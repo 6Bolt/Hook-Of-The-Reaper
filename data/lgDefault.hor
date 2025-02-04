@@ -1,0 +1,12 @@
+Players
+2
+P1
+P2
+[States]
+:mame_start
+*All
+>Open_COM
+:mame_stop
+*All
+>Close_COM
+[Signals]
