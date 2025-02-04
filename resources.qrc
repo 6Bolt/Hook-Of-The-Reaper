@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/data/icons">
         <file>data/icons/hOTRIcon256.ico</file>
+        <file>data/icons/hOTRIcon256.png</file>
     </qresource>
 </RCC>
