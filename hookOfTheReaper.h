@@ -9,7 +9,7 @@
 #include <QMessageBox>
 
 
-
+#include <QDebug>
 
 #include "Windows/addLightGunWindow.h"
 #include "Windows/addComDeviceWindow.h"

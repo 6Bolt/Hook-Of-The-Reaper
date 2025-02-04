@@ -87,6 +87,9 @@ void HookCOMPort::Disconnect(const quint8 &comPortNum)
 
         p_ComPortArray[comPortNum]->close ();
 
+        delete p_ComPortArray[comPortNum];
+        p_ComPortArray[comPortNum] = nullptr;
+
         comPortOpen[comPortNum] = false;
 
         if(numPortOpen > 0)

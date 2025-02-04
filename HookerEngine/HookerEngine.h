@@ -2,7 +2,7 @@
 #define HOOKERENGINE_H
 
 #include <QObject>
-//#include <QDebug>
+#include <QDebug>
 #include <QThread>
 #include <QTimer>
 

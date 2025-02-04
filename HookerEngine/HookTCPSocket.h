@@ -7,7 +7,7 @@
 
 
 #include <QByteArray>
-//#include <QDebug>
+#include <QDebug>
 
 
 

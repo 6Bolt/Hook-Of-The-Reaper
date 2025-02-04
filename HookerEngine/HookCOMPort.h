@@ -5,7 +5,7 @@
 #include <QMap>
 #include <QSerialPort>
 #include <QSerialPortInfo>
-//#include <QDebug>
+#include <QDebug>
 
 
 #include <QByteArray>

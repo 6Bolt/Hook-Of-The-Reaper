@@ -1557,7 +1557,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                     //Write Command(s) to the Default Light Gun's COM Port
                     for(k = 0; k < dlgCommands.count(); k++)
                     {
-                        //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
+                        qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
                         WriteLGComPort(tempCPNum, dlgCommands[k]);
                     }
                 }
