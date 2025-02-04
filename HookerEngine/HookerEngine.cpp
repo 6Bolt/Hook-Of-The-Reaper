@@ -180,6 +180,8 @@ HookerEngine::~HookerEngine()
     if(p_newFile != nullptr)
         delete p_newFile;
 
+    //Close all COM Port Connections
+    emit StopAllComPorts();
 
     //Clean Up threads
     if(useMultiThreading)
@@ -1540,7 +1542,14 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                         dlgCMDFound = false;
 
                 }//if(findDLGCMDs)
-
+                else
+                {
+                    if(commands[i][1] == 'A' && commands[i][2] == 'm')
+                    {
+                        if(commands[i] == AMMOVALUECMD)
+                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(value.toUInt ());
+                    }
+                }
 
                 //isEmpty() is true when Empty
                 if(dlgCMDFound)

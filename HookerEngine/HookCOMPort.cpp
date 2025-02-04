@@ -41,6 +41,9 @@ void HookCOMPort::Connect(const quint8 &comPortNum, const QString &comPortName, 
 
     //qDebug() << "Creating a New Serial Com Port at: " << comPortNum << " With the name of: " << comPortName;
 
+    //Check if it is Already Open, if so, do nothing
+    if(comPortOpen[comPortNum] == false)
+
     p_ComPortArray[comPortNum] = new QSerialPort(comPortName);
     p_ComPortArray[comPortNum]->setBaudRate ((QSerialPort::BaudRate) comPortBaud);
     p_ComPortArray[comPortNum]->setDataBits ((QSerialPort::DataBits) comPortData);
