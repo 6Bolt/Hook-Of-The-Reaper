@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/data/icons">
+        <file>C:/Users/Darren/Pictures/HookOfTheReaper/Icon/newIcon/hOTRIcon32.ico</file>
+        <file>C:/Users/Darren/Pictures/HookOfTheReaper/Icon/newIcon/hOTRIcon32.png</file>
+        <file>C:/Users/Darren/Pictures/HookOfTheReaper/Icon/newIcon/hOTRIcon48.ico</file>
+        <file>C:/Users/Darren/Pictures/HookOfTheReaper/Icon/newIcon/hOTRIcon48.png</file>
+        <file>C:/Users/Darren/Pictures/HookOfTheReaper/Icon/newIcon/hOTRIcon64.ico</file>
+        <file>C:/Users/Darren/Pictures/HookOfTheReaper/Icon/newIcon/hOTRIcon64.png</file>
+        <file>C:/Users/Darren/Pictures/HookOfTheReaper/Icon/newIcon/hOTRIcon128.ico</file>
+        <file>C:/Users/Darren/Pictures/HookOfTheReaper/Icon/newIcon/hOTRIcon128.png</file>
+        <file>C:/Users/Darren/Pictures/HookOfTheReaper/Icon/newIcon/hOTRIcon256.ico</file>
+        <file>C:/Users/Darren/Pictures/HookOfTheReaper/Icon/newIcon/hOTRIcon256.png</file>
+    </qresource>
+</RCC>
