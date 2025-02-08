@@ -14,9 +14,11 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     //First time Game is Found
     firstTimeGame = true;
 
-    //INI or Default LG Game File Loaded
+    //INI or Default LG Game File Loaded or failed loading
     iniFileLoaded = false;
     lgFileLoaded = false;
+    iniFileLoadFail = false;
+    lgFileLoadFail = false;
 
     //New INI or Default LG Game File Made
     newINIFileMade = false;
@@ -29,6 +31,12 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
 
     //Used For INI COM Port Read
     bufferNum = 0;
+
+
+    commandLGList << OPENCOMPORT << CLOSECOMPORT << DAMAGECMD << RECOILCMD << RELOADCMD;
+    commandLGList << AMMOCMD << AMMOVALUECMD << SHAKECMD << AUTOLEDCMD << ARATIO169CMD;
+    commandLGList << ARATIO43CMD << JOYMODECMD << KANDMMODECMD << DLGNULLCMD;
+
 
 
     //qDebug() << "Hooker Engine Started";
@@ -688,6 +696,10 @@ void HookerEngine::LoadINIFile()
     QStringList tempSplit;
     quint16 indexEqual;
     bool isOutput = false;
+    bool goodCommand;
+
+    iniFileLoadFail = false;
+    openComPortCheck.clear();
 
     //Open File. If Failed to Open, so Critical Message Box
     QFile iniFile(gameINIFilePath);
@@ -749,6 +761,16 @@ void HookerEngine::LoadINIFile()
 
                 //qDebug() << "Loaded INI Signal or State: " << signal;
 
+                goodCommand = CheckINICommands(tempSplit);
+
+                //If bad command file, then fail load
+                if(!goodCommand)
+                {
+                    iniFileLoadFail = true;
+                    return;
+                }
+
+
                 if(isOutput)
                     signalsAndCommands.insert(signal, tempSplit);
                 else
@@ -781,6 +803,301 @@ void HookerEngine::LoadINIFile()
 
     //Process the "mame_start" Signal
     ProcessINICommands(MAMESTARTAFTER, "", true);
+}
+
+bool HookerEngine::CheckINICommands(QStringList commadsNotChk)
+{
+    QString command;
+    QStringList subCommands;
+    quint8 subCmdCnt;
+    QString subCmd;
+    quint8 commandCount = commadsNotChk.length ();
+    bool isCommandsGood = true;
+    quint8 i, j;
+
+    for(i = 0; i < commandCount; i++)
+    {
+        command = commadsNotChk[i];
+
+        if(command.contains ('|'))
+        {
+            commadsNotChk[i].replace(" |","|");
+            commadsNotChk[i].replace("| ","|");
+
+            subCommands = commadsNotChk[i].split ('|');
+            subCmdCnt = subCommands.length ();
+
+            for(j = 0; j < subCmdCnt; j++)
+            {
+                subCmd = subCommands[j];
+
+                //Check for %s%, if so replace with 0
+                if(subCmd.contains (SIGNALDATAVARIBLE))
+                    subCmd.replace(SIGNALDATAVARIBLE, "0");
+
+                isCommandsGood = CheckINICommand(subCmd);
+
+                if(!isCommandsGood)
+                {
+                    QString tempCrit = "Loaded INI game file has a bad command. Please close program and solve file problem. CMD: "+subCommands[j]+" File: "+gameINIFilePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            //Check for %s%, if so replace with 0
+            if(command.contains (SIGNALDATAVARIBLE))
+                command.replace(SIGNALDATAVARIBLE, "0");
+
+            isCommandsGood = CheckINICommand(command);
+
+            if(!isCommandsGood)
+            {
+                QString tempCrit = "Loaded INI game file has a bad command. Please close program and solve file problem. CMD: "+command+" File: "+gameINIFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+        }
+
+    }
+
+    //Ran the gaunlet
+    return isCommandsGood;
+}
+
+bool HookerEngine::CheckINICommand(QString commndNotChk)
+{
+    QStringList temp1, temp2;
+    INIPortStruct portTemp;
+    quint8 comPortNumber;
+    bool isCommandsGood = true;
+    bool chkSetting;
+    quint8 i;
+
+
+    //COM Port Commands, Starts with "cm" or "cs"
+    if(commndNotChk.startsWith(PORTCMDSTART1, Qt::CaseInsensitive) == true || commndNotChk.startsWith(PORTCMDSTART2, Qt::CaseInsensitive) == true)
+    {
+        //qDebug() << "Is a COM Port Command";
+
+        //COM Port Open Command
+        if(commndNotChk.startsWith(COMPORTOPEN, Qt::CaseInsensitive) || commndNotChk.startsWith(COMPORTSETTINGS, Qt::CaseInsensitive))
+        {
+            //This will give 3 Strings 1: cmo/css  2: Com Port #  3: Settings
+            temp1 = commndNotChk.split(' ');
+
+            bool isNumber;
+
+            comPortNumber = temp1[1].toUInt(&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In COM port open command, port number is not a number. Port Number: "+temp1[1]+"  File: "+gameINIFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            //Add in COM Port number for checks
+            openComPortCheck << comPortNumber;
+
+            //qDebug() << "Open COM Port Command: " << temp1[0] << " " << temp1[1] << " " << temp1[2];
+
+            //Split the Settings into 4 Strings  1: Baud  2: Parity  3: Data  4: Stop
+            temp2 = temp1[2].split('_');
+            temp2[0].remove(BAUDREMOVE);
+            temp2[1].remove(PARITYREMOVE);
+            temp2[2].remove(DATAREMOVE);
+            temp2[3].remove(STOPREMOVE);
+
+            portTemp.baud = temp2[0].toUInt(&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In COM port open command, baud rate is not a number. Baud Rate Number: "+temp2[0]+"  File: "+gameINIFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            chkSetting = false;
+
+            for(i = 0; i < BAUD_NUMBER; i++)
+            {
+                if(portTemp.baud == BAUDDATA_ARRAY[i])
+                    chkSetting = true;
+            }
+
+            if(!chkSetting)
+            {
+                QString tempCrit = "In COM port open command, baud rate is not a correct rate. Baud Rate Number: "+temp2[0]+"  File: "+gameINIFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+
+            if(temp2[1] == "N")
+                portTemp.parity = 0;
+            else if(temp2[1] == "E")
+                portTemp.parity = 2;
+            else if(temp2[1] == "O")
+                portTemp.parity = 3;
+            else if(temp2[1] == "S")
+                portTemp.parity = 4;
+            else if(temp2[1] == "M")
+                portTemp.parity = 5;
+            else
+            {
+                QString tempCrit = "In COM port open command, parity is not a correct char[N,E,O,S,M]. Parity Char: "+temp2[1]+"  File: "+gameINIFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            portTemp.data = temp2[2].toUInt(&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In COM port open command, data bits is not a number. Data Bits Number: "+temp2[2]+"  File: "+gameINIFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            //Can be 5-8
+            if(portTemp.data < 5 || portTemp.data > 8)
+            {
+                QString tempCrit = "In COM port open command, data bits is not in range [5-8]. Data Bits Number: "+temp2[2]+"  File: "+gameINIFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+
+            if(temp2[3] == "1.5")
+                temp2[3] = "3";
+
+            portTemp.stop = temp2[3].toUInt(&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In COM port open command, stop bits is not a number. Stop Bits Number: "+temp2[3]+"  File: "+gameINIFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            //Can be 1-3
+            if(portTemp.stop == 0 || portTemp.stop > 3)
+            {
+                QString tempCrit = "In COM port open command, stop bits is not in range [1-3], where 3 = 1.5. Data Bits Number: "+temp2[3]+"  File: "+gameINIFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+
+            //Good open or settings command
+            return true;
+
+
+        }
+        else if(commndNotChk.startsWith(COMPORTCLOSE, Qt::CaseInsensitive))
+        {
+            //This will give 2 Strings 1: cmc  2: Com Port #
+            temp1 = commndNotChk.split(' ');
+
+            bool isNumber;
+            quint8 comPortNumber = temp1[1].toUInt (&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In COM port close command, port number is not a number. Port Number: "+temp1[1]+"  File: "+gameLGFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            if(!openComPortCheck.isEmpty ())
+            {
+                if(!openComPortCheck.contains (comPortNumber))
+                {
+                    QString tempCrit = "In COM port close command, port number doesn't match any open port number(s). Port Number: "+temp1[1]+"  File: "+gameLGFilePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                    return false;
+                }
+            }
+
+            //ran the gaunlet, good Close CMD
+            return true;
+
+        }
+        else if(commndNotChk.startsWith(COMPORTREAD, Qt::CaseInsensitive))
+        {
+            //This will give 4 Strings 1: cmr  2: Com Port #  3: Buffer # 4: length
+            //temp1 = commands[i].split(' ');
+
+            QString tempCrit = "In COM port read, reads are not implamented yet. Please remove read. Read CMD: "+commndNotChk+"  File: "+gameLGFilePath;
+            if(displayMB)
+                QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+            return false;
+
+
+            //Not Implamented Yet
+            //ReadINIComPort(temp1[1].toUInt(), temp1[2].toUInt(), temp1[3].toUInt());
+        }
+        else if(commndNotChk.startsWith(COMPORTWRITE, Qt::CaseInsensitive))
+        {
+            //This will give 3 Strings 1: cmw  2: Com Port #  3: Data
+            temp1 = commndNotChk.split(' ');
+
+            //qDebug() << "Write to COM Port on Number: " << temp1[1] << " with Data: " << temp1[2];
+
+            bool isNumber;
+            quint8 comPortNumber = temp1[1].toUInt (&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In COM port write command, port number is not a number. Port Number: "+temp1[1]+"  File: "+gameLGFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            if(!openComPortCheck.isEmpty ())
+            {
+                if(!openComPortCheck.contains (comPortNumber))
+                {
+                    QString tempCrit = "In COM port write command, port number doesn't match any open port number(s). Port Number: "+temp1[1]+"  File: "+gameLGFilePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
+                    return false;
+                }
+            }
+
+            //Ran the gaunlet, good Write CMD;
+            return true;
+
+        }
+        else if(commndNotChk.startsWith(ININULLCMD, Qt::CaseInsensitive))
+        {
+            //Null Command - Do Nothing, but return true;
+            return true;
+        }
+    }//COM Port Commands, Starts with "cm" or "cs"
+    else
+    {
+        return false;
+    }
+
+    //Something Bad happen to get here
+    return false;
 }
 
 
@@ -830,36 +1147,6 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
     bool foundCommand;
     bool foundNoCommand;
 
-    if(isState)
-        foundCommand = stateAndCommands.contains(signalName);
-    else
-        foundCommand = signalsAndCommands.contains(signalName);
-
-    //If No Command Found, then something went wrong
-    if(!foundCommand)
-    {
-        QString critMessage;
-
-        if(isState)
-            foundNoCommand = statesNoCommands.contains(signalName);
-        else
-            foundNoCommand = signalsNoCommands.contains(signalName);
-
-        if(foundNoCommand)
-        {
-            critMessage = "Signal name cannot be processed, as it is not found in any of the QMaps. Something really messed up happened. Signal name: ";
-            critMessage.append (signalName);
-        }
-        else
-        {
-            critMessage = "Signal name cannot be processed, as it has no commands for it. Found in QStringList for signals with no commands. Signal name: ";
-            critMessage.append (signalName);
-        }
-        if(displayMB)
-            QMessageBox::critical (p_guiConnect, "Processes Error",critMessage, QMessageBox::Ok);
-        return;
-
-    }
 
     if(isState)
         commands = stateAndCommands[signalName];
@@ -874,7 +1161,7 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
         //qDebug() << commands[i];
 
         //First Check if there are more values with '|', is so split.
-        if(commands[i].contains ("|"))
+        if(commands[i].contains ('|'))
         {
             commands[i].replace(" |","|");
             commands[i].replace("| ","|");
@@ -919,6 +1206,7 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
             {
                 //This will give 3 Strings 1: cmo/css  2: Com Port #  3: Settings
                 temp1 = commands[i].split(' ');
+
                 comPortNumber = temp1[1].toUInt();
 
                 //qDebug() << "Open COM Port Command: " << temp1[0] << " " << temp1[1] << " " << temp1[2];
@@ -931,6 +1219,7 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
                 temp2[3].remove(STOPREMOVE);
 
                 portTemp.baud = temp2[0].toUInt();
+
 
                 if(temp2[1] == "N")
                     portTemp.parity = 0;
@@ -946,7 +1235,12 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
                     portTemp.parity = 1;
 
                 portTemp.data = temp2[2].toUInt();
+
+                if(temp2[3] == "1.5")
+                    temp2[3] = "3";
+
                 portTemp.stop = temp2[3].toUInt();
+
 
                 //qDebug() << "COM Port Setting - Baud: " << temp2[0] << " Parity: " << temp2[1] << " Data: " << temp2[2] << " Stop: " << temp2[3];
 
@@ -965,7 +1259,6 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
                         iniPortMap.insert(comPortNumber,portTemp);
                 }
 
-
             }
             else if(commands[i].startsWith(COMPORTCLOSE, Qt::CaseInsensitive))
             {
@@ -974,13 +1267,16 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
 
                 //qDebug() << "Close COM Port on Number: " << temp1[1];
 
-                CloseINIComPort(temp1[1].toUInt());
+                quint8 comPortNumber = temp1[1].toUInt ();
+
+                CloseINIComPort(comPortNumber);
             }
             else if(commands[i].startsWith(COMPORTREAD, Qt::CaseInsensitive))
             {
                 //This will give 4 Strings 1: cmr  2: Com Port #  3: Buffer # 4: length
-                temp1 = commands[i].split(' ');
+                //temp1 = commands[i].split(' ');
 
+                //Not Implamented Yet
                 //ReadINIComPort(temp1[1].toUInt(), temp1[2].toUInt(), temp1[3].toUInt());
             }
             else if(commands[i].startsWith(COMPORTWRITE, Qt::CaseInsensitive))
@@ -990,8 +1286,9 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
 
                 //qDebug() << "Write to COM Port on Number: " << temp1[1] << " with Data: " << temp1[2];
 
-                WriteINIComPort(temp1[1].toUInt(), temp1[2]);
+                quint8 comPortNumber = temp1[1].toUInt ();
 
+                WriteINIComPort(comPortNumber, temp1[2]);
             }
             else if(commands[i].startsWith(ININULLCMD, Qt::CaseInsensitive))
             {
@@ -1008,7 +1305,7 @@ void HookerEngine::OpenINIComPort(quint8 cpNum)
 
     //qDebug() << "OpenINIComPort with name: " << cpName << " Emitting StartComPort";
 
-    emit StartComPort(cpNum, cpName, iniPortMap[cpNum].baud, iniPortMap[cpNum].data, iniPortMap[cpNum].parity, iniPortMap[cpNum].stop, 0);
+    emit StartComPort(cpNum, cpName, iniPortMap[cpNum].baud, iniPortMap[cpNum].data, iniPortMap[cpNum].parity, iniPortMap[cpNum].stop, 0, true);
 }
 
 void HookerEngine::CloseINIComPort(quint8 cpNum)
@@ -1056,7 +1353,7 @@ void HookerEngine::NewLGFile()
     if(!copyFile)
     {
         if(displayMB)
-            QMessageBox::critical (p_guiConnect, "File Error", "Can not copy default Light Gun file to defaultLG. Please close program and solve file problem. Might be permissions problem.", QMessageBox::Ok);
+            QMessageBox::critical (p_guiConnect, "File Error", "Can not copy top of Default Light Gun game file to defaultLG directory. Please close program and solve file problem. Might be permissions problem. File: "+gameLGFilePath, QMessageBox::Ok);
         return;
     }
 
@@ -1069,7 +1366,7 @@ void HookerEngine::NewLGFile()
 
     if(!openFile)
     {
-        QString tempCrit = "Can not open default light gun file to read. Please close program and solve file problem. Might be permissions problem. File: "+gameLGFilePath;
+        QString tempCrit = "Can not open new default light gun game file to write. Please close program and solve file problem. Might be permissions problem. File: "+gameLGFilePath;
         if(displayMB)
             QMessageBox::critical (p_guiConnect, "File Error", tempCrit, QMessageBox::Ok);
         return;
@@ -1095,8 +1392,14 @@ void HookerEngine::LoadLGFile()
     quint8 lgNumber;
     bool isDefaultLG;
     quint8 tempDLGNum;
+    QString tempLine;
+    quint8 tempPlayer;
+    bool isGoodCmd;
+    QStringList subCommands;
+    quint8 subCmdsCnt;
     // bool isOutput = false;
 
+    lgFileLoadFail = false;
 
     QFile lgFile(gameLGFilePath);
 
@@ -1106,7 +1409,7 @@ void HookerEngine::LoadLGFile()
     {
         QString tempCrit = "Can not open default light gun game file to read. Please close program and solve file problem. Might be permissions problem. File: "+gameLGFilePath;
         if(displayMB)
-            QMessageBox::critical (p_guiConnect, "File Error", tempCrit, QMessageBox::Ok);
+            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
         return;
     }
 
@@ -1139,12 +1442,23 @@ void HookerEngine::LoadLGFile()
                     line.remove (0,1);
                     playerNumber = line.toUInt (&isNumber);
                     if(isNumber)
+                    {
+                        if(playerNumber == 0 || playerNumber > MAXPLAYERLIGHTGUNS)
+                        {
+                            lgFileLoadFail = true;
+                            QString tempCrit = "Player number under \"Players\" is out of range. Player number range is 1-4. File: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
                         lgPlayerOrder[i] = playerNumber-1;
+                    }
                     else
                     {
+                        lgFileLoadFail = true;
                         QString tempCrit = "Default light gun game file corrupted. Please close program and solve file problem. Player number was not a number. File: "+gameLGFilePath;
                         if(displayMB)
-                            QMessageBox::critical (p_guiConnect, "File Error", tempCrit, QMessageBox::Ok);
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                         return;
                     }
                     //qDebug() << "Player " << i << " connected to: " << line;
@@ -1156,12 +1470,25 @@ void HookerEngine::LoadLGFile()
                     if(lgNumber != UNASSIGN)
                         isDefaultLG = p_comDeviceList->p_lightGunList[lgNumber]->GetDefaultLightGun();
                     else
+                    {
+                        lgFileLoadFail = true;
+                        QString tempCrit = "Player P"+QString::number (playerNumber)+" has no light gun assign to it. Please close game, and then assign a light gun to the player. File: ";
+                        tempCrit.append (gameLGFilePath);
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                         return;
+                    }
 
-                    //If Light Gun is not a Default Light Gun, the fail and go to INI file
+                    //If Light Gun(s) is not a Default Light Gun(s), then fail
                     if(!isDefaultLG)
-                        return;
+                    {
+                        lgFileLoadFail = true;
 
+                        QString tempCrit = "One or More of the assign light guns are not \"Default Light Gun.\" To use defaultLG files, must use only default light guns. File: "+gameLGFilePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return;
+                    }
                     //Load Light Gun Order, based on Player Order and Player's Assignment
                     loadedLGNumbers[i] = lgNumber;
 
@@ -1249,8 +1576,40 @@ void HookerEngine::LoadLGFile()
             //If Got a Signal, Add The Player. If Not then Sometrhing Went Wrong
             if(gotSignal)
             {
-                //Remove the '*' from the Front of Players
-                //line.remove (0,1);
+                tempLine = line;
+
+                //Remove the '*P' from the Front of Players
+                tempLine.remove (0,2);
+
+                tempPlayer = tempLine.toUInt (&isNumber);
+
+                //Check if Number
+                if(!isNumber)
+                {
+                    lgFileLoadFail = true;
+                    QString tempCrit = "Player Number is not a number in defaultLG game file. Please close program and solve file problem. Player Number:"+tempLine+" File: "+gameLGFilePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return;
+                }
+
+                //Check if Player Number Matches Loaded Players Above
+                bool playerMatch = false;
+
+                for(quint8 i = 0; i < numberLGPlayers; i++)
+                {
+                    if(tempPlayer-1 == lgPlayerOrder[i])
+                        playerMatch = true;
+                }
+
+                if(!playerMatch)
+                {
+                    lgFileLoadFail = true;
+                    QString tempCrit = "Player Number does not match loaded Players in defaultLG game file. Please close program and solve file problem. Player Number:"+tempLine+" File: "+gameLGFilePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return;
+                }
 
                 //First thing of the Command is the Player(s)
                 commands << line;
@@ -1259,29 +1618,72 @@ void HookerEngine::LoadLGFile()
             }
             else if(in.atEnd ())
             {
+                lgFileLoadFail = true;
                 QString tempCrit = "File cannot end on a player(*). Please close program and solve file problem. Need to open defualt light gun file for game and fixed player problem. File: "+gameLGFilePath;
                 if(displayMB)
-                    QMessageBox::critical (p_guiConnect, "Process File Error", tempCrit, QMessageBox::Ok);
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return;
             }
             else
             {
+                lgFileLoadFail = true;
                 QString tempCrit = "Player(*) came before a signal(:). Please close program and solve file problem. Need to open defualt light gun file for game and fixed player problem. File: "+gameLGFilePath;
                 if(displayMB)
-                    QMessageBox::critical (p_guiConnect, "Process File Error", tempCrit, QMessageBox::Ok);
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return;
             }
         }
         else if(line[0] == COMMANDSTARTCHAR)
         {
-            //Got a Command
+            //Got a Command - Check if Good Command
+
+            if(line.contains ('|'))
+            {
+                line.replace(" |","|");
+                line.replace("| ","|");
+
+                subCommands = line.split("|");
+                subCmdsCnt = subCommands.size ();
+
+                for(quint8 i = 0; i < subCmdsCnt; i++)
+                {
+                    isGoodCmd = CheckLGCommand(subCommands[i]);
+
+                    if(!isGoodCmd)
+                    {
+                        lgFileLoadFail = true;
+                        QString tempCrit = "Command(>) is not found in the command list. Please close program and solve file problem. CMD: "+subCommands[i]+" File: "+gameLGFilePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return;
+                    }
+                }
+
+            }
+            else
+            {
+                //Check Command to to see if it is good
+                isGoodCmd = CheckLGCommand(line);
+
+                if(!isGoodCmd)
+                {
+                    lgFileLoadFail = true;
+                    QString tempCrit = "Command(>) is not found in the command list. Please close program and solve file problem. CMD: "+line+" File: "+gameLGFilePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return;
+                }
+            }
+
+
 
             //If Got a Signal and Player, then add Command
             if(gotSignal && gotPlayer)
             {
+
                 //Check to See iff at Last Line
                 if(!in.atEnd ())
-                {
+                {    
                     //Last Data Must Be Commands
                     commands << line;
 
@@ -1305,9 +1707,10 @@ void HookerEngine::LoadLGFile()
             else if(gotSignal && !gotPlayer && gotCommands)
             {
                 //If Got a Signal and Command, with No Player
+                lgFileLoadFail = true;
                 QString tempCrit = "No player(*) between a signal(:) and command(>). Please close program and solve file problem. Need to open defualt light gun file for game, and add in player at signal, "+signal+". File: "+gameLGFilePath;
                 if(displayMB)
-                    QMessageBox::critical (p_guiConnect, "Process File Error", tempCrit, QMessageBox::Ok);
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return;
             }
 
@@ -1336,6 +1739,13 @@ void HookerEngine::LoadLGFile()
     ProcessLGCommands(MAMESTARTAFTER, gameName);
 }
 
+bool HookerEngine::CheckLGCommand(QString commndNotChk)
+{
+    if(commandLGList.contains (commndNotChk))
+        return true;
+
+    return false;
+}
 
 void HookerEngine::ProcessLGCommands(QString signalName, QString value)
 {
@@ -1349,18 +1759,6 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
     bool dlgCMDFound;
     bool findDLGCMDs;
 
-
-
-    //Search Signals & Commands QMap for the Signal
-    if(signalsAndCommands.contains (signalName))
-        commands = signalsAndCommands[signalName];
-    else
-    {
-        QString critMessage = "Signal name cannot be processed, as it is not found in any of the QMaps. Something really messed up happened. Signal: "+signalName;
-        if(displayMB)
-            QMessageBox::critical (p_guiConnect, "Processes Error",critMessage, QMessageBox::Ok);
-        return;
-    }
 
     //Get the Player(s) & Command(s) for Signal
     cmdCount = signalsAndCommands[signalName].count ();
@@ -1380,8 +1778,9 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
         //First Check if there are multiple commands with '|', is so split.
         if(commands[i].contains ("|"))
         {
-            commands[i].replace(" |","|");
-            commands[i].replace("| ","|");
+            //Done this when checking commands, when loaded the file
+            //commands[i].replace(" |","|");
+            //commands[i].replace("| ","|");
 
             multiValue = commands[i].split("|");
 
@@ -1510,29 +1909,29 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                 dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands();
                         }
                     }
-                    else if(commands[i][0] == 'D' && value != "0")
+                    else if(commands[i][1] == 'D' && value != "0")
                     {
                         //Only Do Damage if Value != 0
                         if(commands[i] == DAMAGECMD)
                             dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DamageCommands();
                     }
-                    else if(commands[i][0] == 'S' && value != "0")
+                    else if(commands[i][1] == 'S' && value != "0")
                     {
                         //Only Do Shake if Value != 0
                         if(commands[i] == SHAKECMD)
                             dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ShakeCommands();
                     }
-                    else if(commands[i][0] == 'J')
+                    else if(commands[i][1] == 'J')
                     {
                         if(commands[i] == JOYMODECMD)
                             dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->JoystickModeCommands();
                     }
-                    else if(commands[i][0] == 'K')
+                    else if(commands[i][1] == 'K')
                     {
                         if(commands[i] == KANDMMODECMD)
                             dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->MouseAndKeyboardModeCommands();
                     }
-                    else if(commands[i][0] == 'N')
+                    else if(commands[i][1] == 'N')
                     {
                         //If Null Command - Do Nothing
                         if(commands[i] == DLGNULLCMD)
@@ -1542,22 +1941,15 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                         dlgCMDFound = false;
 
                 }//if(findDLGCMDs)
-                else
-                {
-                    if(commands[i][1] == 'A' && commands[i][2] == 'm')
-                    {
-                        if(commands[i] == AMMOVALUECMD)
-                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(value.toUInt ());
-                    }
-                }
+
 
                 //isEmpty() is true when Empty
-                if(dlgCMDFound)
+                if(dlgCMDFound && !dlgCommands.isEmpty ())
                 {
                     //Write Command(s) to the Default Light Gun's COM Port
                     for(k = 0; k < dlgCommands.count(); k++)
                     {
-                        qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
+                        //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
                         WriteLGComPort(tempCPNum, dlgCommands[k]);
                     }
                 }
@@ -1623,7 +2015,7 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum)
         tempFlow = p_comDeviceList->p_lightGunList[lightGun]->GetComPortFlow();
 
         //Opens the COM Port
-        emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow);
+        emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, true);
 
         //Get the Commnds for Open COM Port
         commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands();

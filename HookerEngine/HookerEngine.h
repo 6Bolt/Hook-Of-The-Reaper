@@ -55,7 +55,7 @@ signals:
     void StopTCPSocket();
 
     //Starts and Stops a Certain Serial COM Port (different thread)
-    void StartComPort(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow);
+    void StartComPort(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const bool &isWriteOnly);
     void StopComPort(const quint8 &comPortNum);
 
     //Write Data on a Certain Serail COM Port (different thread)
@@ -108,6 +108,13 @@ private:
     //Loads INI file for Game
     void LoadINIFile();
 
+    //Checks the Commands Loaded in from INI File
+    bool CheckINICommands(QStringList commadsNotChk);
+
+    //Checks a Signle Command Loaded in from INI File
+    bool CheckINICommand(QString commndNotChk);
+
+
     //If No Game File Exists for INI & Default LG, then make New INI File with all Signals
     void NewINIFile();
 
@@ -136,6 +143,9 @@ private:
 
     //Loads INI file for Game
     void LoadLGFile();
+
+    //Check if Loaded Command is Good or Not
+    bool CheckLGCommand(QString commndNotChk);
 
     //If No Game File Exists for INI & Default LG, then make New INI File with all Signals
     void NewLGFile();
@@ -229,6 +239,16 @@ private:
     //QFile Used When Making a New File
     //A Pointer, Since Used in Multiple Functions
     QFile                           *p_newFile;
+    //If Failed Loading the File
+    bool                            iniFileLoadFail;
+    bool                            lgFileLoadFail;
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    //Check Commands & Command for INI & Default LG
+    QList<quint8>                   openComPortCheck;
+    QStringList                     commandLGList;
+
 
     ///////////////////////////////////////////////////////////////////////////
 
