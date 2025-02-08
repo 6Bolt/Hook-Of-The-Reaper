@@ -36,7 +36,7 @@ HookCOMPort::~HookCOMPort()
 
 //public slots
 
-void HookCOMPort::Connect(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow)
+void HookCOMPort::Connect(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const bool &isWriteOnly)
 {
 
     //qDebug() << "Creating a New Serial Com Port at: " << comPortNum << " With the name of: " << comPortName;
@@ -44,9 +44,16 @@ void HookCOMPort::Connect(const quint8 &comPortNum, const QString &comPortName, 
     //Check if it is Already Open, if so, do nothing
     if(comPortOpen[comPortNum] == false)
     {
+        bool isOpen;
+
 
         p_ComPortArray[comPortNum] = new QSerialPort(comPortName);
-        p_ComPortArray[comPortNum]->setBaudRate ((QSerialPort::BaudRate) comPortBaud);
+
+        if(isWriteOnly)
+            p_ComPortArray[comPortNum]->setBaudRate ((QSerialPort::BaudRate) comPortBaud, QSerialPort::Output);
+        else
+            p_ComPortArray[comPortNum]->setBaudRate ((QSerialPort::BaudRate) comPortBaud);
+
         p_ComPortArray[comPortNum]->setDataBits ((QSerialPort::DataBits) comPortData);
         p_ComPortArray[comPortNum]->setParity ((QSerialPort::Parity) comPortParity);
         p_ComPortArray[comPortNum]->setStopBits ((QSerialPort::StopBits) comPortStop);
@@ -55,7 +62,12 @@ void HookCOMPort::Connect(const quint8 &comPortNum, const QString &comPortName, 
         QSerialPortInfo newPortInfo(comPortName);
         p_ComPortArray[comPortNum]->setPort (newPortInfo);
 
-        if(!p_ComPortArray[comPortNum]->open(QIODevice::ReadWrite))
+        if(isWriteOnly)
+            isOpen = p_ComPortArray[comPortNum]->open (QIODevice::WriteOnly);
+        else
+            isOpen = p_ComPortArray[comPortNum]->open(QIODevice::ReadWrite);
+
+        if(!isOpen)
         {
             //If Failed to Open COM Port
             QSerialPort::SerialPortError portError = p_ComPortArray[comPortNum]->error();
@@ -69,7 +81,8 @@ void HookCOMPort::Connect(const quint8 &comPortNum, const QString &comPortName, 
             //If Open COM Port
             comPortOpen[comPortNum] = true;
 
-            connect(p_ComPortArray[comPortNum],SIGNAL(readyRead()),this,SLOT(ReadData()));
+            if(!isWriteOnly)
+                connect(p_ComPortArray[comPortNum],SIGNAL(readyRead()),this,SLOT(ReadData()));
 
             numPortOpen++;
             isPortOpen = true;
@@ -116,9 +129,10 @@ void HookCOMPort::WriteData(const quint8 &comPortNum, const QByteArray &writeDat
 
         //qDebug() << "bytesWritten is : " << bytesWritten << " and QByteArray size is: " << writeData.size();
 
-        //If the data has not been Written, wait 100 milli-secs
+        //If the data has not been Written, flush & wait 100 milli-secs
         if(bytesWritten != writeData.size())
         {
+            p_ComPortArray[comPortNum]->flush ();
             writeDone = p_ComPortArray[comPortNum]->waitForBytesWritten (100);
         }
         else
