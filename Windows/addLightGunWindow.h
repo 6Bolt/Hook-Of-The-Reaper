@@ -12,7 +12,6 @@
 
 
 
-#include "../COMDeviceList/LightGun.h"
 #include "../COMDeviceList/ComDeviceList.h"
 
 
@@ -83,7 +82,6 @@ private:
     ComDeviceList           *p_comDeviceList;
 
     //Temp Pointers to Add a Light Gun and Serial Port Info. Delete if not Set to nullptr
-    LightGun                *p_lgTemp = nullptr;
     QSerialPortInfo         *p_comPortInfo = nullptr;
 
     //Light Gun Data

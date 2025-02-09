@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>616</width>
-    <height>478</height>
+    <height>508</height>
    </rect>
   </property>
   <property name="font">
@@ -295,7 +295,7 @@
    <property name="geometry">
     <rect>
      <x>540</x>
-     <y>450</y>
+     <y>480</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -316,7 +316,7 @@
    <property name="geometry">
     <rect>
      <x>460</x>
-     <y>450</y>
+     <y>480</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -337,7 +337,7 @@
    <property name="geometry">
     <rect>
      <x>380</x>
-     <y>450</y>
+     <y>480</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -587,7 +587,7 @@
    <property name="geometry">
     <rect>
      <x>300</x>
-     <y>450</y>
+     <y>480</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -605,6 +605,34 @@
    </property>
    <property name="flat">
     <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>410</y>
+     <width>131</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Dip Switch Player:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="dipSwitchComboBox">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>420</y>
+     <width>51</width>
+     <height>24</height>
+    </rect>
    </property>
   </widget>
  </widget>

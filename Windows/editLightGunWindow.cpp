@@ -38,6 +38,14 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     //Default Light Gun Combo Box - Adding Default Light Guns
     ui->defaultLightGunComboBox->insertItem(0,"");
     ui->defaultLightGunComboBox->insertItem(RS3_REAPER,REAPERNAME);
+    ui->defaultLightGunComboBox->insertItem(MX24,MX24NAME);
+
+    //Add P1-P4 to Dip Swich Combo Box
+    for(quint8 comPortIndx=0;comPortIndx<DIPSWITCH_NUMBER;comPortIndx++)
+    {
+        tempQS = "P"+QString::number(comPortIndx+1);
+        ui->dipSwitchComboBox->insertItem (comPortIndx,tempQS);
+    }
 
     //Check if the First Light Gun is a Default Light Gun
     if(p_comDeviceList->p_lightGunList[0]->GetDefaultLightGun())
@@ -46,6 +54,16 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
         ui->defaultLightGunComboBox->setCurrentIndex (defaultLightGunNum);
         defaultLightGun = true;
         SetEnableComboBoxes(false);
+        if(defaultLightGunNum == 2)
+        {
+            ui->dipSwitchComboBox->setEnabled(true);
+            dipSwitchNumber = p_comDeviceList->p_lightGunList[0]->GetDipSwitchPlayerNumber (dipSwitchSet);
+            ui->dipSwitchComboBox->setCurrentIndex(dipSwitchNumber);
+        }
+        else
+        {
+            ui->dipSwitchComboBox->setEnabled(false);
+        }
     }
     else
     {
@@ -53,6 +71,7 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
         defaultLightGun = false;
         defaultLightGunNum = 0;
         SetEnableComboBoxes(true);
+        ui->dipSwitchComboBox->setEnabled(false);
     }
 
 
@@ -165,11 +184,17 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
 
         //Disable Combo Boxes Affect by Default Light Gun
         SetEnableComboBoxes(false);
+
+        if(index == MX24)
+            ui->dipSwitchComboBox->setEnabled(true);
+        else
+            ui->dipSwitchComboBox->setEnabled(false);
     }
     else
     {
         //Enable Combo Boxes Affect by Default Light Gun
         SetEnableComboBoxes(true);
+        ui->dipSwitchComboBox->setEnabled(false);
     }
 }
 
@@ -368,18 +393,42 @@ bool editLightGunWindow::IsValidData()
 bool editLightGunWindow::IsDefaultLightGun()
 {
     quint8 dlgIndex = ui->defaultLightGunComboBox->currentIndex ();
+    defaultLightGunNumChanged = false;
 
+    if(defaultLightGun)
+    {
+        oldDefaultLightGunNum = defaultLightGunNum;
+        oldDefaultLightGun = true;
+    }
+    else
+        oldDefaultLightGun = false;
 
     if(dlgIndex > 0)
     {
         defaultLightGun = true;
         defaultLightGunNum = dlgIndex;
+
+        if(oldDefaultLightGun != defaultLightGun)
+            defaultLightGunNumChanged = true;
+        else
+        {
+            if(oldDefaultLightGun)
+            {
+                if(oldDefaultLightGunNum != defaultLightGunNum)
+                    defaultLightGunNumChanged = true;
+            }
+        }
+
         return true;
     }
+    else
+    {
+        defaultLightGun = false;
+        defaultLightGunNum = 0;
+        return false;
+    }
 
-    defaultLightGun = false;
-    defaultLightGunNum = 0;
-    return false;
+
 }
 
 void editLightGunWindow::EditLightGun()
@@ -419,6 +468,23 @@ void editLightGunWindow::EditLightGun()
     p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortParity (comPortParity);
     p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortStopBits (comPortStopBits);
     p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortFlow (comPortFlow);
+
+    if(defaultLightGun && defaultLightGunNum == RS3_REAPER)
+    {
+        quint16 maxAmmo = REAPERMAXAMMONUM;
+        quint16 reloadValue = REAPERRELOADNUM;
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetMaxAmmo (maxAmmo);
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetReloadValue (reloadValue);
+    }
+    else if(defaultLightGun && defaultLightGunNum == MX24)
+    {
+        dipSwitchNumber = ui->dipSwitchComboBox->currentIndex ();
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetDipSwitchPlayerNumber (dipSwitchNumber);
+    }
+
+    //Now a Default Light Gun or Default Light Number Changed
+    if(defaultLightGunNumChanged)
+        p_comDeviceList->p_lightGunList[lightGunNum]->LoadDefaultLGCommands ();
 
     delete p_comPortInfo;
     p_comPortInfo = nullptr;
@@ -542,6 +608,17 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
         ui->defaultLightGunComboBox->setCurrentIndex (defaultLightGunNum);
         defaultLightGun = true;
         SetEnableComboBoxes(false);
+
+        if(defaultLightGunNum == 2)
+        {
+            ui->dipSwitchComboBox->setEnabled(true);
+            dipSwitchNumber = p_comDeviceList->p_lightGunList[0]->GetDipSwitchPlayerNumber (dipSwitchSet);
+            ui->dipSwitchComboBox->setCurrentIndex(dipSwitchNumber);
+        }
+        else
+        {
+            ui->dipSwitchComboBox->setEnabled(false);
+        }
     }
     else
     {
@@ -549,6 +626,8 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
         defaultLightGun = false;
         defaultLightGunNum = 0;
         SetEnableComboBoxes(true);
+        ui->dipSwitchComboBox->setEnabled(false);
+
     }
 
     //COM Port Combo Box - List Unused COM Port and Select Light Gun COM Port

@@ -108,6 +108,11 @@ private:
     quint8 comPortFlow;
     quint8 maxAmmoNum;
     quint8 reloadValueNum;
+    bool dipSwitchSet;
+    quint8 dipSwitchNumber;
+    bool defaultLightGunNumChanged;
+    quint8 oldDefaultLightGunNum;
+    bool oldDefaultLightGun;
 
     //Number of Light Gun in the List
     quint8 numberLightGuns;

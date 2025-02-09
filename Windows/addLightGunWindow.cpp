@@ -114,9 +114,7 @@ addLightGunWindow::~addLightGunWindow()
 {
     //Delete Window
     delete ui;
-    //Delete temp LightGun pointer
-    if(p_lgTemp != nullptr)
-        delete p_lgTemp;
+
     //Delete temp ComPortDevice pointer
     if(p_comPortInfo != nullptr)
         delete p_comPortInfo;
@@ -318,22 +316,28 @@ void addLightGunWindow::AddLightGun()
     FindStopBits();
     FindFlow();
 
-    //Create a New Light Gun Class
-    p_lgTemp = new LightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow);
-
-    //Copy the New LightGun to the ComDeviceList
-    p_comDeviceList->AddLightGun (*p_lgTemp);
-
     //Set Player Dip Switch for MX24 Light Gun, since it is needed for commands
-    if(defaultLightGun && defaultLightGunNum == MX24)
+    if(defaultLightGun && defaultLightGunNum == RS3_REAPER)
+    {
+        quint16 maxAmmo = REAPERMAXAMMONUM;
+        quint16 reloadValue = REAPERRELOADNUM;
+
+        //Create a New Light Gun Class
+        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, maxAmmo, reloadValue);
+    }
+    else if(defaultLightGun && defaultLightGunNum == MX24)
     {
         quint8 tempDS = ui->dipSwitchComboBox->currentIndex ();
-        p_comDeviceList->p_lightGunList[lightGunNum]->SetDipSwitchPlayerNumber (tempDS);
+
+        //Create a New Light Gun Class
+        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, true, tempDS);
+    }
+    else
+    {
+        //Create a New Light Gun Class
+        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow);
     }
 
-    //Delete pointer, since it has been copied over. Then set it to nullptr
-    delete p_lgTemp;
-    p_lgTemp = nullptr;
 
     //Since Data was Passed onto the COM Port Device List
     delete p_comPortInfo;
