@@ -36,6 +36,12 @@ public:
     void Start();
     void Stop();
 
+    //Loads INI Game file for Checks
+    bool LoadINIFileTest(QString fileNamePath);
+
+    //Loads defaultLG Game file for Checks
+    bool LoadLGFileTest(QString fileNamePath);
+
 public slots:
 
     //Read Data from the TCP Socket (different thread)
@@ -109,10 +115,10 @@ private:
     void LoadINIFile();
 
     //Checks the Commands Loaded in from INI File
-    bool CheckINICommands(QStringList commadsNotChk, quint16 lineNumber);
+    bool CheckINICommands(QStringList commadsNotChk, quint16 lineNumber, QString filePathName);
 
     //Checks a Signle Command Loaded in from INI File
-    bool CheckINICommand(QString commndNotChk, quint16 lineNumber);
+    bool CheckINICommand(QString commndNotChk, quint16 lineNumber, QString filePathName);
 
 
     //If No Game File Exists for INI & Default LG, then make New INI File with all Signals
@@ -291,6 +297,14 @@ private:
     QList<quint8>                   defaultLGNumbers;
     //Number of Different Default Light guns Used
     quint8                          uniqueDefaultLG;
+
+
+    //Used to Test defaultLG Game Files
+    quint8                          numberLGPlayersTest;
+    quint8                          lgPlayerOrderTest[MAXPLAYERLIGHTGUNS];
+    quint8                          loadedLGNumbersTest[MAXPLAYERLIGHTGUNS];
+    QList<quint8>                   defaultLGNumbersTest;
+    quint8                          uniqueDefaultLGTest;
 
 
     ///////////////////////////////////////////////////////////////////////////

@@ -201,6 +201,8 @@ struct INIPortStruct
 #define SIGNALSTARTCHAR         ':'
 #define PLAYERSTARTCHAR         '*'
 #define COMMANDSTARTCHAR        '>'
+#define PLAYER2CHHAR            'P'
+
 
 //Process Default LG Commands
 #define CMDSIGNAL               '>'

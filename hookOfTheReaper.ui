@@ -51,6 +51,9 @@
     <addaction name="separator"/>
     <addaction name="actionPlayer_Assignment"/>
     <addaction name="separator"/>
+    <addaction name="actionTest_defaultLG_Game_File"/>
+    <addaction name="actionTest_INI_Game_File"/>
+    <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -118,6 +121,16 @@
   <action name="actionTest_COM_Port">
    <property name="text">
     <string>Test COM Port</string>
+   </property>
+  </action>
+  <action name="actionTest_defaultLG_Game_File">
+   <property name="text">
+    <string>Test DefaultLG Game File</string>
+   </property>
+  </action>
+  <action name="actionTest_INI_Game_File">
+   <property name="text">
+    <string>Test INI Game File</string>
    </property>
   </action>
  </widget>

@@ -478,6 +478,64 @@ void HookOfTheReaper::TestComPortWindowClosed()
     ui->statusbar->showMessage ("Running");
 }
 
+
+void HookOfTheReaper::on_actionTest_defaultLG_Game_File_triggered()
+{
+    //Open File Dialog
+    QStringList fileNames = QFileDialog::getOpenFileNames(
+        this, "Test DefaultLG Game File", "defaultLG", "DefaultLG Game Files (*.txt)");
+
+    if(!fileNames.isEmpty ())
+    {
+        bool isGoodFile;
+        quint8 fileCount = fileNames.length ();
+
+        for(quint8 i = 0; i < fileCount; i++)
+        {
+            //qDebug() << "DefaultLG Game File: " << fileNames[i];
+
+            isGoodFile = p_hookEngine->LoadLGFileTest(fileNames[i]);
+
+            if(isGoodFile)
+                QMessageBox::information (this, "DefaultLG Game File", "The DefaultLG game file passed the checks.\nFile: "+fileNames[i]);
+        }
+    }
+    else
+    {
+        QMessageBox::information(this, "No File Selected", "No file(s) was selected.");
+    }
+
+
+}
+
+
+void HookOfTheReaper::on_actionTest_INI_Game_File_triggered()
+{
+    //Open File Dialog
+    QStringList fileNames = QFileDialog::getOpenFileNames(
+        this, "Test INI Game File", "ini/MAME", "INI Game Files (*.ini)");
+
+    if(!fileNames.isEmpty ())
+    {
+        bool isGoodFile;
+        quint8 fileCount = fileNames.length ();
+
+        for(quint8 i = 0; i < fileCount; i++)
+        {
+
+            isGoodFile = p_hookEngine->LoadINIFileTest(fileNames[i]);
+
+            if(isGoodFile)
+                QMessageBox::information (this, "INI Game File", "The INI game file passed the checks.\nFile: "+fileNames[i]);
+        }
+    }
+    else
+    {
+        QMessageBox::information(this, "No File Selected", "No file(s) was selected.");
+    }
+}
+
+
 //Private Functions
 
 void HookOfTheReaper::MakeTopDisplayText(QString romName)
@@ -503,6 +561,9 @@ void HookOfTheReaper::DisplayText()
     for(quint8 i = 1; i < lineCount; i++)
         ui->textBrowser->append (displayText[i]);
 }
+
+
+
 
 
 

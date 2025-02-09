@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include <QPointer>
-
+#include <QFileDialog>
 
 #include <QDialog>
 #include <QMessageBox>
@@ -117,6 +117,10 @@ private slots:
 
     //On Close of test COM Port Window
     void TestComPortWindowClosed();
+
+    void on_actionTest_defaultLG_Game_File_triggered();
+
+    void on_actionTest_INI_Game_File_triggered();
 
 signals:
 

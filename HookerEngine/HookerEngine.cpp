@@ -250,6 +250,489 @@ void HookerEngine::HookerEngine::Stop()
 }
 
 
+bool HookerEngine::LoadINIFileTest(QString fileNamePath)
+{
+    QString line;
+    QString signal;
+    QString commands;
+    QStringList tempSplit;
+    quint16 indexEqual;
+    bool isOutput = false;
+    bool goodCommand;
+    quint16 lineNumber = 0;
+
+    openComPortCheck.clear();
+
+    //Open File. If Failed to Open, so Critical Message Box
+    QFile iniFile(fileNamePath);
+
+    bool openFile = iniFile.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+
+    if(!openFile)
+    {
+        QString tempCrit = "Can not open INI data file to read. Please close program and solve file problem. Might be permissions problem.\nFile: "+fileNamePath;
+        if(displayMB)
+            QMessageBox::critical (p_guiConnect, "File Error", tempCrit, QMessageBox::Ok);
+        return false;
+    }
+
+    //Create a Text Stream, to Stream in the Data Easier
+    QTextStream in(&iniFile);
+
+    while(!in.atEnd ())
+    {
+
+        //Get a line of data from file
+        line = in.readLine();
+        lineNumber++;
+
+        //All lines have an '=', except for the one with '[' and ']'
+        if(!line.startsWith("["))
+        {
+            //Get the Index of the Equal
+            indexEqual = line.indexOf('=',0);
+
+            //If there is Nothing After '=', but in NoCommnds List
+            //If something after '=' then Split it up into Signals and Command(s)
+            if(line.length() != indexEqual+1)
+            {
+
+                if(line[indexEqual-1] == ' ')
+                    signal = line.first(indexEqual-1);
+                else
+                    signal = line.first(indexEqual);
+
+                if(line[indexEqual+1] == ' ')
+                    commands = line.sliced(indexEqual+2);
+                else
+                    commands = line.sliced(indexEqual+1);
+
+                commands.replace(", ", ",");
+                commands.replace(" ,", ",");
+
+                tempSplit = commands.split(',', Qt::SkipEmptyParts);
+
+                if(!isOutput)
+                {
+                    if(signal.startsWith ("On"))
+                        signal.remove(0,2);
+
+                    if(signal.startsWith(JUSTMAME, Qt::CaseInsensitive))
+                        signal.insert(4,'_');
+
+                    signal = signal.toLower();
+                }
+
+                //qDebug() << "Loaded INI Signal or State: " << signal;
+
+                goodCommand = CheckINICommands(tempSplit, lineNumber, fileNamePath);
+
+                //If bad command file, then fail load
+                if(!goodCommand)
+                {
+                    return false;
+                }
+
+            }
+            else
+            {
+                line.chop(1);
+            }
+        }
+        else
+        {
+            //This is the lines with the '[' and ']'
+            if(line.contains(SIGNALSTATE, Qt::CaseInsensitive))
+                isOutput = true;
+            else
+                isOutput = false;
+        }
+
+    }
+
+    //Close File
+    iniFile.close();
+
+
+    return true;
+}
+
+
+bool HookerEngine::LoadLGFileTest(QString fileNamePath)
+{
+    QString line;
+    quint8 playerNumber;
+    QString signal;
+    QStringList commands;
+    bool gotCommands = false;
+    bool gotSignal = false;
+    bool gotPlayer = false;
+    bool isNumber;
+    bool begin = true;
+    quint8 lgNumber;
+    bool isDefaultLG;
+    quint8 tempDLGNum;
+    QString tempLine;
+    quint8 tempPlayer;
+    bool isGoodCmd;
+    QStringList subCommands;
+    quint8 subCmdsCnt;
+    quint16 lineNumber = 0;
+    bool isOutput = false;
+
+
+    QFile lgFile(fileNamePath);
+
+    bool openFile = lgFile.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+
+    if(!openFile)
+    {
+        QString tempCrit = "Can not open default light gun game file to read. Please close program and solve file problem. Might be permissions problem.\nFile: "+fileNamePath;
+        if(displayMB)
+            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+        return false;
+    }
+
+    //Create a Text Stream, to Stream in the Data Easier
+    QTextStream in(&lgFile);
+
+    while(!in.atEnd ())
+    {
+
+        //Get a line of data from file
+        line = in.readLine();
+        lineNumber++;
+
+        //For Faster Processing, search first char
+        if(line[0] == 'P'  && begin)
+        {
+            //File should Start with "Players"
+            if(line.startsWith(PLAYERSSTART))
+            {
+                //Next Line is the number of Players
+                line = in.readLine();
+                lineNumber++;
+                numberLGPlayersTest = line.toUInt (&isNumber);
+
+                if(!isNumber)
+                {
+                    QString tempCrit = "The number pf Players, is not a number. Please close program and fix.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number: "+line+"\nFile: "+fileNamePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return false;
+                }
+
+                //qDebug() << "Number of Players: " << numberLGPlayersTest;
+
+                //Read in Players and there Order IE P1, P2 or P3, P1, P4
+                for(quint8 i = 0; i < numberLGPlayersTest; i++)
+                {
+                    line = in.readLine();
+                    lineNumber++;
+
+                    if(line[0] != PLAYER2CHHAR)
+                    {
+                        QString tempCrit = "The player needs to be P[1-4]. Please close program and fix.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number: "+line+"\nFile: "+fileNamePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return false;
+                    }
+
+
+                    //Remove 'P'
+                    line.remove (0,1);
+                    playerNumber = line.toUInt (&isNumber);
+                    if(isNumber)
+                    {
+                        if(playerNumber == 0 || playerNumber > MAXPLAYERLIGHTGUNS)
+                        {
+                            QString tempCrit = "Player number under \"Players\" is out of range. Player number range is 1-4.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number: "+line+"\nFile: "+fileNamePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return false;
+                        }
+                        lgPlayerOrderTest[i] = playerNumber-1;
+                    }
+                    else
+                    {
+                        QString tempCrit = "Player number was not a number in game file.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number: "+line+"\nFile: "+fileNamePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return false;
+                    }
+                    //qDebug() << "Player " << i << " connected to: " << line;
+
+                    //Check if Light Gun is a Default Light Gun
+                    lgNumber = playersLGAssignment[lgPlayerOrderTest[i]];
+
+                    //If Player Assignment is Unassign, then fail load and go to INI file
+                    if(lgNumber != UNASSIGN)
+                        isDefaultLG = p_comDeviceList->p_lightGunList[lgNumber]->GetDefaultLightGun();
+                    else
+                    {
+                        QString tempCrit = "Player P"+QString::number (playerNumber)+" has no light gun assign to it. Please close game, and then assign a light gun to the player.\nFile: "+fileNamePath;
+                        tempCrit.append (gameLGFilePath);
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return false;
+                    }
+
+                    //If Light Gun(s) is not a Default Light Gun(s), then fail
+                    if(!isDefaultLG)
+                    {
+                        QString tempCrit = "One or More of the assign light guns are not \"Default Light Gun.\" To use defaultLG files, all used light guns must be default light guns.\nFile: "+fileNamePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return false;
+                    }
+                    //Load Light Gun Order, based on Player Order and Player's Assignment
+                    loadedLGNumbersTest[i] = lgNumber;
+
+                }
+
+                //Clear Out List and Number
+                defaultLGNumbersTest.clear ();
+                uniqueDefaultLGTest = 0;
+
+                //Check the Default Light Guns Number to See How Many Unique Default Light Guns There Are
+                if(numberLGPlayersTest > 1)
+                {
+                    for(quint8 i = 0; i < numberLGPlayersTest; i++)
+                    {
+                        tempDLGNum = p_comDeviceList->p_lightGunList[loadedLGNumbersTest[i]]->GetDefaultLightGunNumber();
+
+                        if(i == 0)
+                        {
+                            defaultLGNumbersTest << tempDLGNum;
+                            uniqueDefaultLGTest++;
+                        }
+                        else
+                        {
+                            //Check if Default Light Gun Number is Not In The List
+                            if(defaultLGNumbersTest.count(tempDLGNum) == 0)
+                            {
+                                defaultLGNumbersTest << tempDLGNum;
+                                uniqueDefaultLGTest++;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    //Only 1 Player for Game
+                    tempDLGNum = p_comDeviceList->p_lightGunList[loadedLGNumbersTest[0]]->GetDefaultLightGunNumber();
+                    defaultLGNumbersTest << tempDLGNum;
+                    uniqueDefaultLGTest++;
+                }
+                //Don't Run the Players Again
+                begin = false;
+            }
+        }
+        else if(line[0] == '[')
+        {
+            //Nothing In Here Yet, But Might Be Used Later
+            if(line.startsWith("[Sig"))
+                isOutput = true;
+        }
+        else if(line[0] == SIGNALSTARTCHAR)
+        {
+            //Got a Signal, order is Signal, Player Commands, where there could be multiple Players, But a Command is needed after Player
+            //But first process older data
+
+            //If Got a Signal & Player(s) and Command(s), then Load into QMap
+            if(gotSignal && gotPlayer && gotCommands)
+            {
+                //qDebug() << "Signal: " << signal << " Commands: " << commands;
+
+                gotPlayer = false;
+                gotCommands = false;
+                commands.clear ();
+            }
+            else if(gotSignal && !gotPlayer && !gotCommands)
+            {
+                //Signal that has no players and no commands
+            }
+
+            //Process Current Line
+
+            //Remove the ':' from the Front
+            line.remove (0,1);
+
+            signal = line;
+
+            gotSignal = true;
+
+        }
+        else if(line[0] == PLAYERSTARTCHAR)
+        {
+            //Got a Player
+
+            //If Got a Signal, Add The Player. If Not then Sometrhing Went Wrong
+            if(gotSignal)
+            {
+                //Check If it is a Player Number, like *P1 or *P3
+                if(line[1] == PLAYER2CHHAR)
+                {
+
+                    tempLine = line;
+
+                    //Remove the '*P' from the Front of Players
+                    tempLine.remove (0,2);
+
+                    tempPlayer = tempLine.toUInt (&isNumber);
+
+                    //Check if Number
+                    if(!isNumber)
+                    {
+                        QString tempCrit = "Player Number is not a number in defaultLG game file.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number:"+tempLine+"\nFile: "+fileNamePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return false;
+                    }
+
+                    //Check if Player Number Matches Loaded Players Above
+                    bool playerMatch = false;
+
+                    for(quint8 i = 0; i < numberLGPlayersTest; i++)
+                    {
+                        if(tempPlayer-1 == lgPlayerOrderTest[i])
+                            playerMatch = true;
+                    }
+
+                    if(!playerMatch)
+                    {
+                        QString tempCrit = "Player Number does not match loaded Players in defaultLG game file.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number:"+tempLine+"\nFile: "+fileNamePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return false;
+                    }
+
+                } //If not *P[1-4], then must be *All. If not those 2, then something is wrong.
+                else if(line != ALLPLAYERS)
+                {
+                    QString tempCrit = "Something is wrong with Player Number in defaultLG game file. Can be *All or *P[1-4].\nLine Number: "+QString::number(lineNumber)+"\nLine :"+line+"\nFile: "+fileNamePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return false;
+                }
+
+                //First thing of the Command is the Player(s)
+                commands << line;
+
+                gotPlayer = true;
+            }
+            else if(in.atEnd ())
+            {
+                QString tempCrit = "File cannot end on a player(*). Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+            else
+            {
+                QString tempCrit = "Player(*) came before a signal(:). Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+        }
+        else if(line[0] == COMMANDSTARTCHAR)
+        {
+            //Got a Command - Check if Good Command
+
+            if(line.contains ('|'))
+            {
+                line.replace(" |","|");
+                line.replace("| ","|");
+
+                subCommands = line.split('|', Qt::SkipEmptyParts);
+                subCmdsCnt = subCommands.size ();
+
+                for(quint8 i = 0; i < subCmdsCnt; i++)
+                {
+                    isGoodCmd = CheckLGCommand(subCommands[i]);
+
+                    if(!isGoodCmd)
+                    {
+                        QString tempCrit = "Command(>) is not found in the command list. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+subCommands[i]+"\nFile: "+fileNamePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return false;
+                    }
+                }
+
+            }
+            else
+            {
+                //Check Command to to see if it is good
+                isGoodCmd = CheckLGCommand(line);
+
+                if(!isGoodCmd)
+                {
+                    QString tempCrit = "Command(>) is not found in the command list. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+line+"\nFile: "+fileNamePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return false;
+                }
+            }
+
+
+
+            //If Got a Signal and Player, then add Command
+            if(gotSignal && gotPlayer)
+            {
+
+                //Check to See iff at Last Line
+                if(!in.atEnd ())
+                {
+                    //Last Data Must Be Commands
+                    commands << line;
+
+                    gotCommands = true;
+                }
+                else
+                {
+                    commands << line;
+
+                    //At Last Line of the File
+                    //qDebug() << "Last1 Signal: " << signal << " Commands: " << commands;
+
+                    gotPlayer = false;
+                    gotCommands = false;
+                    gotSignal = false;
+                    commands.clear ();
+
+                }
+            }
+            else if(gotSignal && !gotPlayer && gotCommands)
+            {
+                //If Got a Signal and Command, with No Player
+                QString tempCrit = "No player(*) between a signal(:) and command(>). Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nSignal: "+signal+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+        }
+        else
+        {
+            //Something went wrong. Extra Line
+            QString tempCrit = "This Line has no place in DefaultLG game file. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nLine: "+line+"\nFile: "+fileNamePath;
+            if(displayMB)
+                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+            return false;
+        }
+
+    }
+
+
+    lgFile.close();
+
+    return true;
+}
+
+
+
 //Public Slots
 
 void HookerEngine::TCPReadyRead(const QByteArray &readBA)
@@ -764,7 +1247,7 @@ void HookerEngine::LoadINIFile()
 
                 //qDebug() << "Loaded INI Signal or State: " << signal;
 
-                goodCommand = CheckINICommands(tempSplit, lineNumber);
+                goodCommand = CheckINICommands(tempSplit, lineNumber, gameINIFilePath);
 
                 //If bad command file, then fail load
                 if(!goodCommand)
@@ -806,9 +1289,11 @@ void HookerEngine::LoadINIFile()
 
     //Process the "mame_start" Signal
     ProcessINICommands(MAMESTARTAFTER, "", true);
+
+
 }
 
-bool HookerEngine::CheckINICommands(QStringList commadsNotChk, quint16 lineNumber)
+bool HookerEngine::CheckINICommands(QStringList commadsNotChk, quint16 lineNumber, QString filePathName)
 {
     QString command;
     QStringList subCommands;
@@ -838,11 +1323,11 @@ bool HookerEngine::CheckINICommands(QStringList commadsNotChk, quint16 lineNumbe
                 if(subCmd.contains (SIGNALDATAVARIBLE))
                     subCmd.replace(SIGNALDATAVARIBLE, "0");
 
-                isCommandsGood = CheckINICommand(subCmd, lineNumber);
+                isCommandsGood = CheckINICommand(subCmd, lineNumber, filePathName);
 
                 if(!isCommandsGood)
                 {
-                    QString tempCrit = "Loaded INI game file has a bad command. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+subCommands[j]+"\nFile: "+gameINIFilePath;
+                    QString tempCrit = "Loaded INI game file has a bad command. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+subCommands[j]+"\nFile: "+filePathName;
                     if(displayMB)
                         QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                     return false;
@@ -855,11 +1340,11 @@ bool HookerEngine::CheckINICommands(QStringList commadsNotChk, quint16 lineNumbe
             if(command.contains (SIGNALDATAVARIBLE))
                 command.replace(SIGNALDATAVARIBLE, "0");
 
-            isCommandsGood = CheckINICommand(command, lineNumber);
+            isCommandsGood = CheckINICommand(command, lineNumber, filePathName);
 
             if(!isCommandsGood)
             {
-                QString tempCrit = "Loaded INI game file has a bad command. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+command+"\nFile: "+gameINIFilePath;
+                QString tempCrit = "Loaded INI game file has a bad command. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+command+"\nFile: "+filePathName;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -872,7 +1357,7 @@ bool HookerEngine::CheckINICommands(QStringList commadsNotChk, quint16 lineNumbe
     return isCommandsGood;
 }
 
-bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
+bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber, QString filePathName)
 {
     QStringList temp1, temp2;
     INIPortStruct portTemp;
@@ -899,7 +1384,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
 
             if(!isNumber)
             {
-                QString tempCrit = "In COM port open command, port number is not a number.\nLine Number: "+QString::number(lineNumber)+"\nPort Number: "+temp1[1]+"\nFile: "+gameINIFilePath;
+                QString tempCrit = "In COM port open command, port number is not a number.\nLine Number: "+QString::number(lineNumber)+"\nPort Number: "+temp1[1]+"\nFile: "+filePathName;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -921,7 +1406,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
 
             if(!isNumber)
             {
-                QString tempCrit = "In COM port open command, baud rate is not a number.\nLine Number: "+QString::number(lineNumber)+"\nBaud Rate Number: "+temp2[0]+"\nFile: "+gameINIFilePath;
+                QString tempCrit = "In COM port open command, baud rate is not a number.\nLine Number: "+QString::number(lineNumber)+"\nBaud Rate Number: "+temp2[0]+"\nFile: "+filePathName;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -937,7 +1422,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
 
             if(!chkSetting)
             {
-                QString tempCrit = "In COM port open command, baud rate is not a correct rate.\nLine Number: "+QString::number(lineNumber)+"\nBaud Rate Number: "+temp2[0]+"\nFile: "+gameINIFilePath;
+                QString tempCrit = "In COM port open command, baud rate is not a correct rate.\nLine Number: "+QString::number(lineNumber)+"\nBaud Rate Number: "+temp2[0]+"\nFile: "+filePathName;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -956,7 +1441,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
                 portTemp.parity = 5;
             else
             {
-                QString tempCrit = "In COM port open command, parity is not a correct char[N,E,O,S,M].\nLine Number: "+QString::number(lineNumber)+"\nParity Char: "+temp2[1]+"\nFile: "+gameINIFilePath;
+                QString tempCrit = "In COM port open command, parity is not a correct char[N,E,O,S,M].\nLine Number: "+QString::number(lineNumber)+"\nParity Char: "+temp2[1]+"\nFile: "+filePathName;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -966,7 +1451,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
 
             if(!isNumber)
             {
-                QString tempCrit = "In COM port open command, data bits is not a number.\nLine Number: "+QString::number(lineNumber)+"\nData Bits Number: "+temp2[2]+"\nFile: "+gameINIFilePath;
+                QString tempCrit = "In COM port open command, data bits is not a number.\nLine Number: "+QString::number(lineNumber)+"\nData Bits Number: "+temp2[2]+"\nFile: "+filePathName;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -975,7 +1460,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
             //Can be 5-8
             if(portTemp.data < 5 || portTemp.data > 8)
             {
-                QString tempCrit = "In COM port open command, data bits is not in range [5-8].\nLine Number: "+QString::number(lineNumber)+"\nData Bits Number: "+temp2[2]+"\nFile: "+gameINIFilePath;
+                QString tempCrit = "In COM port open command, data bits is not in range [5-8].\nLine Number: "+QString::number(lineNumber)+"\nData Bits Number: "+temp2[2]+"\nFile: "+filePathName;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -989,7 +1474,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
 
             if(!isNumber)
             {
-                QString tempCrit = "In COM port open command, stop bits is not a number.\nLine Number: "+QString::number(lineNumber)+"\nStop Bits Number: "+temp2[3]+"\nFile: "+gameINIFilePath;
+                QString tempCrit = "In COM port open command, stop bits is not a number.\nLine Number: "+QString::number(lineNumber)+"\nStop Bits Number: "+temp2[3]+"\nFile: "+filePathName;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -998,7 +1483,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
             //Can be 1-3
             if(portTemp.stop == 0 || portTemp.stop > 3)
             {
-                QString tempCrit = "In COM port open command, stop bits is not in range [1,1.5,2].\nLine Number: "+QString::number(lineNumber)+"\nData Bits Number: "+temp2[3]+"\nFile: "+gameINIFilePath;
+                QString tempCrit = "In COM port open command, stop bits is not in range [1,1.5,2].\nLine Number: "+QString::number(lineNumber)+"\nData Bits Number: "+temp2[3]+"\nFile: "+filePathName;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -1020,7 +1505,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
 
             if(!isNumber)
             {
-                QString tempCrit = "In COM port close command, port number is not a number.\nLine Number: "+QString::number(lineNumber)+"\nPort Number: "+temp1[1]+"\nFile: "+gameLGFilePath;
+                QString tempCrit = "In COM port close command, port number is not a number.\nLine Number: "+QString::number(lineNumber)+"\nPort Number: "+temp1[1]+"\nFile: "+filePathName;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -1030,7 +1515,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
             {
                 if(!openComPortCheck.contains (comPortNumber))
                 {
-                    QString tempCrit = "In COM port close command, port number doesn't match any open port number(s).\nLine Number: "+QString::number(lineNumber)+"\nPort Number: "+temp1[1]+"\nFile: "+gameLGFilePath;
+                    QString tempCrit = "In COM port close command, port number doesn't match any open port number(s).\nLine Number: "+QString::number(lineNumber)+"\nPort Number: "+temp1[1]+"\nFile: "+filePathName;
                     if(displayMB)
                         QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                     return false;
@@ -1046,7 +1531,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
             //This will give 4 Strings 1: cmr  2: Com Port #  3: Buffer # 4: length
             //temp1 = commands[i].split(' ', Qt::SkipEmptyParts);
 
-            QString tempCrit = "In COM port read, reads are not implamented yet. Please remove read.\nLine Number: "+QString::number(lineNumber)+"\nRead CMD: "+commndNotChk+"\nFile: "+gameLGFilePath;
+            QString tempCrit = "In COM port read, reads are not implamented yet. Please remove read.\nLine Number: "+QString::number(lineNumber)+"\nRead CMD: "+commndNotChk+"\nFile: "+filePathName;
             if(displayMB)
                 QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
             return false;
@@ -1067,7 +1552,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
 
             if(!isNumber)
             {
-                QString tempCrit = "In COM port write command, port number is not a number.\nLine Number: "+QString::number(lineNumber)+"\nPort Number: "+temp1[1]+"\nFile: "+gameLGFilePath;
+                QString tempCrit = "In COM port write command, port number is not a number.\nLine Number: "+QString::number(lineNumber)+"\nPort Number: "+temp1[1]+"\nFile: "+filePathName;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -1077,7 +1562,7 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber)
             {
                 if(!openComPortCheck.contains (comPortNumber))
                 {
-                    QString tempCrit = "In COM port write command, port number doesn't match any open port number(s).\nLine Number: "+QString::number(lineNumber)+"\nPort Number: "+temp1[1]+"\nFile: "+gameLGFilePath;
+                    QString tempCrit = "In COM port write command, port number doesn't match any open port number(s).\nLine Number: "+QString::number(lineNumber)+"\nPort Number: "+temp1[1]+"\nFile: "+filePathName;
                     if(displayMB)
                         QMessageBox::critical (p_guiConnect, "Loaded INI Game File Has Error", tempCrit, QMessageBox::Ok);
                     return false;
@@ -1401,7 +1886,7 @@ void HookerEngine::LoadLGFile()
     QStringList subCommands;
     quint8 subCmdsCnt;
     quint16 lineNumber = 0;
-    // bool isOutput = false;
+    bool isOutput = false;
 
     lgFileLoadFail = false;
 
@@ -1436,7 +1921,16 @@ void HookerEngine::LoadLGFile()
                 //Next Line is the number of Players
                 line = in.readLine();
                 lineNumber++;
-                numberLGPlayers = line.toUInt ();
+                numberLGPlayers = line.toUInt (&isNumber);
+
+                if(!isNumber)
+                {
+                    lgFileLoadFail = true;
+                    QString tempCrit = "The number of Players is not a number. Please close program and fix.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number: "+line+"\nFile: "+gameLGFilePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return;
+                }
 
                 //qDebug() << "Number of Players: " << numberLGPlayers;
 
@@ -1445,6 +1939,16 @@ void HookerEngine::LoadLGFile()
                 {
                     line = in.readLine();
                     lineNumber++;
+
+                    if(line[0] != PLAYER2CHHAR)
+                    {
+                        lgFileLoadFail = true;
+                        QString tempCrit = "The player needs to be P[1-4]. Please close program and fix.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number: "+line+"\nFile: "+gameLGFilePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return;
+                    }
+
                     //Remove 'P'
                     line.remove (0,1);
                     playerNumber = line.toUInt (&isNumber);
@@ -1491,7 +1995,7 @@ void HookerEngine::LoadLGFile()
                     {
                         lgFileLoadFail = true;
 
-                        QString tempCrit = "One or More of the assign light guns are not \"Default Light Gun.\" To use defaultLG files, all used light guns must be default light guns. File: "+gameLGFilePath;
+                        QString tempCrit = "One or More of the assign light guns are not \"Default Light Gun.\" To use defaultLG files, all used light guns must be default light guns.\nFile: "+gameLGFilePath;
                         if(displayMB)
                             QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                         return;
@@ -1539,12 +2043,12 @@ void HookerEngine::LoadLGFile()
                 begin = false;
             }
         }
-        //else if(line[0] == '[')
-        //{
-        //    //Nothing In Here Yet, But Might Be Used Later
-        //    if(line.startsWith("[Sig"))
-        //        isOutput = true;
-        //}
+        else if(line[0] == '[')
+        {
+            //Nothing In Here Yet, But Might Be Used Later
+            if(line.startsWith("[Sig"))
+                isOutput = true;
+        }
         else if(line[0] == SIGNALSTARTCHAR)
         {
             //Got a Signal, order is Signal, Player Commands, where there could be multiple Players, But a Command is needed after Player
@@ -1583,36 +2087,51 @@ void HookerEngine::LoadLGFile()
             //If Got a Signal, Add The Player. If Not then Sometrhing Went Wrong
             if(gotSignal)
             {
-                tempLine = line;
 
-                //Remove the '*P' from the Front of Players
-                tempLine.remove (0,2);
+                //Check If it is a Player Number, like *P1 or *P3
+                if(line[1] == PLAYER2CHHAR)
+                {
 
-                tempPlayer = tempLine.toUInt (&isNumber);
+                    tempLine = line;
 
-                //Check if Number
-                if(!isNumber)
+                    //Remove the '*P' from the Front of Players
+                    tempLine.remove (0,2);
+
+                    tempPlayer = tempLine.toUInt (&isNumber);
+
+                    //Check if Number
+                    if(!isNumber)
+                    {
+                        lgFileLoadFail = true;
+                        QString tempCrit = "Player Number is not a number in defaultLG game file.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number:"+tempLine+"\nFile: "+gameLGFilePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return;
+                    }
+
+                    //Check if Player Number Matches Loaded Players Above
+                    bool playerMatch = false;
+
+                    for(quint8 i = 0; i < numberLGPlayers; i++)
+                    {
+                        if(tempPlayer-1 == lgPlayerOrder[i])
+                            playerMatch = true;
+                    }
+
+                    if(!playerMatch)
+                    {
+                        lgFileLoadFail = true;
+                        QString tempCrit = "Player Number does not match loaded Players in defaultLG game file.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number:"+tempLine+"\nFile: "+gameLGFilePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return;
+                    }
+
+                } //If not *P[1-4], then muust be *All, If not something went wrong
+                else if(line != ALLPLAYERS)
                 {
                     lgFileLoadFail = true;
-                    QString tempCrit = "Player Number is not a number in defaultLG game file.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number:"+tempLine+"\nFile: "+gameLGFilePath;
-                    if(displayMB)
-                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
-                    return;
-                }
-
-                //Check if Player Number Matches Loaded Players Above
-                bool playerMatch = false;
-
-                for(quint8 i = 0; i < numberLGPlayers; i++)
-                {
-                    if(tempPlayer-1 == lgPlayerOrder[i])
-                        playerMatch = true;
-                }
-
-                if(!playerMatch)
-                {
-                    lgFileLoadFail = true;
-                    QString tempCrit = "Player Number does not match loaded Players in defaultLG game file.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number:"+tempLine+" File: "+gameLGFilePath;
+                    QString tempCrit = "Something is wrong with Player Number in defaultLG game file. Can be *All or *P[1-4].\nLine Number: "+QString::number(lineNumber)+"\nLine: "+line+"\nFile: "+gameLGFilePath;
                     if(displayMB)
                         QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                     return;
@@ -1721,6 +2240,15 @@ void HookerEngine::LoadLGFile()
                 return;
             }
 
+        }
+        else
+        {
+            //Something went wrong. Extra Line
+            lgFileLoadFail = true;
+            QString tempCrit = "This Line has no place in DefaultLG game file. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nLine: "+line+"\nFile: "+gameLGFilePath;
+            if(displayMB)
+                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+            return;
         }
 
     }
