@@ -142,6 +142,19 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
     numberLightGuns++;
 }
 
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber)
+{
+    quint8 usedComPortNum;
+
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, dipSwitchSet, dipSwitchNumber);
+
+    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumber ();
+    availableComPorts[usedComPortNum] = false;
+
+    numberLightGuns++;
+}
+
+
 //Add COM Devices to the List
 void ComDeviceList::AddComPortDevice(ComPortDevice const &cpdMember)
 {

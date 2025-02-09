@@ -246,13 +246,13 @@ void LightGun::SetComPortFlow(quint8 cpFlow)
     comPortFlow = cpFlow;
 }
 
-void LightGun::SetMaxAmmo(quint8 maNumber)
+void LightGun::SetMaxAmmo(quint16 maNumber)
 {
     maxAmmo = maNumber;
     maxAmmoSet = true;
 }
 
-void LightGun::SetReloadValue(quint8 rvNumber)
+void LightGun::SetReloadValue(quint16 rvNumber)
 {
     reloadValue = rvNumber;
     reloadValueSet = true;
@@ -327,12 +327,12 @@ quint8 LightGun::GetComPortFlow()
     return comPortFlow;
 }
 
-quint8 LightGun::GetMaxAmmo()
+quint16 LightGun::GetMaxAmmo()
 {
     return maxAmmo;
 }
 
-quint8 LightGun::GetReloadValue()
+quint16 LightGun::GetReloadValue()
 {
     return reloadValue;
 }
@@ -403,6 +403,70 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
         reloadValue = DEFAULTLG_ARRAY[defaultLightGunNum].RELOADVALUEN;
         reloadValueSet = true;
     }
+
+    isDipSwitchPlayerNumberSet = lgMember.isDipSwitchPlayerNumberSet;
+
+    if(isDipSwitchPlayerNumberSet)
+        dipSwitchPlayerNumber = lgMember.dipSwitchPlayerNumber;
+    else
+        dipSwitchPlayerNumber = 0;
+
+    currentPath = lgMember.currentPath;
+    dataPath = lgMember.dataPath;
+    defaultLGFilePath = lgMember.defaultLGFilePath;
+
+    openComPortCmdsSet = lgMember.openComPortCmdsSet;
+    if(openComPortCmdsSet)
+        openComPortCmds = lgMember.openComPortCmds;
+
+    closeComPortCmdsSet = lgMember.closeComPortCmdsSet;
+    if(closeComPortCmdsSet)
+        closeComPortCmds = lgMember.closeComPortCmds;
+
+    damageCmdsSet = lgMember.damageCmdsSet;
+    if(damageCmdsSet)
+        damageCmds = lgMember.damageCmds;
+
+    recoilCmdsSet = lgMember.recoilCmdsSet;
+    if(recoilCmdsSet)
+        recoilCmds = lgMember.recoilCmds;
+
+    reloadCmdsSet = lgMember.reloadCmdsSet;
+    if(reloadCmdsSet)
+        reloadCmds = lgMember.reloadCmds;
+
+    ammoCmdsSet = lgMember.ammoCmdsSet;
+    if(ammoCmdsSet)
+        ammoCmds = lgMember.ammoCmds;
+
+    ammoValueCmdsSet = lgMember.ammoValueCmdsSet;
+    if(ammoValueCmdsSet)
+        ammoValueCmds = lgMember.ammoValueCmds;
+
+    shakeCmdsSet = lgMember.shakeCmdsSet;
+    if(shakeCmdsSet)
+        shakeCmds = lgMember.shakeCmds;
+
+    autoLedCmdsSet = lgMember.autoLedCmdsSet;
+    if(autoLedCmdsSet)
+        autoLedCmds = lgMember.autoLedCmds;
+
+    aspect16x9CmdsSet = lgMember.aspect16x9CmdsSet;
+    if(aspect16x9CmdsSet)
+        aspect16x9Cmds = lgMember.aspect16x9Cmds;
+
+    aspect4x3CmdsSet = lgMember.aspect4x3CmdsSet;
+    if(aspect4x3CmdsSet)
+        aspect4x3Cmds = lgMember.aspect4x3Cmds;
+
+    joystickCmdsSet = lgMember.joystickCmdsSet;
+    if(joystickCmdsSet)
+        joystickCmds = lgMember.joystickCmds;
+
+    keyMouseCmdsSet = lgMember.keyMouseCmdsSet;
+    if(keyMouseCmdsSet)
+        keyMouseCmds = lgMember.keyMouseCmds;
+
 }
 
 
@@ -410,7 +474,9 @@ void LightGun::LoadDefaultLGCommands()
 {
     QString line;
     QStringList splitLines, commands;
-    quint8 numberCommands, i;
+    quint8 numberCommands, i, equalIndex;
+    quint16 lineLength;
+    bool noCommands;
 
     openComPortCmdsSet = false;
     closeComPortCmdsSet = false;
@@ -426,12 +492,26 @@ void LightGun::LoadDefaultLGCommands()
     joystickCmdsSet = false;
     keyMouseCmdsSet = false;
 
+    openComPortCmds.clear();
+    closeComPortCmds.clear();
+    damageCmds.clear();
+    recoilCmds.clear();
+    reloadCmds.clear();
+    ammoCmds.clear();
+    ammoValueCmds.clear();
+    shakeCmds.clear();
+    autoLedCmds.clear();
+    aspect16x9Cmds.clear();
+    aspect4x3Cmds.clear();
+    joystickCmds.clear();
+    keyMouseCmds.clear();
+
 
     //Get Current Path
     currentPath = QDir::currentPath();
     dataPath = currentPath + "/" + DATAFILEDIR;
 
-    defaultLGFilePath = dataPath+DEFAULTLGFILENAMES_ARRAY[defaultLightGunNum];
+    defaultLGFilePath = dataPath + "/" + DEFAULTLGFILENAMES_ARRAY[defaultLightGunNum];
 
     QFile defaultLGCmdFile(defaultLGFilePath);
 
@@ -451,8 +531,24 @@ void LightGun::LoadDefaultLGCommands()
     {
         line = in.readLine();
 
-        if(line != ENDOFFILE)
+        if(line.contains ('='))
         {
+            equalIndex = line.indexOf ('=',0);
+            lineLength = line.length ();
+
+            if(lineLength == equalIndex+1)
+                noCommands = true;
+            else
+                noCommands = false;
+        }
+        else
+           noCommands = true;
+
+
+        if(line != ENDOFFILE && !noCommands)
+        {
+
+
             splitLines = line.split ('=', Qt::SkipEmptyParts);
 
             if(splitLines[1].contains ('|'))
@@ -595,6 +691,37 @@ void LightGun::LoadDefaultLGCommands()
 
     //Close the File
     defaultLGCmdFile.close ();
+
+/*
+    qDebug() << openComPortCmdsSet;
+    qDebug() << closeComPortCmdsSet;
+    qDebug() << damageCmdsSet;
+    qDebug() << recoilCmdsSet;
+    qDebug() << reloadCmdsSet;
+    qDebug() << ammoCmdsSet;
+    qDebug() << ammoValueCmdsSet;
+    qDebug() << shakeCmdsSet;
+    qDebug() << autoLedCmdsSet;
+    qDebug() << aspect16x9CmdsSet;
+    qDebug() << aspect4x3CmdsSet;
+    qDebug() << joystickCmdsSet;
+    qDebug() << keyMouseCmdsSet;
+
+    qDebug() << openComPortCmds;
+    qDebug() << closeComPortCmds;
+    qDebug() << damageCmds;
+    qDebug() << recoilCmds;
+    qDebug() << reloadCmds;
+    qDebug() << ammoCmds;
+    qDebug() << ammoValueCmds;
+    qDebug() << shakeCmds;
+    qDebug() << autoLedCmds;
+    qDebug() << aspect16x9Cmds;
+    qDebug() << aspect4x3Cmds;
+    qDebug() << joystickCmds;
+    qDebug() << keyMouseCmds;
+*/
+
 }
 
 

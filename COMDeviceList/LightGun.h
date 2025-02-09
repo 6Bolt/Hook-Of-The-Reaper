@@ -34,8 +34,8 @@ public:
     void SetComPortParity(quint8 cpParity);
     void SetComPortStopBits(quint8 cpStopBits);
     void SetComPortFlow(quint8 cpFlow);
-    void SetMaxAmmo(quint8 maNumber);
-    void SetReloadValue(quint8 rvNumber);
+    void SetMaxAmmo(quint16 maNumber);
+    void SetReloadValue(quint16 rvNumber);
     void SetDipSwitchPlayerNumber(quint8 dsNumber);
 
     //Get Functions that Gets the Stated Variable
@@ -51,8 +51,8 @@ public:
     quint8 GetComPortParity();
     quint8 GetComPortStopBits();
     quint8 GetComPortFlow();
-    quint8 GetMaxAmmo();
-    quint8 GetReloadValue();
+    quint16 GetMaxAmmo();
+    quint16 GetReloadValue();
     quint8 GetDipSwitchPlayerNumber(bool &isSet);
 
     //If a Default Light Gun, is Needed Varibles Set
