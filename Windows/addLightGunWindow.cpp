@@ -48,6 +48,7 @@ addLightGunWindow::addLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     //Default Light Gun Combo Box - Adding Default Light Guns
     ui->defaultLightGunComboBox->insertItem(0,"");
     ui->defaultLightGunComboBox->insertItem(RS3_REAPER,REAPERNAME);
+    ui->defaultLightGunComboBox->insertItem(MX24,MX24NAME);
     ui->defaultLightGunComboBox->setCurrentIndex (0);
 
     //COM Port Combo Box - Adding Available COM Ports
@@ -97,6 +98,15 @@ addLightGunWindow::addLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     {
         ui->flowControlComboBox->insertItem(comPortIndx,FLOWNAME_ARRAY[comPortIndx]);
     }
+
+    //Add P1-P4 to Dip Swich Combo Box
+    for(quint8 comPortIndx=0;comPortIndx<DIPSWITCH_NUMBER;comPortIndx++)
+    {
+        tempQS = "P"+QString::number(comPortIndx+1);
+        ui->dipSwitchComboBox->insertItem (comPortIndx,tempQS);
+    }
+
+    ui->dipSwitchComboBox->setEnabled(false);
 }
 
 //Deconstructor
@@ -118,7 +128,7 @@ addLightGunWindow::~addLightGunWindow()
 
 void addLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int index)
 {
-    //Set Data for Default Guns. Currently only Retro Shooters: RS3 Reaper Gun
+    //Set Data for Default Guns
     if(index > 0)
     {
         //Sets Default Light Gun Settings
@@ -134,6 +144,12 @@ void addLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int index
         ui->parityComboBox->setEnabled (false);
         ui->stopBitsComboBox->setEnabled (false);
         ui->flowControlComboBox->setEnabled (false);
+
+        if(index == MX24)
+            ui->dipSwitchComboBox->setEnabled(true);
+        else
+            ui->dipSwitchComboBox->setEnabled(false);
+
     }
     else
     {
@@ -143,6 +159,7 @@ void addLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int index
         ui->parityComboBox->setEnabled (true);
         ui->stopBitsComboBox->setEnabled (true);
         ui->flowControlComboBox->setEnabled (true);
+        ui->dipSwitchComboBox->setEnabled(false);
     }
 }
 
@@ -306,6 +323,13 @@ void addLightGunWindow::AddLightGun()
 
     //Copy the New LightGun to the ComDeviceList
     p_comDeviceList->AddLightGun (*p_lgTemp);
+
+    //Set Player Dip Switch for MX24 Light Gun, since it is needed for commands
+    if(defaultLightGun && defaultLightGunNum == MX24)
+    {
+        quint8 tempDS = ui->dipSwitchComboBox->currentIndex ();
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetDipSwitchPlayerNumber (tempDS);
+    }
 
     //Delete pointer, since it has been copied over. Then set it to nullptr
     delete p_lgTemp;

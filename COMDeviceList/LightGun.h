@@ -5,6 +5,10 @@
 #include <QSerialPortInfo>
 
 #include <QObject>
+#include <QDir>
+#include <QFile>
+#include <QMessageBox>
+#include <QTextStream>
 //#include <QDebug>
 
 class LightGun
@@ -14,6 +18,7 @@ public:
     LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber);
     LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow);
     LightGun(LightGun const &lgMember);
+    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber);
 
 
     //Set Functions that Sets the Stated Variable
@@ -31,6 +36,7 @@ public:
     void SetComPortFlow(quint8 cpFlow);
     void SetMaxAmmo(quint8 maNumber);
     void SetReloadValue(quint8 rvNumber);
+    void SetDipSwitchPlayerNumber(quint8 dsNumber);
 
     //Get Functions that Gets the Stated Variable
     bool GetDefaultLightGun();
@@ -47,6 +53,7 @@ public:
     quint8 GetComPortFlow();
     quint8 GetMaxAmmo();
     quint8 GetReloadValue();
+    quint8 GetDipSwitchPlayerNumber(bool &isSet);
 
     //If a Default Light Gun, is Needed Varibles Set
     bool IsMaxAmmoSet();
@@ -58,22 +65,26 @@ public:
     void CopyLightGun(LightGun const &lgMember);
 
 
+    //Load Default Light Gun Commands
+    void LoadDefaultLGCommands();
+
+    QStringList SplitLoadedCommands(QString commandList);
 
     //Sends Out the Needed Commands for a Default Light Gun
     //Used In the Hooker Engine
-    QStringList OpenComPortCommands();
-    QStringList CloseComPortCommands();
-    QStringList DamageCommands();
-    QStringList RecoilCommands();
-    QStringList ReloadCommands();
-    QStringList AmmoCommands();
-    QStringList AmmoValueCommands(quint16 ammoValue);
-    QStringList ShakeCommands();
-    QStringList AutoLEDCommands();
-    QStringList AspectRatio16b9Commands();
-    QStringList AspectRatio4b3Commands();
-    QStringList JoystickModeCommands();
-    QStringList MouseAndKeyboardModeCommands();
+    QStringList OpenComPortCommands(bool &isSet);
+    QStringList CloseComPortCommands(bool &isSet);
+    QStringList DamageCommands(bool &isSet);
+    QStringList RecoilCommands(bool &isSet);
+    QStringList ReloadCommands(bool &isSet);
+    QStringList AmmoCommands(bool &isSet);
+    QStringList AmmoValueCommands(bool &isSet, quint16 ammoValue);
+    QStringList ShakeCommands(bool &isSet);
+    QStringList AutoLEDCommands(bool &isSet);
+    QStringList AspectRatio16b9Commands(bool &isSet);
+    QStringList AspectRatio4b3Commands(bool &isSet);
+    QStringList JoystickModeCommands(bool &isSet);
+    QStringList MouseAndKeyboardModeCommands(bool &isSet);
 
 
 private:
@@ -102,6 +113,44 @@ private:
     quint8              comPortParity;
     quint8              comPortStopBits;
     quint8              comPortFlow;
+
+    quint8              dipSwitchPlayerNumber;
+    bool                isDipSwitchPlayerNumberSet;
+
+    QString             currentPath;
+    QString             dataPath;
+    QString             defaultLGFilePath;
+
+    //Commands QStringLists
+    QStringList         openComPortCmds;
+    QStringList         closeComPortCmds;
+    QStringList         damageCmds;
+    QStringList         recoilCmds;
+    QStringList         reloadCmds;
+    QStringList         ammoCmds;
+    QStringList         ammoValueCmds;
+    QStringList         shakeCmds;
+    QStringList         autoLedCmds;
+    QStringList         aspect16x9Cmds;
+    QStringList         aspect4x3Cmds;
+    QStringList         joystickCmds;
+    QStringList         keyMouseCmds;
+
+    bool                openComPortCmdsSet;
+    bool                closeComPortCmdsSet;
+    bool                damageCmdsSet;
+    bool                recoilCmdsSet;
+    bool                reloadCmdsSet;
+    bool                ammoCmdsSet;
+    bool                ammoValueCmdsSet;
+    bool                shakeCmdsSet;
+    bool                autoLedCmdsSet;
+    bool                aspect16x9CmdsSet;
+    bool                aspect4x3CmdsSet;
+    bool                joystickCmdsSet;
+    bool                keyMouseCmdsSet;
+
+    quint16             lastAmmoValue;
 
 
 

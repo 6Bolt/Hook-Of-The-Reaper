@@ -418,10 +418,26 @@ void ComDeviceList::SaveLightGunList()
         out << p_lightGunList[i]->GetComPortStopBits() << "\n";
         out << p_lightGunList[i]->GetComPortFlow() << "\n";
 
-        if(p_lightGunList[i]->GetDefaultLightGun())
+        if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == RS3_REAPER)
         {
             out << p_lightGunList[i]->GetMaxAmmo() << "\n";
             out << p_lightGunList[i]->GetReloadValue() << "\n";
+        }
+        else if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == MX24)
+        {
+            bool isDipSet;
+            quint8 dipNumber = p_lightGunList[i]->GetDipSwitchPlayerNumber (isDipSet);
+
+            if(isDipSet)
+            {
+                out << "1\n";
+                out << dipNumber << "\n";
+            }
+            else
+            {
+                out << "0\n";
+                out << "0\n";
+            }
         }
 
 
@@ -464,6 +480,8 @@ void ComDeviceList::LoadLightGunList()
     quint16 tempMaxAmmo;
     quint16 tempReloadValue;
     QString line, cmpLine;
+    bool dipSet;
+    quint8 dipNumber;
 
     QFile loadLGData(lightGunsSaveFile);
 
@@ -561,7 +579,7 @@ void ComDeviceList::LoadLightGunList()
         line = in.readLine();
         tempComPortFlow = line.toUInt ();
 
-        if(tempIsDefaultGun)
+        if(tempIsDefaultGun && tempDefaultGunNum==RS3_REAPER)
         {
             line = in.readLine();
             tempMaxAmmo = line.toUInt ();
@@ -571,6 +589,19 @@ void ComDeviceList::LoadLightGunList()
 
             AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, tempMaxAmmo, tempReloadValue);
 
+        }
+        else if(tempIsDefaultGun && tempDefaultGunNum==MX24)
+        {
+            line = in.readLine();
+            if(line == "0")
+                dipSet = false;
+            else
+                dipSet = true;
+
+            line = in.readLine();
+            dipNumber = line.toUInt ();
+
+            AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, dipSet, dipNumber);
         }
         else
         {

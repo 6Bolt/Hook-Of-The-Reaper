@@ -109,10 +109,10 @@ private:
     void LoadINIFile();
 
     //Checks the Commands Loaded in from INI File
-    bool CheckINICommands(QStringList commadsNotChk);
+    bool CheckINICommands(QStringList commadsNotChk, quint16 lineNumber);
 
     //Checks a Signle Command Loaded in from INI File
-    bool CheckINICommand(QString commndNotChk);
+    bool CheckINICommand(QString commndNotChk, quint16 lineNumber);
 
 
     //If No Game File Exists for INI & Default LG, then make New INI File with all Signals

@@ -21,6 +21,8 @@
 #define STOPBITS_NUMBER         3
 #define FLOW_NUMBER             3
 
+#define DIPSWITCH_NUMBER        4
+
 //Arrays that Store the Different Settings
 //Located in the Top of hookOfTheReaper.cpp
 extern QString BAUDNAME_ARRAY[];
@@ -33,10 +35,11 @@ extern QString STOPBITSNAME_ARRAY[];
 extern quint8  STOPBITSDATA_ARRAY[];
 extern QString FLOWNAME_ARRAY[];
 extern quint8  FLOWDATA_ARRAY[];
+extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Default Light Gun Definition - There is No Zero, so 2 is 1
-#define NUM_DEFAULTLG           2
+#define NUM_DEFAULTLG           3
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -51,6 +54,20 @@ extern quint8  FLOWDATA_ARRAY[];
 #define REAPERRELOAD            "6"
 #define REAPERMAXAMMONUM        5
 #define REAPERRELOADNUM         6
+
+//Second Default Light Gun
+//Retro Shooter: MX24
+#define MX24                    2
+#define MX24NAME                "Retro Shooter: MX24"
+#define MX24BAUD                0
+#define MX24DATA                0
+#define MX24PARITY              0
+#define MX24STOP                0
+#define MX24FLOW                0
+#define MX24MAXAMMO             "0"
+#define MX24RELOAD              "0"
+#define MX24MAXAMMONUM          0
+#define MX24RELOADNUM           0
 
 //Struct that Stores the Default Light gun Data
 struct S_DEFAULTLG
@@ -199,6 +216,7 @@ struct INIPortStruct
 #define AMMOVALUECMD            ">Ammo_Value"
 #define SHAKECMD                ">Shake"
 #define AUTOLEDCMD              ">Auto_LED"
+#define AUTOLEDCMD3CHAR         'u'
 #define ARATIO169CMD            ">AspectRatio_16:9"
 #define ARATIO169CMD13CHAR      "1"
 #define ARATIO43CMD             ">AspectRatio_4:3"
@@ -207,7 +225,20 @@ struct INIPortStruct
 #define ALLPLAYERS              "*All"
 #define DLGNULLCMD              ">Null"
 
-
+#define OPENCOMPORTONLY         "Open_COM"
+#define CLOSECOMPORTONLY        "Close_COM"
+#define DAMAGECMDONLY           "Damage"
+#define RECOILCMDONLY           "Recoil"
+#define RELOADCMDONLY           "Reload"
+#define AMMOCMDONLY             "Ammo"
+#define AMMOVALUECMDONLY        "Ammo_Value"
+#define SHAKECMDONLY            "Shake"
+#define AUTOLEDCMDONLY          "Auto_LED"
+#define ARATIO169CMDONLY        "AspectRatio_16:9"
+#define ARATIO43CMDONLY         "AspectRatio_4:3"
+#define JOYMODECMDONLY          "Joystick_Mode"
+#define KANDMMODECMDONLY        "Keyboard_Mouse_Mode"
+#define DLGNULLCMDONLY          "Null"
 
 //Not Used Yet, But Needed for Future
 //#define DEFAULTCDDIR            "defaultCD"

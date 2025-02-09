@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>667</width>
-    <height>439</height>
+    <height>489</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -321,7 +321,7 @@
    <property name="geometry">
     <rect>
      <x>590</x>
-     <y>410</y>
+     <y>460</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -337,7 +337,7 @@
    <property name="geometry">
     <rect>
      <x>510</x>
-     <y>410</y>
+     <y>460</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -353,7 +353,7 @@
    <property name="geometry">
     <rect>
      <x>430</x>
-     <y>410</y>
+     <y>460</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -592,6 +592,34 @@
    </property>
    <property name="text">
     <string>Serial Port Info</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>390</y>
+     <width>131</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Dip Switch Player:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="dipSwitchComboBox">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>400</y>
+     <width>51</width>
+     <height>24</height>
+    </rect>
    </property>
   </widget>
  </widget>
