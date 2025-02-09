@@ -18,6 +18,7 @@
 #include "Windows/playerAssignWindow.h"
 #include "Windows/settingsWindow.h"
 #include "Windows/aboutWindow.h"
+#include "Windows/testComPortWindow.h"
 
 #include "COMDeviceList/ComDeviceList.h"
 
@@ -111,6 +112,12 @@ private slots:
     //On Close of the Settings Window
     void AboutWindowClosed();
 
+    //Brings Up Test COM Port Window
+    void on_actionTest_COM_Port_triggered();
+
+    //On Close of test COM Port Window
+    void TestComPortWindowClosed();
+
 signals:
 
     //Starts the Hooker Engine
@@ -156,6 +163,9 @@ private:
 
     //Edit COM Port Device Window QPointer
     QPointer<aboutWindow>           p_aboutW;
+
+    //Test COM Port Window QPointer
+    QPointer<testComPortWindow>     p_tcpW;
 
     //Serial Port Devices List of Light Guns & Other COM Port Devices (Not Implamented yet)
     ComDeviceList                   *p_comDeviceList;

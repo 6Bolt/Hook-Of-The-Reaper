@@ -39,7 +39,7 @@
      <x>0</x>
      <y>0</y>
      <width>295</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -59,6 +59,8 @@
     </property>
     <addaction name="actionEdit_Light_Gun"/>
     <addaction name="actionEdit_Device"/>
+    <addaction name="separator"/>
+    <addaction name="actionTest_COM_Port"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
    </widget>
@@ -111,6 +113,11 @@
   <action name="actionHook_of_the_Reaper">
    <property name="text">
     <string>Hook of the Reaper</string>
+   </property>
+  </action>
+  <action name="actionTest_COM_Port">
+   <property name="text">
+    <string>Test COM Port</string>
    </property>
   </action>
  </widget>

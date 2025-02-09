@@ -449,6 +449,35 @@ void HookOfTheReaper::AboutWindowClosed()
 }
 
 
+void HookOfTheReaper::on_actionTest_COM_Port_triggered()
+{
+    if (!p_tcpW)
+    {
+
+
+        if(engineRunning)
+        {
+            //Stop the Hooker Engine
+            p_hookEngine->Stop ();
+            engineRunning = false;
+            ui->statusbar->showMessage ("Stopped");
+        }
+
+        p_tcpW = new testComPortWindow(p_comDeviceList, this);
+        p_tcpW->setAttribute(Qt::WA_DeleteOnClose);
+        connect(p_tcpW, SIGNAL(accepted()), this, SLOT(TestComPortWindowClosed()));
+        connect(p_tcpW, SIGNAL(rejected()), this, SLOT(TestComPortWindowClosed()));
+    }
+    p_tcpW->exec ();
+}
+
+void HookOfTheReaper::TestComPortWindowClosed()
+{
+    p_hookEngine->Start ();
+    engineRunning = true;
+    ui->statusbar->showMessage ("Running");
+}
+
 //Private Functions
 
 void HookOfTheReaper::MakeTopDisplayText(QString romName)
@@ -474,6 +503,9 @@ void HookOfTheReaper::DisplayText()
     for(quint8 i = 1; i < lineCount; i++)
         ui->textBrowser->append (displayText[i]);
 }
+
+
+
 
 
 
