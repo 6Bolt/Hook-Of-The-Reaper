@@ -33,6 +33,7 @@ qt_add_executable(HookOfTheReaper
     Windows/playerAssignWindow.cpp Windows/playerAssignWindow.h Windows/playerAssignWindow.ui
     Windows/settingsWindow.cpp Windows/settingsWindow.h Windows/settingsWindow.ui
     Windows/aboutWindow.cpp Windows/aboutWindow.h Windows/aboutWindow.ui
+    data/mx24.hor data/rs3Reaper.hor
 
 )
 

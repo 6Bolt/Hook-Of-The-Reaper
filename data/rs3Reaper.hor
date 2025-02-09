@@ -1,0 +1,14 @@
+Open_COM=ZS ZZ
+Close_COM=ZX
+Damage=ZZ
+Recoil=Z5
+Reload=Z6
+Ammo=Z5
+Ammo_Value=Z%s%
+Shake=ZZ
+Auto_LED=ZR
+AspectRatio_16:9=ZW
+AspectRatio_4:3=ZN
+Joystick_Mode=ZJ
+Keyboard_Mouse_Mode=ZM
+END_OF_FILE

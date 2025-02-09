@@ -1,0 +1,14 @@
+Open_COM=P1 0E|P2 aF
+Close_COM=P1 0A|P2 aB
+Damage=
+Recoil=P1 0E|P2 aF
+Reload=
+Ammo=P1 0E|P2 aF
+Ammo_Value=P1 0E|P2 aF
+Shake=
+Auto_LED=
+AspectRatio_16:9=
+AspectRatio_4:3=
+Joystick_Mode=
+Keyboard_Mouse_Mode=
+END_OF_FILE
