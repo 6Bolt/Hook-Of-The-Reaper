@@ -7,7 +7,10 @@
 LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber)
 {
     defaultLightGun = lgDefault;
-    defaultLightGunNum = dlgNum;
+    if(defaultLightGun)
+        defaultLightGunNum = dlgNum;
+    else
+        defaultLightGunNum = 0;
 
     lightGunName = lgName;
     lightGunNum = lgNumber;
@@ -32,8 +35,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     analogStrength = DEFAULTANALOGSTRENGTH;
     isAnalogStrengthSet = false;
 
-    if(defaultLightGun)
-        LoadDefaultLGCommands();
+
+    LoadDefaultLGCommands();
 
 }
 
@@ -41,7 +44,10 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow)
 {
     defaultLightGun = lgDefault;
-    defaultLightGunNum = dlgNum;
+    if(defaultLightGun)
+        defaultLightGunNum = dlgNum;
+    else
+        defaultLightGunNum = 0;
 
     lightGunName = lgName;
     lightGunNum = lgNumber;
@@ -81,15 +87,18 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     analogStrength = DEFAULTANALOGSTRENGTH;
     isAnalogStrengthSet = false;
 
-    if(defaultLightGun)
-        LoadDefaultLGCommands();
+
+    LoadDefaultLGCommands();
 }
 
 //For Copy Light Gun
 LightGun::LightGun(LightGun const &lgMember)
 {
     defaultLightGun = lgMember.defaultLightGun;
-    defaultLightGunNum = lgMember.defaultLightGunNum;
+    if(defaultLightGun)
+        defaultLightGunNum = lgMember.defaultLightGunNum;
+    else
+        defaultLightGunNum = 0;
 
     lightGunName = lgMember.lightGunName;
     lightGunNum = lgMember.lightGunNum;
@@ -152,8 +161,8 @@ LightGun::LightGun(LightGun const &lgMember)
         isAnalogStrengthSet = false;
     }
 
-    if(defaultLightGun)
-        LoadDefaultLGCommands();
+
+    LoadDefaultLGCommands();
 
 }
 
@@ -161,7 +170,10 @@ LightGun::LightGun(LightGun const &lgMember)
 LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber)
 {
     defaultLightGun = lgDefault;
-    defaultLightGunNum = dlgNum;
+    if(defaultLightGun)
+        defaultLightGunNum = dlgNum;
+    else
+        defaultLightGunNum = 0;
 
     lightGunName = lgName;
     lightGunNum = lgNumber;
@@ -204,14 +216,18 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isAnalogStrengthSet = false;
 
 
-    if(defaultLightGun)
-        LoadDefaultLGCommands();
+
+    LoadDefaultLGCommands();
 }
 
+//For JB Gun4IR
 LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength)
 {
     defaultLightGun = lgDefault;
-    defaultLightGunNum = dlgNum;
+    if(defaultLightGun)
+        defaultLightGunNum = dlgNum;
+    else
+        defaultLightGunNum = 0;
 
     lightGunName = lgName;
     lightGunNum = lgNumber;
@@ -254,9 +270,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     analogStrength = analStrength;
     isAnalogStrengthSet = true;
 
-
-    if(defaultLightGun)
-        LoadDefaultLGCommands();
+    LoadDefaultLGCommands();
 }
 
 //public member functions
@@ -639,6 +653,10 @@ void LightGun::LoadDefaultLGCommands()
     joystickCmds.clear();
     keyMouseCmds.clear();
 
+    //If Not a Default Light Gun, then make sure defaultLightGunNum is 0
+    //To load in nonDefaultLG.hor file
+    if(!defaultLightGun)
+        defaultLightGunNum = 0;
 
     //Get Current Path
     currentPath = QDir::currentPath();

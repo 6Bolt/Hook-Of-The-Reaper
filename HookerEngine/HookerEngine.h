@@ -293,18 +293,7 @@ private:
     //list above. So you Know What Player has What Light
     //Gun, based on the Player's Light Gun Assignment Data
     quint8                          loadedLGNumbers[MAXPLAYERLIGHTGUNS];
-    //Default Light Gun Numbers Based on the Player Order Above
-    QList<quint8>                   defaultLGNumbers;
-    //Number of Different Default Light guns Used
-    quint8                          uniqueDefaultLG;
 
-
-    //Used to Test defaultLG Game Files
-    quint8                          numberLGPlayersTest;
-    quint8                          lgPlayerOrderTest[MAXPLAYERLIGHTGUNS];
-    quint8                          loadedLGNumbersTest[MAXPLAYERLIGHTGUNS];
-    QList<quint8>                   defaultLGNumbersTest;
-    quint8                          uniqueDefaultLGTest;
 
 
     ///////////////////////////////////////////////////////////////////////////

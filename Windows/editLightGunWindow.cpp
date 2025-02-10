@@ -428,7 +428,7 @@ bool editLightGunWindow::IsValidData()
             analNotNumber = true;
         else
         {
-            if(analStrengthBig < 0 || analStrengthBig > 255)
+            if(analStrengthBig > 255)
                 analNotRange = true;
         }
     }
@@ -532,7 +532,10 @@ void editLightGunWindow::EditLightGun()
 
     //Edit Light Gun
     p_comDeviceList->p_lightGunList[lightGunNum]->SetDefaultLightGun (defaultLightGun);
-    p_comDeviceList->p_lightGunList[lightGunNum]->SetDefaultLightGunNumer (defaultLightGunNum);
+    if(defaultLightGun)
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetDefaultLightGunNumer (defaultLightGunNum);
+    else
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetDefaultLightGunNumer (0);
     p_comDeviceList->p_lightGunList[lightGunNum]->SetLightGunName (lightGunName);
     p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortNumber (comPortNum);
     p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortString (comPortName);
@@ -557,7 +560,7 @@ void editLightGunWindow::EditLightGun()
         bool isSet;
         quint8 oldDipNumber = p_comDeviceList->p_lightGunList[lightGunNum]->GetDipSwitchPlayerNumber (&isSet);
 
-        //Check if Number Changed
+        //Check if Dip Player is Set & Number Changed
         if(oldDipNumber != dipSwitchNumber && isSet)
         {
             p_comDeviceList->usedDipPlayers[oldDipNumber] = false;
@@ -572,11 +575,11 @@ void editLightGunWindow::EditLightGun()
     {
         QString analString = ui->analogLineEdit->text();
         quint8 analStrength = analString.toUInt ();
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetAnalogStrength (analStrength);
     }
 
-    //Now a Default Light Gun or Default Light Number Changed
-    if(defaultLightGunNumChanged)
-        p_comDeviceList->p_lightGunList[lightGunNum]->LoadDefaultLGCommands ();
+    //Load in Commands After the Edit
+    p_comDeviceList->p_lightGunList[lightGunNum]->LoadDefaultLGCommands ();
 
     delete p_comPortInfo;
     p_comPortInfo = nullptr;

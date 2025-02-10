@@ -379,6 +379,10 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
     quint8 subCmdsCnt;
     quint16 lineNumber = 0;
     bool isOutput = false;
+    quint8 unassignLG = 0;
+    quint8 numberLGPlayersTest;
+    quint8 lgPlayerOrderTest[MAXPLAYERLIGHTGUNS];
+    quint8 loadedLGNumbersTest[MAXPLAYERLIGHTGUNS];
 
 
     QFile lgFile(fileNamePath);
@@ -466,65 +470,24 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                     lgNumber = playersLGAssignment[lgPlayerOrderTest[i]];
 
                     //If Player Assignment is Unassign, then fail load and go to INI file
-                    if(lgNumber != UNASSIGN)
-                        isDefaultLG = p_comDeviceList->p_lightGunList[lgNumber]->GetDefaultLightGun();
-                    else
-                    {
-                        QString tempCrit = "Player P"+QString::number (playerNumber)+" has no light gun assign to it. Please close game, and then assign a light gun to the player.\nFile: "+fileNamePath;
-                        tempCrit.append (gameLGFilePath);
-                        if(displayMB)
-                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
-                        return false;
-                    }
+                    if(lgNumber == UNASSIGN)
+                        unassignLG++;
 
-                    //If Light Gun(s) is not a Default Light Gun(s), then fail
-                    if(!isDefaultLG)
-                    {
-                        QString tempCrit = "One or More of the assign light guns are not \"Default Light Gun.\" To use defaultLG files, all used light guns must be default light guns.\nFile: "+fileNamePath;
-                        if(displayMB)
-                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
-                        return false;
-                    }
+
                     //Load Light Gun Order, based on Player Order and Player's Assignment
                     loadedLGNumbersTest[i] = lgNumber;
 
                 }
 
-                //Clear Out List and Number
-                defaultLGNumbersTest.clear ();
-                uniqueDefaultLGTest = 0;
-
-                //Check the Default Light Guns Number to See How Many Unique Default Light Guns There Are
-                if(numberLGPlayersTest > 1)
+                if(unassignLG == numberLGPlayersTest)
                 {
-                    for(quint8 i = 0; i < numberLGPlayersTest; i++)
-                    {
-                        tempDLGNum = p_comDeviceList->p_lightGunList[loadedLGNumbersTest[i]]->GetDefaultLightGunNumber();
+                    QString tempCrit = "No Player(s) have assign light gun. Atleast one player needs to have an assign light gun. Please close game, and then assign a light gun to the player.\nFile: "+fileNamePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return false;
+                }
 
-                        if(i == 0)
-                        {
-                            defaultLGNumbersTest << tempDLGNum;
-                            uniqueDefaultLGTest++;
-                        }
-                        else
-                        {
-                            //Check if Default Light Gun Number is Not In The List
-                            if(defaultLGNumbersTest.count(tempDLGNum) == 0)
-                            {
-                                defaultLGNumbersTest << tempDLGNum;
-                                uniqueDefaultLGTest++;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    //Only 1 Player for Game
-                    tempDLGNum = p_comDeviceList->p_lightGunList[loadedLGNumbersTest[0]]->GetDefaultLightGunNumber();
-                    defaultLGNumbersTest << tempDLGNum;
-                    uniqueDefaultLGTest++;
-                }
-                //Don't Run the Players Again
+
                 begin = false;
             }
         }
@@ -1887,6 +1850,7 @@ void HookerEngine::LoadLGFile()
     quint8 subCmdsCnt;
     quint16 lineNumber = 0;
     bool isOutput = false;
+    quint8 unassignLG = 0;
 
     lgFileLoadFail = false;
 
@@ -1977,68 +1941,24 @@ void HookerEngine::LoadLGFile()
                     //Check if Light Gun is a Default Light Gun
                     lgNumber = playersLGAssignment[lgPlayerOrder[i]];
 
-                    //If Player Assignment is Unassign, then fail load and go to INI file
-                    if(lgNumber != UNASSIGN)
-                        isDefaultLG = p_comDeviceList->p_lightGunList[lgNumber]->GetDefaultLightGun();
-                    else
-                    {
-                        lgFileLoadFail = true;
-                        QString tempCrit = "Player P"+QString::number (playerNumber)+" has no light gun assign to it. Please close game, and then assign a light gun to the player.\nFile: "+gameLGFilePath;
-                        tempCrit.append (gameLGFilePath);
-                        if(displayMB)
-                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
-                        return;
-                    }
+                    //If Player Assignment is Unassign, increament unassignLG
+                    if(lgNumber == UNASSIGN)
+                        unassignLG++;
 
-                    //If Light Gun(s) is not a Default Light Gun(s), then fail
-                    if(!isDefaultLG)
-                    {
-                        lgFileLoadFail = true;
-
-                        QString tempCrit = "One or More of the assign light guns are not \"Default Light Gun.\" To use defaultLG files, all used light guns must be default light guns.\nFile: "+gameLGFilePath;
-                        if(displayMB)
-                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
-                        return;
-                    }
                     //Load Light Gun Order, based on Player Order and Player's Assignment
                     loadedLGNumbers[i] = lgNumber;
 
                 }
 
-                //Clear Out List and Number
-                defaultLGNumbers.clear ();
-                uniqueDefaultLG = 0;
-
-                //Check the Default Light Guns Number to See How Many Unique Default Light Guns There Are
-                if(numberLGPlayers > 1)
+                if(unassignLG == numberLGPlayers)
                 {
-                    for(quint8 i = 0; i < numberLGPlayers; i++)
-                    {
-                        tempDLGNum = p_comDeviceList->p_lightGunList[loadedLGNumbers[i]]->GetDefaultLightGunNumber();
+                    lgFileLoadFail = true;
+                    QString tempCrit = "No Player(s) have assign light gun. Atleast one player needs to have an assign light gun. Please close game, and then assign a light gun to the player.\nFile: "+gameLGFilePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return;
+                }
 
-                        if(i == 0)
-                        {
-                            defaultLGNumbers << tempDLGNum;
-                            uniqueDefaultLG++;
-                        }
-                        else
-                        {
-                            //Check if Default Light Gun Number is Not In The List
-                            if(defaultLGNumbers.count(tempDLGNum) == 0)
-                            {
-                                defaultLGNumbers << tempDLGNum;
-                                uniqueDefaultLG++;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    //Only 1 Player for Game
-                    tempDLGNum = p_comDeviceList->p_lightGunList[loadedLGNumbers[0]]->GetDefaultLightGunNumber();
-                    defaultLGNumbers << tempDLGNum;
-                    uniqueDefaultLG++;
-                }
                 //Don't Run the Players Again
                 begin = false;
             }
@@ -2380,105 +2300,112 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
 
 
                 lightGun = loadedLGNumbers[player];
-                tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
 
-                //Set True. If No Command or Null, then it is set to false
-                dlgCMDFound = false;
-
-
-                charToNumber = static_cast<quint8>(commands[i][1].toLatin1 ());
-
-                //If First Char in Command is A-D, as E = 69
-                if(charToNumber < 69)
+                //Check if light gun has an assign value, if not then don't run
+                if(lightGun != UNASSIGN)
                 {
-                    //Have to Search Commands Multiple Times as Multiple Default Light Guns Could be Used
-                    //Faster to Search for 1 char than the whole string
-                    //There are 4 Commands that start with ">A"
-                    if(commands[i][1] == 'A')
+
+                    tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
+
+                    //Set True. If No Command or Null, then it is set to false
+                    dlgCMDFound = false;
+
+
+                    charToNumber = static_cast<quint8>(commands[i][1].toLatin1 ());
+
+                    //If First Char in Command is A-D, as E = 69
+                    if(charToNumber < 69)
                     {
-                        if(commands[i][2] == 'm')
+                        //Have to Search Commands Multiple Times as Multiple Default Light Guns Could be Used
+                        //Faster to Search for 1 char than the whole string
+                        //There are 4 Commands that start with ">A"
+                        if(commands[i][1] == 'A')
                         {
-                            if(commands[i].size() > AMMOCMDCOUNT)
+                            if(commands[i][2] == 'm')
                             {
-                                //Must Be Ammo_Value Command
-                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(dlgCMDFound, value.toUInt ());
+                                if(commands[i].size() > AMMOCMDCOUNT)
+                                {
+                                    //Must Be Ammo_Value Command
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(dlgCMDFound, value.toUInt ());
+                                }
+                                else  //Must Be Ammo Command
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoCommands(dlgCMDFound);
                             }
-                            else  //Must Be Ammo Command
-                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoCommands(dlgCMDFound);
-                        }
-                        else if(commands[i][2] == 's')
-                        {
-                            if(commands[i][13] == ARATIO169CMD13CHAR)
+                            else if(commands[i][2] == 's')
                             {
-                                //Must Be AspectRatio_16:9 Command
-                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AspectRatio16b9Commands(dlgCMDFound);
+                                if(commands[i][13] == ARATIO169CMD13CHAR)
+                                {
+                                    //Must Be AspectRatio_16:9 Command
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AspectRatio16b9Commands(dlgCMDFound);
+                                }
+                                else //Must Be AspectRatio_4:3 Command
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AspectRatio4b3Commands(dlgCMDFound);
                             }
-                            else //Must Be AspectRatio_4:3 Command
-                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AspectRatio4b3Commands(dlgCMDFound);
+                            else if(commands[i][2] == AUTOLEDCMD3CHAR)
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AutoLEDCommands(dlgCMDFound);
+
                         }
-                        else if(commands[i][2] == AUTOLEDCMD3CHAR)
-                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AutoLEDCommands(dlgCMDFound);
-
-                    }
-                    else if(commands[i][1] == 'D' && value != "0")
-                    {
-                        //Must Be Damage Command, Only Do Damage if Value != 0
-                        dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DamageCommands(dlgCMDFound);
-                    }
-
-                }
-                else  //E-Z
-                {
-                    if(commands[i][1] == 'R')
-                    {
-                        //Two Commands Start with ">R", If ">Rel" then Reload, If Not then Recoil, and Then only when value != 0
-                        if(commands[i][3] == 'l')
+                        else if(commands[i][1] == 'D' && value != "0")
                         {
-                            //Must Be Reload Command
-                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ReloadCommands(dlgCMDFound);
+                            //Must Be Damage Command, Only Do Damage if Value != 0
+                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DamageCommands(dlgCMDFound);
                         }
-                        else if(commands[i][3] == 'c' && value != "0")
+
+                    }
+                    else  //E-Z
+                    {
+                        if(commands[i][1] == 'R')
                         {
-                            //Must be Recoil Command, Only Do when Value != 0
-                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(dlgCMDFound);
+                            //Two Commands Start with ">R", If ">Rel" then Reload, If Not then Recoil, and Then only when value != 0
+                            if(commands[i][3] == 'l')
+                            {
+                                //Must Be Reload Command
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ReloadCommands(dlgCMDFound);
+                            }
+                            else if(commands[i][3] == 'c' && value != "0")
+                            {
+                                //Must be Recoil Command, Only Do when Value != 0
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(dlgCMDFound);
+                            }
+                        }
+                        else if(commands[i][1] == 'S' && value != "0")
+                        {
+                            //Must be Shake Command, Only Do Shake if Value != 0
+                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ShakeCommands(dlgCMDFound);
+                        }
+                        else if(commands[i][1] == 'J')
+                        {
+                            //Must Be Joystick_Mode Command
+                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->JoystickModeCommands(dlgCMDFound);
+                        }
+                        else if(commands[i][1] == 'K')
+                        {
+                            //Must be Keyboard_Mouse_Command
+                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->MouseAndKeyboardModeCommands(dlgCMDFound);
+                        }
+                        else if(commands[i][1] == 'N')
+                        {
+                            //Must Be Null Command - Do Nothing
+                            dlgCMDFound = false;
+                        }
+
+                    }
+
+
+                    //isEmpty() is true when Empty
+                    if(dlgCMDFound)
+                    {
+                        //Write Command(s) to the Default Light Gun's COM Port
+                        for(k = 0; k < dlgCommands.count(); k++)
+                        {
+                            //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
+                            WriteLGComPort(tempCPNum, dlgCommands[k]);
                         }
                     }
-                    else if(commands[i][1] == 'S' && value != "0")
-                    {
-                        //Must be Shake Command, Only Do Shake if Value != 0
-                        dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ShakeCommands(dlgCMDFound);
-                    }
-                    else if(commands[i][1] == 'J')
-                    {
-                        //Must Be Joystick_Mode Command
-                        dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->JoystickModeCommands(dlgCMDFound);
-                    }
-                    else if(commands[i][1] == 'K')
-                    {
-                        //Must be Keyboard_Mouse_Command
-                        dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->MouseAndKeyboardModeCommands(dlgCMDFound);
-                    }
-                    else if(commands[i][1] == 'N')
-                    {
-                        //Must Be Null Command - Do Nothing
-                        dlgCMDFound = false;
-                    }
 
-                }
+                } //if(lightGun != UNASSIGN)
 
-
-                //isEmpty() is true when Empty
-                if(dlgCMDFound)
-                {
-                    //Write Command(s) to the Default Light Gun's COM Port
-                    for(k = 0; k < dlgCommands.count(); k++)
-                    {
-                        //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
-                        WriteLGComPort(tempCPNum, dlgCommands[k]);
-                    }
-                }
-
-            }//for(j = 0; j < howManyPlayers; j++)
+            } //for(j = 0; j < howManyPlayers; j++)
 
         } //If Multiple Players are In Commands for Some Reason
         else if(commands[i].startsWith ('*'))
@@ -2528,35 +2455,41 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum)
         //Get Light Gun Number
         lightGun = loadedLGNumbers[player];
 
-        //qDebug() << "Player Number: " << player << " Light Gun Number: " << lightGun;
-
-        //Gets COM Port Settings
-        tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
-        tempCPName = p_comDeviceList->p_lightGunList[lightGun]->GetComPortString();
-        tempBaud = p_comDeviceList->p_lightGunList[lightGun]->GetComPortBaud();
-        tempData = p_comDeviceList->p_lightGunList[lightGun]->GetComPortDataBits();
-        tempParity = p_comDeviceList->p_lightGunList[lightGun]->GetComPortParity();
-        tempStop = p_comDeviceList->p_lightGunList[lightGun]->GetComPortStopBits();
-        tempFlow = p_comDeviceList->p_lightGunList[lightGun]->GetComPortFlow();
-
-        //Opens the COM Port
-        emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, true);
-
-        //Get the Commnds for Open COM Port
-        commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(isCommands);
-        cmdCount = commands.count();
-
-        //qDebug() << "Command Count: " << cmdCount << " Commands: " << commands;
-
-        //Write Commands to the COM Port
-        if(cmdCount > 0 && isCommands)
+        //Check if Light Gun is not Unassign
+        if(lightGun != UNASSIGN)
         {
-            for(j = 0; j < cmdCount; j++)
+
+            //qDebug() << "Player Number: " << player << " Light Gun Number: " << lightGun;
+
+            //Gets COM Port Settings
+            tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
+            tempCPName = p_comDeviceList->p_lightGunList[lightGun]->GetComPortString();
+            tempBaud = p_comDeviceList->p_lightGunList[lightGun]->GetComPortBaud();
+            tempData = p_comDeviceList->p_lightGunList[lightGun]->GetComPortDataBits();
+            tempParity = p_comDeviceList->p_lightGunList[lightGun]->GetComPortParity();
+            tempStop = p_comDeviceList->p_lightGunList[lightGun]->GetComPortStopBits();
+            tempFlow = p_comDeviceList->p_lightGunList[lightGun]->GetComPortFlow();
+
+            //Opens the COM Port
+            emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, true);
+
+            //Get the Commnds for Open COM Port
+            commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(isCommands);
+            cmdCount = commands.count();
+
+            //qDebug() << "Command Count: " << cmdCount << " Commands: " << commands;
+
+            //Write Commands to the COM Port
+            if(cmdCount > 0 && isCommands)
             {
-                WriteLGComPort(tempCPNum, commands[j]);
+                for(j = 0; j < cmdCount; j++)
+                {
+                    WriteLGComPort(tempCPNum, commands[j]);
+                }
             }
-        }
-    }
+
+        } //if(lightGun != UNASSIGN)
+    } //for(i = 0; i < howManyPlayers; i++)
 }
 
 void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
@@ -2581,24 +2514,31 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
 
         //Get Light Gun Number
         lightGun = loadedLGNumbers[player];
-        //Get COM Port For Light Gun
-        tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
 
-        //Get Close COM Port Commands for Light Gun
-        commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(isCommands);
-        cmdCount = commands.count();
-
-        //Write Commnds to COM Port
-        if(cmdCount > 0 && isCommands)
+        //Check if Light Gun is not Unassign
+        if(lightGun != UNASSIGN)
         {
-            for(j = 0; j < cmdCount; j++)
-            {
-                WriteLGComPort(tempCPNum, commands[j]);
-            }
-        }
 
-        //Closes The COM Port
-        emit StopComPort(tempCPNum);
+            //Get COM Port For Light Gun
+            tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
+
+            //Get Close COM Port Commands for Light Gun
+            commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(isCommands);
+            cmdCount = commands.count();
+
+            //Write Commnds to COM Port
+            if(cmdCount > 0 && isCommands)
+            {
+                for(j = 0; j < cmdCount; j++)
+                {
+                    WriteLGComPort(tempCPNum, commands[j]);
+                }
+            }
+
+            //Closes The COM Port
+            emit StopComPort(tempCPNum);
+
+        }
     }
 
 }

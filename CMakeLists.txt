@@ -36,6 +36,7 @@ qt_add_executable(HookOfTheReaper
     data/mx24.hor data/rs3Reaper.hor
     Windows/testComPortWindow.h Windows/testComPortWindow.cpp Windows/testComPortWindow.ui
     data/jbgun4ir.hor
+    data/nonDefaultLG.hor
 
 )
 

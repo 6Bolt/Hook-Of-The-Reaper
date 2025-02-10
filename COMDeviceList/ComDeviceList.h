@@ -83,6 +83,10 @@ public:
     quint32         GetRefreshTimeDisplay();
     void            SetRefreshTimeDisplay(quint32 rtDisplay);
 
+    //Close the COM Port Connect on When Game Ends or Leave Open
+    bool            GetCloseComPortGameExit();
+    void            SetCloseComPortGameExit(bool ccpGameExit);
+
     //Copies Used Dip Players Array
     void            CopyUsedDipPlayersArray(bool *targetArray, quint8 size);
 
@@ -132,6 +136,7 @@ private:
     bool                useDefaultLGFirst;
     bool                useMultiThreading;
     quint32             refreshTimeDisplay;
+    bool                closeComPortGameExit;
 
 
 

@@ -1035,6 +1035,11 @@ void ComDeviceList::SaveSettings()
     rtDisplay = QString::number(refreshTimeDisplay)+"\n";
     out << rtDisplay;
 
+    if(closeComPortGameExit)
+        out << "1\n";
+    else
+        out << "0\n";
+
 
     out << ENDOFFILE;
 
@@ -1095,7 +1100,7 @@ void ComDeviceList::LoadSettings()
     }
     else
     {
-        QMessageBox::critical (nullptr, "File Error", "Settings save data file is corrupted at first setting. Please close program and solve file problem.", QMessageBox::Ok);
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at first setting. Please close program and solve file problem.", QMessageBox::Ok);
         return;
     }
 
@@ -1113,7 +1118,7 @@ void ComDeviceList::LoadSettings()
     }
     else
     {
-        QMessageBox::critical (nullptr, "File Error", "Settings save data file is corrupted at second setting. Please close program and solve file problem.", QMessageBox::Ok);
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at second setting. Please close program and solve file problem.", QMessageBox::Ok);
         return;
     }
 
@@ -1123,14 +1128,37 @@ void ComDeviceList::LoadSettings()
     refreshTimeDisplay = line.toUInt (&isNumber);
 
     if(!isNumber)
+    {
         refreshTimeDisplay = DEFAULTREFRESHDISPLAY;
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at third setting. Refresh time display is not a number, setting to default.", QMessageBox::Ok);
+    }
+
+    //Next Line is Close COM Port when Game Exits
+    line = in.readLine();
+
+    if(line.startsWith ("1"))
+    {
+        closeComPortGameExit = true;
+    }
+    else if(line.startsWith ("0"))
+    {
+        closeComPortGameExit = false;
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at fourth setting. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
+
+
+
 
     //Next Line is End of File
     line = in.readLine();
 
     if(!line.startsWith (ENDOFFILE))
     {
-        QMessageBox::critical (nullptr, "File Error", "Settings save data file is corrupted at the end. Please close program and solve file problem.", QMessageBox::Ok);
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at the end. Please close program and solve file problem.", QMessageBox::Ok);
         return;
     }
 
@@ -1168,6 +1196,16 @@ quint32 ComDeviceList::GetRefreshTimeDisplay()
 void ComDeviceList::SetRefreshTimeDisplay(quint32 rtDisplay)
 {
     refreshTimeDisplay = rtDisplay;
+}
+
+bool ComDeviceList::GetCloseComPortGameExit()
+{
+    return closeComPortGameExit;
+}
+
+void ComDeviceList::SetCloseComPortGameExit(bool ccpGameExit)
+{
+    closeComPortGameExit = ccpGameExit;
 }
 
 

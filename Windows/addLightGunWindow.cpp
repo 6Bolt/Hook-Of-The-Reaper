@@ -300,7 +300,7 @@ bool addLightGunWindow::IsValidData()
             analNotNumber = true;
         else
         {
-            if(analStrengthBig < 0 || analStrengthBig > 255)
+            if(analStrengthBig > 255)
                 analNotRange = true;
         }
     }

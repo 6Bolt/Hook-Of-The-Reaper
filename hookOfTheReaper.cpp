@@ -20,7 +20,7 @@ quint8  STOPBITSDATA_ARRAY[STOPBITS_NUMBER] = {1, 2, 3};
 QString FLOWNAME_ARRAY[FLOW_NUMBER] = {"No Flow Control", "RTS/CTS - Hardware", "Xon/Xoff - Software"};
 quint8  FLOWDATA_ARRAY[FLOW_NUMBER] = {0, 1, 2};
 
-QString DEFAULTLGFILENAMES_ARRAY[NUM_DEFAULTLG] = {"","rs3Reaper.hor","mx24.hor","jbgun4ir.hor"};
+QString DEFAULTLGFILENAMES_ARRAY[NUM_DEFAULTLG] = {"nonDefaultLG.hor","rs3Reaper.hor","mx24.hor","jbgun4ir.hor"};
 
 //Constructor
 HookOfTheReaper::HookOfTheReaper(QWidget *parent)
