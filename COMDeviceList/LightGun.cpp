@@ -3,6 +3,7 @@
 
 //Constructors
 
+//For RS3 Reaper Light Gun
 LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber)
 {
     defaultLightGun = lgDefault;
@@ -28,11 +29,15 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     isDipSwitchPlayerNumberSet = false;
 
+    analogStrength = DEFAULTANALOGSTRENGTH;
+    isAnalogStrengthSet = false;
+
     if(defaultLightGun)
         LoadDefaultLGCommands();
 
 }
 
+//For Normal Light Gun
 LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow)
 {
     defaultLightGun = lgDefault;
@@ -73,10 +78,14 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     isDipSwitchPlayerNumberSet = false;
 
+    analogStrength = DEFAULTANALOGSTRENGTH;
+    isAnalogStrengthSet = false;
+
     if(defaultLightGun)
         LoadDefaultLGCommands();
 }
 
+//For Copy Light Gun
 LightGun::LightGun(LightGun const &lgMember)
 {
     defaultLightGun = lgMember.defaultLightGun;
@@ -124,14 +133,31 @@ LightGun::LightGun(LightGun const &lgMember)
         reloadValueSet = false;
     }
 
-    isDipSwitchPlayerNumberSet = false;
+    if(lgMember.isDipSwitchPlayerNumberSet)
+    {
+        dipSwitchPlayerNumber = lgMember.dipSwitchPlayerNumber;
+        isDipSwitchPlayerNumberSet = true;
+    }
+    else
+        isDipSwitchPlayerNumberSet = false;
+
+    if(lgMember.isAnalogStrengthSet)
+    {
+        analogStrength = lgMember.analogStrength;
+        isAnalogStrengthSet = true;
+    }
+    else
+    {
+        analogStrength = DEFAULTANALOGSTRENGTH;
+        isAnalogStrengthSet = false;
+    }
 
     if(defaultLightGun)
         LoadDefaultLGCommands();
 
 }
 
-
+//For MX24 Light Gun
 LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber)
 {
     defaultLightGun = lgDefault;
@@ -174,12 +200,64 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
         reloadValueSet = false;
     }
 
+    analogStrength = DEFAULTANALOGSTRENGTH;
+    isAnalogStrengthSet = false;
+
 
     if(defaultLightGun)
         LoadDefaultLGCommands();
 }
 
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength)
+{
+    defaultLightGun = lgDefault;
+    defaultLightGunNum = dlgNum;
 
+    lightGunName = lgName;
+    lightGunNum = lgNumber;
+
+    comPortNum = cpNumber;
+    comPortString = cpString;
+    comPortInfo = cpInfo;
+    comPortBaud = cpBaud;
+    comPortDataBits = cpDataBits;
+    comPortParity = cpParity;
+    comPortStopBits = cpStopBits;
+    comPortFlow = cpFlow;
+
+    //For MX24
+    isDipSwitchPlayerNumberSet = false;
+
+
+    //For RS3 Reaper
+    if(defaultLightGun)
+    {
+        if(defaultLightGunNum == RS3_REAPER)
+        {
+            maxAmmo = DEFAULTLG_ARRAY[defaultLightGunNum].MAXAMMON;
+            reloadValue = DEFAULTLG_ARRAY[defaultLightGunNum].RELOADVALUEN;
+            maxAmmoSet = true;
+            reloadValueSet = true;
+        }
+        else
+        {
+            maxAmmoSet = false;
+            reloadValueSet = false;
+        }
+    }
+    else
+    {
+        maxAmmoSet = false;
+        reloadValueSet = false;
+    }
+
+    analogStrength = analStrength;
+    isAnalogStrengthSet = true;
+
+
+    if(defaultLightGun)
+        LoadDefaultLGCommands();
+}
 
 //public member functions
 
@@ -264,6 +342,11 @@ void LightGun::SetDipSwitchPlayerNumber(quint8 dsNumber)
     isDipSwitchPlayerNumberSet = true;
 }
 
+void LightGun::SetAnalogStrength(quint8 analStrength)
+{
+    analogStrength = analStrength;
+    isAnalogStrengthSet = true;
+}
 
 //Get Member Functions
 
@@ -349,20 +432,59 @@ bool LightGun::IsReloadValueSet()
     return reloadValueSet;
 }
 
-quint8 LightGun::GetDipSwitchPlayerNumber(bool &isSet)
+quint8 LightGun::GetDipSwitchPlayerNumber(bool *isSet)
 {
     if(isDipSwitchPlayerNumberSet)
     {
-        isSet = true;
+        *isSet = true;
         return dipSwitchPlayerNumber;
     }
     else
     {
-        isSet = false;
+        *isSet = false;
         return UNASSIGN;
     }
 }
 
+quint8 LightGun::GetDipSwitchPlayerNumber()
+{
+    if(isDipSwitchPlayerNumberSet)
+        return dipSwitchPlayerNumber;
+    else
+        return UNASSIGN;
+}
+
+bool LightGun::GetIsDipSwitchPlayerNumberSet()
+{
+    return isDipSwitchPlayerNumberSet;
+}
+
+quint8 LightGun::GetAnalogStrength(bool *isSet)
+{
+    if(isAnalogStrengthSet)
+    {
+        *isSet = true;
+        return analogStrength;
+    }
+    else
+    {
+        *isSet = false;
+        return UNASSIGN;
+    }
+}
+
+quint8 LightGun::GetAnalogStrength()
+{
+    if(isAnalogStrengthSet)
+        return analogStrength;
+    else
+        return UNASSIGN;
+}
+
+bool LightGun::GetIsAnalogStrengthSet()
+{
+    return isAnalogStrengthSet;
+}
 
 void LightGun::CopyLightGun(LightGun const &lgMember)
 {
@@ -381,6 +503,7 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
     comPortStopBits = lgMember.comPortStopBits;
     comPortFlow = lgMember.comPortFlow;
 
+    //For RS3 Reaper
     maxAmmoSet = lgMember.maxAmmoSet;
     reloadValueSet = lgMember.reloadValueSet;
 
@@ -404,12 +527,22 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
         reloadValueSet = true;
     }
 
+    //For MX24
     isDipSwitchPlayerNumberSet = lgMember.isDipSwitchPlayerNumberSet;
 
     if(isDipSwitchPlayerNumberSet)
         dipSwitchPlayerNumber = lgMember.dipSwitchPlayerNumber;
     else
         dipSwitchPlayerNumber = 0;
+
+    //For JB Gun4IR
+    isAnalogStrengthSet = lgMember.isAnalogStrengthSet;
+
+    if(isAnalogStrengthSet)
+        analogStrength = lgMember.analogStrength;
+    else
+        analogStrength = UNASSIGN;
+
 
     currentPath = lgMember.currentPath;
     dataPath = lgMember.dataPath;
@@ -720,8 +853,8 @@ void LightGun::LoadDefaultLGCommands()
     qDebug() << aspect4x3Cmds;
     qDebug() << joystickCmds;
     qDebug() << keyMouseCmds;
-*/
 
+*/
 }
 
 

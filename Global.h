@@ -23,6 +23,8 @@
 
 #define DIPSWITCH_NUMBER        4
 
+#define DEFAULTANALOGSTRENGTH   63
+
 //Arrays that Store the Different Settings
 //Located in the Top of hookOfTheReaper.cpp
 extern QString BAUDNAME_ARRAY[];
@@ -39,7 +41,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Default Light Gun Definition - There is No Zero, so 2 is 1
-#define NUM_DEFAULTLG           3
+#define NUM_DEFAULTLG           4
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -68,6 +70,23 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define MX24RELOAD              "0"
 #define MX24MAXAMMONUM          0
 #define MX24RELOADNUM           0
+
+
+//Third Default Light Gun
+//JB Gun4IR
+#define JBGUN4IR                3
+#define JBGUN4IRNAME            "JB Gun4IR"
+#define JBGUN4IRBAUD            4
+#define JBGUN4IRDATA            0
+#define JBGUN4IRPARITY          0
+#define JBGUN4IRSTOP            0
+#define JBGUN4IRFLOW            0
+#define JBGUN4IRMAXAMMO         "0"
+#define JBGUN4IRRELOAD          "0"
+#define JBGUN4IRMAXAMMONUM      0
+#define JBGUN4IRRELOADNUM       0
+#define JBGUN4IRSTRENGTH        63
+
 
 //Struct that Stores the Default Light gun Data
 struct S_DEFAULTLG
@@ -133,8 +152,8 @@ extern S_DEFAULTLG DEFAULTLG_ARRAY[];
 
 //Input Masks for Refresh Display Time in Settings
 #define REFRESHDISPLAYMASK      "000000"
-
-
+//Input Mask for Analog Strength 8bit 0-255
+#define ANALOGSTRENGTHMASK      "000"
 
 //Display
 #define GAMEINFO                "Game Info:"

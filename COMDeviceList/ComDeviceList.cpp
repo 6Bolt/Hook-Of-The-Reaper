@@ -25,6 +25,12 @@ ComDeviceList::ComDeviceList()
         playersLightGun[i] = UNASSIGN;
     }
 
+    //More Set Defaults
+    for(i = 0; i < DIPSWITCH_NUMBER; i++)
+    {
+        usedDipPlayers[i] = false;
+    }
+
     //Get Current Path
     currentPath = QDir::currentPath();
 
@@ -106,6 +112,7 @@ ComDeviceList::~ComDeviceList()
 }
 
 //Add Light Gun to the List
+//Copy Light Gun
 void ComDeviceList::AddLightGun(LightGun const &lgMember)
 {
     quint8 usedComPortNum;
@@ -118,6 +125,7 @@ void ComDeviceList::AddLightGun(LightGun const &lgMember)
     numberLightGuns++;
 }
 
+//For RS3 Reaper Light Gun
 void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint16 maNumber, quint16 rvNumber)
 {
     quint8 usedComPortNum;
@@ -130,6 +138,7 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
     numberLightGuns++;
 }
 
+//For Normal Light Gun
 void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow)
 {
     quint8 usedComPortNum;
@@ -142,11 +151,28 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
     numberLightGuns++;
 }
 
+//For MX24 Light Gun
 void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber)
 {
     quint8 usedComPortNum;
 
     p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, dipSwitchSet, dipSwitchNumber);
+
+    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumber ();
+    availableComPorts[usedComPortNum] = false;
+
+    if(dipSwitchSet)
+        usedDipPlayers[dipSwitchNumber] = true;
+
+    numberLightGuns++;
+}
+
+//For JB Gun4IR Light Gun
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint8 analStrength)
+{
+    quint8 usedComPortNum;
+
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, analStrength);
 
     usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumber ();
     availableComPorts[usedComPortNum] = false;
@@ -214,6 +240,22 @@ void ComDeviceList::DeleteLightGun(quint8 lgNumber)
 
     openComPort = p_lightGunList[lgNumber]->GetComPortNumber ();
     availableComPorts[openComPort] = true;
+
+    //Check if it is MX24, for Used Dip Switch Player
+    bool isDefaultLG = p_lightGunList[lgNumber]->GetDefaultLightGun ();
+
+    if(isDefaultLG)
+    {
+        quint8 defaultLGNum = p_lightGunList[lgNumber]->GetDefaultLightGunNumber ();
+
+        if(defaultLGNum == MX24)
+        {
+            bool isSet;
+            quint8 dipSwNumber = p_lightGunList[lgNumber]->GetDipSwitchPlayerNumber (&isSet);
+            if(isSet)
+                usedDipPlayers[dipSwNumber] = false;
+        }
+    }
 
     //Only One Light Gun In the List
     if(numberLightGuns == 1 && lgNumber == 0)
@@ -433,13 +475,35 @@ void ComDeviceList::SaveLightGunList()
 
         if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == RS3_REAPER)
         {
-            out << p_lightGunList[i]->GetMaxAmmo() << "\n";
-            out << p_lightGunList[i]->GetReloadValue() << "\n";
+            bool mxAmmoSet = p_lightGunList[i]->IsMaxAmmoSet();
+            bool rlValueSet = p_lightGunList[i]->IsReloadValueSet();
+
+            if(mxAmmoSet)
+            {
+                out << "1\n";
+                out << p_lightGunList[i]->GetMaxAmmo() << "\n";
+            }
+            else
+            {
+                out << "0\n";
+                out << "69\n";
+            }
+
+            if(rlValueSet)
+            {
+                out << "1\n";
+                out << p_lightGunList[i]->GetReloadValue() << "\n";
+            }
+            else
+            {
+                out << "0\n";
+                out << "69\n";
+            }
         }
         else if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == MX24)
         {
             bool isDipSet;
-            quint8 dipNumber = p_lightGunList[i]->GetDipSwitchPlayerNumber (isDipSet);
+            quint8 dipNumber = p_lightGunList[i]->GetDipSwitchPlayerNumber (&isDipSet);
 
             if(isDipSet)
             {
@@ -449,10 +513,25 @@ void ComDeviceList::SaveLightGunList()
             else
             {
                 out << "0\n";
-                out << "0\n";
+                out << "69\n";
             }
         }
+        else if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == JBGUN4IR)
+        {
+            bool isAnalSet;
+            quint8 analNumber = p_lightGunList[i]->GetAnalogStrength (&isAnalSet);
 
+            if(isAnalSet)
+            {
+                out << "1\n";
+                out << analNumber << "\n";
+            }
+            else
+            {
+                out << "0\n";
+                out << "69\n";
+            }
+        }
 
     }
 
@@ -492,9 +571,11 @@ void ComDeviceList::LoadLightGunList()
     quint16 tempComPortFlow;
     quint16 tempMaxAmmo;
     quint16 tempReloadValue;
+    bool tempMaxAmmoSet;
+    bool tempReloadValueSet;
     QString line, cmpLine;
-    bool dipSet;
-    quint8 dipNumber;
+    bool dipSet, analSet;
+    quint8 dipNumber, analNumber;
 
     QFile loadLGData(lightGunsSaveFile);
 
@@ -595,13 +676,30 @@ void ComDeviceList::LoadLightGunList()
         if(tempIsDefaultGun && tempDefaultGunNum==RS3_REAPER)
         {
             line = in.readLine();
+
+            if(line == "1")
+                tempMaxAmmoSet = true;
+            else
+                tempMaxAmmoSet = false;
+
+            line = in.readLine();
             tempMaxAmmo = line.toUInt ();
+
+            line = in.readLine();
+
+            if(line == "1")
+                tempReloadValueSet = true;
+            else
+                tempReloadValueSet = false;
 
             line = in.readLine();
             tempReloadValue = line.toUInt ();
 
-            AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, tempMaxAmmo, tempReloadValue);
 
+            if(tempMaxAmmoSet && tempReloadValueSet)
+                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, tempMaxAmmo, tempReloadValue);
+            else
+                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
         }
         else if(tempIsDefaultGun && tempDefaultGunNum==MX24)
         {
@@ -614,7 +712,33 @@ void ComDeviceList::LoadLightGunList()
             line = in.readLine();
             dipNumber = line.toUInt ();
 
+            if(dipSet)
+                usedDipPlayers[dipNumber] = true;
+
             AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, dipSet, dipNumber);
+        }
+        else if(tempIsDefaultGun && tempDefaultGunNum==JBGUN4IR)
+        {
+            //Is Analog Strength Set
+            line = in.readLine();
+            if(line == "0")
+                analSet = false;
+            else
+                analSet = true;
+
+            //Analog Strength, If Set Above
+            line = in.readLine();
+
+            if(analSet)
+            {
+                analNumber = line.toUInt ();
+                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, analNumber);
+            }
+            else
+            {
+                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
+            }
+
         }
         else
         {
@@ -1047,7 +1171,13 @@ void ComDeviceList::SetRefreshTimeDisplay(quint32 rtDisplay)
 }
 
 
-
+void ComDeviceList::CopyUsedDipPlayersArray(bool *targetArray, quint8 size)
+{
+    for (quint8 i = 0; i < size; i++)
+    {
+        *(targetArray + i) = *(usedDipPlayers + i);
+    }
+}
 
 
 

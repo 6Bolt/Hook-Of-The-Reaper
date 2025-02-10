@@ -15,11 +15,17 @@ class LightGun
 {
 public:
     //Constructors
-    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber);
-    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow);
-    LightGun(LightGun const &lgMember);
-    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber);
 
+    //RS3 Reaper
+    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber);
+    //Normal Light Gun
+    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow);
+    //Copy Light Gun
+    LightGun(LightGun const &lgMember);
+    //MX24
+    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber);
+    //JB Gun4IR
+    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength);
 
     //Set Functions that Sets the Stated Variable
     void SetDefaultLightGun(bool lgDefault);
@@ -37,6 +43,7 @@ public:
     void SetMaxAmmo(quint16 maNumber);
     void SetReloadValue(quint16 rvNumber);
     void SetDipSwitchPlayerNumber(quint8 dsNumber);
+    void SetAnalogStrength(quint8 analStrength);
 
     //Get Functions that Gets the Stated Variable
     bool GetDefaultLightGun();
@@ -53,7 +60,13 @@ public:
     quint8 GetComPortFlow();
     quint16 GetMaxAmmo();
     quint16 GetReloadValue();
-    quint8 GetDipSwitchPlayerNumber(bool &isSet);
+    quint8 GetDipSwitchPlayerNumber(bool *isSet);
+    quint8 GetDipSwitchPlayerNumber();
+    bool GetIsDipSwitchPlayerNumberSet();
+    quint8 GetAnalogStrength(bool *isSet);
+    quint8 GetAnalogStrength();
+    bool GetIsAnalogStrengthSet();
+
 
     //If a Default Light Gun, is Needed Varibles Set
     bool IsMaxAmmoSet();
@@ -95,10 +108,19 @@ private:
     //Default Light Gun
     bool                defaultLightGun;
     quint8              defaultLightGunNum;
+
+    //RS3 Reaper
     quint16             maxAmmo;
     quint16             reloadValue;
     bool                maxAmmoSet;
     bool                reloadValueSet;
+    //MX24
+    quint8              dipSwitchPlayerNumber;
+    bool                isDipSwitchPlayerNumberSet;
+    //JB Gun4IR
+    quint8              analogStrength;
+    bool                isAnalogStrengthSet;
+
 
     //Light Gun Name & Number
     quint8              lightGunNum;
@@ -114,8 +136,7 @@ private:
     quint8              comPortStopBits;
     quint8              comPortFlow;
 
-    quint8              dipSwitchPlayerNumber;
-    bool                isDipSwitchPlayerNumberSet;
+
 
     QString             currentPath;
     QString             dataPath;

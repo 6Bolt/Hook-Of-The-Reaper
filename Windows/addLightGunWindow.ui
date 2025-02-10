@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>667</width>
-    <height>489</height>
+    <height>517</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -147,6 +147,11 @@
      <width>71</width>
      <height>22</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
    </property>
   </widget>
   <widget class="QLabel" name="label_5">
@@ -321,7 +326,7 @@
    <property name="geometry">
     <rect>
      <x>590</x>
-     <y>460</y>
+     <y>490</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -337,7 +342,7 @@
    <property name="geometry">
     <rect>
      <x>510</x>
-     <y>460</y>
+     <y>490</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -353,7 +358,7 @@
    <property name="geometry">
     <rect>
      <x>430</x>
-     <y>460</y>
+     <y>490</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -572,6 +577,11 @@
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
    <property name="alignment">
     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
    </property>
@@ -620,6 +630,68 @@
      <width>51</width>
      <height>24</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_11">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>430</y>
+     <width>121</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Analog Strength:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="analogLineEdit">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>440</y>
+     <width>51</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_12">
+   <property name="geometry">
+    <rect>
+     <x>190</x>
+     <y>430</y>
+     <width>51</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>0-255</string>
    </property>
   </widget>
  </widget>

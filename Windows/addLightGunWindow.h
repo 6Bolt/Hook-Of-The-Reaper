@@ -100,6 +100,9 @@ private:
     //Lists Used for the Combo Boxes
     bool                    unusedComPort[MAXCOMPORTS];
 
+    //Dip Switch PLayers
+    bool                    usedDipPlayers[DIPSWITCH_NUMBER];
+
 };
 
 #endif // ADDLIGHTGUNWINDOW_H

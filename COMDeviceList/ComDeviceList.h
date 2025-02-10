@@ -24,10 +24,16 @@ public:
     ~ComDeviceList();
 
     //Adds a Light Gun In the List
+    //Copy Light Gun
     void            AddLightGun(LightGun const &lgMember);
+    //For RS3 Reaper
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint16 maNumber, quint16 rvNumber);
+    //Normal Light Gun
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow);
+    //For MX24 Light Gun
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber);
+    //For JB Gun4IR Light Gun
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint8 analStrength);
 
     //Adds a COM Device in the List
     void            AddComPortDevice(ComPortDevice const &cpdMember);
@@ -77,7 +83,8 @@ public:
     quint32         GetRefreshTimeDisplay();
     void            SetRefreshTimeDisplay(quint32 rtDisplay);
 
-
+    //Copies Used Dip Players Array
+    void            CopyUsedDipPlayersArray(bool *targetArray, quint8 size);
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -87,6 +94,9 @@ public:
     //COM Devices List
     ComPortDevice*      p_comPortDeviceList[MAXCOMPORTS];
 
+    //Available Dip Switch Players for MX24
+    bool                usedDipPlayers[DIPSWITCH_NUMBER];
+
 
 private:
 
@@ -94,6 +104,8 @@ private:
 
     //Available Serial COM Ports
     bool                availableComPorts[MAXCOMPORTS];
+
+
 
     //Number of Light Guns & COM Devices
     quint8              numberLightGuns;

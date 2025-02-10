@@ -15,9 +15,13 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     //Fixes the Size of the Window, so it Cannot Be Expanded
     this->setFixedSize(this->size());
 
-    //Move Over the ComDevice List and Get a Copy of the Unused COM Ports
+    //Move Over the ComDevice List and Get a Copy of the Unused COM Ports & Used Dip Players
     p_comDeviceList = cdList;
     p_comDeviceList->CopyAvailableComPortsArray(unusedComPort, MAXCOMPORTS);
+    p_comDeviceList->CopyUsedDipPlayersArray(usedDipPlayers, DIPSWITCH_NUMBER);
+
+    //Set Mask for Analog Strength
+    ui->analogLineEdit->setInputMask (ANALOGSTRENGTHMASK);
 
     //Load First Combo Box with the Saved Light Guns; Number, Name, and COM Port
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();
@@ -39,39 +43,70 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     ui->defaultLightGunComboBox->insertItem(0,"");
     ui->defaultLightGunComboBox->insertItem(RS3_REAPER,REAPERNAME);
     ui->defaultLightGunComboBox->insertItem(MX24,MX24NAME);
-
-    //Add P1-P4 to Dip Swich Combo Box
-    for(quint8 comPortIndx=0;comPortIndx<DIPSWITCH_NUMBER;comPortIndx++)
-    {
-        tempQS = "P"+QString::number(comPortIndx+1);
-        ui->dipSwitchComboBox->insertItem (comPortIndx,tempQS);
-    }
+    ui->defaultLightGunComboBox->insertItem(JBGUN4IR,JBGUN4IRNAME);
 
     //Check if the First Light Gun is a Default Light Gun
-    if(p_comDeviceList->p_lightGunList[0]->GetDefaultLightGun())
+    defaultLightGun = p_comDeviceList->p_lightGunList[0]->GetDefaultLightGun();
+
+    if(defaultLightGun)
     {
         defaultLightGunNum = p_comDeviceList->p_lightGunList[0]->GetDefaultLightGunNumber();
-        ui->defaultLightGunComboBox->setCurrentIndex (defaultLightGunNum);
-        defaultLightGun = true;
-        SetEnableComboBoxes(false);
-        if(defaultLightGunNum == 2)
+
+        if(defaultLightGunNum == MX24)
         {
-            ui->dipSwitchComboBox->setEnabled(true);
-            dipSwitchNumber = p_comDeviceList->p_lightGunList[0]->GetDipSwitchPlayerNumber (dipSwitchSet);
+            dipSwitchNumber = p_comDeviceList->p_lightGunList[0]->GetDipSwitchPlayerNumber (&dipSwitchSet);
+            if(!dipSwitchSet)
+                dipSwitchNumber = UNASSIGN;
+        }
+    }
+
+    ui->dipSwitchComboBox->setEnabled(true);
+
+    for(quint8 comPortIndx=0;comPortIndx<DIPSWITCH_NUMBER;comPortIndx++)
+    {
+        if(usedDipPlayers[comPortIndx] && dipSwitchNumber != comPortIndx)
+            tempQS = "";
+        else
+            tempQS = "P"+QString::number(comPortIndx+1);
+        ui->dipSwitchComboBox->insertItem(comPortIndx,tempQS);
+    }
+
+
+
+
+    if(defaultLightGun)
+    {
+
+        ui->defaultLightGunComboBox->setCurrentIndex (defaultLightGunNum);
+        SetEnableComboBoxes(false);
+        if(defaultLightGunNum == MX24)
+        {
             ui->dipSwitchComboBox->setCurrentIndex(dipSwitchNumber);
+            ui->analogLineEdit->setEnabled(false);
+        }
+        else if(defaultLightGunNum == JBGUN4IR)
+        {
+            ui->dipSwitchComboBox->setEnabled(false);
+            ui->analogLineEdit->setEnabled(true);
+            analogStrength = p_comDeviceList->p_lightGunList[0]->GetAnalogStrength (&analogStrengthSet);
+            if(analogStrengthSet)
+                ui->analogLineEdit->setText(QString::number (analogStrength));
         }
         else
         {
             ui->dipSwitchComboBox->setEnabled(false);
+            ui->analogLineEdit->setEnabled(false);
+            dipSwitchNumber = UNASSIGN;
+            analogStrength = UNASSIGN;
         }
     }
     else
     {
         ui->defaultLightGunComboBox->setCurrentIndex(0);
-        defaultLightGun = false;
         defaultLightGunNum = 0;
         SetEnableComboBoxes(true);
         ui->dipSwitchComboBox->setEnabled(false);
+        ui->analogLineEdit->setEnabled(false);
     }
 
 
@@ -189,12 +224,18 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
             ui->dipSwitchComboBox->setEnabled(true);
         else
             ui->dipSwitchComboBox->setEnabled(false);
+
+        if(index == JBGUN4IR)
+            ui->analogLineEdit->setEnabled(true);
+        else
+            ui->analogLineEdit->setEnabled(false);
     }
     else
     {
         //Enable Combo Boxes Affect by Default Light Gun
         SetEnableComboBoxes(true);
         ui->dipSwitchComboBox->setEnabled(false);
+        ui->analogLineEdit->setEnabled(false);
     }
 }
 
@@ -338,9 +379,14 @@ bool editLightGunWindow::IsValidData()
     bool lgnIsEmpty = false;
     bool comPortNumEmpty = false;
     bool unusedName = false;
+    bool analNotNumber = false;
+    bool analNotRange = false;
+    bool badDipIndex = false;
     quint8 numLightGuns = p_comDeviceList->GetNumberLightGuns();
     quint8 i;
     quint8 currentIndex = ui->savedLightGunsComboBox->currentIndex ();
+    quint8 defaultLGIndex = ui->defaultLightGunComboBox->currentIndex ();
+
 
     //Check If Light Gun Name Line Edit Box is Empty
     ivTemp = ui->lightGunNameLineEdit->text();
@@ -366,11 +412,32 @@ bool editLightGunWindow::IsValidData()
     if(ivTemp.isEmpty ())
         comPortNumEmpty = true;
 
+    if(defaultLGIndex == MX24)
+    {
+        ivTemp = ui->dipSwitchComboBox->currentText ();
+        if(ivTemp.isEmpty ())
+            badDipIndex = true;
+    }
+
+    if(defaultLGIndex == JBGUN4IR)
+    {
+        bool isNumber;
+        QString analString = ui->analogLineEdit->text();
+        quint16 analStrengthBig = analString.toUInt (&isNumber);
+        if(!isNumber)
+            analNotNumber = true;
+        else
+        {
+            if(analStrengthBig < 0 || analStrengthBig > 255)
+                analNotRange = true;
+        }
+    }
+
 
 
     //Check All the bools, If They are false, data is good and return true.
     //If false, then make a Warning string, and Pop Up a Warning Message Box on What is Wrong and return false
-    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false)
+    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false)
     {
         return true;
     }
@@ -382,6 +449,12 @@ bool editLightGunWindow::IsValidData()
             message.append ("COM Port is empty. Please select a valid COM Port. ");
         if(unusedName == true)
             message.append ("Light gun name is already used. Please pick a different name.");
+        if(badDipIndex == true)
+            message.append ("A Used Dip Switch Player has been selected. Please change to a valid Dip Switch Player.");
+        if(analNotNumber == true)
+            message.append ("Analog Strength is not a number.");
+        if(analNotRange == true)
+            message.append ("Analog Strength is out of range. Needs to be 0-255");
 
         QMessageBox::warning (this, "Can Not Edit Light Gun", message);
 
@@ -408,10 +481,11 @@ bool editLightGunWindow::IsDefaultLightGun()
         defaultLightGun = true;
         defaultLightGunNum = dlgIndex;
 
+        //Went to Not a DefaultLG to a DefaultLG
         if(oldDefaultLightGun != defaultLightGun)
             defaultLightGunNumChanged = true;
         else
-        {
+        {   //If Both are DefaultLG, then check number change
             if(oldDefaultLightGun)
             {
                 if(oldDefaultLightGunNum != defaultLightGunNum)
@@ -479,7 +553,25 @@ void editLightGunWindow::EditLightGun()
     else if(defaultLightGun && defaultLightGunNum == MX24)
     {
         dipSwitchNumber = ui->dipSwitchComboBox->currentIndex ();
+
+        bool isSet;
+        quint8 oldDipNumber = p_comDeviceList->p_lightGunList[lightGunNum]->GetDipSwitchPlayerNumber (&isSet);
+
+        //Check if Number Changed
+        if(oldDipNumber != dipSwitchNumber && isSet)
+        {
+            p_comDeviceList->usedDipPlayers[oldDipNumber] = false;
+            usedDipPlayers[oldDipNumber] = false;
+        }
+
         p_comDeviceList->p_lightGunList[lightGunNum]->SetDipSwitchPlayerNumber (dipSwitchNumber);
+        p_comDeviceList->usedDipPlayers[dipSwitchNumber] = true;
+        usedDipPlayers[dipSwitchNumber] = true;
+    }
+    else if(defaultLightGun && defaultLightGunNum == JBGUN4IR)
+    {
+        QString analString = ui->analogLineEdit->text();
+        quint8 analStrength = analString.toUInt ();
     }
 
     //Now a Default Light Gun or Default Light Number Changed
@@ -593,12 +685,15 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
 {
     QString tempQS;
 
-    //Move Over a Clean Copy of the Unused COM Port Array
+    //Move Over a Clean Copy of the Unused COM Port Array & Used Dip Switch Players
     p_comDeviceList->CopyAvailableComPortsArray(unusedComPort, MAXCOMPORTS);
+    p_comDeviceList->CopyUsedDipPlayersArray(usedDipPlayers, DIPSWITCH_NUMBER);
 
     //Put the Name of the Selected Light Gun into the Light Gun Name Line Edit
     lightGunName = p_comDeviceList->p_lightGunList[index]->GetLightGunName ();
     ui->lightGunNameLineEdit->setText (lightGunName);
+
+
 
 
     //Check if the Light Gun is a Default Light Gun
@@ -609,15 +704,31 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
         defaultLightGun = true;
         SetEnableComboBoxes(false);
 
-        if(defaultLightGunNum == 2)
+        if(defaultLightGunNum == MX24)
         {
+            ui->analogLineEdit->clear();
+            ui->analogLineEdit->setEnabled(false);
             ui->dipSwitchComboBox->setEnabled(true);
-            dipSwitchNumber = p_comDeviceList->p_lightGunList[0]->GetDipSwitchPlayerNumber (dipSwitchSet);
-            ui->dipSwitchComboBox->setCurrentIndex(dipSwitchNumber);
+            dipSwitchNumber = p_comDeviceList->p_lightGunList[index]->GetDipSwitchPlayerNumber (&dipSwitchSet);
+            if(!dipSwitchSet)
+                dipSwitchNumber = UNASSIGN;
+            else
+                ui->dipSwitchComboBox->setCurrentIndex(dipSwitchNumber);
+
+        }
+        else if(defaultLightGunNum == JBGUN4IR)
+        {
+            ui->dipSwitchComboBox->setEnabled(false);
+            ui->analogLineEdit->setEnabled(true);
+            analogStrength = p_comDeviceList->p_lightGunList[index]->GetAnalogStrength (&analogStrengthSet);
+            if(analogStrengthSet)
+                ui->analogLineEdit->setText(QString::number (analogStrength));
         }
         else
         {
+            ui->analogLineEdit->clear();
             ui->dipSwitchComboBox->setEnabled(false);
+            ui->analogLineEdit->setEnabled(false);
         }
     }
     else
@@ -626,9 +737,21 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
         defaultLightGun = false;
         defaultLightGunNum = 0;
         SetEnableComboBoxes(true);
+        ui->analogLineEdit->clear();
         ui->dipSwitchComboBox->setEnabled(false);
-
+        ui->analogLineEdit->setEnabled(false);
     }
+
+
+    for(quint8 comPortIndx=0;comPortIndx<DIPSWITCH_NUMBER;comPortIndx++)
+    {
+        if(usedDipPlayers[comPortIndx] && dipSwitchNumber != comPortIndx)
+            tempQS = "";
+        else
+            tempQS = "P"+QString::number(comPortIndx+1);
+        ui->dipSwitchComboBox->setItemText(comPortIndx,tempQS);
+    }
+
 
     //COM Port Combo Box - List Unused COM Port and Select Light Gun COM Port
     comPortName = p_comDeviceList->p_lightGunList[index]->GetComPortString();

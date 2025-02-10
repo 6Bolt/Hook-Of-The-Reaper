@@ -86,46 +86,51 @@ private:
     ///////////////////////////////////////////////////////////////////////////
 
     //For Window
-    Ui::editLightGunWindow *ui;
+    Ui::editLightGunWindow  *ui;
 
     //ComDeviceList to Add the Light Gun Too. Do Not Delete!
-    ComDeviceList *p_comDeviceList;
+    ComDeviceList           *p_comDeviceList;
 
     //Temp Pointers to Add Data. Delete if not Set to nullptr
-    QSerialPortInfo *p_comPortInfo = nullptr;
+    QSerialPortInfo         *p_comPortInfo = nullptr;
 
     //Light Gun Data
-    bool defaultLightGun;
-    quint8 defaultLightGunNum;
-    QString lightGunName;
-    quint8 lightGunNum;
-    quint8 comPortNum;
-    QString comPortName;
-    qint32 comPortBaud;
-    quint8 comPortDataBits;
-    quint8 comPortParity;
-    quint8 comPortStopBits;
-    quint8 comPortFlow;
-    quint8 maxAmmoNum;
-    quint8 reloadValueNum;
-    bool dipSwitchSet;
-    quint8 dipSwitchNumber;
-    bool defaultLightGunNumChanged;
-    quint8 oldDefaultLightGunNum;
-    bool oldDefaultLightGun;
+    bool                    defaultLightGun;
+    quint8                  defaultLightGunNum;
+    QString                 lightGunName;
+    quint8                  lightGunNum;
+    quint8                  comPortNum;
+    QString                 comPortName;
+    qint32                  comPortBaud;
+    quint8                  comPortDataBits;
+    quint8                  comPortParity;
+    quint8                  comPortStopBits;
+    quint8                  comPortFlow;
+    quint8                  maxAmmoNum;
+    quint8                  reloadValueNum;
+    bool                    dipSwitchSet;
+    quint8                  dipSwitchNumber;
+    bool                    analogStrengthSet;
+    quint8                  analogStrength;
+    bool                    defaultLightGunNumChanged;
+    quint8                  oldDefaultLightGunNum;
+    bool                    oldDefaultLightGun;
 
     //Number of Light Gun in the List
-    quint8 numberLightGuns;
+    quint8                  numberLightGuns;
 
     //Lists Used for the Combo Boxes
-    bool unusedComPort[MAXCOMPORTS];
+    bool                    unusedComPort[MAXCOMPORTS];
+
+    //Dip Switch PLayers
+    bool                    usedDipPlayers[DIPSWITCH_NUMBER];
 
     //Records the Combo Boxes Index
-    quint8 baudIndex;
-    quint8 dataBitsIndex;
-    quint8 parityIndex;
-    quint8 stopBitsIndex;
-    quint8 flowIndex;
+    quint8                  baudIndex;
+    quint8                  dataBitsIndex;
+    quint8                  parityIndex;
+    quint8                  stopBitsIndex;
+    quint8                  flowIndex;
 
 
 };

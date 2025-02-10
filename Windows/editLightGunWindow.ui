@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>616</width>
-    <height>508</height>
+    <height>539</height>
    </rect>
   </property>
   <property name="font">
@@ -295,7 +295,7 @@
    <property name="geometry">
     <rect>
      <x>540</x>
-     <y>480</y>
+     <y>510</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -316,7 +316,7 @@
    <property name="geometry">
     <rect>
      <x>460</x>
-     <y>480</y>
+     <y>510</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -337,7 +337,7 @@
    <property name="geometry">
     <rect>
      <x>380</x>
-     <y>480</y>
+     <y>510</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -587,7 +587,7 @@
    <property name="geometry">
     <rect>
      <x>300</x>
-     <y>480</y>
+     <y>510</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -633,6 +633,63 @@
      <width>51</width>
      <height>24</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_11">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>450</y>
+     <width>121</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Analog Strength:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="analogLineEdit">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>460</y>
+     <width>51</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_12">
+   <property name="geometry">
+    <rect>
+     <x>190</x>
+     <y>450</y>
+     <width>51</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>0-255</string>
    </property>
   </widget>
  </widget>
