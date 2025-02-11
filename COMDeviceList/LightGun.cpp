@@ -35,6 +35,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     analogStrength = DEFAULTANALOGSTRENGTH;
     isAnalogStrengthSet = false;
 
+    hubComPortNumber = UNASSIGN;
 
     LoadDefaultLGCommands();
 
@@ -83,6 +84,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     }
 
     isDipSwitchPlayerNumberSet = false;
+    hubComPortNumber = UNASSIGN;
 
     analogStrength = DEFAULTANALOGSTRENGTH;
     isAnalogStrengthSet = false;
@@ -150,6 +152,8 @@ LightGun::LightGun(LightGun const &lgMember)
     else
         isDipSwitchPlayerNumberSet = false;
 
+    hubComPortNumber = lgMember.hubComPortNumber;
+
     if(lgMember.isAnalogStrengthSet)
     {
         analogStrength = lgMember.analogStrength;
@@ -167,7 +171,7 @@ LightGun::LightGun(LightGun const &lgMember)
 }
 
 //For MX24 Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber)
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -190,6 +194,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isDipSwitchPlayerNumberSet = dipSwitchSet;
     dipSwitchPlayerNumber = dipSwitchNumber;
 
+    hubComPortNumber = hubcpNumber;
 
     if(defaultLightGun)
     {
@@ -243,6 +248,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     //For MX24
     isDipSwitchPlayerNumberSet = false;
+    hubComPortNumber = UNASSIGN;
 
 
     //For RS3 Reaper
@@ -362,6 +368,11 @@ void LightGun::SetAnalogStrength(quint8 analStrength)
     isAnalogStrengthSet = true;
 }
 
+void LightGun::SetHubComPortNumber(quint8 hcpNumber)
+{
+    hubComPortNumber = hcpNumber;
+}
+
 //Get Member Functions
 
 bool LightGun::GetDefaultLightGun()
@@ -385,6 +396,14 @@ quint8 LightGun::GetLightGunNumber()
 }
 
 quint8 LightGun::GetComPortNumber()
+{
+    if(defaultLightGun && defaultLightGunNum == MX24)
+        return hubComPortNumber;
+
+    return comPortNum;
+}
+
+quint8 LightGun::GetComPortNumberBypass()
 {
     return comPortNum;
 }
@@ -433,8 +452,6 @@ quint16 LightGun::GetReloadValue()
 {
     return reloadValue;
 }
-
-
 
 bool LightGun::IsMaxAmmoSet()
 {
@@ -498,6 +515,11 @@ quint8 LightGun::GetAnalogStrength()
 bool LightGun::GetIsAnalogStrengthSet()
 {
     return isAnalogStrengthSet;
+}
+
+quint8 LightGun::GetHubComPortNumber()
+{
+    return hubComPortNumber;
 }
 
 void LightGun::CopyLightGun(LightGun const &lgMember)

@@ -149,7 +149,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Close Serial COM Port on Game Exit. Un-check, leaves it open.</string>
+    <string>Close Serial COM Port on Game Exit. Un-check, Leaves it Open.</string>
    </property>
   </widget>
  </widget>

@@ -152,11 +152,11 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
 }
 
 //For MX24 Light Gun
-void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber)
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hcpNum)
 {
     quint8 usedComPortNum;
 
-    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, dipSwitchSet, dipSwitchNumber);
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, dipSwitchSet, dipSwitchNumber, hcpNum);
 
     usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumber ();
     availableComPorts[usedComPortNum] = false;
@@ -515,6 +515,8 @@ void ComDeviceList::SaveLightGunList()
                 out << "0\n";
                 out << "69\n";
             }
+
+            out << p_lightGunList[i]->GetHubComPortNumber ();
         }
         else if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == JBGUN4IR)
         {
@@ -575,7 +577,7 @@ void ComDeviceList::LoadLightGunList()
     bool tempReloadValueSet;
     QString line, cmpLine;
     bool dipSet, analSet;
-    quint8 dipNumber, analNumber;
+    quint8 dipNumber, analNumber, hcpNumber;
 
     QFile loadLGData(lightGunsSaveFile);
 
@@ -715,7 +717,10 @@ void ComDeviceList::LoadLightGunList()
             if(dipSet)
                 usedDipPlayers[dipNumber] = true;
 
-            AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, dipSet, dipNumber);
+            line = in.readLine();
+            hcpNumber = line.toUInt ();
+
+            AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, dipSet, dipNumber, hcpNumber);
         }
         else if(tempIsDefaultGun && tempDefaultGunNum==JBGUN4IR)
         {

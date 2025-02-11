@@ -628,7 +628,7 @@
      <x>140</x>
      <y>400</y>
      <width>51</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
    <property name="font">
@@ -692,6 +692,39 @@
    </property>
    <property name="text">
     <string>0-255</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_20">
+   <property name="geometry">
+    <rect>
+     <x>210</x>
+     <y>390</y>
+     <width>111</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Hub COM Port:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="hubComComboBox">
+   <property name="geometry">
+    <rect>
+     <x>320</x>
+     <y>400</y>
+     <width>81</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
    </property>
   </widget>
  </widget>

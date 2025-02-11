@@ -112,6 +112,7 @@ private:
     quint8                  dipSwitchNumber;
     bool                    analogStrengthSet;
     quint8                  analogStrength;
+    quint8                  hubComPortNumber;
     bool                    defaultLightGunNumChanged;
     quint8                  oldDefaultLightGunNum;
     bool                    oldDefaultLightGun;

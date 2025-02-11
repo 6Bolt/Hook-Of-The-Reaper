@@ -23,7 +23,7 @@ public:
     //Copy Light Gun
     LightGun(LightGun const &lgMember);
     //MX24
-    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber);
+    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber);
     //JB Gun4IR
     LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength);
 
@@ -44,6 +44,7 @@ public:
     void SetReloadValue(quint16 rvNumber);
     void SetDipSwitchPlayerNumber(quint8 dsNumber);
     void SetAnalogStrength(quint8 analStrength);
+    void SetHubComPortNumber(quint8 hcpNumber);
 
     //Get Functions that Gets the Stated Variable
     bool GetDefaultLightGun();
@@ -51,6 +52,7 @@ public:
     QString GetLightGunName();
     quint8 GetLightGunNumber();
     quint8 GetComPortNumber();
+    quint8 GetComPortNumberBypass();
     QString GetComPortString();
     QSerialPortInfo GetComPortInfo();
     qint32 GetComPortBaud();
@@ -66,6 +68,7 @@ public:
     quint8 GetAnalogStrength(bool *isSet);
     quint8 GetAnalogStrength();
     bool GetIsAnalogStrengthSet();
+    quint8 GetHubComPortNumber();
 
 
     //If a Default Light Gun, is Needed Varibles Set
@@ -117,6 +120,7 @@ private:
     //MX24
     quint8              dipSwitchPlayerNumber;
     bool                isDipSwitchPlayerNumberSet;
+    quint8              hubComPortNumber;
     //JB Gun4IR
     quint8              analogStrength;
     bool                isAnalogStrengthSet;
