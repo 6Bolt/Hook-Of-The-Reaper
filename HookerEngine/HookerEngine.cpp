@@ -106,6 +106,7 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     useDefaultLGFirst = p_comDeviceList->GetUseDefaultLGFirst ();
     useMultiThreading = p_comDeviceList->GetUseMultiThreading ();
     refreshTimeDisplay = p_comDeviceList->GetRefreshTimeDisplay ();
+    closeComPortGameExit = p_comDeviceList->GetCloseComPortGameExit ();
 
     //Set-Up Refresh Display Timer
     p_refreshDisplayTimer = new QTimer(this);
@@ -1761,7 +1762,8 @@ void HookerEngine::OpenINIComPort(quint8 cpNum)
 
 void HookerEngine::CloseINIComPort(quint8 cpNum)
 {
-    emit StopComPort(cpNum);
+    if(closeComPortGameExit)
+        emit StopComPort(cpNum);
 }
 
 void HookerEngine::ReadINIComPort(quint8 cpNum, QByteArray readData, quint8 bfNum, quint16 lengthNum)
@@ -2536,7 +2538,8 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
             }
 
             //Closes The COM Port
-            emit StopComPort(tempCPNum);
+            if(closeComPortGameExit)
+                emit StopComPort(tempCPNum);
 
         }
     }

@@ -314,6 +314,9 @@ private:
     //Settings used in Hooker Engine
     bool                            useDefaultLGFirst;
     bool                            useMultiThreading;
+    //Refresh time in msec
+    quint32                         refreshTimeDisplay;
+    bool                            closeComPortGameExit;
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -323,9 +326,6 @@ private:
     //QMaps to Hold the Signals and Data
     QMap<QString,QString>           addSignalDataDisplay;
     QMap<QString,QString>           updateSignalDataDisplay;
-    //Refresh time in msec
-    quint32                         refreshTimeDisplay;
-
 
     bool                            displayMB;
 

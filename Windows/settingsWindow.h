@@ -31,6 +31,8 @@ private slots:
 
 private:
 
+    //Check the Setting and then Save Them
+    void CheckAndSaveSetting();
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -43,10 +45,12 @@ private:
     //Two Settings
     bool                useDefaultLGFirst;
     bool                useMultiThreading;
+    bool                closeComPortGameExit;
 
     //For Check Boxes
     Qt::CheckState      defaultLG;
     Qt::CheckState      multiThreading;
+    Qt::CheckState      closeComPort;
 
     //Refresh Time in Number and String
     quint32             refreshDisplayTime;

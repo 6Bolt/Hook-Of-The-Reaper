@@ -44,6 +44,18 @@ settingsWindow::settingsWindow(ComDeviceList *cdList, QWidget *parent)
     //Display
     ui->refreshDisplayLineEdit->setText (refreshDisplayTimeString);
 
+    //Get Fourth Setting
+    closeComPortGameExit = p_comDeviceList->GetCloseComPortGameExit ();
+
+    //If Set. then Check the Box
+    if(closeComPortGameExit)
+        ui->closeComCheckBox->setCheckState (Qt::Checked);
+    else
+        ui->closeComCheckBox->setCheckState (Qt::Unchecked);
+
+
+
+
 }
 
 //Deconstructor
@@ -58,74 +70,13 @@ settingsWindow::~settingsWindow()
 //Collect Display Data, and then Save Data to List
 void settingsWindow::on_updatePushButton_clicked()
 {
-    QString tempRTD;
-    bool isNumber;
-
-    defaultLG = ui->useDefaultLGCheckBox->checkState ();
-    multiThreading = ui->useMultiThreadCheckBox->checkState ();
-
-    if(defaultLG == Qt::Checked)
-        useDefaultLGFirst = true;
-    else
-        useDefaultLGFirst = false;
-
-
-    if(multiThreading == Qt::Checked)
-        useMultiThreading = true;
-    else
-        useMultiThreading = false;
-
-
-    tempRTD = ui->refreshDisplayLineEdit->text ();
-    refreshDisplayTime = tempRTD.toUInt (&isNumber);
-
-
-    p_comDeviceList->SetUseDefaultLGFirst(useDefaultLGFirst);
-    p_comDeviceList->SetUseMultiThreading (useMultiThreading);
-
-    if(isNumber)
-    {
-        p_comDeviceList->SetRefreshTimeDisplay(refreshDisplayTime);
-        refreshDisplayTimeString = QString::number (refreshDisplayTime);
-    }
-
-    p_comDeviceList->SaveSettings();
-
+    CheckAndSaveSetting();
 }
 
 //Collect Display Data, and then Save Data to List, and Then Close Window
 void settingsWindow::on_okPushButton_clicked()
 {
-    QString tempRTD;
-    bool isNumber;
-
-    defaultLG = ui->useDefaultLGCheckBox->checkState ();
-    multiThreading = ui->useMultiThreadCheckBox->checkState ();
-
-    if(defaultLG == Qt::Checked)
-        useDefaultLGFirst = true;
-    else
-        useDefaultLGFirst = false;
-
-
-    if(multiThreading == Qt::Checked)
-        useMultiThreading = true;
-    else
-        useMultiThreading = false;
-
-    tempRTD = ui->refreshDisplayLineEdit->text ();
-    refreshDisplayTime = tempRTD.toUInt (&isNumber);
-
-    p_comDeviceList->SetUseDefaultLGFirst(useDefaultLGFirst);
-    p_comDeviceList->SetUseMultiThreading (useMultiThreading);
-
-    if(isNumber)
-    {
-        p_comDeviceList->SetRefreshTimeDisplay(refreshDisplayTime);
-        refreshDisplayTimeString = QString::number (refreshDisplayTime);
-    }
-
-    p_comDeviceList->SaveSettings();
+    CheckAndSaveSetting();
 
     //Close Dialog Window using accept
     accept();
@@ -136,5 +87,48 @@ void settingsWindow::on_cancelPushButton_clicked()
 {
     //Close Dialog Window using accept
     accept();
+}
+
+void settingsWindow::CheckAndSaveSetting()
+{
+    QString tempRTD;
+    bool isNumber;
+
+    defaultLG = ui->useDefaultLGCheckBox->checkState ();
+    multiThreading = ui->useMultiThreadCheckBox->checkState ();
+    closeComPort = ui->closeComCheckBox->checkState ();
+
+    if(defaultLG == Qt::Checked)
+        useDefaultLGFirst = true;
+    else
+        useDefaultLGFirst = false;
+
+
+    if(multiThreading == Qt::Checked)
+        useMultiThreading = true;
+    else
+        useMultiThreading = false;
+
+    if(closeComPort == Qt::Checked)
+        closeComPortGameExit = true;
+    else
+        closeComPortGameExit = false;
+
+
+    tempRTD = ui->refreshDisplayLineEdit->text ();
+    refreshDisplayTime = tempRTD.toUInt (&isNumber);
+
+
+    p_comDeviceList->SetUseDefaultLGFirst(useDefaultLGFirst);
+    p_comDeviceList->SetUseMultiThreading (useMultiThreading);
+    p_comDeviceList->SetCloseComPortGameExit (closeComPortGameExit);
+
+    if(isNumber)
+    {
+        p_comDeviceList->SetRefreshTimeDisplay(refreshDisplayTime);
+        refreshDisplayTimeString = QString::number (refreshDisplayTime);
+    }
+
+    p_comDeviceList->SaveSettings();
 }
 

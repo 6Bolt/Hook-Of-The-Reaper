@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>476</width>
+    <width>487</width>
     <height>300</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Settings</string>
   </property>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>456</width>
-     <height>85</height>
+     <width>458</width>
+     <height>89</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -61,12 +61,12 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>230</x>
      <y>270</y>
-     <width>239</width>
+     <width>254</width>
      <height>26</height>
     </rect>
    </property>
@@ -103,13 +103,13 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
      <y>100</y>
      <width>381</width>
-     <height>24</height>
+     <height>26</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -133,6 +133,24 @@
      </widget>
     </item>
    </layout>
+  </widget>
+  <widget class="QCheckBox" name="closeComCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>130</y>
+     <width>461</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Close Serial COM Port on Game Exit. Un-check, leaves it open.</string>
+   </property>
   </widget>
  </widget>
  <resources/>
