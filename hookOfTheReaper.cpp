@@ -507,8 +507,11 @@ void HookOfTheReaper::on_actionTest_defaultLG_Game_File_triggered()
 
             isGoodFile = p_hookEngine->LoadLGFileTest(fileNames[i]);
 
+            qint16 lastIndex = fileNames[i].lastIndexOf ('/');
+            QString fName = fileNames[i].sliced (lastIndex+1);
+
             if(isGoodFile)
-                QMessageBox::information (this, "DefaultLG Game File", "The DefaultLG game file passed the checks.\nFile: "+fileNames[i]);
+                QMessageBox::information (this, "DefaultLG Game File: "+fName, "The DefaultLG game file, "+fName+" passed the checks.\nFile: "+fileNames[i]);
         }
     }
     else
@@ -533,11 +536,15 @@ void HookOfTheReaper::on_actionTest_INI_Game_File_triggered()
 
         for(quint8 i = 0; i < fileCount; i++)
         {
+            qDebug() << "DefaultLG Game File: " << fileNames[i];
 
             isGoodFile = p_hookEngine->LoadINIFileTest(fileNames[i]);
 
+            qint16 lastIndex = fileNames[i].lastIndexOf ('/');
+            QString fName = fileNames[i].sliced (lastIndex+1);
+
             if(isGoodFile)
-                QMessageBox::information (this, "INI Game File", "The INI game file passed the checks.\nFile: "+fileNames[i]);
+                QMessageBox::information (this, "INI Game File: "+fName, "The INI game file, "+fName+" passed the checks.\nFile: "+fileNames[i]);
         }
     }
     else
