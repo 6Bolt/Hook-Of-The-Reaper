@@ -130,6 +130,9 @@ At the top of the file, it will start with 'Players' and then the next line is h
 | :P1_Damaged |      |
 | *P1 | Which is mapped to P3  |
 | >Damage | Send Damage CMDs to P3's Light Gun |
+| :P2_Ammo |        |
+| *P2 | Which is mapped to P4   |
+| >Ammo_Value | Send Ammo_Value to P4's Light Gun |
 
 
 # Current Default Light Gun Files Included

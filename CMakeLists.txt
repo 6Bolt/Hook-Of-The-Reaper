@@ -37,6 +37,7 @@ qt_add_executable(HookOfTheReaper
     Windows/testComPortWindow.h Windows/testComPortWindow.cpp Windows/testComPortWindow.ui
     data/jbgun4ir.hor
     data/nonDefaultLG.hor
+    README.md
 
 )
 
