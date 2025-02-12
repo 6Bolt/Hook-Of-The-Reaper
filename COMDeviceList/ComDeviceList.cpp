@@ -119,7 +119,7 @@ void ComDeviceList::AddLightGun(LightGun const &lgMember)
 
     p_lightGunList[numberLightGuns] = new LightGun(lgMember);
 
-    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumber ();
+    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumberBypass ();
     availableComPorts[usedComPortNum] = false;
 
     numberLightGuns++;
@@ -132,7 +132,7 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
 
     p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, maNumber, rvNumber);
 
-    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumber ();
+    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumberBypass ();
     availableComPorts[usedComPortNum] = false;
 
     numberLightGuns++;
@@ -145,7 +145,7 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
 
     p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow);
 
-    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumber ();
+    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumberBypass ();
     availableComPorts[usedComPortNum] = false;
 
     numberLightGuns++;
@@ -158,7 +158,7 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
 
     p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, dipSwitchSet, dipSwitchNumber, hcpNum);
 
-    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumber ();
+    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumberBypass ();
     availableComPorts[usedComPortNum] = false;
 
     if(dipSwitchSet)
@@ -174,7 +174,7 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
 
     p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, analStrength);
 
-    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumber ();
+    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumberBypass ();
     availableComPorts[usedComPortNum] = false;
 
     numberLightGuns++;
@@ -238,7 +238,7 @@ void ComDeviceList::DeleteLightGun(quint8 lgNumber)
     quint8 index;
     quint8 openComPort;
 
-    openComPort = p_lightGunList[lgNumber]->GetComPortNumber ();
+    openComPort = p_lightGunList[lgNumber]->GetComPortNumberBypass ();
     availableComPorts[openComPort] = true;
 
     //Check if it is MX24, for Used Dip Switch Player
@@ -465,7 +465,7 @@ void ComDeviceList::SaveLightGunList()
         }
 
         //COM Port Data
-        out << p_lightGunList[i]->GetComPortNumber() << "\n";
+        out << p_lightGunList[i]->GetComPortNumberBypass() << "\n";
         out << p_lightGunList[i]->GetComPortString() << "\n";
         out << p_lightGunList[i]->GetComPortBaud() << "\n";
         out << p_lightGunList[i]->GetComPortDataBits() << "\n";
@@ -516,7 +516,7 @@ void ComDeviceList::SaveLightGunList()
                 out << "69\n";
             }
 
-            out << p_lightGunList[i]->GetHubComPortNumber ();
+            out << p_lightGunList[i]->GetHubComPortNumber () << "\n";
         }
         else if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == JBGUN4IR)
         {
