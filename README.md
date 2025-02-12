@@ -49,8 +49,8 @@ I am working on a new game file format for light guns, I call it Default Light G
 | Light Gun | MAMEHooker INI | HOTR Default LG |
 |-----------|----------------|-----------------|
 | RS3 Reaper | P1_Damage=cmr 4 ZZ |:P1_Damage *P1 >Damage |
-| Default Gun #2 | P1_Damage=cmr 4 M0(Z)%s% | :P1_Damage *P1 >Damage |
-| Default Gun #3 | P1_Damage=cmr 4 TTXER#7 | :P1_Damage *P1 >Damage |
+| Default Gun #2 | P1_Damage=cmr 7 M0(Z)%s% | :P1_Damage *P1 >Damage |
+| Default Gun #3 | P1_Damage=cmr 9 TTXER#7 | :P1_Damage *P1 >Damage |
 
 
  As you can see, the Hook Of The Reaper, didn’t change. The program will load up the command, based on the Default Light Gun being used. Then the same game files can be used for every light gun. So Default Light Gun game files can be slowly built, and used by everyone. Instead of everyone making custom INI game files. 
