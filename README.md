@@ -1,6 +1,20 @@
 # Hook-Of-The-Reaper
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
+# YouTube Videos
+
+## Hook Of The Reaper - Project Introduction
+
+Talk about the main feature of the program and how to use it.
+
+https://youtu.be/9Fx3xqHKH-o
+
+## Hook Of The Reaper - Advance Feature & How to file a Bug, Enhancement, or Quetion
+
+Talk about the advance feature of the program. Also how to file a bug, enhancement, question. 
+
+https://youtu.be/LRuflVbOHfQ
+
 # The Goals for Hook of the Reaper
 
 #### 1) To do everything that MAMEHooker can do with Serial Port Devices. Starting with light guns, then IO Controllers, and finally force feedback. Able to load INI Files
@@ -155,7 +169,7 @@ At the top of the file, it will start with 'Players' and then the next line is h
 
 ### Add a Light Gun:
 
-Select ‘File’ in the menu at the top, and to the left. Select “Add Light Gun” and a new small child window will pop up. The first combo box has the supported default light guns, which currently is only RS3 Reaper. When you select a default light gun, it will lock in certain combo boxes, which is the correct settings for that light gun. Then a name is needed in the name box. Also the correct COM port needs to be selected. If the light guns are connected and powered on, the COM Port info will show up on the right side. You can toggle through COM port number, until the correct data shows up on the right. Then you can click the “Add” button or the “OK” button. The “Add" button will add and save the light gun. The “OK button will do the same as the “Add” button, but will close the window after saving. If any changes need to be made after the light gun has been saved, then select “Edit” in the top menu, and then select “Edit Light Gun.” This will bring up a similar child window, but called “Edit Light Gun.” You will be able to edit or delete the light gun. There is also windows for adding a COM Device, but nothing can be done with it yet.
+Select ‘File’ in the menu at the top, and to the left. Select “Add Light Gun” and a new small child window will pop up. The first combo box has the supported default light guns, which currently the Retro Shooter RS3 Reaper, Retro Shooter MX24, and JB Gun4IR. If you have a light gun that is not in the list, then choose the blank option, and fill out the name and COM port options. Then you will have to add the COM Port commands to the 'nonDefaultLG.hor' file, located in the data directory. When you select a default light gun, it will lock in certain combo boxes, which is the correct settings for that light gun. Then a name is needed in the name box. Also the correct COM port needs to be selected. If the light guns are connected and powered on, the COM Port info will show up on the right side. You can toggle through COM port number, until the correct data shows up on the right. Then you can click the “Add” button or the “OK” button. The “Add" button will add and save the light gun. The “OK button will do the same as the “Add” button, but will close the window after saving. If any changes need to be made after the light gun has been saved, then select “Edit” in the top menu, and then select “Edit Light Gun.” This will bring up a similar child window, but called “Edit Light Gun.” You will be able to edit or delete the light gun. There is also windows for adding a COM Device, but nothing can be done with it yet.
 
 
 ### Player’s Assignment:
@@ -166,13 +180,13 @@ After the light guns have been added to Hook Of The Reaper, they need to be assi
 
 ### Settings:
 
-##### Currently there are only three settings. The first is to use the Default Light Gun game files before the INI game files. There is a check box to the left, that can be checked or un-checked. But if it is set, and you load a game that doesn’t have a Default Light Gun game file, but there is an INI game file, it will load the INI game file. If both were missing it will make new Default Light Gun game file with all the signals. If it is not set, and you load a game that doesn’t have a INI game file, but there is a Default Light Gun game file, it will load the Default Light Gun game file. If both were missing it will make new INI game file with all the signals.  
+##### Currently there are only four settings. The first is to use the Default Light Gun game files before the INI game files. There is a check box to the left, that can be checked or un-checked. But if it is set, and you load a game that doesn’t have a Default Light Gun game file, but there is an INI game file, it will load the INI game file. If both were missing it will make new Default Light Gun game file with all the signals. If it is not set, and you load a game that doesn’t have a INI game file, but there is a Default Light Gun game file, it will load the Default Light Gun game file. If both were missing it will make new INI game file with all the signals.  
 
 ##### The second option is to disable the multi-threading. Hook Of The Reaper uses multi-threading to boost performance. Currently, it uses 3 threads. One main thread, a 2nd thread for the TCP Socket, and a 3rd for the Serial COM Port. If Multi-threading is disabled, then the GUI will work horribly, if it is waiting to connect to to a TCP Socket. It is highly recommended not to disable multi-threading, unless it is needed. This is why I wanted to use multi-threading, so waiting for the TCP Connection, doesn’t affect the GUI performance. A re-start of the program is needed.
 
-##### The final option is the refresh time for the output signals in msecs. So that performance will not suffer from updating the signal values on the main window, I put the updating on a timer. So smaller the time setting, the faster it will refresh the data, and vice versa. So if you don’t see any signal values changing, then the refresh display time needs to be a smaller amount. But smaller the number, will make the performance less and less. So it is a trade off.  
+##### The third option is the refresh time for the output signals in msecs. So that performance will not suffer from updating the signal values on the main window, I put the updating on a timer. So smaller the time setting, the faster it will refresh the data, and vice versa. So if you don’t see any signal values changing, then the refresh display time needs to be a smaller amount. But smaller the number, will make the performance less and less. So it is a trade off.  
 
-
+##### The fourth and last option is to close or leave the COM port connections open. If if the option is checked, then it closes the port connection. If un-checked, it leaves the connection open. The one bad thing is if you leave the COM port open, then you can not use the test COM port window option.
 
 ### Hooker Engine
 
@@ -182,7 +196,7 @@ The Hooker Engine, which does all the magic, will start right away. Also, when a
 
 ### State of the Program
 
-The program is currently in Beta (0.8). Right now I plan on adding in more default light guns. Also add in more Default Light Gun game files. Once that is done, I will move onto I/O Devices and LED controllers. 
+The program is currently in early release (v1.0). Right now I plan on adding in more default light guns. Also add in more Default Light Gun game files. Once that is done, I will move onto I/O Devices and LED controllers. 
 
 If you find any bugs, please report them here. 
 
