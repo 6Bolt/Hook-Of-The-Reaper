@@ -250,7 +250,10 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
         if(index == JBGUN4IR)
             ui->analogLineEdit->setEnabled(true);
         else
+        {
+            ui->analogLineEdit->clear();
             ui->analogLineEdit->setEnabled(false);
+        }
     }
     else
     {
@@ -258,6 +261,7 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
         SetEnableComboBoxes(true);
         ui->dipSwitchComboBox->setEnabled(false);
         ui->hubComComboBox->setEnabled(false);
+        ui->analogLineEdit->clear();
         ui->analogLineEdit->setEnabled(false);
     }
 }
@@ -781,6 +785,7 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
             ui->analogLineEdit->clear();
             ui->dipSwitchComboBox->setEnabled(false);
             ui->hubComComboBox->setEnabled(false);
+            ui->analogLineEdit->clear();
             ui->analogLineEdit->setEnabled(false);
         }
     }
@@ -793,6 +798,7 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
         ui->analogLineEdit->clear();
         ui->dipSwitchComboBox->setEnabled(false);
         ui->hubComComboBox->setEnabled(false);
+        ui->analogLineEdit->clear();
         ui->analogLineEdit->setEnabled(false);
     }
 

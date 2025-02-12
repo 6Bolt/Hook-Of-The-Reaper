@@ -1943,12 +1943,17 @@ void HookerEngine::LoadLGFile()
                     //Check if Light Gun is a Default Light Gun
                     lgNumber = playersLGAssignment[lgPlayerOrder[i]];
 
+                    //Load Light Gun Order, based on Player Order and Player's Assignment
+                    loadedLGNumbers[i] = lgNumber;
+
                     //If Player Assignment is Unassign, increament unassignLG
                     if(lgNumber == UNASSIGN)
                         unassignLG++;
-
-                    //Load Light Gun Order, based on Player Order and Player's Assignment
-                    loadedLGNumbers[i] = lgNumber;
+                    else
+                    {
+                        //Since There is a Light Gun Get COM Port Number
+                        loadedLGComPortNumber[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetComPortNumber();
+                    }
 
                 }
 
@@ -2208,7 +2213,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
 {
     QStringList commands, dlgCommands, multiValue;
     quint8 cmdCount;
-    bool allPlayers = false;
+    bool allPlayers;
     quint8 playerNum = 69;
     quint8 i, j, k, tempCPNum;
     quint8 howManyPlayers;
@@ -2227,8 +2232,10 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
         allPlayers = true;
     else
     {
+        //Remove the *P, to get number
         commands[0].remove(0,2);
         playerNum = commands[0].toUInt ()-1;
+        allPlayers = false;
     }
 
     for(i = 1; i < cmdCount; i++)
@@ -2296,7 +2303,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
             for(j = 0; j < howManyPlayers; j++)
             {   
                 if(allPlayers)
-                    player = lgPlayerOrder[j];
+                    player = j;
                 else
                     player = playerNum;
 
@@ -2307,7 +2314,8 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                 if(lightGun != UNASSIGN)
                 {
 
-                    tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
+                    //tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
+                    tempCPNum = loadedLGComPortNumber[player];
 
                     //Set True. If No Command or Null, then it is set to false
                     dlgCMDFound = false;
@@ -2419,6 +2427,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                 //Take out the *P and get the Number *P2 -> 2
                 commands[i].remove(0,2);
                 playerNum = commands[i].toUInt ()-1;
+                allPlayers = false;
             }
 
         }//Command Searching If and Else If
@@ -2449,7 +2458,7 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum)
     for(i = 0; i < howManyPlayers; i++)
     {
         if(allPlayers)
-            player = lgPlayerOrder[i];
+            player = i;
         else
             player = playerNum;
 
@@ -2464,7 +2473,8 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum)
             //qDebug() << "Player Number: " << player << " Light Gun Number: " << lightGun;
 
             //Gets COM Port Settings
-            tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
+            //tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
+            tempCPNum = loadedLGComPortNumber[player];
             tempCPName = p_comDeviceList->p_lightGunList[lightGun]->GetComPortString();
             tempBaud = p_comDeviceList->p_lightGunList[lightGun]->GetComPortBaud();
             tempData = p_comDeviceList->p_lightGunList[lightGun]->GetComPortDataBits();
@@ -2510,7 +2520,7 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
     for(i = 0; i < howManyPlayers; i++)
     {
         if(allPlayers)
-            player = lgPlayerOrder[i];
+            player = i;
         else
             player = playerNum;
 
@@ -2522,7 +2532,8 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
         {
 
             //Get COM Port For Light Gun
-            tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
+            //tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
+            tempCPNum = loadedLGComPortNumber[player];
 
             //Get Close COM Port Commands for Light Gun
             commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(isCommands);

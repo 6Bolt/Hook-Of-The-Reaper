@@ -155,11 +155,8 @@ void addLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int index
         ui->flowControlComboBox->setCurrentIndex (DEFAULTLG_ARRAY[index].FLOW);
 
         //Disable Combo Boxes for Default Light Gun
-        ui->baudSpeedComboBox->setEnabled (false);
-        ui->dataBitsComboBox->setEnabled (false);
-        ui->parityComboBox->setEnabled (false);
-        ui->stopBitsComboBox->setEnabled (false);
-        ui->flowControlComboBox->setEnabled (false);
+        SetEnableComboBoxes(false);
+
 
         if(index == MX24)
         {
@@ -175,18 +172,21 @@ void addLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int index
         if(index == JBGUN4IR)
             ui->analogLineEdit->setEnabled(true);
         else
+        {
+            ui->analogLineEdit->clear ();
             ui->analogLineEdit->setEnabled(false);
+        }
 
     }
     else
     {
         //Re-enable Combo Boxes when No Default Light is Selected
-        ui->baudSpeedComboBox->setEnabled (true);
-        ui->dataBitsComboBox->setEnabled (true);
-        ui->parityComboBox->setEnabled (true);
-        ui->stopBitsComboBox->setEnabled (true);
-        ui->flowControlComboBox->setEnabled (true);
+        SetEnableComboBoxes(true);
+
         ui->dipSwitchComboBox->setEnabled(false);
+        ui->analogLineEdit->clear ();
+        ui->analogLineEdit->setEnabled(false);
+        ui->hubComComboBox->setEnabled(false);
     }
 }
 
@@ -530,7 +530,14 @@ void addLightGunWindow::FillSerialPortInfo(quint8 index)
 }
 
 
-
+void addLightGunWindow::SetEnableComboBoxes(bool enableCB)
+{
+    ui->baudSpeedComboBox->setEnabled (enableCB);
+    ui->dataBitsComboBox->setEnabled (enableCB);
+    ui->parityComboBox->setEnabled (enableCB);
+    ui->stopBitsComboBox->setEnabled (enableCB);
+    ui->flowControlComboBox->setEnabled (enableCB);
+}
 
 
 

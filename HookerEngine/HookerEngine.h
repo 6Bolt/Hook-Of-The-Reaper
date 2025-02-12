@@ -293,6 +293,8 @@ private:
     //list above. So you Know What Player has What Light
     //Gun, based on the Player's Light Gun Assignment Data
     quint8                          loadedLGNumbers[MAXPLAYERLIGHTGUNS];
+    //Array of the Loaded Light guns COM Port Number
+    quint8                          loadedLGComPortNumber[MAXPLAYERLIGHTGUNS];
 
 
 

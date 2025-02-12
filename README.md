@@ -63,12 +63,12 @@ Light guns only have so many commands, as they can recoil, shake, and few other 
 
 | Command | Notes |
 |---------|-------|
-| Damage | (only happens on 0->1, no need for '|') |
-| Recoil | (only happens on 0->1, no need for '|') |
+| Damage | (only happens on 0->1, no need for '\|') |
+| Recoil | (only happens on 0->1, no need for '\|') |
 | Reload |     |
 | Ammo   |     |
 | Ammo_Value|      |
-| Shake | (only happens on 0->1, no need for '|') |
+| Shake | (only happens on 0->1, no need for '\|') |
 | Auto_LED |     |
 | AspectRatio_16:9 |    |
 | AspectRatio_4:3 |      |
@@ -111,6 +111,26 @@ Also, multiple commands can be used, and be selected based on the Signal’s cur
 - \>Null|Shake|Recoil|Damage	&emsp;	So When P1_Damage=0 → Null, 1 -> Shake, 2 → Recoil, 3 → Damage
 
 The 0 is the left most Command, then increase by one, going to the right. The same way MAMEHooker has it. Also, the INI files can use the %s% variable. The %s% is replaced by the Signal’s value. It is not used in the Default Light gun files, but want to mention that it is supported.  
+
+# Player Ordering in the Default Light Gun Game Format
+
+At the top of the file, it will start with 'Players' and then the next line is how many players needed for the game, which can be 1 to 4 currently. The next lines will tell Hook Of The Reaper the player ordering. If there are 2 playeres, then there will be P1 and P2. If 4 players, then P1, P2, P3, and P4. But you can put in different players. For example, there is 2 players, and you put in P3 and P4. What will happen is P3 will map onto P1, and P4 will map onto P2. I did it this way, so you could you different light guns in Player's Assignment. So for a certain game, you would like to use a different light guns that are assigned to P3 and P4. then you could change the game file to use players P3 and P4, instead of P1 and P2. Then you didn't have to change the Player's Assignment all the time, if you wanted to use a different light guns for certain games. Below is an example of this.
+
+| Default Light Gun Game File | Notes |
+|-----------------------------|-------|
+| Players |  |
+| 2 | Number of Players |
+| P3 | P3 -> P1 in this file  |
+| P4   | P4 -> P2 in this File  |
+| [States] |      |
+| :mame_start |  |
+| *All | P3 & P4  |
+| >Open_COM | Open COM Ports for P3 & P4 Light Guns |
+| [Signals] |      |
+| :P1_Damaged |      |
+| *P1 | Which is mapped to P3  |
+| >Damage | Send Damage CMDs to P3's Light Gun |
+
 
 # Current Default Light Gun Files Included
 

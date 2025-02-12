@@ -73,6 +73,9 @@ private:
     //Fill Out Serial Port Info on Right Side of Window
     void FillSerialPortInfo(quint8 index);
 
+    //Enable or Disable Combo Boxes if a Default Light Gun is Selected
+    void SetEnableComboBoxes(bool enableCB);
+
     ///////////////////////////////////////////////////////////////////////////
 
     //For Window
