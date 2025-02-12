@@ -140,9 +140,15 @@ At the top of the file, it will start with 'Players' and then the next line is h
 | Directoury | File Name | Game Name |
 |------------|-----------|-----------|
 | defaultLG/ |     |     |
+|     | alien3.txt | Alien 3 |
+|     | confmiss.txt | Confidential Mission |
 |     | hotd4.txt | House of the Gead 4 |
-|     | jp.txt    | Jurassic Park |
-|     | rambo.txt | Rambo |
+|     | jp.txt | Jurassic Park |
+|     | lgi.txt | Let's Go Island |
+|     | lgi3d.txt | Let's Go Island 3D |
+|     | lgj.txt | Let's Go Jungle |
+|     | ptblank2.txt | Point Blank 2 |
+|     | rambo.txt | Rambo   |
 
 
 # How to Use Hook Of The Reaper 
