@@ -462,24 +462,35 @@ void HookOfTheReaper::AboutWindowClosed()
 
 void HookOfTheReaper::on_actionTest_COM_Port_triggered()
 {
-    if (!p_tcpW)
+    quint8 numLightGuns = p_comDeviceList->GetNumberLightGuns();
+
+    if(numLightGuns == 0)
+    {
+        QMessageBox::warning (this, "No Saved Light Guns", "There are no saved Light Guns to test. Please add a Light Gun first.");
+    }
+    else
     {
 
-
-        if(engineRunning)
+        if (!p_tcpW)
         {
-            //Stop the Hooker Engine
-            p_hookEngine->Stop ();
-            engineRunning = false;
-            ui->statusbar->showMessage ("Stopped");
-        }
 
-        p_tcpW = new testComPortWindow(p_comDeviceList, this);
-        p_tcpW->setAttribute(Qt::WA_DeleteOnClose);
-        connect(p_tcpW, SIGNAL(accepted()), this, SLOT(TestComPortWindowClosed()));
-        connect(p_tcpW, SIGNAL(rejected()), this, SLOT(TestComPortWindowClosed()));
+
+            if(engineRunning)
+            {
+                //Stop the Hooker Engine
+                p_hookEngine->Stop ();
+                engineRunning = false;
+                ui->statusbar->showMessage ("Stopped");
+            }
+
+            p_tcpW = new testComPortWindow(p_comDeviceList, this);
+            p_tcpW->setAttribute(Qt::WA_DeleteOnClose);
+            connect(p_tcpW, SIGNAL(accepted()), this, SLOT(TestComPortWindowClosed()));
+            connect(p_tcpW, SIGNAL(rejected()), this, SLOT(TestComPortWindowClosed()));
+        }
+        p_tcpW->exec ();
+
     }
-    p_tcpW->exec ();
 }
 
 void HookOfTheReaper::TestComPortWindowClosed()
@@ -536,7 +547,7 @@ void HookOfTheReaper::on_actionTest_INI_Game_File_triggered()
 
         for(quint8 i = 0; i < fileCount; i++)
         {
-            qDebug() << "DefaultLG Game File: " << fileNames[i];
+            //qDebug() << "INI Game File: " << fileNames[i];
 
             isGoodFile = p_hookEngine->LoadINIFileTest(fileNames[i]);
 

@@ -13,6 +13,7 @@
 //Max Number of COM Ports
 #define MAXCOMPORTS             20
 #define BEGINCOMPORTNAME        "COM"
+#define COMPORTWAITFORWRITE     50
 
 //Number of Different Settings
 #define BAUD_NUMBER             8

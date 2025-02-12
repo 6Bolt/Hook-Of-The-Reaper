@@ -110,6 +110,13 @@
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>savedLightGunsComboBox</tabstop>
+  <tabstop>connectPushButton</tabstop>
+  <tabstop>disconnectPushButton</tabstop>
+  <tabstop>comPortLineEdit</tabstop>
+  <tabstop>sendDataPushButton</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

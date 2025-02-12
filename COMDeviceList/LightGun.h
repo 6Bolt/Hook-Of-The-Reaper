@@ -88,19 +88,19 @@ public:
 
     //Sends Out the Needed Commands for a Default Light Gun
     //Used In the Hooker Engine
-    QStringList OpenComPortCommands(bool &isSet);
-    QStringList CloseComPortCommands(bool &isSet);
-    QStringList DamageCommands(bool &isSet);
-    QStringList RecoilCommands(bool &isSet);
-    QStringList ReloadCommands(bool &isSet);
-    QStringList AmmoCommands(bool &isSet);
-    QStringList AmmoValueCommands(bool &isSet, quint16 ammoValue);
-    QStringList ShakeCommands(bool &isSet);
-    QStringList AutoLEDCommands(bool &isSet);
-    QStringList AspectRatio16b9Commands(bool &isSet);
-    QStringList AspectRatio4b3Commands(bool &isSet);
-    QStringList JoystickModeCommands(bool &isSet);
-    QStringList MouseAndKeyboardModeCommands(bool &isSet);
+    QStringList OpenComPortCommands(bool *isSet);
+    QStringList CloseComPortCommands(bool *isSet);
+    QStringList DamageCommands(bool *isSet);
+    QStringList RecoilCommands(bool *isSet);
+    QStringList ReloadCommands(bool *isSet);
+    QStringList AmmoCommands(bool *isSet);
+    QStringList AmmoValueCommands(bool *isSet, quint16 ammoValue);
+    QStringList ShakeCommands(bool *isSet);
+    QStringList AutoLEDCommands(bool *isSet);
+    QStringList AspectRatio16b9Commands(bool *isSet);
+    QStringList AspectRatio4b3Commands(bool *isSet);
+    QStringList JoystickModeCommands(bool *isSet);
+    QStringList MouseAndKeyboardModeCommands(bool *isSet);
 
 
 private:

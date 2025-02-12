@@ -946,9 +946,9 @@ QStringList LightGun::SplitLoadedCommands(QString commandList)
 
 
 //Default Light Gun Commands for Certain Signals
-QStringList LightGun::OpenComPortCommands(bool &isSet)
+QStringList LightGun::OpenComPortCommands(bool *isSet)
 {
-    isSet = openComPortCmdsSet;
+    *isSet = openComPortCmdsSet;
 
     if(openComPortCmdsSet)
         return openComPortCmds;
@@ -959,9 +959,9 @@ QStringList LightGun::OpenComPortCommands(bool &isSet)
     }
 }
 
-QStringList LightGun::CloseComPortCommands(bool &isSet)
+QStringList LightGun::CloseComPortCommands(bool *isSet)
 {
-    isSet = closeComPortCmdsSet;
+    *isSet = closeComPortCmdsSet;
 
     if(closeComPortCmdsSet)
         return closeComPortCmds;
@@ -972,9 +972,9 @@ QStringList LightGun::CloseComPortCommands(bool &isSet)
     }
 }
 
-QStringList LightGun::DamageCommands(bool &isSet)
+QStringList LightGun::DamageCommands(bool *isSet)
 {
-    isSet = damageCmdsSet;
+    *isSet = damageCmdsSet;
 
     if(damageCmdsSet)
         return damageCmds;
@@ -985,9 +985,9 @@ QStringList LightGun::DamageCommands(bool &isSet)
     }
 }
 
-QStringList LightGun::RecoilCommands(bool &isSet)
+QStringList LightGun::RecoilCommands(bool *isSet)
 {
-    isSet = recoilCmdsSet;
+    *isSet = recoilCmdsSet;
 
     if(recoilCmdsSet)
         return recoilCmds;
@@ -998,9 +998,9 @@ QStringList LightGun::RecoilCommands(bool &isSet)
     }
 }
 
-QStringList LightGun::ReloadCommands(bool &isSet)
+QStringList LightGun::ReloadCommands(bool *isSet)
 {
-    isSet = reloadCmdsSet;
+    *isSet = reloadCmdsSet;
 
     if(reloadCmdsSet)
         return reloadCmds;
@@ -1011,9 +1011,9 @@ QStringList LightGun::ReloadCommands(bool &isSet)
     }
 }
 
-QStringList LightGun::AmmoCommands(bool &isSet)
+QStringList LightGun::AmmoCommands(bool *isSet)
 {
-    isSet = ammoCmdsSet;
+    *isSet = ammoCmdsSet;
 
     if(ammoCmdsSet)
         return ammoCmds;
@@ -1024,28 +1024,39 @@ QStringList LightGun::AmmoCommands(bool &isSet)
     }
 }
 
-QStringList LightGun::AmmoValueCommands(bool &isSet, quint16 ammoValue)
+QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
 {
-    quint16 tempAV;
+
     QString tempAVS;
     QString cmdString;
     QStringList tempSL;
+    quint8 cmdCount = ammoValueCmds.length ();
 
-    isSet = ammoValueCmdsSet;
 
-    if(maxAmmoSet && reloadValueSet && ammoValueCmdsSet)
+    *isSet = ammoValueCmdsSet;
+
+    if(ammoValueCmdsSet)
     {
-        if(lastAmmoValue == 0 && ammoValue > 0)
-            tempAV = reloadValue;
-        else if(ammoValue > maxAmmo)
-            tempAV = maxAmmo;
+
+        if(maxAmmoSet && reloadValueSet)
+        {
+            quint16 tempAV;
+
+            if(lastAmmoValue == 0 && ammoValue > 0)
+                tempAV = reloadValue;
+            else if(ammoValue > maxAmmo)
+                tempAV = maxAmmo;
+            else
+                tempAV = ammoValue;
+
+            tempAVS = QString::number (tempAV);
+            lastAmmoValue = ammoValue;
+        }
         else
-            tempAV = ammoValue;
+        {
+            tempAVS = QString::number (ammoValue);
+        }
 
-        tempAVS = QString::number (tempAV);
-        lastAmmoValue = ammoValue;
-
-        quint8 cmdCount = ammoValueCmds.length ();
 
         for(quint8 i = 0; i < cmdCount; i++)
         {
@@ -1055,16 +1066,16 @@ QStringList LightGun::AmmoValueCommands(bool &isSet, quint16 ammoValue)
             tempSL << cmdString;
         }
 
-        return tempSL;
+
+
     }
 
-
-    return ammoValueCmds;
+    return tempSL;
 }
 
-QStringList LightGun::ShakeCommands(bool &isSet)
+QStringList LightGun::ShakeCommands(bool *isSet)
 {
-    isSet = shakeCmdsSet;
+    *isSet = shakeCmdsSet;
 
     if(shakeCmdsSet)
         return shakeCmds;
@@ -1075,9 +1086,9 @@ QStringList LightGun::ShakeCommands(bool &isSet)
     }
 }
 
-QStringList LightGun::AutoLEDCommands(bool &isSet)
+QStringList LightGun::AutoLEDCommands(bool *isSet)
 {
-    isSet = autoLedCmdsSet;
+    *isSet = autoLedCmdsSet;
 
     if(autoLedCmdsSet)
         return autoLedCmds;
@@ -1088,9 +1099,9 @@ QStringList LightGun::AutoLEDCommands(bool &isSet)
     }
 }
 
-QStringList LightGun::AspectRatio16b9Commands(bool &isSet)
+QStringList LightGun::AspectRatio16b9Commands(bool *isSet)
 {
-    isSet = aspect16x9CmdsSet;
+    *isSet = aspect16x9CmdsSet;
 
     if(aspect16x9CmdsSet)
         return aspect16x9Cmds;
@@ -1101,9 +1112,9 @@ QStringList LightGun::AspectRatio16b9Commands(bool &isSet)
     }
 }
 
-QStringList LightGun::AspectRatio4b3Commands(bool &isSet)
+QStringList LightGun::AspectRatio4b3Commands(bool *isSet)
 {
-    isSet = aspect4x3CmdsSet;
+    *isSet = aspect4x3CmdsSet;
 
     if(aspect4x3CmdsSet)
         return aspect4x3Cmds;
@@ -1114,9 +1125,9 @@ QStringList LightGun::AspectRatio4b3Commands(bool &isSet)
     }
 }
 
-QStringList LightGun::JoystickModeCommands(bool &isSet)
+QStringList LightGun::JoystickModeCommands(bool *isSet)
 {
-    isSet = joystickCmdsSet;
+    *isSet = joystickCmdsSet;
 
     if(joystickCmdsSet)
         return joystickCmds;
@@ -1128,9 +1139,9 @@ QStringList LightGun::JoystickModeCommands(bool &isSet)
 }
 
 
-QStringList LightGun::MouseAndKeyboardModeCommands(bool &isSet)
+QStringList LightGun::MouseAndKeyboardModeCommands(bool *isSet)
 {
-    isSet = keyMouseCmdsSet;
+    *isSet = keyMouseCmdsSet;
 
     if(keyMouseCmdsSet)
         return keyMouseCmds;

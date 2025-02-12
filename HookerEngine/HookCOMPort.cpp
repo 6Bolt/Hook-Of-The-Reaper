@@ -100,8 +100,8 @@ void HookCOMPort::Disconnect(const quint8 &comPortNum)
 
         p_ComPortArray[comPortNum]->close ();
 
-        delete p_ComPortArray[comPortNum];
-        p_ComPortArray[comPortNum] = nullptr;
+        //delete p_ComPortArray[comPortNum];
+        //p_ComPortArray[comPortNum] = nullptr;
 
         comPortOpen[comPortNum] = false;
 
@@ -133,7 +133,7 @@ void HookCOMPort::WriteData(const quint8 &comPortNum, const QByteArray &writeDat
         if(bytesWritten != writeData.size())
         {
             p_ComPortArray[comPortNum]->flush ();
-            writeDone = p_ComPortArray[comPortNum]->waitForBytesWritten (100);
+            writeDone = p_ComPortArray[comPortNum]->waitForBytesWritten (COMPORTWAITFORWRITE);
         }
         else
             writeDone = true;

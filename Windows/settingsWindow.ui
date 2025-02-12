@@ -153,6 +153,15 @@
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>useDefaultLGCheckBox</tabstop>
+  <tabstop>useMultiThreadCheckBox</tabstop>
+  <tabstop>refreshDisplayLineEdit</tabstop>
+  <tabstop>closeComCheckBox</tabstop>
+  <tabstop>updatePushButton</tabstop>
+  <tabstop>okPushButton</tabstop>
+  <tabstop>cancelPushButton</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

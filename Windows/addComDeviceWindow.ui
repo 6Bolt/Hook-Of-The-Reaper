@@ -533,6 +533,24 @@
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>comDeviceNameLineEdit</tabstop>
+  <tabstop>comPortComboBox</tabstop>
+  <tabstop>baudSpeedComboBox</tabstop>
+  <tabstop>dataBitsComboBox</tabstop>
+  <tabstop>parityComboBox</tabstop>
+  <tabstop>stopBitsComboBox</tabstop>
+  <tabstop>flowControlComboBox</tabstop>
+  <tabstop>locationLlineEdit</tabstop>
+  <tabstop>descriptionLineEdit</tabstop>
+  <tabstop>manufactureLineEdit</tabstop>
+  <tabstop>serialNumLineEdit</tabstop>
+  <tabstop>vendorIDLineEdit</tabstop>
+  <tabstop>productIDLineEdit</tabstop>
+  <tabstop>addPushButton</tabstop>
+  <tabstop>okPushButton</tabstop>
+  <tabstop>cancelPushButton</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

@@ -26,7 +26,7 @@ playerAssignWindow::playerAssignWindow(ComDeviceList *cdList, QWidget *parent)
     ui->player3ComboBox->insertItem(0,"");
     ui->player4ComboBox->insertItem(0,"");
 
-    for(i = 0; i<numberLightGuns; i++)
+    for(i = 0; i < numberLightGuns; i++)
     {
         tempQS = QString::number(i+1);
         tempQS.append (": ");
@@ -40,7 +40,7 @@ playerAssignWindow::playerAssignWindow(ComDeviceList *cdList, QWidget *parent)
     }
 
     //Get Players Assignment from the COM Devices List
-    for(i = 0; i<MAXPLAYERLIGHTGUNS; i++)
+    for(i = 0; i < MAXPLAYERLIGHTGUNS; i++)
     {
         playersAssignment[i] = p_comDeviceList->GetPlayerLightGunAssignment(i);
     }
@@ -117,9 +117,9 @@ void playerAssignWindow::AssignPlayers()
     GetComboBoxIndexes();
 
     //Check to make sure a Light Gun is not Being Assign Multiple times
-    for(i = 0; i<(MAXPLAYERLIGHTGUNS-1); i++)
+    for(i = 0; i < (MAXPLAYERLIGHTGUNS-1); i++)
     {
-        for(j = (i+1); j<MAXPLAYERLIGHTGUNS; j++)
+        for(j = (i+1); j < MAXPLAYERLIGHTGUNS; j++)
         {
             if(playersIndex[i] == playersIndex[j] && playersIndex[i] != 0)
                 assignmentError = true;

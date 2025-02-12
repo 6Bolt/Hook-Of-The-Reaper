@@ -559,7 +559,7 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
 
                     for(quint8 i = 0; i < numberLGPlayersTest; i++)
                     {
-                        if(tempPlayer-1 == lgPlayerOrderTest[i])
+                        if(tempPlayer-1 == i)
                             playerMatch = true;
                     }
 
@@ -2041,7 +2041,7 @@ void HookerEngine::LoadLGFile()
 
                     for(quint8 i = 0; i < numberLGPlayers; i++)
                     {
-                        if(tempPlayer-1 == lgPlayerOrder[i])
+                        if(tempPlayer-1 == i)
                             playerMatch = true;
                     }
 
@@ -2224,8 +2224,9 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
 
 
 
-    //Get the Player(s) & Command(s) for Signal
-    cmdCount = signalsAndCommands[signalName].count ();
+    //Get the Player(s) & Command(s) From sinalsAndCommands QMap using signalName
+    commands = signalsAndCommands[signalName];
+    cmdCount = commands.length ();
 
     //First Command Is Always a Player
     if(commands[0] == ALLPLAYERS)
@@ -2336,29 +2337,29 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                 if(commands[i].size() > AMMOCMDCOUNT)
                                 {
                                     //Must Be Ammo_Value Command
-                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(dlgCMDFound, value.toUInt ());
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(&dlgCMDFound, value.toUInt ());
                                 }
                                 else  //Must Be Ammo Command
-                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoCommands(dlgCMDFound);
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoCommands(&dlgCMDFound);
                             }
                             else if(commands[i][2] == 's')
                             {
                                 if(commands[i][13] == ARATIO169CMD13CHAR)
                                 {
                                     //Must Be AspectRatio_16:9 Command
-                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AspectRatio16b9Commands(dlgCMDFound);
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AspectRatio16b9Commands(&dlgCMDFound);
                                 }
                                 else //Must Be AspectRatio_4:3 Command
-                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AspectRatio4b3Commands(dlgCMDFound);
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AspectRatio4b3Commands(&dlgCMDFound);
                             }
                             else if(commands[i][2] == AUTOLEDCMD3CHAR)
-                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AutoLEDCommands(dlgCMDFound);
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AutoLEDCommands(&dlgCMDFound);
 
                         }
                         else if(commands[i][1] == 'D' && value != "0")
                         {
                             //Must Be Damage Command, Only Do Damage if Value != 0
-                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DamageCommands(dlgCMDFound);
+                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DamageCommands(&dlgCMDFound);
                         }
 
                     }
@@ -2370,28 +2371,28 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                             if(commands[i][3] == 'l')
                             {
                                 //Must Be Reload Command
-                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ReloadCommands(dlgCMDFound);
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ReloadCommands(&dlgCMDFound);
                             }
                             else if(commands[i][3] == 'c' && value != "0")
                             {
                                 //Must be Recoil Command, Only Do when Value != 0
-                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(dlgCMDFound);
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
                             }
                         }
                         else if(commands[i][1] == 'S' && value != "0")
                         {
                             //Must be Shake Command, Only Do Shake if Value != 0
-                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ShakeCommands(dlgCMDFound);
+                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ShakeCommands(&dlgCMDFound);
                         }
                         else if(commands[i][1] == 'J')
                         {
                             //Must Be Joystick_Mode Command
-                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->JoystickModeCommands(dlgCMDFound);
+                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->JoystickModeCommands(&dlgCMDFound);
                         }
                         else if(commands[i][1] == 'K')
                         {
                             //Must be Keyboard_Mouse_Command
-                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->MouseAndKeyboardModeCommands(dlgCMDFound);
+                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->MouseAndKeyboardModeCommands(&dlgCMDFound);
                         }
                         else if(commands[i][1] == 'N')
                         {
@@ -2486,13 +2487,13 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum)
             emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, true);
 
             //Get the Commnds for Open COM Port
-            commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(isCommands);
+            commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
             cmdCount = commands.count();
 
             //qDebug() << "Command Count: " << cmdCount << " Commands: " << commands;
 
             //Write Commands to the COM Port
-            if(cmdCount > 0 && isCommands)
+            if(isCommands)
             {
                 for(j = 0; j < cmdCount; j++)
                 {
@@ -2536,11 +2537,11 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
             tempCPNum = loadedLGComPortNumber[player];
 
             //Get Close COM Port Commands for Light Gun
-            commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(isCommands);
+            commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
             cmdCount = commands.count();
 
             //Write Commnds to COM Port
-            if(cmdCount > 0 && isCommands)
+            if(isCommands)
             {
                 for(j = 0; j < cmdCount; j++)
                 {
@@ -2560,6 +2561,8 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
 void HookerEngine::WriteLGComPort(quint8 cpNum, QString cpData)
 {
     QByteArray cpBA = cpData.toUtf8 ();
+
+    //qDebug() << "COM Port: " << cpNum << " Data: " << cpData;
 
     //Send Data to COM Port
     emit WriteComPortSig(cpNum, cpBA);

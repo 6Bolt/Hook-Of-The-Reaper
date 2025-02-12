@@ -194,6 +194,15 @@
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>player1ComboBox</tabstop>
+  <tabstop>player2ComboBox</tabstop>
+  <tabstop>player3ComboBox</tabstop>
+  <tabstop>player4ComboBox</tabstop>
+  <tabstop>assignPushButton</tabstop>
+  <tabstop>okPushButton</tabstop>
+  <tabstop>cancelPushButton</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
