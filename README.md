@@ -30,7 +30,7 @@ I started this project after getting two Retro Shooter RS3 Reaper light guns as 
 
 # Getting the Program to Work
 
-Since the project is in Beta, only Windows is supported right now. I plan on getting Linux and Mac OSes later on. A person could take the code, and compile in the needed OS.
+Since the project is still in early release, only Windows is supported right now. I plan on getting Linux and Mac OSes later on. I do have a Linux box, which doubles as my NFS/Clould server. I plan to use that for getting Linux up in running next. A person could take the code, and compile in the needed OS. I detail compiling below.
 
 There is one major change that needs to be done to get Hook Of The Reaper working with MAME and DemulShooter. The ‘network’ has to be enabled on MAME and DemulShooter. MAMEHooker used the window messaging to receive data. This is a Windows type thing, as Linux and MacOS (think it is based on Debian) don’t have this window message type. They might have something that is close to it. But to meet goal #4, I needed a solution that would easily work on all platforms. The ‘network’ was the best options. Instead of using window messaging, it uses TCP Socket data on the localhost (IP 127.0.0.1) on port 8000. TCP Socket has major support on all platforms.
 
@@ -49,7 +49,7 @@ This is a lot easier then MAME. Open up the DemulShooter GUI (DemulShooter_GUI.e
 
 ## INI Game Files
 
-Now you just need to have game files to tell Hook Of The Reaper what signals to watch out for. You can use the MAMEHooker INI gamefiles. Hook Of The Reaper can load these files and process the data for light guns only. I have not set up any I/O controllers, LED controllers, or force feedback. The INI game files can be put in the directory below. Alos the characters ‘%s%’ and ‘|’ are supported in Hook Of the Reaper
+Now you just need to have game files to tell Hook Of The Reaper what signals to watch out for. You can use the MAMEHooker INI gamefiles. Hook Of The Reaper can load these files and process the data for light guns only. I have not set up any I/O controllers, LED controllers, or force feedback. The INI game files can be put in the directory below. Also the characters ‘%s%’ and ‘|’ are supported in Hook Of the Reaper INI game files.
 
 ### Location of INI Game Files
 
@@ -101,7 +101,7 @@ If the setting is not set for use Default Light Gun files first, it will make a 
 
 - path/to/HookOfTheReaper/defaultLG
 
-I put in three games in the defaultLG directory, so a person can see how it is set up. Unlike above, every thing has its own line. The Damage example would be like this in the file.
+I put in nine games in the defaultLG directory, so a person can see how it is set up. Unlike above, every thing has its own line. The Damage example would be like this in the file.
 
 | File Line | What it Represents |
 |-----------|--------------------|
@@ -169,7 +169,7 @@ At the top of the file, it will start with 'Players' and then the next line is h
 
 ### Add a Light Gun:
 
-Select ‘File’ in the menu at the top, and to the left. Select “Add Light Gun” and a new small child window will pop up. The first combo box has the supported default light guns, which currently the Retro Shooter RS3 Reaper, Retro Shooter MX24, and JB Gun4IR. If you have a light gun that is not in the list, then choose the blank option, and fill out the name and COM port options. Then you will have to add the COM Port commands to the 'nonDefaultLG.hor' file, located in the data directory. When you select a default light gun, it will lock in certain combo boxes, which is the correct settings for that light gun. Then a name is needed in the name box. Also the correct COM port needs to be selected. If the light guns are connected and powered on, the COM Port info will show up on the right side. You can toggle through COM port number, until the correct data shows up on the right. Then you can click the “Add” button or the “OK” button. The “Add" button will add and save the light gun. The “OK button will do the same as the “Add” button, but will close the window after saving. If any changes need to be made after the light gun has been saved, then select “Edit” in the top menu, and then select “Edit Light Gun.” This will bring up a similar child window, but called “Edit Light Gun.” You will be able to edit or delete the light gun. There is also windows for adding a COM Device, but nothing can be done with it yet.
+Select ‘File’ in the menu at the top, and to the left. Select “Add Light Gun” and a new small child window will pop up. The first combo box has the supported default light guns, which currently are the Retro Shooter RS3 Reaper, Retro Shooter MX24, and JB Gun4IR. If you have a light gun that is not in the list, then choose the blank option, and fill out the name and COM port options. Then you will have to add the COM Port commands to the 'nonDefaultLG.hor' file, located in the data directory. When you select a default light gun, it will lock in certain combo boxes, which is the correct settings for that light gun. Then a name is needed in the name box. Also the correct COM port needs to be selected. If the light guns are connected and powered on, the COM Port info will show up on the right side. You can toggle through COM port number, until the correct data shows up on the right. Then you can click the “Add” button or the “OK” button. The “Add" button will add and save the light gun. The “OK button will do the same as the “Add” button, but will close the window after saving. If any changes need to be made after the light gun has been saved, then select “Edit” in the top menu, and then select “Edit Light Gun.” This will bring up a similar child window, but called “Edit Light Gun.” You will be able to edit or delete the light gun. There is also windows for adding a COM Device, but nothing can be done with it yet.
 
 
 ### Player’s Assignment:
