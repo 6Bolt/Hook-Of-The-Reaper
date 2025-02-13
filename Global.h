@@ -41,8 +41,8 @@ extern quint8  FLOWDATA_ARRAY[];
 extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
-//Default Light Gun Definition - There is No Zero, so 2 is 1
-#define NUM_DEFAULTLG           4
+//Default Light Gun Definition - There is No Zero, as that is blan and nonDefaultLG
+#define NUM_DEFAULTLG           5
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -87,6 +87,21 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define JBGUN4IRMAXAMMONUM      0
 #define JBGUN4IRRELOADNUM       0
 #define JBGUN4IRSTRENGTH        63
+
+//Fourth Default Light Gun
+//Fusion Light Gun
+#define FUSION                  4
+#define FUSIONNAME              "Fusion"
+#define FUSIONBAUD              0
+#define FUSIONDATA              0
+#define FUSIONPARITY            0
+#define FUSIONSTOP              0
+#define FUSIONFLOW              0
+#define FUSIONMAXAMMO           "0"
+#define FUSIONRELOAD            "0"
+#define FUSIONMAXAMMONUM        0
+#define FUSIONRELOADNUM         0
+
 
 
 //Struct that Stores the Default Light gun Data
@@ -190,6 +205,8 @@ extern S_DEFAULTLG DEFAULTLG_ARRAY[];
 
 //Processing INI & Default Light Gun
 #define MAMESTARTAFTER          "mame_start"
+#define MAMESTOPAFTER           "mame_stop"
+#define MAMESTAFTER             "mame_st"
 
 //Process INI Commands
 #define PORTCMDSTART1           "cm"

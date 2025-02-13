@@ -51,6 +51,7 @@ addLightGunWindow::addLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     ui->defaultLightGunComboBox->insertItem(RS3_REAPER,REAPERNAME);
     ui->defaultLightGunComboBox->insertItem(MX24,MX24NAME);
     ui->defaultLightGunComboBox->insertItem(JBGUN4IR,JBGUN4IRNAME);
+    ui->defaultLightGunComboBox->insertItem(FUSION,FUSIONNAME);
     ui->defaultLightGunComboBox->setCurrentIndex (0);
 
     //COM Port Combo Box - Adding Available COM Ports

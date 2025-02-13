@@ -1,0 +1,14 @@
+Open_COM=S6
+Close_COM=E
+Damage=F1x2
+Recoil=F0x2
+Reload=F0x0
+Ammo=F0x2
+Ammo_Value=F1x2
+Shake=F1x2
+Auto_LED=
+AspectRatio_16:9=
+AspectRatio_4:3=
+Joystick_Mode=
+Keyboard_Mouse_Mode=
+END_OF_FILE

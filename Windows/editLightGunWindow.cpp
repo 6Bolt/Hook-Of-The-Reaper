@@ -53,6 +53,7 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     ui->defaultLightGunComboBox->insertItem(RS3_REAPER,REAPERNAME);
     ui->defaultLightGunComboBox->insertItem(MX24,MX24NAME);
     ui->defaultLightGunComboBox->insertItem(JBGUN4IR,JBGUN4IRNAME);
+    ui->defaultLightGunComboBox->insertItem(FUSION,FUSIONNAME);
 
     //Check if the First Light Gun is a Default Light Gun
     defaultLightGun = p_comDeviceList->p_lightGunList[0]->GetDefaultLightGun();
