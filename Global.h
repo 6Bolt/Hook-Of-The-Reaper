@@ -42,7 +42,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Default Light Gun Definition - There is No Zero, as that is blan and nonDefaultLG
-#define NUM_DEFAULTLG           5
+#define NUM_DEFAULTLG           6
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -101,6 +101,21 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define FUSIONRELOAD            "0"
 #define FUSIONMAXAMMONUM        0
 #define FUSIONRELOADNUM         0
+
+
+//Fifth Default Light Gun
+//Blamcon Light Gun
+#define BLAMCON                  5
+#define BLAMCONNAME              "Blamcon"
+#define BLAMCONBAUD              4
+#define BLAMCONDATA              0
+#define BLAMCONPARITY            0
+#define BLAMCONSTOP              0
+#define BLAMCONFLOW              0
+#define BLAMCONMAXAMMO           "0"
+#define BLAMCONRELOAD            "0"
+#define BLAMCONMAXAMMONUM        0
+#define BLAMCONRELOADNUM         0
 
 
 

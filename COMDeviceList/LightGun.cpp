@@ -893,8 +893,8 @@ void LightGun::LoadDefaultLGCommands()
     qDebug() << aspect4x3Cmds;
     qDebug() << joystickCmds;
     qDebug() << keyMouseCmds;
-*/
 
+*/
 }
 
 

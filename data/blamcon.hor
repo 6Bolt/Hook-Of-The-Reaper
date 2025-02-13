@@ -1,0 +1,14 @@
+Open_COM=SM.6.1
+Close_COM=ES
+Damage=FB.1.1 FB.2.1.16711680.1
+Recoil=FB.0.1
+Reload=FB.1.1
+Ammo=FB.0.1
+Ammo_Value=FB.0.1
+Shake=FB.1.1 FB.2.1.16711680.1
+Auto_LED=
+AspectRatio_16:9=CM.3.0
+AspectRatio_4:3=CM.3.1
+Joystick_Mode=CM.0.1
+Keyboard_Mouse_Mode=CM.0.0
+END_OF_FILE

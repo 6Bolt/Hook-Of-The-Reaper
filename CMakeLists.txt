@@ -41,6 +41,7 @@ qt_add_executable(HookOfTheReaper
     defaultLG/lgi.txt defaultLG/lgi3d.txt defaultLG/lgj.txt
     defaultLG/alien3.txt defaultLG/confmiss.txt defaultLG/ptblank2.txt
     data/fusion.hor
+    data/blamcon.hor
 
 )
 
