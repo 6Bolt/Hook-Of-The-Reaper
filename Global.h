@@ -150,6 +150,7 @@ extern S_DEFAULTLG DEFAULTLG_ARRAY[];
 //File & Dir Data
 
 #define ENDOFFILE               "END_OF_FILE"
+#define DEFAULTFILE             "default"
 
 //Saved Light Gun & COM Devices Files & Dir
 #define DATAFILEDIR             "data"

@@ -21,10 +21,10 @@ playerAssignWindow::playerAssignWindow(ComDeviceList *cdList, QWidget *parent)
     //Load Players Combo Boxes with the Saved Light Guns; Number, Name, and COM Port. But the first entry will be blank to deassign
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();
 
-    ui->player1ComboBox->insertItem(0,"");
-    ui->player2ComboBox->insertItem(0,"");
-    ui->player3ComboBox->insertItem(0,"");
-    ui->player4ComboBox->insertItem(0,"");
+    ui->player1ComboBox->insertItem(0,"   ");
+    ui->player2ComboBox->insertItem(0,"   ");
+    ui->player3ComboBox->insertItem(0,"   ");
+    ui->player4ComboBox->insertItem(0,"   ");
 
     for(i = 0; i < numberLightGuns; i++)
     {
@@ -50,6 +50,8 @@ playerAssignWindow::playerAssignWindow(ComDeviceList *cdList, QWidget *parent)
         ui->player1ComboBox->setCurrentIndex (0);
     else
         ui->player1ComboBox->setCurrentIndex (playersAssignment[0]+1);
+
+
 
     if(playersAssignment[1] == UNASSIGN)
         ui->player2ComboBox->setCurrentIndex (0);

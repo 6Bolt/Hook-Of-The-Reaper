@@ -299,7 +299,7 @@ void ComDeviceList::DeleteLightGun(quint8 lgNumber)
         {
             if(playersLightGun[index] == lgNumber)
                 playersLightGun[index] = UNASSIGN;
-            else if(playersLightGun[index] > lgNumber)
+            else if(playersLightGun[index] > lgNumber && playersLightGun[index] != UNASSIGN)
                 playersLightGun[index]--;
         }
     }
@@ -1045,6 +1045,11 @@ void ComDeviceList::SaveSettings()
     else
         out << "0\n";
 
+    if(newGameFileOrDefaultFile)
+        out << "1\n";
+    else
+        out << "0\n";
+
 
     out << ENDOFFILE;
 
@@ -1155,7 +1160,22 @@ void ComDeviceList::LoadSettings()
         return;
     }
 
+    //Next Line is to Create new Game File or Use Default File
+    line = in.readLine();
 
+    if(line.startsWith ("1"))
+    {
+        newGameFileOrDefaultFile = true;
+    }
+    else if(line.startsWith ("0"))
+    {
+        newGameFileOrDefaultFile = false;
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at fifth setting. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
 
 
     //Next Line is End of File
@@ -1213,6 +1233,16 @@ void ComDeviceList::SetCloseComPortGameExit(bool ccpGameExit)
     closeComPortGameExit = ccpGameExit;
 }
 
+//Create a New Game File with Signals or Use Default File Setting
+bool ComDeviceList::GetNewGameFileOrDefaultFile()
+{
+    return newGameFileOrDefaultFile;
+}
+
+void ComDeviceList::SetNewGameFileOrDefaultFile(bool newgDefaultF)
+{
+    newGameFileOrDefaultFile = newgDefaultF;
+}
 
 void ComDeviceList::CopyUsedDipPlayersArray(bool *targetArray, quint8 size)
 {

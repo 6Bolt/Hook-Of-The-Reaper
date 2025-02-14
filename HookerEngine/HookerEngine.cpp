@@ -107,6 +107,7 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     useMultiThreading = p_comDeviceList->GetUseMultiThreading ();
     refreshTimeDisplay = p_comDeviceList->GetRefreshTimeDisplay ();
     closeComPortGameExit = p_comDeviceList->GetCloseComPortGameExit ();
+    newGameFileOrDefaultFile = p_comDeviceList->GetNewGameFileOrDefaultFile ();
 
     //Set-Up Refresh Display Timer
     p_refreshDisplayTimer = new QTimer(this);
@@ -1123,8 +1124,17 @@ void HookerEngine::GameFound()
             }
             else
             {
-                //If no Default LG or INI Game File, then create New Default LG file
-                NewLGFile();
+                if(newGameFileOrDefaultFile)
+                    NewLGFile();
+                else
+                {
+                    bool defaultFileFound = IsDefaultDefaultLGFile();
+
+                    if(defaultFileFound)
+                        LoadLGFile();
+                    else
+                        NewLGFile();
+                }
             }
         }
     }
@@ -1147,8 +1157,17 @@ void HookerEngine::GameFound()
                 LoadLGFile();
             else
             {
-                //Save a New INI File with Signals Connected
-                NewINIFile();
+                if(newGameFileOrDefaultFile)
+                    NewINIFile();
+                else
+                {
+                    bool defaultFileFound = IsDefaultINIFile();
+
+                    if(defaultFileFound)
+                        LoadINIFile();
+                    else
+                        NewINIFile();
+                }
             }
         }
     }
@@ -1182,6 +1201,19 @@ bool HookerEngine::IsINIFile()
 
     return fileFound;
 
+}
+
+bool HookerEngine::IsDefaultINIFile()
+{
+    bool fileFound;
+
+    gameINIFilePath = iniPath+"/"+DEFAULTFILE+ENDOFINIFILE;
+
+    fileFound = QFile::exists (gameINIFilePath);
+
+    //qDebug() << gameINIFilePath << " is found: " << fileFound;
+
+    return fileFound;
 }
 
 
@@ -1836,11 +1868,24 @@ void HookerEngine::WriteINIComPort(quint8 cpNum, QString cpData)
 ///////////////////////////////////////////////////////////////////////////
 
 
-bool HookerEngine::HookerEngine::IsDefaultLGFile()
+bool HookerEngine::IsDefaultLGFile()
 {
     bool fileFound;
 
     gameLGFilePath = defaultLGPath+"/"+gameName+ENDOFLGFILE;
+
+    fileFound = QFile::exists (gameLGFilePath);
+
+    //qDebug() << gameLGFilePath << " is found: " << fileFound;
+
+    return fileFound;
+}
+
+bool HookerEngine::IsDefaultDefaultLGFile()
+{
+    bool fileFound;
+
+    gameLGFilePath = defaultLGPath+"/"+DEFAULTFILE+ENDOFLGFILE;
 
     fileFound = QFile::exists (gameLGFilePath);
 

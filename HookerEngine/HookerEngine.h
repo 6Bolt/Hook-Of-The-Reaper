@@ -111,6 +111,9 @@ private:
     //Checks if an INI file Exists for Game
     bool IsINIFile();
 
+    //Checks if an INI Deafult file Exists in ./ini
+    bool IsDefaultINIFile();
+
     //Loads INI file for Game
     void LoadINIFile();
 
@@ -144,8 +147,11 @@ private:
     //Default LG Side, New Way of Doing Light Guns
     ///////////////////////////////////////////////////////////////////////////
 
-    //Checks if Default LG file Exists for Game
+    //Checks if Default LG Game file Exists
     bool IsDefaultLGFile();
+
+    //Checks if Default LG Default file Exists default.txt
+    bool IsDefaultDefaultLGFile();
 
     //Loads INI file for Game
     void LoadLGFile();
@@ -319,6 +325,7 @@ private:
     //Refresh time in msec
     quint32                         refreshTimeDisplay;
     bool                            closeComPortGameExit;
+    bool                            newGameFileOrDefaultFile;
 
     ///////////////////////////////////////////////////////////////////////////
 

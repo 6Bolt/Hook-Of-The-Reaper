@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>487</width>
+    <width>489</width>
     <height>300</height>
    </rect>
   </property>
@@ -150,6 +150,42 @@
    </property>
    <property name="text">
     <string>Close Serial COM Port on Game Exit. Un-check, Leaves it Open.</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="defaultFileCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>160</y>
+     <width>381</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>If No Game File, Create New Game File with Signals</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>180</y>
+     <width>441</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>UnCheck: Use Default File (ini/default.ini or defaultLG/default.txt</string>
    </property>
   </widget>
  </widget>

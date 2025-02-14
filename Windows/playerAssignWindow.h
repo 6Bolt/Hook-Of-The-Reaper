@@ -54,7 +54,7 @@ private:
     quint8                  numberLightGuns;
 
     quint8                  playersAssignment[MAXPLAYERLIGHTGUNS];
-    quint8                  playersIndex[MAXPLAYERLIGHTGUNS];
+    qint16                  playersIndex[MAXPLAYERLIGHTGUNS];
 
 };
 

@@ -46,11 +46,13 @@ private:
     bool                useDefaultLGFirst;
     bool                useMultiThreading;
     bool                closeComPortGameExit;
+    bool                newGameFileOrDefaultFile;
 
     //For Check Boxes
     Qt::CheckState      defaultLG;
     Qt::CheckState      multiThreading;
     Qt::CheckState      closeComPort;
+    Qt::CheckState      newFileOrDefault;
 
     //Refresh Time in Number and String
     quint32             refreshDisplayTime;
