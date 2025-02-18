@@ -681,7 +681,9 @@ void LightGun::LoadDefaultLGCommands()
         defaultLightGunNum = 0;
 
     //Get Current Path
-    currentPath = QDir::currentPath();
+    //currentPath = QDir::currentPath();
+    currentPath = QApplication::applicationDirPath();
+
     dataPath = currentPath + "/" + DATAFILEDIR;
 
     defaultLGFilePath = dataPath + "/" + DEFAULTLGFILENAMES_ARRAY[defaultLightGunNum];

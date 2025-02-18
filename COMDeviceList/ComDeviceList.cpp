@@ -32,8 +32,8 @@ ComDeviceList::ComDeviceList()
     }
 
     //Get Current Path
-    currentPath = QDir::currentPath();
-
+    //currentPath = QDir::currentPath();
+    currentPath = QApplication::applicationDirPath();
 
     //qDebug() << currentPath;
     currentPathDir.setPath (currentPath);

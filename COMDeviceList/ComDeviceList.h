@@ -5,7 +5,7 @@
 
 #include <QDir>
 #include <QMessageBox>
-
+#include <QApplication>
 
 #include <QObject>
 #include <QFile>

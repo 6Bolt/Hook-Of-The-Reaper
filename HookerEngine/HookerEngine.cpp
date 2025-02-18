@@ -51,7 +51,8 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
 
 
     //Start of Directory and Path Checking. If Directory Doesn't Exists, It will Make it
-    currentPath = QDir::currentPath();
+    //currentPath = QDir::currentPath();
+    currentPath = QApplication::applicationDirPath();
 
     //INI Stuff
     iniMAMEPathDir.setPath (currentPath);

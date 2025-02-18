@@ -3,7 +3,7 @@
 
 
 #include <QSerialPortInfo>
-
+#include <QApplication>
 #include <QObject>
 #include <QDir>
 #include <QFile>
