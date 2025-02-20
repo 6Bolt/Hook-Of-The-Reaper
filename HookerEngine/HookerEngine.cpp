@@ -839,8 +839,8 @@ void HookerEngine::TCPDisconnected()
 
         //QObject().thread()->usleep(50);
 
-        if(gameHasRun)
-            ClearOnDisconnect();
+        //if(gameHasRun)
+        //    ClearOnDisconnect();
 
         //Timer Start  - Interval Already Set
         p_waitingForConnection->start ();
@@ -954,6 +954,8 @@ void HookerEngine::ClearOnDisconnect()
 
             iniFileTemp.close ();
         }
+
+
     }
 
 
@@ -1013,6 +1015,19 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
 
                 //Start Refresh Time for Display Timer
                 p_refreshDisplayTimer->start ();
+
+                if(!firstTimeGame)
+                {
+                    //Check old stuff to make sure it is close & cleared
+
+                    signalsAndCommands.clear ();
+                    stateAndCommands.clear ();
+                    signalsNoCommands.clear ();
+                    statesNoCommands.clear ();
+                }
+                else
+                    firstTimeGame = false;
+
 
                 //Start Looking For Game Files to Load
                 GameFound();
@@ -1115,20 +1130,20 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
                         iniFileTemp.close ();
                     }
 
-
+                    iniFileLoaded = false;
                 }
 
                 //Clear out Old Games Signal & Data and States & Data
                 signalsAndData.clear ();
                 statesAndData.clear ();
 
-                //Clear Out Old Games Signal & Commands & Signals & No Commands
+                //Clear out Signal & Commands QMap & Signal & No Commands QLists
                 signalsAndCommands.clear ();
                 stateAndCommands.clear ();
                 signalsNoCommands.clear ();
                 statesNoCommands.clear ();
 
-                //The other 3 File Loaded bools where checked before, so Clear the Last
+                //The other 2 File Loaded bools where checked before, so Clear the Last 2
                 lgFileLoaded = false;
                 iniFileLoaded = false;
 

@@ -97,9 +97,9 @@ void HookCOMPort::Disconnect(const quint8 &comPortNum)
 {
     if(comPortOpen[comPortNum])
     {
-        p_ComPortArray[comPortNum]->flush ();
+        //p_ComPortArray[comPortNum]->flush ();
 
-        bool writeDone = p_ComPortArray[comPortNum]->waitForBytesWritten (COMPORTWAITFORWRITE);
+        //bool writeDone = p_ComPortArray[comPortNum]->waitForBytesWritten (COMPORTWAITFORWRITE);
 
         //qDebug() << "Closing COM Port #" << comPortNum << " writeDone: " << writeDone;
 

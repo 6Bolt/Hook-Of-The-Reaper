@@ -1054,6 +1054,8 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
                 tempAV = reloadValue;
             else if(ammoValue > maxAmmo)
                 tempAV = maxAmmo;
+            else if(lastAmmoValue == 0 && ammoValue == 0) //To make sure it is not sending Z0 multiple times
+                tempAV = reloadValue;
             else
                 tempAV = ammoValue;
 
