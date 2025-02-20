@@ -86,6 +86,12 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
     DEFAULTLG_ARRAY[BLAMCON].RELOADVALUEN = BLAMCONRELOADNUM;
 
 
+    //TCP Socket is Not Connected Yet
+    isTCPConnected = false;
+
+    //Is Game INI or DefaultLG
+    isGameINI = false;
+
 
     //Creates a New COM Port Device List, which Includes Light Guns and Other COM Devices
     //Loads Up Save Data Files and Settings File
@@ -103,6 +109,7 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
     connect(p_hookEngine, &HookerEngine::UpdateSignalFromGame, this, &HookOfTheReaper::UpdateSignalDisplay);
     connect(p_hookEngine, &HookerEngine::UpdatePauseFromGame, this, &HookOfTheReaper::UpdatePauseDisplay);
     connect(p_hookEngine, &HookerEngine::UpdateOrientationFromGame, this, &HookOfTheReaper::UpdateOrientationDisplay);
+    connect(p_hookEngine, &HookerEngine::TCPStatus, this, &HookOfTheReaper::UpdateTCPConnectionStatus);
 
     //Get the Number of Devices, after Loading Up the Save Data
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();
@@ -128,21 +135,27 @@ HookOfTheReaper::~HookOfTheReaper()
 //Displays No Game Data on Main Window
 void HookOfTheReaper::DisplayMameNoGame()
 {
-   //Display Text QMap needs to be cleared
-   signalNumberMap.clear ();
+    //Display Text QMap needs to be cleared
+    signalNumberMap.clear ();
 
-    MakeTopDisplayText(MAMENOGAMEEMPTY);
+    gameName = MAMENOGAMEEMPTY;
+
+    MakeTopDisplayText();
 
     DisplayText();
 }
 
 //Displays Top of Game Data on Main Window
-void HookOfTheReaper::DisplayMameGame(QString gName)
+void HookOfTheReaper::DisplayMameGame(QString gName, bool iniGame)
 {
     //Display Text QMap needs to be cleared
     signalNumberMap.clear ();
 
-    MakeTopDisplayText(gName);
+    isGameINI = iniGame;
+
+    gameName = gName;
+
+    MakeTopDisplayText();
 
     displayText << " " << OUTPUTSIGNALS << OUTPUTSIGNALSDASHES;
 
@@ -182,7 +195,7 @@ void HookOfTheReaper::UpdateSignalDisplay(const QString &sig, const QString &dat
 //Updates Pause Data on Main Window
 void HookOfTheReaper::UpdatePauseDisplay(QString dat)
 {
-    QString pTemp = PAUSEEQUALS+dat;
+    QString pTemp = PAUSECOLON+dat;
     displayText[PAUSEINDEX] = pTemp;
 
     DisplayText();
@@ -191,12 +204,20 @@ void HookOfTheReaper::UpdatePauseDisplay(QString dat)
 //Updates Orientation Data on the Main Window
 void HookOfTheReaper::UpdateOrientationDisplay(QString sig, QString dat)
 {
-    QString oTemp = sig+" = "+dat;
+    QString oTemp = sig+": "+dat;
     displayText[ORIENTATIONINDEX] = oTemp;
 
     DisplayText();
 }
 
+void HookOfTheReaper::UpdateTCPConnectionStatus(bool tcpConStatus)
+{
+    isTCPConnected = tcpConStatus;
+
+    MakeTopDisplayText();
+
+    DisplayText();
+}
 
 //Private Slots
 
@@ -592,16 +613,42 @@ void HookOfTheReaper::on_actionTest_INI_Game_File_triggered()
 
 //Private Functions
 
-void HookOfTheReaper::MakeTopDisplayText(QString romName)
+void HookOfTheReaper::MakeTopDisplayText()
 {
     displayText.clear ();
-    QString temp = MAMESTARTAFTER;
-    temp.append ("\n");
-    displayText << temp;
+    //QString temp = MAMESTARTAFTER;
+    //temp.append ("\n");
+    //displayText << temp;
+    QString tcpSock = TCPSOCKET;
+
+    if(isTCPConnected)
+        tcpSock.append (CONNECTED);
+    else
+        tcpSock.append (NOCONNECTION);
+
+    displayText << tcpSock;
     displayText << GAMEINFO << GAMEINFODASHES;
-    temp = ROMEQUALS;
-    temp.append (romName);
-    displayText << temp << ORIENTATIONEQUAL0 << PAUSEEQUALS0;
+    QString temp = ROMCOLON;
+    temp.append (gameName);
+    displayText << temp;
+
+    if(gameName != MAMENOGAMEEMPTY)
+    {
+        temp = GAMEFILE;
+        temp.append (gameName);
+
+        if(isGameINI)
+            temp.append (ENDOFINIFILE);
+        else
+            temp.append (ENDOFLGFILE);
+
+    }
+    else
+    {
+        temp = GAMEFILE;
+    }
+
+    displayText << temp << ORIENTATIONCLNEQUAL0 << PAUSECLNEQUALS0;
 }
 
 void HookOfTheReaper::DisplayText()

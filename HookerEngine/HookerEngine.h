@@ -60,6 +60,8 @@ signals:
     void StartTCPSocket();
     void StopTCPSocket();
 
+    void TCPStatus(bool tcpConStatus);
+
     //Starts and Stops a Certain Serial COM Port (different thread)
     void StartComPort(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const bool &isWriteOnly);
     void StopComPort(const quint8 &comPortNum);
@@ -72,7 +74,7 @@ signals:
 
     //Update the Display Data
     void MameConnectedNoGame();
-    void MameConnectedGame(QString gName);
+    void MameConnectedGame(QString gName, bool iniGame);
     void AddSignalFromGame(const QString &sig, const QString &dat);
     void UpdateSignalFromGame(const QString &sig, const QString &dat);
     void UpdatePauseFromGame(QString dat);
@@ -94,6 +96,9 @@ private slots:
 
 
 private:
+
+    //Clears Things out on a TCP Diconnect, if a Game has Run
+    void ClearOnDisconnect();
 
     //Processes the TCP Socket Data
     void ProcessTCPData(QStringList tcpReadData);
@@ -214,6 +219,7 @@ private:
     //When a Game is Found
     bool                            isGameFound;
     bool                            firstTimeGame;
+    bool                            gameHasRun;
 
     ///////////////////////////////////////////////////////////////////////////
 

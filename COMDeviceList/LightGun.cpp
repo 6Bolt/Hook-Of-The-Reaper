@@ -30,6 +30,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     maxAmmoSet = true;
     reloadValueSet = true;
 
+    lastAmmoValue =0;
+
     isDipSwitchPlayerNumberSet = false;
 
     analogStrength = DEFAULTANALOGSTRENGTH;
@@ -89,6 +91,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     analogStrength = DEFAULTANALOGSTRENGTH;
     isAnalogStrengthSet = false;
 
+    lastAmmoValue =0;
 
     LoadDefaultLGCommands();
 }
@@ -165,6 +168,7 @@ LightGun::LightGun(LightGun const &lgMember)
         isAnalogStrengthSet = false;
     }
 
+    lastAmmoValue =0;
 
     LoadDefaultLGCommands();
 
@@ -220,7 +224,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     analogStrength = DEFAULTANALOGSTRENGTH;
     isAnalogStrengthSet = false;
 
-
+    lastAmmoValue =0;
 
     LoadDefaultLGCommands();
 }
@@ -275,6 +279,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     analogStrength = analStrength;
     isAnalogStrengthSet = true;
+
+    lastAmmoValue =0;
 
     LoadDefaultLGCommands();
 }

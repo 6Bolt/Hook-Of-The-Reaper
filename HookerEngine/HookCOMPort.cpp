@@ -63,7 +63,7 @@ void HookCOMPort::Connect(const quint8 &comPortNum, const QString &comPortName, 
         p_ComPortArray[comPortNum]->setPort (newPortInfo);
 
         if(isWriteOnly)
-            isOpen = p_ComPortArray[comPortNum]->open (QIODevice::WriteOnly);
+            isOpen = p_ComPortArray[comPortNum]->open(QIODevice::WriteOnly);
         else
             isOpen = p_ComPortArray[comPortNum]->open(QIODevice::ReadWrite);
 
@@ -97,6 +97,11 @@ void HookCOMPort::Disconnect(const quint8 &comPortNum)
 {
     if(comPortOpen[comPortNum])
     {
+        p_ComPortArray[comPortNum]->flush ();
+
+        bool writeDone = p_ComPortArray[comPortNum]->waitForBytesWritten (COMPORTWAITFORWRITE);
+
+        //qDebug() << "Closing COM Port #" << comPortNum << " writeDone: " << writeDone;
 
         p_ComPortArray[comPortNum]->close ();
 
@@ -122,12 +127,14 @@ void HookCOMPort::WriteData(const quint8 &comPortNum, const QByteArray &writeDat
     if(comPortOpen[comPortNum])
     {
 
-        //qDebug() << "Data to be Written: " << QString::fromStdString (writeData.toStdString ());
+
         //qDebug() << "Port is Open: " << p_ComPortArray[comPortNum]->isOpen() << " and Port Number is: " << comPortNum;
 
         bytesWritten = p_ComPortArray[comPortNum]->write(writeData);
 
         //qDebug() << "bytesWritten is : " << bytesWritten << " and QByteArray size is: " << writeData.size();
+
+        //qDebug() << "Data to be Written: " << QString::fromStdString (writeData.toStdString ()) << " to Port #" << comPortNum << " bytesWritten:" << bytesWritten;
 
         //If the data has not been Written, flush & wait 100 milli-secs
         if(bytesWritten != writeData.size())

@@ -191,14 +191,22 @@ extern S_DEFAULTLG DEFAULTLG_ARRAY[];
 #define GAMEINFO                "Game Info:"
 #define GAMEINFODASHES          "------------"
 #define ROMEQUALS               "ROM="
+#define ROMCOLON                "ROM: "
 #define ORIENTATIONEQUAL0       "Orientation=0"
+#define ORIENTATIONCLNEQUAL0    "Orientation: 0"
 #define PAUSEEQUALS0            "Pause=0"
+#define PAUSECLNEQUALS0         "Pause: 0"
 #define OUTPUTSIGNALS           "Output Signals:"
 #define OUTPUTSIGNALSDASHES     "-----------------"
 #define PAUSEEQUALS             "Pause = "
-#define PAUSEINDEX              5
-#define ORIENTATIONINDEX        4
+#define PAUSECOLON              "Pause: "
+#define PAUSEINDEX              6
+#define ORIENTATIONINDEX        5
 #define MAMENOGAMEEMPTY         "___empty"
+#define TCPSOCKET               "TCP Socket: "
+#define CONNECTED               "Connected\n"
+#define NOCONNECTION            "No Connection\n"
+#define GAMEFILE                "Game File: "
 
 
 

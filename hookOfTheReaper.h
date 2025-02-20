@@ -49,7 +49,7 @@ public slots:
     void DisplayMameNoGame();
 
     //Display Data in the Text Browser when Game is Connected to TCP Socket
-    void DisplayMameGame(QString gName);
+    void DisplayMameGame(QString gName, bool iniGame);
 
     //Add Output Signal to the Display Data in Text Browser
     void AddSignalDisplay(const QString &sig, const QString &dat);
@@ -62,6 +62,9 @@ public slots:
 
     //Update the Orientation Vaule in the Display Data
     void UpdateOrientationDisplay(QString sig, QString dat);
+
+    //Update TCP Connection
+    void UpdateTCPConnectionStatus(bool tcpConStatus);
 
 
 
@@ -135,7 +138,7 @@ signals:
 private:
 
     //Makes the Default Display Data that is Shown in the Text Browser
-    void MakeTopDisplayText(QString romName);
+    void MakeTopDisplayText();
 
     //Display the Display Data to Text Browser
     void DisplayText();
@@ -190,6 +193,16 @@ private:
 
     //Maps Where the Output Data is in the Display Data
     QMap<QString,quint8>            signalNumberMap;
+
+    //If the TCP Socket is Connected or Not
+    bool                            isTCPConnected;
+
+    //Name of the ROM or Game
+    QString                         gameName;
+
+    //Is Game File DefaultLG or INI
+    bool                            isGameINI;
+
 
 };
 #endif // HOOKOFTHEREAPER_H
