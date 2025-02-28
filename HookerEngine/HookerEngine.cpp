@@ -2666,7 +2666,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                     //Must Be Ammo_Value Command
                                     dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(&dlgCMDFound, value.toUInt ());
                                 }
-                                else  //Must Be Ammo Command
+                                else if(value != "0") //Must Be Ammo Command, and only do if not zero
                                     dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoCommands(&dlgCMDFound);
                             }
                             else if(commands[i][2] == 's')
