@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>373</height>
+    <height>413</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -45,6 +45,18 @@
     </widget>
    </item>
    <item>
+    <widget class="QLabel" name="versionLabel">
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Version:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QLabel" name="label_4">
      <property name="font">
       <font>
@@ -59,7 +71,7 @@
    <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Hook of the Reaper has two goals. The first is to be an updated version of MameHooker, that is compatible on all OSes. It has to read in MameHooker INI files, and work the same. The second goal, is to implament default light guns with default light gun game files. For example, most light guns have a damage signal, which makes the gun vibrate. In the game file, it will just state &quot;&gt;Damage.&quot; The program will handle what data is written to the Serial COM port. This will make the default light gun game files work with any imlpamented light guns. So far there are three, Retro Shooter RS3 Reaper, Retro Shooter MX24, and JB Gun4IR. The name comes from MAMEHooker and the RS3 Reaper light gun.</string>
+      <string>Hook of the Reaper has two goals. The first is to be an updated version of MameHooker, that is compatible on all OSes. It has to read in MameHooker INI files, and work the same. The second goal, is to implament default light guns with default light gun game files. For example, most light guns have a damage signal, which makes the gun vibrate. In the game file, it will just state &quot;&gt;Damage.&quot; The program will handle what data is written to the Serial COM port. This will make the default light gun game files work with any imlpamented light guns. The name comes from MAMEHooker and the RS3 Reaper light gun.</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>

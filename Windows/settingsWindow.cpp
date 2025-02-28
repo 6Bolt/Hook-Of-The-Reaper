@@ -54,14 +54,6 @@ settingsWindow::settingsWindow(ComDeviceList *cdList, QWidget *parent)
         ui->closeComCheckBox->setCheckState (Qt::Unchecked);
 
 
-    newGameFileOrDefaultFile = p_comDeviceList->GetNewGameFileOrDefaultFile ();
-
-    //If Set. then Check the Box
-    if(newGameFileOrDefaultFile)
-        ui->defaultFileCheckBox->setCheckState (Qt::Checked);
-    else
-        ui->defaultFileCheckBox->setCheckState (Qt::Unchecked);
-
 }
 
 //Deconstructor
@@ -103,7 +95,6 @@ void settingsWindow::CheckAndSaveSetting()
     defaultLG = ui->useDefaultLGCheckBox->checkState ();
     multiThreading = ui->useMultiThreadCheckBox->checkState ();
     closeComPort = ui->closeComCheckBox->checkState ();
-    newFileOrDefault = ui->defaultFileCheckBox->checkState ();
 
     if(defaultLG == Qt::Checked)
         useDefaultLGFirst = true;
@@ -121,11 +112,6 @@ void settingsWindow::CheckAndSaveSetting()
     else
         closeComPortGameExit = false;
 
-    if(newFileOrDefault == Qt::Checked)
-        newGameFileOrDefaultFile = true;
-    else
-        newGameFileOrDefaultFile = false;
-
 
     tempRTD = ui->refreshDisplayLineEdit->text ();
     refreshDisplayTime = tempRTD.toUInt (&isNumber);
@@ -134,7 +120,7 @@ void settingsWindow::CheckAndSaveSetting()
     p_comDeviceList->SetUseDefaultLGFirst(useDefaultLGFirst);
     p_comDeviceList->SetUseMultiThreading (useMultiThreading);
     p_comDeviceList->SetCloseComPortGameExit (closeComPortGameExit);
-    p_comDeviceList->SetNewGameFileOrDefaultFile (newGameFileOrDefaultFile);
+
 
     if(isNumber)
     {

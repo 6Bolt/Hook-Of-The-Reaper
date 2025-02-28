@@ -40,7 +40,9 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
         tempQS.append (": ");
         tempQS.append (p_comDeviceList->p_lightGunList[i]->GetLightGunName());
         tempQS.append (" on ");
-        tempQS.append (p_comDeviceList->p_lightGunList[i]->GetComPortString());
+        quint8 cpNum = p_comDeviceList->p_lightGunList[i]->GetComPortNumber();
+        tempQS.append ("COM");
+        tempQS.append (QString::number (cpNum));
         ui->savedLightGunsComboBox->insertItem(i,tempQS);
     }
 
@@ -71,6 +73,8 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
 
             hubComPortNumber = p_comDeviceList->p_lightGunList[0]->GetHubComPortNumber ();
             ui->hubComComboBox->setCurrentIndex(hubComPortNumber);
+            ui->comPortComboBox->setEnabled(false);
+            FillSerialPortInfo(hubComPortNumber);
         }
     }
 
@@ -98,9 +102,11 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
             ui->dipSwitchComboBox->setCurrentIndex(dipSwitchNumber);
             ui->hubComComboBox->setEnabled(true);
             ui->analogLineEdit->setEnabled(false);
+            ui->comPortComboBox->setEnabled(false);
         }
         else if(defaultLightGunNum == JBGUN4IR)
         {
+            ui->comPortComboBox->setEnabled(true);
             ui->dipSwitchComboBox->setEnabled(false);
             ui->hubComComboBox->setEnabled(false);
             ui->analogLineEdit->setEnabled(true);
@@ -110,11 +116,11 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
         }
         else
         {
+            ui->comPortComboBox->setEnabled(true);
             ui->dipSwitchComboBox->setEnabled(false);
             ui->hubComComboBox->setEnabled(false);
             ui->analogLineEdit->setEnabled(false);
             dipSwitchNumber = UNASSIGN;
-            analogStrength = UNASSIGN;
         }
     }
     else
@@ -122,6 +128,7 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
         ui->defaultLightGunComboBox->setCurrentIndex(0);
         defaultLightGunNum = 0;
         SetEnableComboBoxes(true);
+        ui->comPortComboBox->setEnabled(true);
         ui->dipSwitchComboBox->setEnabled(false);
         ui->hubComComboBox->setEnabled(false);
         ui->analogLineEdit->setEnabled(false);
@@ -130,9 +137,13 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
 
 
     //COM Port Combo Box - List Unused COM Port and Select Light Gun COM Port
-    comPortName = p_comDeviceList->p_lightGunList[0]->GetComPortString();
-    comPortNum = p_comDeviceList->p_lightGunList[0]->GetComPortNumberBypass();
-    unusedComPort[comPortNum] = true;
+    if((defaultLightGun && defaultLightGunNum != MX24) || !defaultLightGun)
+    {
+        comPortName = p_comDeviceList->p_lightGunList[0]->GetComPortString();
+        comPortNum = p_comDeviceList->p_lightGunList[0]->GetComPortNumberBypass();
+        unusedComPort[comPortNum] = true;
+    }
+
 
     for(quint8 comPortIndx=0;comPortIndx<MAXCOMPORTS;comPortIndx++)
     {
@@ -143,9 +154,12 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
         ui->comPortComboBox->insertItem(comPortIndx,tempQS);
 
     }
-    ui->comPortComboBox->setCurrentIndex(comPortNum);
-    FillSerialPortInfo(comPortNum);
 
+    if((defaultLightGun && defaultLightGunNum != MX24) || !defaultLightGun)
+    {
+        ui->comPortComboBox->setCurrentIndex(comPortNum);
+        FillSerialPortInfo(comPortNum);
+    }
 
     comPortBaud = p_comDeviceList->p_lightGunList[0]->GetComPortBaud ();
 
@@ -225,6 +239,23 @@ void editLightGunWindow::on_savedLightGunsComboBox_currentIndexChanged(int index
 
 void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int index)
 {
+    if(defaultLightGun && defaultLightGunNum == MX24)
+    {
+        QString tempQS;
+
+        p_comDeviceList->CopyAvailableComPortsArray(unusedComPort, MAXCOMPORTS);
+
+        for(quint8 comPortIndx=0;comPortIndx<MAXCOMPORTS;comPortIndx++)
+        {
+            if(unusedComPort[comPortIndx])
+                tempQS = BEGINCOMPORTNAME+QString::number(comPortIndx);
+            else
+                tempQS = "";
+            ui->comPortComboBox->setItemText (comPortIndx,tempQS);
+        }
+    }
+
+
     //Set Data for Default Guns. Currently only Retro Shooters: RS3 Reaper Gun
     if(index > 0)
     {
@@ -242,11 +273,21 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
         {
             ui->dipSwitchComboBox->setEnabled(true);
             ui->hubComComboBox->setEnabled(true);
+            ui->comPortComboBox->setEnabled(false);
+
+            quint8 hubIndex = ui->hubComComboBox->currentIndex ();
+
+            FillSerialPortInfo(hubIndex);
         }
         else
         {
             ui->dipSwitchComboBox->setEnabled(false);
             ui->hubComComboBox->setEnabled(false);
+            ui->comPortComboBox->setEnabled(true);
+
+            quint8 comPortIndex = ui->comPortComboBox->currentIndex ();
+
+            FillSerialPortInfo(comPortIndex);
         }
 
         if(index == JBGUN4IR)
@@ -261,6 +302,13 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
     {
         //Enable Combo Boxes Affect by Default Light Gun
         SetEnableComboBoxes(true);
+
+        ui->comPortComboBox->setEnabled(true);
+
+        quint8 comPortIndex = ui->comPortComboBox->currentIndex ();
+
+        FillSerialPortInfo(comPortIndex);
+
         ui->dipSwitchComboBox->setEnabled(false);
         ui->hubComComboBox->setEnabled(false);
         ui->analogLineEdit->clear();
@@ -283,7 +331,36 @@ void editLightGunWindow::on_deletePushButton_clicked()
     quint8 dlgIndex = ui->savedLightGunsComboBox->currentIndex ();
     quint8 i;
     QString tempQS;
+    quint8 hupComPort;
 
+
+    //If Deleting a MX24, and it is the Last One, then Add COM Port back Into List
+    bool dfLG = p_comDeviceList->p_lightGunList[dlgIndex]->GetDefaultLightGun ();
+    quint8 dfLGNum = p_comDeviceList->p_lightGunList[dlgIndex]->GetDefaultLightGunNumber ();
+
+    if(dfLG && dfLGNum == MX24)
+    {
+        hupComPort = p_comDeviceList->p_lightGunList[dlgIndex]->GetHubComPortNumber ();
+        numberLightGuns = p_comDeviceList->GetNumberLightGuns();
+        bool hupComPortMatch = false;
+
+        for(i = 0; i < numberLightGuns; i++)
+        {
+            quint8 tempCP = p_comDeviceList->p_lightGunList[i]->GetComPortNumber ();
+
+            if(hupComPort == tempCP && dlgIndex != i)
+            {
+                hupComPortMatch = true;
+                break;
+            }
+        }
+
+        //Add Hub Com Port Back Into COM Port List, if no Match
+        if(!hupComPortMatch)
+            p_comDeviceList->ModifyComPortArray(hupComPort, true);
+    }
+
+    //Delete Selected Light Gun
     p_comDeviceList->DeleteLightGun (dlgIndex);
 
     //Load First Combo Box with the Saved Light Guns; Number, Name, and COM Port
@@ -303,15 +380,19 @@ void editLightGunWindow::on_deletePushButton_clicked()
             tempQS.append (": ");
             tempQS.append (p_comDeviceList->p_lightGunList[i]->GetLightGunName());
             tempQS.append (" on ");
-            tempQS.append (p_comDeviceList->p_lightGunList[i]->GetComPortString());
+            quint8 cpNum = p_comDeviceList->p_lightGunList[i]->GetComPortNumber();
+            tempQS.append ("COM");
+            tempQS.append (QString::number (cpNum));
             ui->savedLightGunsComboBox->setItemText(i,tempQS);
+            //Reset Light Gun Numbers, to match Array
+            p_comDeviceList->p_lightGunList[i]->SetLightGunNumber (i);
         }
         ui->savedLightGunsComboBox->removeItem (numberLightGuns);
         ui->savedLightGunsComboBox->setCurrentIndex (0);
 
         //Rebuild COM Port Combo Box, Now with the Used COM port Removed
         p_comDeviceList->CopyAvailableComPortsArray(unusedComPort, MAXCOMPORTS);
-        comPortNum = p_comDeviceList->p_lightGunList[0]->GetComPortNumberBypass();
+        comPortNum = p_comDeviceList->p_lightGunList[0]->GetComPortNumber();
         unusedComPort[comPortNum] = true;
 
         //COM Port Combo Box
@@ -348,7 +429,8 @@ void editLightGunWindow::on_editPushButton_clicked()
 
         //Rebuild COM Port Combo Box, Now with the Used COM port Removed
         p_comDeviceList->CopyAvailableComPortsArray(unusedComPort, MAXCOMPORTS);
-        unusedComPort[comPortNum] = true;
+        if(comPortNum != UNASSIGN)
+            unusedComPort[comPortNum] = true;
 
         //COM Port Combo Box
         for(quint8 comPortIndx=0;comPortIndx<MAXCOMPORTS;comPortIndx++)
@@ -359,9 +441,17 @@ void editLightGunWindow::on_editPushButton_clicked()
                 tempQS = "";
             ui->comPortComboBox->setItemText (comPortIndx,tempQS);
         }
-        ui->comPortComboBox->setCurrentIndex(comPortNum);
 
-        FillSerialPortInfo(comPortNum);
+        if(defaultLightGun && defaultLightGunNum == MX24)
+        {
+            ui->hubComComboBox->setCurrentIndex(hubComPortNumber);
+            FillSerialPortInfo(hubComPortNumber);
+        }
+        else
+        {
+            ui->comPortComboBox->setCurrentIndex(comPortNum);
+            FillSerialPortInfo(comPortNum);
+        }
 
         tempQS = QString::number(lightGunNum+1);
         tempQS.append (": ");
@@ -411,13 +501,12 @@ bool editLightGunWindow::IsValidData()
     bool analNotNumber = false;
     bool analNotRange = false;
     bool badDipIndex = false;
-    bool hubCom = false;
     bool hubComLG = false;
     quint8 numLightGuns = p_comDeviceList->GetNumberLightGuns();
     quint8 i;
     quint8 currentIndex = ui->savedLightGunsComboBox->currentIndex ();
     quint8 defaultLGIndex = ui->defaultLightGunComboBox->currentIndex ();
-    quint8 comPortIndex =  ui->comPortComboBox->currentIndex ();
+    //quint8 comPortIndex =  ui->comPortComboBox->currentIndex ();
     quint8 hubComIndex = ui->hubComComboBox->currentIndex ();
 
 
@@ -440,10 +529,7 @@ bool editLightGunWindow::IsValidData()
     }
 
 
-    //Check If the Com Port Name is Empty for the Combo Box
-    ivTemp = ui->comPortComboBox->currentText ();
-    if(ivTemp.isEmpty ())
-        comPortNumEmpty = true;
+
 
     if(defaultLGIndex == MX24)
     {
@@ -451,14 +537,19 @@ bool editLightGunWindow::IsValidData()
         if(ivTemp.isEmpty ())
             badDipIndex = true;
 
-        if(hubComIndex == comPortIndex)
-            hubCom = true;
 
         for(i = 0; i < numLightGuns; i++)
         {
             if(hubComIndex == p_comDeviceList->p_lightGunList[i]->GetComPortNumberBypass ())
                 hubComLG = true;
         }
+    }
+    else
+    {
+        //Check If the Com Port Name is Empty for the Combo Box
+        ivTemp = ui->comPortComboBox->currentText ();
+        if(ivTemp.isEmpty ())
+            comPortNumEmpty = true;
     }
 
     if(defaultLGIndex == JBGUN4IR)
@@ -479,7 +570,7 @@ bool editLightGunWindow::IsValidData()
 
     //Check All the bools, If They are false, data is good and return true.
     //If false, then make a Warning string, and Pop Up a Warning Message Box on What is Wrong and return false
-    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubCom == false && hubComLG == false)
+    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubComLG == false)
     {
         return true;
     }
@@ -493,8 +584,6 @@ bool editLightGunWindow::IsValidData()
             message.append ("Light gun name is already used. Please pick a different name.");
         if(badDipIndex == true)
             message.append ("A Used Dip Switch Player has been selected. Please change to a valid Dip Switch Player.");
-        if(hubCom == true)
-            message.append ("The hub COM port cannot be the same as the light gun. Please change it to the MX24 Hub COM port number.");
         if(hubComLG == true)
             message.append ("The hub COM port cannot be the same as saved light gun(s). Please change it to the MX24 Hub COM port number.");
         if(analNotNumber == true)
@@ -554,16 +643,51 @@ bool editLightGunWindow::IsDefaultLightGun()
 void editLightGunWindow::EditLightGun()
 {
     quint8 oldComPort;
+    quint8 hupComPort;
 
     //Collect Light Gun Name, Number, COM Port Number & Name, and Serial Port Info
     lightGunNum = ui->savedLightGunsComboBox->currentIndex ();
     lightGunName = ui->lightGunNameLineEdit->text();
-    comPortNum = ui->comPortComboBox->currentIndex ();
-    comPortName = BEGINCOMPORTNAME+QString::number(comPortNum);
-    p_comPortInfo = new QSerialPortInfo(comPortName);
+
+    if(defaultLightGun && defaultLightGunNum == MX24)
+        comPortNum = UNASSIGN;
+    else
+        comPortNum = ui->comPortComboBox->currentIndex ();
+
+    if(comPortNum != UNASSIGN)
+    {
+        comPortName = BEGINCOMPORTNAME+QString::number(comPortNum);
+        p_comPortInfo = new QSerialPortInfo(comPortName);
+    }
+
+    //If Was a MX24 but not Not, Check if Hub COM Port Needs to be put Back Into COM Ports
+    bool dfLG = p_comDeviceList->p_lightGunList[lightGunNum]->GetDefaultLightGun ();
+    quint8 dfLGNum = p_comDeviceList->p_lightGunList[lightGunNum]->GetDefaultLightGunNumber ();
+
+    if((dfLG && dfLGNum == MX24) && defaultLightGunNum != MX24)
+    {
+        hupComPort = p_comDeviceList->p_lightGunList[lightGunNum]->GetHubComPortNumber ();
+        numberLightGuns = p_comDeviceList->GetNumberLightGuns();
+        bool hupComPortMatch = false;
+
+        for(quint8 i = 0; i < numberLightGuns; i++)
+        {
+            quint8 tempCP = p_comDeviceList->p_lightGunList[i]->GetComPortNumber ();
+
+            if(hupComPort == tempCP && lightGunNum != i)
+            {
+                hupComPortMatch = true;
+                break;
+            }
+        }
+
+        //Add Hub Com Port Back Into COM Port List, if no Match
+        if(!hupComPortMatch)
+            p_comDeviceList->ModifyComPortArray(hupComPort, true);
+    }
 
     //Check if COM Port Changed, if so update unusedComPorts list
-    oldComPort = p_comDeviceList->p_lightGunList[lightGunNum]->GetComPortNumber ();
+    oldComPort = p_comDeviceList->p_lightGunList[lightGunNum]->GetComPortNumberBypass ();
     if(oldComPort != comPortNum)
     {
         p_comDeviceList->SwitchComPortsInList(oldComPort, comPortNum);
@@ -577,15 +701,20 @@ void editLightGunWindow::EditLightGun()
     FindFlow();
 
     //Edit Light Gun
+    p_comDeviceList->p_lightGunList[lightGunNum]->SetLightGunNumber (lightGunNum);
     p_comDeviceList->p_lightGunList[lightGunNum]->SetDefaultLightGun (defaultLightGun);
     if(defaultLightGun)
         p_comDeviceList->p_lightGunList[lightGunNum]->SetDefaultLightGunNumer (defaultLightGunNum);
     else
         p_comDeviceList->p_lightGunList[lightGunNum]->SetDefaultLightGunNumer (0);
     p_comDeviceList->p_lightGunList[lightGunNum]->SetLightGunName (lightGunName);
-    p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortNumber (comPortNum);
-    p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortString (comPortName);
-    p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortInfo (*p_comPortInfo);
+    //Only Happens on MX24
+    if(comPortNum != UNASSIGN)
+    {
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortNumber (comPortNum);
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortString (comPortName);
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortInfo (*p_comPortInfo);
+    }
     p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortBaud (comPortBaud);
     p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortDataBits (comPortDataBits);
     p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortParity (comPortParity);
@@ -620,6 +749,11 @@ void editLightGunWindow::EditLightGun()
         hubComPortNumber = ui->hubComComboBox->currentIndex ();
         p_comDeviceList->p_lightGunList[lightGunNum]->SetHubComPortNumber (hubComPortNumber);
 
+        comPortName = BEGINCOMPORTNAME+QString::number(hubComPortNumber);
+        p_comPortInfo = new QSerialPortInfo(comPortName);
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortString (comPortName);
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortInfo (*p_comPortInfo);
+
     }
     else if(defaultLightGun && defaultLightGunNum == JBGUN4IR)
     {
@@ -634,7 +768,6 @@ void editLightGunWindow::EditLightGun()
     delete p_comPortInfo;
     p_comPortInfo = nullptr;
 
-    //p_comDeviceList->p_lightGunList[lightGunNum]->PrintSerialPortInfo ();
 
 }
 
@@ -738,6 +871,7 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
 {
     QString tempQS;
 
+
     //Move Over a Clean Copy of the Unused COM Port Array & Used Dip Switch Players
     p_comDeviceList->CopyAvailableComPortsArray(unusedComPort, MAXCOMPORTS);
     p_comDeviceList->CopyUsedDipPlayersArray(usedDipPlayers, DIPSWITCH_NUMBER);
@@ -746,11 +880,11 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
     lightGunName = p_comDeviceList->p_lightGunList[index]->GetLightGunName ();
     ui->lightGunNameLineEdit->setText (lightGunName);
 
-
+    defaultLightGun = p_comDeviceList->p_lightGunList[index]->GetDefaultLightGun();
 
 
     //Check if the Light Gun is a Default Light Gun
-    if(p_comDeviceList->p_lightGunList[index]->GetDefaultLightGun())
+    if(defaultLightGun)
     {
         defaultLightGunNum = p_comDeviceList->p_lightGunList[index]->GetDefaultLightGunNumber();
         ui->defaultLightGunComboBox->setCurrentIndex (defaultLightGunNum);
@@ -772,6 +906,11 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
             ui->hubComComboBox->setEnabled(true);
             ui->hubComComboBox->setCurrentIndex (hubComPortNumber);
 
+            ui->comPortComboBox->setEnabled(false);
+
+            FillSerialPortInfo(hubComPortNumber);
+
+
         }
         else if(defaultLightGunNum == JBGUN4IR)
         {
@@ -781,6 +920,8 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
             analogStrength = p_comDeviceList->p_lightGunList[index]->GetAnalogStrength (&analogStrengthSet);
             if(analogStrengthSet)
                 ui->analogLineEdit->setText(QString::number (analogStrength));
+
+            ui->comPortComboBox->setEnabled(true);
         }
         else
         {
@@ -789,6 +930,7 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
             ui->hubComComboBox->setEnabled(false);
             ui->analogLineEdit->clear();
             ui->analogLineEdit->setEnabled(false);
+            ui->comPortComboBox->setEnabled(true);
         }
     }
     else
@@ -797,11 +939,11 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
         defaultLightGun = false;
         defaultLightGunNum = 0;
         SetEnableComboBoxes(true);
-        ui->analogLineEdit->clear();
         ui->dipSwitchComboBox->setEnabled(false);
         ui->hubComComboBox->setEnabled(false);
         ui->analogLineEdit->clear();
         ui->analogLineEdit->setEnabled(false);
+        ui->comPortComboBox->setEnabled(true);
     }
 
 
@@ -815,22 +957,27 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
     }
 
 
-    //COM Port Combo Box - List Unused COM Port and Select Light Gun COM Port
-    comPortName = p_comDeviceList->p_lightGunList[index]->GetComPortString();
-    comPortNum = p_comDeviceList->p_lightGunList[index]->GetComPortNumberBypass();
-    unusedComPort[comPortNum] = true;
-
-    for(quint8 comPortIndx=0;comPortIndx<MAXCOMPORTS;comPortIndx++)
+    if((defaultLightGun && defaultLightGunNum != MX24) || !defaultLightGun)
     {
-        if(unusedComPort[comPortIndx])
-            tempQS = BEGINCOMPORTNAME+QString::number(comPortIndx);
-        else
-            tempQS = "";
-        ui->comPortComboBox->setItemText (comPortIndx,tempQS);
-    }
-    ui->comPortComboBox->setCurrentIndex(comPortNum);
+        //COM Port Combo Box - List Unused COM Port and Select Light Gun COM Port
+        comPortName = p_comDeviceList->p_lightGunList[index]->GetComPortString();
+        comPortNum = p_comDeviceList->p_lightGunList[index]->GetComPortNumberBypass();
+        unusedComPort[comPortNum] = true;
 
-    FillSerialPortInfo(comPortNum);
+        for(quint8 comPortIndx=0;comPortIndx<MAXCOMPORTS;comPortIndx++)
+        {
+            if(unusedComPort[comPortIndx])
+                tempQS = BEGINCOMPORTNAME+QString::number(comPortIndx);
+            else
+                tempQS = "";
+            ui->comPortComboBox->setItemText (comPortIndx,tempQS);
+        }
+
+        ui->comPortComboBox->setCurrentIndex(comPortNum);
+
+        FillSerialPortInfo(comPortNum);
+    }
+
 
     comPortBaud = p_comDeviceList->p_lightGunList[index]->GetComPortBaud ();
 
@@ -890,4 +1037,13 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
 
 
 
+
+
+void editLightGunWindow::on_hubComComboBox_currentIndexChanged(int index)
+{
+    quint8 dlgIndex = ui->defaultLightGunComboBox->currentIndex ();
+
+    if(dlgIndex == MX24)
+        FillSerialPortInfo(index);
+}
 

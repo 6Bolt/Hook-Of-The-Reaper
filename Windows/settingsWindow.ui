@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>489</width>
-    <height>300</height>
+    <height>245</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,56 +16,8 @@
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>458</width>
-     <height>89</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QLabel" name="label">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Settings</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="useDefaultLGCheckBox">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Use Default Light Gun Files Before INI Files</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="useMultiThreadCheckBox">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Use Multi-Threading (Recommnded In GUI and Needs Restart)</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="layoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>230</x>
-     <y>270</y>
+     <x>220</x>
+     <y>210</y>
      <width>254</width>
      <height>26</height>
     </rect>
@@ -103,37 +55,6 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="layoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>100</y>
-     <width>381</width>
-     <height>26</height>
-    </rect>
-   </property>
-   <layout class="QHBoxLayout" name="horizontalLayout_2">
-    <item>
-     <widget class="QLineEdit" name="refreshDisplayLineEdit">
-      <property name="alignment">
-       <set>Qt::AlignmentFlag::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_2">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Refresh Display of Output Signals (msec)</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
   <widget class="QCheckBox" name="closeComCheckBox">
    <property name="geometry">
     <rect>
@@ -152,13 +73,13 @@
     <string>Close Serial COM Port on Game Exit. Un-check, Leaves it Open.</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="defaultFileCheckBox">
+  <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>160</y>
-     <width>381</width>
-     <height>22</height>
+     <x>11</x>
+     <y>11</y>
+     <width>56</width>
+     <height>21</height>
     </rect>
    </property>
    <property name="font">
@@ -167,16 +88,16 @@
     </font>
    </property>
    <property name="text">
-    <string>If No Game File, Create New Game File with Signals</string>
+    <string>Settings</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_3">
+  <widget class="QCheckBox" name="useDefaultLGCheckBox">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>180</y>
-     <width>441</width>
-     <height>31</height>
+     <x>11</x>
+     <y>38</y>
+     <width>320</width>
+     <height>27</height>
     </rect>
    </property>
    <property name="font">
@@ -185,7 +106,56 @@
     </font>
    </property>
    <property name="text">
-    <string>UnCheck: Use Default File (ini/default.ini or defaultLG/default.txt</string>
+    <string>Use Default Light Gun Files Before INI Files</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="useMultiThreadCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>11</x>
+     <y>71</y>
+     <width>456</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Use Multi-Threading (Recommnded In GUI and Needs Restart)</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="refreshDisplayLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>11</x>
+     <y>101</y>
+     <width>90</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>107</x>
+     <y>101</y>
+     <width>283</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Refresh Display of Output Signals (msec)</string>
    </property>
   </widget>
  </widget>

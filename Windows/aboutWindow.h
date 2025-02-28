@@ -3,6 +3,9 @@
 
 #include <QDialog>
 
+
+#include "../Global.h"
+
 namespace Ui {
 class aboutWindow;
 }

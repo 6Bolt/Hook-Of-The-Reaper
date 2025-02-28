@@ -42,6 +42,9 @@ public:
     //Loads defaultLG Game file for Checks
     bool LoadLGFileTest(QString fileNamePath);
 
+    //Closes All COM Port Connections
+    void CloseAllComPortConnections();
+
 public slots:
 
     //Read Data from the TCP Socket (different thread)
@@ -220,6 +223,7 @@ private:
     bool                            isGameFound;
     bool                            firstTimeGame;
     bool                            gameHasRun;
+    bool                            isEmptyGame;
 
     ///////////////////////////////////////////////////////////////////////////
 

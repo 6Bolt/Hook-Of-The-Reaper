@@ -530,118 +530,7 @@ quint8 LightGun::GetHubComPortNumber()
 
 void LightGun::CopyLightGun(LightGun const &lgMember)
 {
-    defaultLightGun = lgMember.defaultLightGun;
-    defaultLightGunNum = lgMember.defaultLightGunNum;
-
-    lightGunName = lgMember.lightGunName;
-    lightGunNum = lgMember.lightGunNum;
-
-    comPortNum = lgMember.comPortNum;
-    comPortString = lgMember.comPortString;
-    comPortInfo = lgMember.comPortInfo;
-    comPortBaud = lgMember.comPortBaud;
-    comPortDataBits = lgMember.comPortDataBits;
-    comPortParity = lgMember.comPortParity;
-    comPortStopBits = lgMember.comPortStopBits;
-    comPortFlow = lgMember.comPortFlow;
-
-    //For RS3 Reaper
-    maxAmmoSet = lgMember.maxAmmoSet;
-    reloadValueSet = lgMember.reloadValueSet;
-
-    if(maxAmmoSet)
-    {
-        maxAmmo = lgMember.maxAmmo;
-    }
-    else if(defaultLightGun && defaultLightGunNum == RS3_REAPER)
-    {
-        maxAmmo = DEFAULTLG_ARRAY[defaultLightGunNum].MAXAMMON;
-        maxAmmoSet = true;
-    }
-
-    if(reloadValueSet)
-    {
-        reloadValue = lgMember.reloadValue;
-    }
-    else if(defaultLightGun && defaultLightGunNum == RS3_REAPER)
-    {
-        reloadValue = DEFAULTLG_ARRAY[defaultLightGunNum].RELOADVALUEN;
-        reloadValueSet = true;
-    }
-
-    //For MX24
-    isDipSwitchPlayerNumberSet = lgMember.isDipSwitchPlayerNumberSet;
-
-    if(isDipSwitchPlayerNumberSet)
-        dipSwitchPlayerNumber = lgMember.dipSwitchPlayerNumber;
-    else
-        dipSwitchPlayerNumber = 0;
-
-    //For JB Gun4IR
-    isAnalogStrengthSet = lgMember.isAnalogStrengthSet;
-
-    if(isAnalogStrengthSet)
-        analogStrength = lgMember.analogStrength;
-    else
-        analogStrength = UNASSIGN;
-
-
-    currentPath = lgMember.currentPath;
-    dataPath = lgMember.dataPath;
-    defaultLGFilePath = lgMember.defaultLGFilePath;
-
-    openComPortCmdsSet = lgMember.openComPortCmdsSet;
-    if(openComPortCmdsSet)
-        openComPortCmds = lgMember.openComPortCmds;
-
-    closeComPortCmdsSet = lgMember.closeComPortCmdsSet;
-    if(closeComPortCmdsSet)
-        closeComPortCmds = lgMember.closeComPortCmds;
-
-    damageCmdsSet = lgMember.damageCmdsSet;
-    if(damageCmdsSet)
-        damageCmds = lgMember.damageCmds;
-
-    recoilCmdsSet = lgMember.recoilCmdsSet;
-    if(recoilCmdsSet)
-        recoilCmds = lgMember.recoilCmds;
-
-    reloadCmdsSet = lgMember.reloadCmdsSet;
-    if(reloadCmdsSet)
-        reloadCmds = lgMember.reloadCmds;
-
-    ammoCmdsSet = lgMember.ammoCmdsSet;
-    if(ammoCmdsSet)
-        ammoCmds = lgMember.ammoCmds;
-
-    ammoValueCmdsSet = lgMember.ammoValueCmdsSet;
-    if(ammoValueCmdsSet)
-        ammoValueCmds = lgMember.ammoValueCmds;
-
-    shakeCmdsSet = lgMember.shakeCmdsSet;
-    if(shakeCmdsSet)
-        shakeCmds = lgMember.shakeCmds;
-
-    autoLedCmdsSet = lgMember.autoLedCmdsSet;
-    if(autoLedCmdsSet)
-        autoLedCmds = lgMember.autoLedCmds;
-
-    aspect16x9CmdsSet = lgMember.aspect16x9CmdsSet;
-    if(aspect16x9CmdsSet)
-        aspect16x9Cmds = lgMember.aspect16x9Cmds;
-
-    aspect4x3CmdsSet = lgMember.aspect4x3CmdsSet;
-    if(aspect4x3CmdsSet)
-        aspect4x3Cmds = lgMember.aspect4x3Cmds;
-
-    joystickCmdsSet = lgMember.joystickCmdsSet;
-    if(joystickCmdsSet)
-        joystickCmds = lgMember.joystickCmds;
-
-    keyMouseCmdsSet = lgMember.keyMouseCmdsSet;
-    if(keyMouseCmdsSet)
-        keyMouseCmds = lgMember.keyMouseCmds;
-
+    *this = lgMember;
 }
 
 
@@ -1040,7 +929,7 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
     QStringList tempSL;
     quint8 cmdCount = ammoValueCmds.length ();
 
-
+    //If Command Set Loaded
     *isSet = ammoValueCmdsSet;
 
     if(ammoValueCmdsSet)
@@ -1050,12 +939,18 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
         {
             quint16 tempAV;
 
-            if(lastAmmoValue == 0 && ammoValue > 0)
-                tempAV = reloadValue;
-            else if(ammoValue > maxAmmo)
+            if(ammoValue > maxAmmo) //If ammoValue is higher than maxAmmo, then = to maxValue
                 tempAV = maxAmmo;
-            else if(lastAmmoValue == 0 && ammoValue == 0) //To make sure it is not sending Z0 multiple times
+            else if(lastAmmoValue == 0 && ammoValue > 0) //If Last Value is 0, and ammoValue is Higher, then reload happen
                 tempAV = reloadValue;
+            else if(lastAmmoValue == 1 && ammoValue == 0) // If Last Ammo is 1 and ammoValue is 0, for Z0, to hold slide back
+                tempAV = ammoValue;
+            else if((lastAmmoValue == 0 && ammoValue == 0) || (lastAmmoValue > 1 && ammoValue == 0))
+            {   //This is to make sure slide doesn't get held back multiple time or at start/end of game
+                //Do noting
+                *isSet = false;
+                return tempSL;
+            }
             else
                 tempAV = ammoValue;
 
@@ -1063,11 +958,18 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
             lastAmmoValue = ammoValue;
         }
         else
-        {
+        {   //If not a Reaper, and Ammo is 0, Don't Do Anything
+            if(ammoValue == 0)
+            {
+                *isSet = false;
+                return tempSL;
+            }
+
             tempAVS = QString::number (ammoValue);
+            lastAmmoValue = ammoValue;
         }
 
-
+        //Replace the %s% with the ammo value (tempAVS)
         for(quint8 i = 0; i < cmdCount; i++)
         {
             cmdString = ammoValueCmds[i];
@@ -1075,11 +977,9 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
                 cmdString.replace (SIGNALDATAVARIBLE,tempAVS);
             tempSL << cmdString;
         }
-
-
-
     }
 
+    //Return the Commands
     return tempSL;
 }
 
@@ -1162,7 +1062,10 @@ QStringList LightGun::MouseAndKeyboardModeCommands(bool *isSet)
     }
 }
 
-
+void LightGun::ResetLightGun()
+{
+    lastAmmoValue = 0;
+}
 
 
 

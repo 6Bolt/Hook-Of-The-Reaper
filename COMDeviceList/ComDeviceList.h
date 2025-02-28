@@ -49,6 +49,9 @@ public:
     //Switch COM Ports, Used in Edit Window
     void            SwitchComPortsInList(quint8 oldPort, quint8 newPort);
 
+    //Enable/Disable A COM Port in the availableCOMPorts Array
+    void            ModifyComPortArray(quint8 index, bool valueBool);
+
     //Delete a Light Gun or COM device
     void            DeleteLightGun(quint8 lgNumber);
     void            DeleteComDevice(quint8 cdNumber);
@@ -87,12 +90,12 @@ public:
     bool            GetCloseComPortGameExit();
     void            SetCloseComPortGameExit(bool ccpGameExit);
 
-    //Create a New Game File with Signals or Use Default File Setting
-    bool            GetNewGameFileOrDefaultFile();
-    void            SetNewGameFileOrDefaultFile(bool newgDefaultF);
-
     //Copies Used Dip Players Array
     void            CopyUsedDipPlayersArray(bool *targetArray, quint8 size);
+
+    //Resets Light Gun, when Game Has Ended
+    void            ResetLightgun();
+    void            ResetLightGun(quint8 lgNeedReset);
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -141,7 +144,7 @@ private:
     bool                useMultiThreading;
     quint32             refreshTimeDisplay;
     bool                closeComPortGameExit;
-    bool                newGameFileOrDefaultFile;
+
 
 
 

@@ -44,6 +44,8 @@ private slots:
     //Closes the Window
     void on_cancelPushButton_clicked();
 
+    void on_hubComComboBox_currentIndexChanged(int index);
+
 private:
 
     //Checks if Data is Valid for a LightGun

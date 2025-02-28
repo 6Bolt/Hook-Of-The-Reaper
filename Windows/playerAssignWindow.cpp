@@ -25,6 +25,10 @@ playerAssignWindow::playerAssignWindow(ComDeviceList *cdList, QWidget *parent)
     ui->player2ComboBox->insertItem(0,"   ");
     ui->player3ComboBox->insertItem(0,"   ");
     ui->player4ComboBox->insertItem(0,"   ");
+    ui->player5ComboBox->insertItem(0,"   ");
+    ui->player6ComboBox->insertItem(0,"   ");
+    ui->player7ComboBox->insertItem(0,"   ");
+    ui->player8ComboBox->insertItem(0,"   ");
 
     for(i = 0; i < numberLightGuns; i++)
     {
@@ -37,6 +41,10 @@ playerAssignWindow::playerAssignWindow(ComDeviceList *cdList, QWidget *parent)
         ui->player2ComboBox->insertItem(i+1,tempQS);
         ui->player3ComboBox->insertItem(i+1,tempQS);
         ui->player4ComboBox->insertItem(i+1,tempQS);
+        ui->player5ComboBox->insertItem(i+1,tempQS);
+        ui->player6ComboBox->insertItem(i+1,tempQS);
+        ui->player7ComboBox->insertItem(i+1,tempQS);
+        ui->player8ComboBox->insertItem(i+1,tempQS);
     }
 
     //Get Players Assignment from the COM Devices List
@@ -50,8 +58,6 @@ playerAssignWindow::playerAssignWindow(ComDeviceList *cdList, QWidget *parent)
         ui->player1ComboBox->setCurrentIndex (0);
     else
         ui->player1ComboBox->setCurrentIndex (playersAssignment[0]+1);
-
-
 
     if(playersAssignment[1] == UNASSIGN)
         ui->player2ComboBox->setCurrentIndex (0);
@@ -67,6 +73,27 @@ playerAssignWindow::playerAssignWindow(ComDeviceList *cdList, QWidget *parent)
         ui->player4ComboBox->setCurrentIndex (0);
     else
         ui->player4ComboBox->setCurrentIndex (playersAssignment[3]+1);
+
+
+    if(playersAssignment[4] == UNASSIGN)
+        ui->player5ComboBox->setCurrentIndex (0);
+    else
+        ui->player5ComboBox->setCurrentIndex (playersAssignment[4]+1);
+
+    if(playersAssignment[5] == UNASSIGN)
+        ui->player6ComboBox->setCurrentIndex (0);
+    else
+        ui->player6ComboBox->setCurrentIndex (playersAssignment[5]+1);
+
+    if(playersAssignment[6] == UNASSIGN)
+        ui->player7ComboBox->setCurrentIndex (0);
+    else
+        ui->player7ComboBox->setCurrentIndex (playersAssignment[6]+1);
+
+    if(playersAssignment[7] == UNASSIGN)
+        ui->player8ComboBox->setCurrentIndex (0);
+    else
+        ui->player8ComboBox->setCurrentIndex (playersAssignment[7]+1);
 
 }
 
@@ -107,6 +134,10 @@ void playerAssignWindow::GetComboBoxIndexes()
     playersIndex[1] = ui->player2ComboBox->currentIndex ();
     playersIndex[2] = ui->player3ComboBox->currentIndex ();
     playersIndex[3] = ui->player4ComboBox->currentIndex ();
+    playersIndex[4] = ui->player5ComboBox->currentIndex ();
+    playersIndex[5] = ui->player6ComboBox->currentIndex ();
+    playersIndex[6] = ui->player7ComboBox->currentIndex ();
+    playersIndex[7] = ui->player8ComboBox->currentIndex ();
 }
 
 void playerAssignWindow::AssignPlayers()
@@ -169,6 +200,26 @@ void playerAssignWindow::AssignPlayers()
         //if(passedToList == false)
         //    qDebug() << "\n" << "Player 4 Assignment Failed to Write to List: " << playersIndex[3]-1 << "\n";
 
+
+        if(playersIndex[4] == 0)
+            p_comDeviceList->DeassignPlayerLightGun(4);
+        else
+            passedToList = p_comDeviceList->AssignPlayerLightGun(4, playersIndex[4]-1);
+
+        if(playersIndex[5] == 0)
+            p_comDeviceList->DeassignPlayerLightGun(5);
+        else
+            passedToList = p_comDeviceList->AssignPlayerLightGun(5, playersIndex[5]-1);
+
+        if(playersIndex[6] == 0)
+            p_comDeviceList->DeassignPlayerLightGun(6);
+        else
+            passedToList = p_comDeviceList->AssignPlayerLightGun(6, playersIndex[6]-1);
+
+        if(playersIndex[7] == 0)
+            p_comDeviceList->DeassignPlayerLightGun(7);
+        else
+            passedToList = p_comDeviceList->AssignPlayerLightGun(7, playersIndex[7]-1);
     }
 
 }

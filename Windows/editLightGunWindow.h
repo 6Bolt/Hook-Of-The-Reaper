@@ -48,6 +48,8 @@ private slots:
 
 
 
+    void on_hubComComboBox_currentIndexChanged(int index);
+
 private:
 
     //Checks if Data is Valid for a LightGun

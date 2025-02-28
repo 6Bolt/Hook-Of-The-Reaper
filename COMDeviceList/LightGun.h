@@ -103,6 +103,8 @@ public:
     QStringList MouseAndKeyboardModeCommands(bool *isSet);
 
 
+    void ResetLightGun();
+
 private:
 
 

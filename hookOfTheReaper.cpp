@@ -448,8 +448,6 @@ void HookOfTheReaper::on_actionSettings_triggered()
 {
     if (!p_setW)
     {
-
-
         if(engineRunning)
         {
             //Stop the Hooker Engine
@@ -519,7 +517,8 @@ void HookOfTheReaper::on_actionTest_COM_Port_triggered()
 
         if (!p_tcpW)
         {
-
+            //Close All COM Port Connections to Light Guns, so that the can be Tested
+            p_hookEngine->CloseAllComPortConnections();
 
             if(engineRunning)
             {

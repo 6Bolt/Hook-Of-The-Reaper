@@ -15,6 +15,8 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     firstTimeGame = true;
     //If a game has ran so far
     gameHasRun = false;
+    //If No Game is Loaded ___empty
+    isEmptyGame = false;
 
 
     //INI or Default LG Game File Loaded or failed loading
@@ -111,7 +113,7 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     useMultiThreading = p_comDeviceList->GetUseMultiThreading ();
     refreshTimeDisplay = p_comDeviceList->GetRefreshTimeDisplay ();
     closeComPortGameExit = p_comDeviceList->GetCloseComPortGameExit ();
-    newGameFileOrDefaultFile = p_comDeviceList->GetNewGameFileOrDefaultFile ();
+
 
     //Set-Up Refresh Display Timer
     p_refreshDisplayTimer = new QTimer(this);
@@ -751,6 +753,12 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
 }
 
 
+void HookerEngine::CloseAllComPortConnections()
+{
+    emit StopAllComPorts();
+}
+
+
 
 //Public Slots
 
@@ -833,14 +841,15 @@ void HookerEngine::TCPDisconnected()
 
         emit TCPStatus(isTCPSocketConnected);
 
-        p_waitingForConnection->stop();
+        //p_waitingForConnection->stop();
 
-        emit StopTCPSocket();
+        //emit StopTCPSocket();
 
         //QObject().thread()->usleep(50);
 
-        //if(gameHasRun)
-        //    ClearOnDisconnect();
+        //If in Game Mode & TCP Socket Diconnects, then Clear Things Out
+        if(isGameFound)
+            ClearOnDisconnect();
 
         //Timer Start  - Interval Already Set
         p_waitingForConnection->start ();
@@ -882,10 +891,12 @@ void HookerEngine::UpdateDisplayTimeOut()
 
 void HookerEngine::ClearOnDisconnect()
 {
-
     quint8 j;
 
     //When TCP Socket Disconnects, Then Clear Out Game Data
+
+    //Output Says No Game
+    emit MameConnectedNoGame();
 
     //If Game Files Still Open, close them out
     if(newINIFileMade || newLGFileMade)
@@ -958,23 +969,26 @@ void HookerEngine::ClearOnDisconnect()
 
     }
 
+    //Reset Light guns
+    p_comDeviceList->ResetLightgun ();
+
+    //Stop Refresh Time for Display Timer
+    p_refreshDisplayTimer->stop ();
+
 
     isGameFound = false;
     gameHasRun = false;
+    isEmptyGame = false;
     signalsAndCommands.clear ();
     stateAndCommands.clear ();
     signalsNoCommands.clear ();
     statesNoCommands.clear ();
     signalsAndData.clear ();
+    statesAndData.clear ();
     addSignalDataDisplay.clear();
     updateSignalDataDisplay.clear();
     iniFileLoaded = false;
     lgFileLoaded = false;
-
-
-    //Stop Refresh Time for Display Timer
-    p_refreshDisplayTimer->stop ();
-
 }
 
 
@@ -1007,6 +1021,7 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
                 gameName = tcpSocketData[i].remove(MAMESTART);
                 isGameFound = true;
                 gameHasRun = true;
+                isEmptyGame = false;
 
                 //qDebug() << "Game Found: " << gameName;
 
@@ -1037,6 +1052,24 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
             {
                 //Display No Game Loaded
                 emit MameConnectedNoGame();
+                isEmptyGame = true;
+            }
+            else if(isEmptyGame)
+            {
+                QStringList tempData = tcpSocketData[i].split(" = ", Qt::SkipEmptyParts);
+                QString signal = tempData[0];
+                QString data = tempData[1];
+
+                if(signal == PAUSE || signal.startsWith (ORIENTATION))
+                {
+                    //Update Pause and Orientation to the Display
+                    if(signal == PAUSE)
+                        emit UpdatePauseFromGame(data);
+                    else
+                        emit UpdateOrientationFromGame(signal,data);
+                }
+
+                //qDebug() << "Signal: " << signal << " Data: " << data;
             }
         }
         else
@@ -1061,6 +1094,7 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
 
                 //Game Has Stopped
                 isGameFound = false;
+                isEmptyGame = false;
 
 
                 if(newINIFileMade || newLGFileMade)
@@ -1132,6 +1166,9 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
 
                     iniFileLoaded = false;
                 }
+
+                //Reset Light guns
+                p_comDeviceList->ResetLightgun ();
 
                 //Clear out Old Games Signal & Data and States & Data
                 signalsAndData.clear ();
@@ -1248,19 +1285,19 @@ void HookerEngine::GameFound()
             }
             else
             {
-                if(newGameFileOrDefaultFile)
-                    NewLGFile();
+                //Checks if a Default File Exists
+                bool defaultFileFound = IsDefaultDefaultLGFile();
+
+                //If there is a Default File, then Load it
+                if(defaultFileFound)
+                {
+                    emit MameConnectedGame("default", false);
+                    LoadLGFile();
+                }
                 else
                 {
-                    bool defaultFileFound = IsDefaultDefaultLGFile();
-
-                    if(defaultFileFound)
-                    {
-                        emit MameConnectedGame("default", false);
-                        LoadLGFile();
-                    }
-                    else
-                        NewLGFile();
+                    //Creates a New Deafualt LG Game File
+                    NewLGFile();
                 }
             }
         }
@@ -1288,23 +1325,23 @@ void HookerEngine::GameFound()
             }
             else
             {
-                if(newGameFileOrDefaultFile)
-                    NewINIFile();
+                //Checks if a Default File Exists
+                bool defaultFileFound = IsDefaultINIFile();
+
+                //If there is a Default File, then Load it
+                if(defaultFileFound)
+                {
+                    emit MameConnectedGame("default", true);
+                    LoadINIFile();
+                }
                 else
                 {
-                    bool defaultFileFound = IsDefaultINIFile();
-
-                    if(defaultFileFound)
-                    {
-                        emit MameConnectedGame("default", true);
-                        LoadINIFile();
-                    }
-                    else
-                        NewINIFile();
+                    //Creates a New INI Game File
+                    NewINIFile();
                 }
             }
         }
-    }
+    }  // else of if(useDefaultLGFirst)
 
 }
 
@@ -1342,11 +1379,14 @@ bool HookerEngine::IsDefaultINIFile()
 {
     bool fileFound;
 
-    gameINIFilePath = iniPath+"/"+DEFAULTFILE+ENDOFINIFILE;
+    QString tempFilePath = iniPath+"/"+DEFAULTFILE+ENDOFINIFILE;
 
-    fileFound = QFile::exists (gameINIFilePath);
+    fileFound = QFile::exists (tempFilePath);
 
     //qDebug() << gameINIFilePath << " is found: " << fileFound;
+
+    if(fileFound)
+        gameINIFilePath = tempFilePath;
 
     return fileFound;
 }
@@ -2020,9 +2060,12 @@ bool HookerEngine::IsDefaultDefaultLGFile()
 {
     bool fileFound;
 
-    gameLGFilePath = defaultLGPath+"/"+DEFAULTFILE+ENDOFLGFILE;
+    QString tempGameFilePath = defaultLGPath+"/"+DEFAULTFILE+ENDOFLGFILE;
 
-    fileFound = QFile::exists (gameLGFilePath);
+    fileFound = QFile::exists (tempGameFilePath);
+
+    if(fileFound)
+        gameLGFilePath = tempGameFilePath;
 
     //qDebug() << gameLGFilePath << " is found: " << fileFound;
 
@@ -2031,7 +2074,7 @@ bool HookerEngine::IsDefaultDefaultLGFile()
 
 void HookerEngine::NewLGFile()
 {
-    //Copy default INI file over with game's name as the file's name
+    //Copy default light gun file over with game's name as the file's name
     bool copyFile = QFile::copy(lgDefaultPath, gameLGFilePath);
 
     if(!copyFile)

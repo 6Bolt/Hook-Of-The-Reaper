@@ -6,6 +6,11 @@ aboutWindow::aboutWindow(QWidget *parent)
     , ui(new Ui::aboutWindow)
 {
     ui->setupUi(this);
+
+    QString versionInfo = "Version: ";
+    versionInfo.append (VERSION);
+
+    ui->versionLabel->setText (versionInfo);
 }
 
 aboutWindow::~aboutWindow()

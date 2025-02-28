@@ -164,11 +164,21 @@ void addLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int index
         {
             ui->dipSwitchComboBox->setEnabled(true);
             ui->hubComComboBox->setEnabled(true);
+            ui->comPortComboBox->setEnabled(false);
+
+            quint8 hubIndex = ui->hubComComboBox->currentIndex ();
+
+            FillSerialPortInfo(hubIndex);
         }
         else
         {
             ui->dipSwitchComboBox->setEnabled(false);
             ui->hubComComboBox->setEnabled(false);
+            ui->comPortComboBox->setEnabled(true);
+
+            quint8 comPortIndex = ui->comPortComboBox->currentIndex ();
+
+            FillSerialPortInfo(comPortIndex);
         }
 
         if(index == JBGUN4IR)
@@ -184,6 +194,12 @@ void addLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int index
     {
         //Re-enable Combo Boxes when No Default Light is Selected
         SetEnableComboBoxes(true);
+
+        ui->comPortComboBox->setEnabled(true);
+
+        quint8 comPortIndex = ui->comPortComboBox->currentIndex ();
+
+        FillSerialPortInfo(comPortIndex);
 
         ui->dipSwitchComboBox->setEnabled(false);
         ui->analogLineEdit->clear ();
@@ -276,13 +292,12 @@ bool addLightGunWindow::IsValidData()
     bool analNotNumber = false;
     bool analNotRange = false;
     bool badDipIndex = false;
-    bool hubCom = false;
     bool hubComLG = false;
     quint8 numLightGuns = p_comDeviceList->GetNumberLightGuns();
     quint8 i;
     quint8 defaultLGIndex = ui->defaultLightGunComboBox->currentIndex ();
     quint8 hubComIndex = ui->hubComComboBox->currentIndex ();
-    quint8 comPortIndex =  ui->comPortComboBox->currentIndex ();
+    //quint8 comPortIndex =  ui->comPortComboBox->currentIndex ();
 
     //Check If Light Gun Name Line Edit Box is Empty
     ivTemp = ui->lightGunNameLineEdit->text();
@@ -299,10 +314,7 @@ bool addLightGunWindow::IsValidData()
         }
     }
 
-    //Check If the Com Port Name is Empty for the Combo Box
-    ivTemp = ui->comPortComboBox->currentText ();
-    if(ivTemp.isEmpty ())
-        comPortNumEmpty = true;
+
 
     if(defaultLGIndex == MX24)
     {
@@ -310,8 +322,6 @@ bool addLightGunWindow::IsValidData()
         if(usedDipPlayers[dipIndex])
             badDipIndex = true;
 
-        if(hubComIndex == comPortIndex)
-            hubCom = true;
 
         for(i = 0; i < numLightGuns; i++)
         {
@@ -319,6 +329,13 @@ bool addLightGunWindow::IsValidData()
                     hubComLG = true;
         }
 
+    }
+    else
+    {
+        //Check If the Com Port Name is Empty for the Combo Box
+        ivTemp = ui->comPortComboBox->currentText ();
+        if(ivTemp.isEmpty ())
+            comPortNumEmpty = true;
     }
 
     if(defaultLGIndex == JBGUN4IR)
@@ -338,7 +355,7 @@ bool addLightGunWindow::IsValidData()
 
     //Check All the bools, If They are false, data is good and return true.
     //If false, then make a Warning string, and Pop Up a Warning Message Box on What is Wrong and return false
-    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubCom == false && hubComLG == false)
+    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubComLG == false)
     {
         return true;
     }
@@ -352,8 +369,6 @@ bool addLightGunWindow::IsValidData()
             message.append ("Light gun name is already used. Please pick a different name.");
         if(badDipIndex == true)
             message.append ("A Used Dip Switch Player has been selected. Please change to a valid Dip Switch Player.");
-        if(hubCom == true)
-            message.append ("The hub COM port cannot be the same as the light gun. Please change it to the MX24 Hub COM port number.");
         if(hubComLG == true)
             message.append ("The hub COM port cannot be the same as saved light gun(s). Please change it to the MX24 Hub COM port number.");
         if(analNotNumber == true)
@@ -391,7 +406,12 @@ void addLightGunWindow::AddLightGun()
     //Collect Light Gun Name, Number, COM Port Number & Name, and Serial Port Info
     lightGunName = ui->lightGunNameLineEdit->text();
     lightGunNum = p_comDeviceList->GetNumberLightGuns ();
-    comPortNum = ui->comPortComboBox->currentIndex ();
+
+    if(defaultLightGun && defaultLightGunNum == MX24)
+        comPortNum = UNASSIGN;
+    else
+        comPortNum = ui->comPortComboBox->currentIndex ();
+
     comPortName = BEGINCOMPORTNAME+QString::number(comPortNum);
     p_comPortInfo = new QSerialPortInfo(comPortName);
 
@@ -545,4 +565,13 @@ void addLightGunWindow::SetEnableComboBoxes(bool enableCB)
 
 
 
+
+
+void addLightGunWindow::on_hubComComboBox_currentIndexChanged(int index)
+{
+    quint8 dlgIndex = ui->defaultLightGunComboBox->currentIndex ();
+
+    if(dlgIndex == MX24)
+        FillSerialPortInfo(index);
+}
 

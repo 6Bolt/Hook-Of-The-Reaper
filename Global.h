@@ -3,15 +3,20 @@
 
 #include <qobject.h>
 
+#define VERSION                 "1.0.8"
+#define VERSIONMAIN             1
+#define VERSIONMID              0
+#define VERSIONLAST             8
+
 //Global Settings
-#define MAXPLAYERLIGHTGUNS      4
+#define MAXPLAYERLIGHTGUNS      8
 #define UNASSIGN                69
 
 #define NOGUIARG                "-nogui"
 
 //Serial COM Port Data
 //Max Number of COM Ports
-#define MAXCOMPORTS             20
+#define MAXCOMPORTS             50
 #define BEGINCOMPORTNAME        "COM"
 #define COMPORTWAITFORWRITE     50
 

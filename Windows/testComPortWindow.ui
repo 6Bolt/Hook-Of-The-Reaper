@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>403</width>
     <height>230</height>
    </rect>
   </property>
@@ -86,7 +86,7 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>91</width>
+     <width>81</width>
      <height>41</height>
     </rect>
    </property>
@@ -96,15 +96,15 @@
     </font>
    </property>
    <property name="text">
-    <string>Light Gun(s):</string>
+    <string>Light Gun:</string>
    </property>
   </widget>
   <widget class="QComboBox" name="savedLightGunsComboBox">
    <property name="geometry">
     <rect>
-     <x>110</x>
+     <x>90</x>
      <y>20</y>
-     <width>221</width>
+     <width>241</width>
      <height>22</height>
     </rect>
    </property>

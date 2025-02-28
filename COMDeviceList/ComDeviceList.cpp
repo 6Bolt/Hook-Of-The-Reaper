@@ -159,7 +159,15 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
     p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, dipSwitchSet, dipSwitchNumber, hcpNum);
 
     usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumberBypass ();
-    availableComPorts[usedComPortNum] = false;
+
+    if(usedComPortNum != UNASSIGN)
+        availableComPorts[usedComPortNum] = false;
+    else
+    {
+        usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumber ();
+        availableComPorts[usedComPortNum] = false;
+    }
+
 
     if(dipSwitchSet)
         usedDipPlayers[dipSwitchNumber] = true;
@@ -228,9 +236,18 @@ quint8 ComDeviceList::GetNumberComPortDevices()
 //Switch Available COM Port
 void ComDeviceList::SwitchComPortsInList(quint8 oldPort, quint8 newPort)
 {
-    availableComPorts[oldPort] = true;
-    availableComPorts[newPort] = false;
+    if(oldPort != UNASSIGN)
+        availableComPorts[oldPort] = true;
+
+    if(newPort != UNASSIGN)
+        availableComPorts[newPort] = false;
 }
+
+void ComDeviceList::ModifyComPortArray(quint8 index, bool valueBool)
+{
+    availableComPorts[index] = valueBool;
+}
+
 
 //Delete a Certain Light Gun in the List
 void ComDeviceList::DeleteLightGun(quint8 lgNumber)
@@ -239,7 +256,8 @@ void ComDeviceList::DeleteLightGun(quint8 lgNumber)
     quint8 openComPort;
 
     openComPort = p_lightGunList[lgNumber]->GetComPortNumberBypass ();
-    availableComPorts[openComPort] = true;
+    if(openComPort != UNASSIGN)
+        availableComPorts[openComPort] = true;
 
     //Check if it is MX24, for Used Dip Switch Player
     bool isDefaultLG = p_lightGunList[lgNumber]->GetDefaultLightGun ();
@@ -291,9 +309,10 @@ void ComDeviceList::DeleteLightGun(quint8 lgNumber)
             p_lightGunList[index]->CopyLightGun (*p_lightGunList[(index+1)]);
         }
 
+        numberLightGuns--;
         delete p_lightGunList[numberLightGuns];
         p_lightGunList[numberLightGuns] = nullptr;
-        numberLightGuns--;
+
 
         for(index = 0; index < MAXPLAYERLIGHTGUNS; index++)
         {
@@ -1045,11 +1064,6 @@ void ComDeviceList::SaveSettings()
     else
         out << "0\n";
 
-    if(newGameFileOrDefaultFile)
-        out << "1\n";
-    else
-        out << "0\n";
-
 
     out << ENDOFFILE;
 
@@ -1160,23 +1174,6 @@ void ComDeviceList::LoadSettings()
         return;
     }
 
-    //Next Line is to Create new Game File or Use Default File
-    line = in.readLine();
-
-    if(line.startsWith ("1"))
-    {
-        newGameFileOrDefaultFile = true;
-    }
-    else if(line.startsWith ("0"))
-    {
-        newGameFileOrDefaultFile = false;
-    }
-    else
-    {
-        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at fifth setting. Please close program and solve file problem.", QMessageBox::Ok);
-        return;
-    }
-
 
     //Next Line is End of File
     line = in.readLine();
@@ -1233,17 +1230,6 @@ void ComDeviceList::SetCloseComPortGameExit(bool ccpGameExit)
     closeComPortGameExit = ccpGameExit;
 }
 
-//Create a New Game File with Signals or Use Default File Setting
-bool ComDeviceList::GetNewGameFileOrDefaultFile()
-{
-    return newGameFileOrDefaultFile;
-}
-
-void ComDeviceList::SetNewGameFileOrDefaultFile(bool newgDefaultF)
-{
-    newGameFileOrDefaultFile = newgDefaultF;
-}
-
 void ComDeviceList::CopyUsedDipPlayersArray(bool *targetArray, quint8 size)
 {
     for (quint8 i = 0; i < size; i++)
@@ -1252,6 +1238,19 @@ void ComDeviceList::CopyUsedDipPlayersArray(bool *targetArray, quint8 size)
     }
 }
 
+
+void ComDeviceList::ResetLightgun()
+{
+    for(quint8 i = 0; i < numberLightGuns; i++)
+    {
+        p_lightGunList[i]->ResetLightGun ();
+    }
+}
+
+void ComDeviceList::ResetLightGun(quint8 lgNeedReset)
+{
+    p_lightGunList[lgNeedReset]->ResetLightGun ();
+}
 
 
 

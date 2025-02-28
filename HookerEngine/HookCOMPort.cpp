@@ -97,7 +97,10 @@ void HookCOMPort::Disconnect(const quint8 &comPortNum)
 {
     if(comPortOpen[comPortNum])
     {
-        //p_ComPortArray[comPortNum]->flush ();
+
+
+        if(p_ComPortArray[comPortNum]->bytesToWrite () > 0)
+            p_ComPortArray[comPortNum]->flush ();
 
         //bool writeDone = p_ComPortArray[comPortNum]->waitForBytesWritten (COMPORTWAITFORWRITE);
 
@@ -158,7 +161,7 @@ void HookCOMPort::WriteData(const quint8 &comPortNum, const QByteArray &writeDat
 
 void HookCOMPort::ReadData()
 {
-    quint8 tempNum = 69;
+    quint8 tempNum = UNASSIGN;
     QByteArray tempReadData;
 
     for(quint8 i = 0; i < MAXCOMPORTS; i++)
@@ -170,7 +173,7 @@ void HookCOMPort::ReadData()
         }
     }
 
-    if(tempNum != 69)
+    if(tempNum != UNASSIGN)
     {
         tempReadData = p_ComPortArray[tempNum]->readAll ();
         emit ReadDataSig(tempNum, tempReadData);
@@ -181,14 +184,16 @@ void HookCOMPort::DisconnectAll()
 {
     if(isPortOpen)
     {
-
         //Close All Connections
-        //Close and Delete Serial COM Ports
         for(quint8 i = 0; i < MAXCOMPORTS; i++)
         {
             if(comPortOpen[i])
+            {
                 p_ComPortArray[i]->close ();
+                comPortOpen[i] = false;
+            }
         }
+        isPortOpen = false;
     }
 }
 
