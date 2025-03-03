@@ -2551,7 +2551,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
     commands = signalsAndCommands[signalName];
     cmdCount = commands.length ();
 
-    //qDebug() << "Commnads: " << commands;
+   //qDebug() << "Commnads: " << commands;
 
     //First Command Is Always a Player
     if(commands[0] == ALLPLAYERS)

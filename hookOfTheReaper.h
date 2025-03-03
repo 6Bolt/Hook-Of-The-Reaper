@@ -8,8 +8,14 @@
 #include <QDialog>
 #include <QMessageBox>
 
-
 #include <QDebug>
+
+#include <QEvent>
+
+#include <QSystemTrayIcon>
+#include <QMenu>
+#include <QAction>
+#include <QRect>
 
 #include "Windows/addLightGunWindow.h"
 #include "Windows/addComDeviceWindow.h"
@@ -133,7 +139,20 @@ signals:
     //Stops the Hooker Engine
     void StopHookerEngine();
 
+#ifdef Q_OS_WIN
+    //Hide From Taskbar when Minimized
+protected:
+    void changeEvent(QEvent *event) override {
+        if (event->type() == QEvent::WindowStateChange) {
+            if (windowState() & Qt::WindowMinimized) {
+                hide();
+                trayIcon->show ();
+            }
 
+        }
+        //QMainWindow::changeEvent(event);
+    }
+#endif
 
 private:
 
@@ -203,6 +222,29 @@ private:
     //Is Game File DefaultLG or INI
     bool                            isGameINI;
 
+#ifdef Q_OS_WIN
 
+    //Tray Icon
+    QSystemTrayIcon                 *trayIcon;
+
+    //Tray Icon Menu
+    QMenu                           *trayMenu;
+
+    //Tray Icon Meun Quit Action
+    QAction                         *quitAction;
+
+    //Tray Icon Meun Add Light Gun Action
+    QAction                         *addLGAction;
+
+    //Tray Icon Meun Edit Light Gun Action
+    QAction                         *editLGAction;
+
+    //Tray Icon Meun Player's Assignment Action
+    QAction                         *playAsignAction;
+
+    //Tray Icon Meun Test COM Port Action
+    QAction                         *testComAction;
+
+#endif
 };
 #endif // HOOKOFTHEREAPER_H

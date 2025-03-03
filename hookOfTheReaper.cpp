@@ -29,6 +29,9 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
 {
     ui->setupUi(this);
 
+    //setWindowFlags(Qt::Tool | Qt::WindowSystemMenuHint | Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
+    //setWindowFlags(Qt::Tool | Qt::WindowMaximizeButtonHint);
+
     //Set Up Reaper Default Light Gun Settings
     DEFAULTLG_ARRAY[RS3_REAPER].BAUD = REAPERBAUD;
     DEFAULTLG_ARRAY[RS3_REAPER].DATA = REAPERDATA;
@@ -101,6 +104,50 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
     //Creates the Hooker Engine and Gives Pointer Address of COM Device List
     p_hookEngine = new HookerEngine(p_comDeviceList, true, this);
 
+#ifdef Q_OS_WIN
+
+    this->hide();
+
+    //Set Up Tray Icon and show it
+    trayIcon = new QSystemTrayIcon(this);
+    trayIcon->setIcon(QIcon("./data/icons/hOTRIcon256.ico"));
+    trayIcon->show ();
+
+    //Set Up Quit in tray Icon Menu
+    trayMenu = new QMenu(this);
+    addLGAction = new QAction("Add Light Gun", this);
+    connect(addLGAction, &QAction::triggered, this, &HookOfTheReaper::on_actionAdd_Light_Gun_triggered);
+    trayMenu->addAction(addLGAction);
+    editLGAction = new QAction("Edit Light Gun", this);
+    connect(editLGAction, &QAction::triggered, this, &HookOfTheReaper::on_actionEdit_Light_Gun_triggered);
+    trayMenu->addAction(editLGAction);
+    playAsignAction = new QAction("Player's Assignment", this);
+    connect(playAsignAction, &QAction::triggered, this, &HookOfTheReaper::on_actionPlayer_Assignment_triggered);
+    trayMenu->addAction(playAsignAction);
+    testComAction = new QAction("Test COM Port", this);
+    connect(testComAction, &QAction::triggered, this, &HookOfTheReaper::on_actionTest_COM_Port_triggered);
+    trayMenu->addAction(testComAction);
+    quitAction = new QAction("Quit", this);
+    connect(quitAction, &QAction::triggered, QApplication::instance(), &QApplication::quit);
+    trayMenu->addAction(quitAction);
+    trayIcon->setContextMenu(trayMenu);
+
+    //When Tray Icon Triggered or Double Clicked, bring up Program
+    connect(trayIcon, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason){
+        if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick) {
+            this->show(); // Show the window when the tray icon is clicked
+            this->setWindowState (Qt::WindowActive);
+            trayIcon->hide();
+        }
+    });
+
+#else
+
+    this->show();
+    this->setWindowState (Qt::WindowMinimized);
+
+#endif
+
     //Signals and Slots. Used to Display Info On Main Windows.
     //Hooker Engine Updates, Based on the Refresh Time Display
     connect(p_hookEngine, &HookerEngine::MameConnectedNoGame, this, &HookOfTheReaper::DisplayMameNoGame);
@@ -118,7 +165,17 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
     //Start the Hooker Engine. If no Light Guns Saved, then must use INI Files
     p_hookEngine->Start ();
     engineRunning = true;
+
+#ifdef Q_OS_WIN
+
+#else
     ui->statusbar->showMessage ("Running");
+#endif
+
+
+
+
+
 
 }
 
@@ -131,6 +188,7 @@ HookOfTheReaper::~HookOfTheReaper()
 
 
 //Public Slots
+
 
 //Displays No Game Data on Main Window
 void HookOfTheReaper::DisplayMameNoGame()

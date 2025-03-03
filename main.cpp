@@ -4,7 +4,9 @@
 #include <QApplication>
 #include <QSystemSemaphore>
 #include <QSharedMemory>
-
+#include <QSystemTrayIcon>
+#include <QMenu>
+#include <QAction>
 
 int main(int argc, char *argv[])
 {
@@ -44,8 +46,12 @@ int main(int argc, char *argv[])
     {
         //If Not Running, then Get Going
         HookOfTheReaper w;
-        w.setWindowIcon (QIcon(":/data/icons/hOTRIcon256.ico"));
-        w.show();
+        //w.setWindowIcon (QIcon(":/data/icons/hOTRIcon256.ico"));
+        w.setWindowIcon (QIcon("./data/icons/hOTRIcon256.ico"));
+
+        //w.setVisible (false);
+        //w.hide();
+        //w.show();
         return a.exec();
     }
     else
