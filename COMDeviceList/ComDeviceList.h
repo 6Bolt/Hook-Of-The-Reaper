@@ -12,6 +12,8 @@
 #include <QTextStream>
 #include <QString>
 #include <QSerialPortInfo>
+#include <QList>
+#include <QMap>
 
 
 #include "LightGun.h"
@@ -91,7 +93,9 @@ public:
     void            SetCloseComPortGameExit(bool ccpGameExit);
 
     //Copies Used Dip Players Array
-    void            CopyUsedDipPlayersArray(bool *targetArray, quint8 size);
+    void            CopyUsedDipPlayersArray(bool *targetArray, quint8 size, quint8 hubComPort);
+    void            ChangeUsedDipPlayersArray(quint8 hubComPort, quint8 dipPN, bool value);
+    bool            IsComDipPlayer(quint8 comNum);
 
     //Resets Light Gun, when Game Has Ended
     void            ResetLightgun();
@@ -106,7 +110,7 @@ public:
     ComPortDevice*      p_comPortDeviceList[MAXCOMPORTS];
 
     //Available Dip Switch Players for MX24
-    bool                usedDipPlayers[DIPSWITCH_NUMBER];
+    QMap<quint8,QList<bool>>    usedHubComDipPlayers;
 
 
 private:

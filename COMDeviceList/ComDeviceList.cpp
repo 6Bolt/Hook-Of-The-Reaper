@@ -25,12 +25,6 @@ ComDeviceList::ComDeviceList()
         playersLightGun[i] = UNASSIGN;
     }
 
-    //More Set Defaults
-    for(i = 0; i < DIPSWITCH_NUMBER; i++)
-    {
-        usedDipPlayers[i] = false;
-    }
-
     //Get Current Path
     //currentPath = QDir::currentPath();
     currentPath = QApplication::applicationDirPath();
@@ -158,20 +152,28 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
 
     p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, dipSwitchSet, dipSwitchNumber, hcpNum);
 
-    usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumberBypass ();
-
-    if(usedComPortNum != UNASSIGN)
-        availableComPorts[usedComPortNum] = false;
-    else
-    {
-        usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumber ();
-        availableComPorts[usedComPortNum] = false;
-    }
+    //Remove Hub COM port From List
+    availableComPorts[hcpNum] = false;
 
 
+    //Set Up DIP Switch Player for Hub Com Port
     if(dipSwitchSet)
-        usedDipPlayers[dipSwitchNumber] = true;
-
+    {
+        if(usedHubComDipPlayers.contains (hcpNum))
+            usedHubComDipPlayers[hcpNum][dipSwitchNumber] = true;
+        else
+        {
+            QList<bool> tempDP;
+            for(quint8 i = 0; i < DIPSWITCH_NUMBER; i++)
+            {
+                if(i == dipSwitchNumber)
+                    tempDP << true;
+                else
+                    tempDP << false;
+            }
+            usedHubComDipPlayers.insert(hcpNum, tempDP);
+        }
+    }
     numberLightGuns++;
 }
 
@@ -270,8 +272,9 @@ void ComDeviceList::DeleteLightGun(quint8 lgNumber)
         {
             bool isSet;
             quint8 dipSwNumber = p_lightGunList[lgNumber]->GetDipSwitchPlayerNumber (&isSet);
+            quint8 hubCPNum = p_lightGunList[lgNumber]->GetHubComPortNumber ();
             if(isSet)
-                usedDipPlayers[dipSwNumber] = false;
+                ChangeUsedDipPlayersArray(hubCPNum, dipSwNumber, false);
         }
     }
 
@@ -279,8 +282,8 @@ void ComDeviceList::DeleteLightGun(quint8 lgNumber)
     if(numberLightGuns == 1 && lgNumber == 0)
     {
         delete p_lightGunList[lgNumber];
-        p_lightGunList[numberLightGuns] = nullptr;
         numberLightGuns--;
+        p_lightGunList[numberLightGuns] = nullptr;
 
         for(index = 0; index < MAXPLAYERLIGHTGUNS; index++)
         {
@@ -292,8 +295,8 @@ void ComDeviceList::DeleteLightGun(quint8 lgNumber)
     {
         //Targeted Light Gun is the Last in the List. So Don't have to Move Light guns Around
         delete p_lightGunList[lgNumber];
-        p_lightGunList[numberLightGuns] = nullptr;
         numberLightGuns--;
+        p_lightGunList[numberLightGuns] = nullptr;
 
         for(index = 0; index < MAXPLAYERLIGHTGUNS; index++)
         {
@@ -732,9 +735,6 @@ void ComDeviceList::LoadLightGunList()
 
             line = in.readLine();
             dipNumber = line.toUInt ();
-
-            if(dipSet)
-                usedDipPlayers[dipNumber] = true;
 
             line = in.readLine();
             hcpNumber = line.toUInt ();
@@ -1230,14 +1230,68 @@ void ComDeviceList::SetCloseComPortGameExit(bool ccpGameExit)
     closeComPortGameExit = ccpGameExit;
 }
 
-void ComDeviceList::CopyUsedDipPlayersArray(bool *targetArray, quint8 size)
+void ComDeviceList::CopyUsedDipPlayersArray(bool *targetArray, quint8 size, quint8 hubComPort)
 {
-    for (quint8 i = 0; i < size; i++)
+    if(usedHubComDipPlayers.contains (hubComPort))
     {
-        *(targetArray + i) = *(usedDipPlayers + i);
+        for (quint8 i = 0; i < size; i++)
+        {
+            *(targetArray + i) = usedHubComDipPlayers[hubComPort][i];
+        }
+    }
+    else
+    {
+        for (quint8 i = 0; i < size; i++)
+        {
+            *(targetArray + i) = false;
+        }
     }
 }
 
+bool ComDeviceList::IsComDipPlayer(quint8 comNum)
+{
+    if(usedHubComDipPlayers.contains (comNum))
+        return true;
+    else
+        return false;
+}
+
+
+void ComDeviceList::ChangeUsedDipPlayersArray(quint8 hubComPort, quint8 dipPN, bool value)
+{
+    if(usedHubComDipPlayers.contains (hubComPort))
+    {
+        usedHubComDipPlayers[hubComPort][dipPN] = value;
+
+        quint8 count = 0;
+
+        for (quint8 i = 0; i < usedHubComDipPlayers[hubComPort].size (); i++)
+        {
+            if(!usedHubComDipPlayers[hubComPort][i])
+                count++;
+        }
+
+        if(count == DIPSWITCH_NUMBER)
+        {
+            usedHubComDipPlayers.remove (hubComPort);
+            availableComPorts[hubComPort] = true;
+        }
+    }
+    else if(value)
+    {
+        QList<bool> tempDP;
+
+        for (quint8 i = 0; i < DIPSWITCH_NUMBER; i++)
+        {
+            if(dipPN == i)
+                tempDP << value;
+            else
+                tempDP << false;
+        }
+
+        usedHubComDipPlayers.insert (hubComPort, tempDP);
+    }
+}
 
 void ComDeviceList::ResetLightgun()
 {

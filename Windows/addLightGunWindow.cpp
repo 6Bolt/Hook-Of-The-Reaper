@@ -43,7 +43,7 @@ addLightGunWindow::addLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     //Move Over the ComDevice List and Get a Copy of the Unused COM Ports & Used Dip Players
     p_comDeviceList = cdList;
     p_comDeviceList->CopyAvailableComPortsArray(unusedComPort, MAXCOMPORTS);
-    p_comDeviceList->CopyUsedDipPlayersArray(usedDipPlayers, DIPSWITCH_NUMBER);
+    p_comDeviceList->CopyUsedDipPlayersArray(usedDipPlayers, DIPSWITCH_NUMBER, 0);
 
 
     //Default Light Gun Combo Box - Adding Default Light Guns
@@ -53,6 +53,7 @@ addLightGunWindow::addLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     ui->defaultLightGunComboBox->insertItem(JBGUN4IR,JBGUN4IRNAME);
     ui->defaultLightGunComboBox->insertItem(FUSION,FUSIONNAME);
     ui->defaultLightGunComboBox->insertItem(BLAMCON,BLAMCONNAME);
+    ui->defaultLightGunComboBox->insertItem(OPENFIRE,OPENFIRENAME);
     ui->defaultLightGunComboBox->setCurrentIndex (0);
 
     //COM Port Combo Box - Adding Available COM Ports
@@ -124,7 +125,7 @@ addLightGunWindow::addLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     //Only for MX24 Light Gun
     ui->dipSwitchComboBox->setEnabled(false);
     ui->hubComComboBox->setEnabled(false);
-    //Only for JB Gun4IR
+    //Only for JB Gun4IR & OpenFire
     ui->analogLineEdit->setInputMask (ANALOGSTRENGTHMASK);
     ui->analogLineEdit->setEnabled(false);
 }
@@ -181,7 +182,7 @@ void addLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int index
             FillSerialPortInfo(comPortIndex);
         }
 
-        if(index == JBGUN4IR)
+        if(index == JBGUN4IR || index == OPENFIRE)
             ui->analogLineEdit->setEnabled(true);
         else
         {
@@ -338,7 +339,7 @@ bool addLightGunWindow::IsValidData()
             comPortNumEmpty = true;
     }
 
-    if(defaultLGIndex == JBGUN4IR)
+    if(defaultLGIndex == JBGUN4IR || defaultLGIndex == OPENFIRE)
     {
         bool isNumber;
         QString analString = ui->analogLineEdit->text();
@@ -443,7 +444,7 @@ void addLightGunWindow::AddLightGun()
         //Create a New MX24 Light Gun Class
         p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, true, tempDS, tempHub);
     }
-    else if(defaultLightGun && defaultLightGunNum == JBGUN4IR)
+    else if(defaultLightGun && (defaultLightGunNum == JBGUN4IR || defaultLightGunNum == OPENFIRE))
     {
         QString analString = ui->analogLineEdit->text();
         quint8 analStrength = analString.toUInt ();
@@ -569,9 +570,19 @@ void addLightGunWindow::SetEnableComboBoxes(bool enableCB)
 
 void addLightGunWindow::on_hubComComboBox_currentIndexChanged(int index)
 {
-    quint8 dlgIndex = ui->defaultLightGunComboBox->currentIndex ();
+    QString tempQS;
+    p_comDeviceList->CopyUsedDipPlayersArray(usedDipPlayers, DIPSWITCH_NUMBER, index);
 
-    if(dlgIndex == MX24)
-        FillSerialPortInfo(index);
+    for(quint8 comPortIndx=0;comPortIndx<DIPSWITCH_NUMBER;comPortIndx++)
+    {
+        if(usedDipPlayers[comPortIndx])
+            tempQS = "";
+        else
+            tempQS = "P"+QString::number(comPortIndx+1);
+        ui->dipSwitchComboBox->setItemText(comPortIndx,tempQS);
+    }
+
+
+    FillSerialPortInfo(index);
 }
 

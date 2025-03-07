@@ -20,7 +20,7 @@ quint8  STOPBITSDATA_ARRAY[STOPBITS_NUMBER] = {1, 2, 3};
 QString FLOWNAME_ARRAY[FLOW_NUMBER] = {"No Flow Control", "RTS/CTS - Hardware", "Xon/Xoff - Software"};
 quint8  FLOWDATA_ARRAY[FLOW_NUMBER] = {0, 1, 2};
 
-QString DEFAULTLGFILENAMES_ARRAY[NUM_DEFAULTLG] = {"nonDefaultLG.hor","rs3Reaper.hor","mx24.hor","jbgun4ir.hor","fusion.hor","blamcon.hor"};
+QString DEFAULTLGFILENAMES_ARRAY[NUM_DEFAULTLG] = {"nonDefaultLG.hor","rs3Reaper.hor","mx24.hor","jbgun4ir.hor","fusion.hor","blamcon.hor","openFire.hor"};
 
 //Constructor
 HookOfTheReaper::HookOfTheReaper(QWidget *parent)
@@ -28,9 +28,6 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
     , ui(new Ui::HookOfTheReaper)
 {
     ui->setupUi(this);
-
-    //setWindowFlags(Qt::Tool | Qt::WindowSystemMenuHint | Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
-    //setWindowFlags(Qt::Tool | Qt::WindowMaximizeButtonHint);
 
     //Set Up Reaper Default Light Gun Settings
     DEFAULTLG_ARRAY[RS3_REAPER].BAUD = REAPERBAUD;
@@ -88,6 +85,17 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
     DEFAULTLG_ARRAY[BLAMCON].MAXAMMON = BLAMCONMAXAMMONUM;
     DEFAULTLG_ARRAY[BLAMCON].RELOADVALUEN = BLAMCONRELOADNUM;
 
+    //Set Up OpenFire Default Light Gun Settings
+    DEFAULTLG_ARRAY[OPENFIRE].BAUD = OPENFIREBAUD;
+    DEFAULTLG_ARRAY[OPENFIRE].DATA = OPENFIREDATA;
+    DEFAULTLG_ARRAY[OPENFIRE].PARITY = OPENFIREPARITY;
+    DEFAULTLG_ARRAY[OPENFIRE].STOP = OPENFIRESTOP;
+    DEFAULTLG_ARRAY[OPENFIRE].FLOW = OPENFIREFLOW;
+    DEFAULTLG_ARRAY[OPENFIRE].MAXAMMO = OPENFIREMAXAMMO;
+    DEFAULTLG_ARRAY[OPENFIRE].RELOADVALUE = OPENFIRERELOAD;
+    DEFAULTLG_ARRAY[OPENFIRE].MAXAMMON = OPENFIREMAXAMMONUM;
+    DEFAULTLG_ARRAY[OPENFIRE].RELOADVALUEN = OPENFIRERELOADNUM;
+
 
     //TCP Socket is Not Connected Yet
     isTCPConnected = false;
@@ -140,6 +148,8 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
             trayIcon->hide();
         }
     });
+
+    trayIcon->showMessage ("Hook Of The Reaper", "Now Hooking", QIcon("./data/icons/hOTRIcon256.ico"));
 
 #else
 

@@ -108,6 +108,15 @@ void HookCOMPort::Disconnect(const quint8 &comPortNum)
 
         p_ComPortArray[comPortNum]->close ();
 
+        bool isOpen = p_ComPortArray[comPortNum]->isOpen ();
+
+        if(isOpen)
+        {
+            QSerialPort::SerialPortError portError = p_ComPortArray[comPortNum]->error();
+            QString critMessage = "Serial Port could not close, something is wrong. Serial COM Port: "+QString::number(comPortNum)+". Serial Port Error: "+QString::number(portError)+"  "+QString::number(p_ComPortArray[comPortNum]->bytesToWrite());
+            emit ErrorMessage("Serial COM Port Error",critMessage);
+        }
+
         //delete p_ComPortArray[comPortNum];
         //p_ComPortArray[comPortNum] = nullptr;
 

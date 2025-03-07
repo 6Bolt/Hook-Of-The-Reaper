@@ -97,6 +97,13 @@ private slots:
     //When Timer Runs Out, Calls this Function to Update the Display
     void UpdateDisplayTimeOut();
 
+    //For the Recoil_R2S Command
+    void P1RecoilR2S();
+    void P2RecoilR2S();
+    void P3RecoilR2S();
+    void P4RecoilR2S();
+
+
 
 private:
 
@@ -347,6 +354,15 @@ private:
     QMap<QString,QString>           updateSignalDataDisplay;
 
     bool                            displayMB;
+
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    QTimer                          pRecoilR2STimer[MAXGAMEPLAYERS];
+    bool                            isPRecoilR2SFirstTime[MAXGAMEPLAYERS];
+    QStringList                     pRecoilR2SCommands[MAXGAMEPLAYERS];
+    quint32                         recoilR2SSkewPrec[MAXGAMEPLAYERS];
+
 
 };
 

@@ -40,7 +40,7 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
 
     commandLGList << OPENCOMPORT << CLOSECOMPORT << DAMAGECMD << RECOILCMD << RELOADCMD;
     commandLGList << AMMOCMD << AMMOVALUECMD << SHAKECMD << AUTOLEDCMD << ARATIO169CMD;
-    commandLGList << ARATIO43CMD << JOYMODECMD << KANDMMODECMD << DLGNULLCMD;
+    commandLGList << ARATIO43CMD << JOYMODECMD << KANDMMODECMD << DLGNULLCMD << RECOIL_R2SCMD;
 
 
 
@@ -186,6 +186,19 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     {
         threadForCOMPort.start(QThread::HighPriority);
     }
+
+    //Connect Recoil_R2S Timers To Slots
+    connect(&pRecoilR2STimer[0], SIGNAL(timeout()), this, SLOT(P1RecoilR2S()));
+    connect(&pRecoilR2STimer[1], SIGNAL(timeout()), this, SLOT(P2RecoilR2S()));
+    connect(&pRecoilR2STimer[2], SIGNAL(timeout()), this, SLOT(P3RecoilR2S()));
+    connect(&pRecoilR2STimer[3], SIGNAL(timeout()), this, SLOT(P4RecoilR2S()));
+
+    for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
+    {
+        isPRecoilR2SFirstTime[i] = true;
+        recoilR2SSkewPrec[i] = 100;
+    }
+
 
 }
 
@@ -634,6 +647,17 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
         }
         else if(line[0] == COMMANDSTARTCHAR)
         {
+
+            if(line.startsWith (RECOIL_R2SCMD))
+            {
+                lgFileLoadFail = true;
+                lgFile.close();
+                QString tempCrit = "Recoil_R2S command doesn't support the '|'.\nLine Number: "+QString::number(lineNumber)+"\nCMD: Recoil_R2S"+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
             //Got a Command - Check if Good Command
 
             if(line.contains ('|'))
@@ -661,6 +685,37 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
             }
             else
             {
+
+                if(line.startsWith (RECOIL_R2SCMD) && line.size() > RECOIL_R2SCMDCNT)
+                {
+                    subCommands = line.split(' ', Qt::SkipEmptyParts);
+
+                    if(subCommands.size() > 2)
+                    {
+                        lgFileLoadFail = true;
+                        lgFile.close();
+                        QString tempCrit = "Too many variables after Recoil_R2S command. Can only have 0-1 variable. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+subCommands[2]+"\nFile: "+fileNamePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return false;
+                    }
+
+
+                    subCommands[1].toULong (&isNumber);
+
+                    if(!isNumber)
+                    {
+                        lgFileLoadFail = true;
+                        lgFile.close();
+                        QString tempCrit = "Recoil_R2S Skew is not a number.\nLine Number: "+QString::number(lineNumber)+"\nSkew Number:"+subCommands[1]+"\nFile: "+fileNamePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return false;
+                    }
+
+                    line = subCommands[0];
+                }
+
                 //Check Command to to see if it is good
                 isGoodCmd = CheckLGCommand(line);
 
@@ -886,6 +941,73 @@ void HookerEngine::UpdateDisplayTimeOut()
 }
 
 
+void HookerEngine::P1RecoilR2S()
+{
+    if(!isPRecoilR2SFirstTime[0])
+    {
+        quint8 tempCPNum = loadedLGComPortNumber[0];
+
+        for(quint8 k = 0; k < pRecoilR2SCommands[0].count(); k++)
+        {
+            //qDebug() << "Recoil_R2S Timer - Writting to Port: " << tempCPNum << " with Commands: " << pRecoilR2SCommands[0][k];
+            WriteLGComPort(tempCPNum, pRecoilR2SCommands[0][k]);
+        }
+
+        pRecoilR2STimer[0].start();
+    }
+}
+
+void HookerEngine::P2RecoilR2S()
+{
+    if(!isPRecoilR2SFirstTime[1])
+    {
+        quint8 tempCPNum = loadedLGComPortNumber[1];
+
+        for(quint8 k = 0; k < pRecoilR2SCommands[1].count(); k++)
+        {
+            //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
+            WriteLGComPort(tempCPNum, pRecoilR2SCommands[1][k]);
+        }
+
+        pRecoilR2STimer[1].start();
+    }
+}
+
+void HookerEngine::P3RecoilR2S()
+{
+    if(!isPRecoilR2SFirstTime[2])
+    {
+        quint8 tempCPNum = loadedLGComPortNumber[2];
+
+        for(quint8 k = 0; k < pRecoilR2SCommands[2].count(); k++)
+        {
+            //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
+            WriteLGComPort(tempCPNum, pRecoilR2SCommands[2][k]);
+        }
+
+        pRecoilR2STimer[2].start();
+    }
+}
+
+void HookerEngine::P4RecoilR2S()
+{
+    if(!isPRecoilR2SFirstTime[3])
+    {
+        quint8 tempCPNum = loadedLGComPortNumber[3];
+
+        for(quint8 k = 0; k < pRecoilR2SCommands[3].count(); k++)
+        {
+            //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
+            WriteLGComPort(tempCPNum, pRecoilR2SCommands[3][k]);
+        }
+
+        pRecoilR2STimer[3].start();
+    }
+}
+
+
+
+
 //Private Member Functions
 
 
@@ -989,6 +1111,14 @@ void HookerEngine::ClearOnDisconnect()
     updateSignalDataDisplay.clear();
     iniFileLoaded = false;
     lgFileLoaded = false;
+
+    for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
+    {
+        isPRecoilR2SFirstTime[i] = true;
+        recoilR2SSkewPrec[i] = 100;
+    }
+
+
 }
 
 
@@ -1183,6 +1313,12 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
                 //The other 2 File Loaded bools where checked before, so Clear the Last 2
                 lgFileLoaded = false;
                 iniFileLoaded = false;
+
+                for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
+                {
+                    isPRecoilR2SFirstTime[i] = true;
+                    recoilR2SSkewPrec[i] = 100;
+                }
 
             }
             else
@@ -2390,6 +2526,16 @@ void HookerEngine::LoadLGFile()
 
             if(line.contains ('|'))
             {
+                if(line.startsWith (RECOIL_R2SCMD))
+                {
+                    lgFileLoadFail = true;
+                    lgFile.close();
+                    QString tempCrit = "Recoil_R2S command doesn't support the '|'.\nLine Number: "+QString::number(lineNumber)+"\nCMD: Recoil_R2S"+"\nFile: "+gameLGFilePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return;
+                }
+
                 line.replace(" |","|");
                 line.replace("| ","|");
 
@@ -2414,6 +2560,37 @@ void HookerEngine::LoadLGFile()
             }
             else
             {
+                if(line.startsWith (RECOIL_R2SCMD) && line.size() > RECOIL_R2SCMDCNT)
+                {
+                    subCommands = line.split(' ', Qt::SkipEmptyParts);
+
+                    if(subCommands.size() > 2)
+                    {
+                        lgFileLoadFail = true;
+                        lgFile.close();
+                        QString tempCrit = "Too many variables after Recoil_R2S command. Can only have 0-1 variable. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+subCommands[2]+"\nFile: "+gameLGFilePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return;
+                    }
+
+                    recoilR2SSkewPrec[tempPlayer - 1] = subCommands[1].toULong (&isNumber);
+
+                    if(!isNumber)
+                    {
+                        recoilR2SSkewPrec[tempPlayer - 1] = 100;
+                        lgFileLoadFail = true;
+                        lgFile.close();
+                        QString tempCrit = "Recoil_R2S Skew is not a number.\nLine Number: "+QString::number(lineNumber)+"\nSkew Number:"+subCommands[1]+"\nFile: "+gameLGFilePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return;
+                    }
+
+                    line = subCommands[0];
+                }
+
+
                 //Check Command to to see if it is good
                 isGoodCmd = CheckLGCommand(line);
 
@@ -2534,7 +2711,7 @@ bool HookerEngine::CheckLGCommand(QString commndNotChk)
 
 void HookerEngine::ProcessLGCommands(QString signalName, QString value)
 {
-    QStringList commands, dlgCommands, multiValue;
+    QStringList commands, dlgCommands, multiValue, tmpCMDs;
     quint8 cmdCount;
     bool allPlayers;
     quint8 playerNum = 69;
@@ -2700,10 +2877,57 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                 //Must Be Reload Command
                                 dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ReloadCommands(&dlgCMDFound);
                             }
-                            else if(commands[i][3] == 'c' && value != "0")
+                            else if(commands[i][3] == 'c')
                             {
-                                //Must be Recoil Command, Only Do when Value != 0
-                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
+                                if(commands[i].size() > RECOILCMDCNT)
+                                {
+
+                                    if(isPRecoilR2SFirstTime[player])
+                                    {
+                                        tmpCMDs = p_comDeviceList->p_lightGunList[lightGun]->RecoilR2SCommands(&dlgCMDFound);
+                                        if(dlgCMDFound && tmpCMDs.count() > 1)
+                                        {
+                                            quint32 delay = tmpCMDs[0].toULong();
+
+                                            if(recoilR2SSkewPrec[player] != 100)
+                                            {
+                                                delay = delay * recoilR2SSkewPrec[player];
+                                                delay = delay/100;
+                                            }
+
+                                            //qDebug() << "Delay for P" << QString::number(player+1) << " is " << delay;
+
+                                            pRecoilR2STimer[player].setInterval(delay);
+
+                                            for(quint8 x = 1; x < tmpCMDs.count(); x++)
+                                                pRecoilR2SCommands[player] << tmpCMDs[x];
+
+                                            isPRecoilR2SFirstTime[player] = false;
+                                        }
+                                    }
+
+                                    if(value != "0" && !isPRecoilR2SFirstTime[player])
+                                    {
+                                        pRecoilR2STimer[player].start ();
+
+                                        for(quint8 x = 0; x < pRecoilR2SCommands[player].count(); x++)
+                                            dlgCommands << pRecoilR2SCommands[player][x];
+
+                                        dlgCMDFound = true;
+                                    }
+                                    else
+                                    {
+                                        pRecoilR2STimer[player].stop ();
+                                        dlgCMDFound = false;
+                                    }
+                                    tmpCMDs.clear();
+
+                                }
+                                else if(value != "0")
+                                {
+                                    //Must be Recoil Command, Only Do when Value != 0
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
+                                }
                             }
                         }
                         else if(commands[i][1] == 'S' && value != "0")

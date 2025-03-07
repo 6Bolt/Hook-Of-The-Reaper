@@ -546,6 +546,7 @@ void LightGun::LoadDefaultLGCommands()
     closeComPortCmdsSet = false;
     damageCmdsSet = false;
     recoilCmdsSet = false;
+    recoilR2SCmdsSet = false;
     reloadCmdsSet = false;
     ammoCmdsSet = false;
     ammoValueCmdsSet = false;
@@ -560,6 +561,7 @@ void LightGun::LoadDefaultLGCommands()
     closeComPortCmds.clear();
     damageCmds.clear();
     recoilCmds.clear();
+    recoilR2SCmds.clear();
     reloadCmds.clear();
     ammoCmds.clear();
     ammoValueCmds.clear();
@@ -672,6 +674,16 @@ void LightGun::LoadDefaultLGCommands()
                     }
                     recoilCmdsSet = true;
                 }
+                else if(splitLines[0] == RECOIL_R2SONLY)
+                {
+                    //qDebug() << "Recoiol_R2S Commands: " << commands;
+                    for(i = 0; i < numberCommands; i++)
+                    {
+                        commands[i] = commands[i].trimmed ();
+                        recoilR2SCmds << commands[i];
+                    }
+                    recoilR2SCmdsSet = true;
+                }
                 else if(splitLines[0] == RELOADCMDONLY)
                 {
                     for(i = 0; i < numberCommands; i++)
@@ -767,6 +779,7 @@ void LightGun::LoadDefaultLGCommands()
     qDebug() << closeComPortCmdsSet;
     qDebug() << damageCmdsSet;
     qDebug() << recoilCmdsSet;
+    qDebug() << recoilR2SCmdsSet;
     qDebug() << reloadCmdsSet;
     qDebug() << ammoCmdsSet;
     qDebug() << ammoValueCmdsSet;
@@ -781,6 +794,7 @@ void LightGun::LoadDefaultLGCommands()
     qDebug() << closeComPortCmds;
     qDebug() << damageCmds;
     qDebug() << recoilCmds;
+    qDebug() << recoilR2SCmds;
     qDebug() << reloadCmds;
     qDebug() << ammoCmds;
     qDebug() << ammoValueCmds;
@@ -803,6 +817,18 @@ QStringList LightGun::SplitLoadedCommands(QString commandList)
     QStringList cmdSplit, returnList;
     quint8 cmdCount;
     QString goodCMD;
+    QString frontPart;
+    bool needFront = false;
+
+    quint16 indexOfP = commandList.indexOf('P');
+
+    if(indexOfP != 0)
+    {
+        frontPart = commandList.first (indexOfP);
+        frontPart = frontPart.trimmed ();
+        commandList = commandList.remove(0,indexOfP);
+        needFront = true;
+    }
 
     cmdSplit = commandList.split ('|', Qt::SkipEmptyParts);
 
@@ -825,6 +851,11 @@ QStringList LightGun::SplitLoadedCommands(QString commandList)
 
         returnList = goodCMD.split (' ', Qt::SkipEmptyParts);
     }
+
+    if(needFront)
+        returnList.prepend(frontPart);
+
+    //qDebug() << "returnList: " << returnList;
 
     return returnList;
 }
@@ -1055,6 +1086,19 @@ QStringList LightGun::MouseAndKeyboardModeCommands(bool *isSet)
 
     if(keyMouseCmdsSet)
         return keyMouseCmds;
+    else
+    {
+        QStringList tempSL;
+        return tempSL;
+    }
+}
+
+QStringList LightGun::RecoilR2SCommands(bool *isSet)
+{
+    *isSet = recoilR2SCmdsSet;
+
+    if(recoilR2SCmdsSet)
+        return recoilR2SCmds;
     else
     {
         QStringList tempSL;

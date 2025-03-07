@@ -3,13 +3,14 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.0.9"
+#define VERSION                 "1.1.0"
 #define VERSIONMAIN             1
 #define VERSIONMID              0
 #define VERSIONLAST             8
 
 //Global Settings
 #define MAXPLAYERLIGHTGUNS      8
+#define MAXGAMEPLAYERS          4
 #define UNASSIGN                69
 
 #define NOGUIARG                "-nogui"
@@ -47,7 +48,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Default Light Gun Definition - There is No Zero, as that is blan and nonDefaultLG
-#define NUM_DEFAULTLG           6
+#define NUM_DEFAULTLG           7
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -122,7 +123,19 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define BLAMCONMAXAMMONUM        0
 #define BLAMCONRELOADNUM         0
 
-
+//Sixth Default Light Gun
+//OpenFire Light Gun
+#define OPENFIRE                  6
+#define OPENFIRENAME              "OpenFire"
+#define OPENFIREBAUD              4
+#define OPENFIREDATA              0
+#define OPENFIREPARITY            0
+#define OPENFIRESTOP              0
+#define OPENFIREFLOW              0
+#define OPENFIREMAXAMMO           "0"
+#define OPENFIRERELOAD            "0"
+#define OPENFIREMAXAMMONUM        0
+#define OPENFIRERELOADNUM         0
 
 //Struct that Stores the Default Light gun Data
 struct S_DEFAULTLG
@@ -292,6 +305,9 @@ struct INIPortStruct
 #define KANDMMODECMD            ">Keyboard_Mouse_Mode"
 #define ALLPLAYERS              "*All"
 #define DLGNULLCMD              ">Null"
+#define RECOIL_R2SCMD           ">Recoil_R2S"
+#define RECOILCMDCNT            8
+#define RECOIL_R2SCMDCNT        12
 
 #define OPENCOMPORTONLY         "Open_COM"
 #define CLOSECOMPORTONLY        "Close_COM"
@@ -307,6 +323,7 @@ struct INIPortStruct
 #define JOYMODECMDONLY          "Joystick_Mode"
 #define KANDMMODECMDONLY        "Keyboard_Mouse_Mode"
 #define DLGNULLCMDONLY          "Null"
+#define RECOIL_R2SONLY          "Recoil_R2S"
 
 //Not Used Yet, But Needed for Future
 //#define DEFAULTCDDIR            "defaultCD"

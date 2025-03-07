@@ -102,6 +102,7 @@ public:
     QStringList JoystickModeCommands(bool *isSet);
     QStringList MouseAndKeyboardModeCommands(bool *isSet);
 
+    QStringList RecoilR2SCommands(bool *isSet);
 
     void ResetLightGun();
 
@@ -153,6 +154,7 @@ private:
     QStringList         closeComPortCmds;
     QStringList         damageCmds;
     QStringList         recoilCmds;
+    QStringList         recoilR2SCmds;
     QStringList         reloadCmds;
     QStringList         ammoCmds;
     QStringList         ammoValueCmds;
@@ -167,6 +169,7 @@ private:
     bool                closeComPortCmdsSet;
     bool                damageCmdsSet;
     bool                recoilCmdsSet;
+    bool                recoilR2SCmdsSet;
     bool                reloadCmdsSet;
     bool                ammoCmdsSet;
     bool                ammoValueCmdsSet;
