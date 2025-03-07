@@ -20,7 +20,7 @@ https://youtu.be/LRuflVbOHfQ
 #### 1) To do everything that MAMEHooker can do with Serial Port Devices. Starting with light guns, then IO Controllers, and finally force feedback. Able to load INI Files
 #### 2) To implement the new Default Light Gun format. This will make any default light gun work with the associated game file, like the INI files.
 #### 3) To be open source with the GPLv3 license, so it will remain always open source.
-#### 4) To be platform independent. Reason why I chose Qt, as it can compile on many platforms.
+#### 4) To be platform independent. Reason why I chose Qt, as it can compile on many platforms. (Now Low Priority)
 #### 5) Have the best performance, and be multi-threaded.
 
 
@@ -69,48 +69,65 @@ I am working on a new game file format for light guns, I call it Default Light G
 
  As you can see, the Hook Of The Reaper, didn’t change. The program will load up the command, based on the Default Light Gun being used. Then the same game files can be used for every light gun. So Default Light Gun game files can be slowly built, and used by everyone. Instead of everyone making custom INI game files. 
 
-### Commands
+## Commands
 
-Light guns only have so many commands, as they can recoil, shake, and few other things. Here is the List of commands I have so far:
+Light guns only have so many commands, as they can recoil, shake, and few other things. I do have some overlap in commands, but that is to support HD Recoil features in the future. Here is the List of commands I have so far:
 
 ### Current Default Light Gun Commands
 
 | Command | Notes |
 |---------|-------|
-| Damage | (only happens on 0->1, no need for '\|') |
-| Recoil | (only happens on 0->1, no need for '\|') |
+| Damage | Doesn't Happen on 0, no need for '\|' |
+| Recoil | Doesn't Happen on 0, no need for '\|' |
+| Recoil_R2S | Converts Rumble Recoil to Solenoid Recoil |
 | Reload |     |
-| Ammo   |     |
-| Ammo_Value|      |
-| Shake | (only happens on 0->1, no need for '\|') |
+| Ammo   | Doesn't Happen on 0, no need for '\|'    |
+| Ammo_Value|  Doesn't Happen on 0, no need for '\|', except for Reapers for Z0    |
+| Shake | Doesn't Happen on 0, no need for '\|' |
 | Auto_LED |     |
-| AspectRatio_16:9 |    |
-| AspectRatio_4:3 |      |
-| Joystick_Mode |      |
-| Keyboard_Mouse_Mode |     |
+| AspectRatio_16:9 | Can be used at mame_start/stop   |
+| AspectRatio_4:3 | Can be used at mame_start/stop     |
+| Joystick_Mode | Can be used at mame_start/stop     |
+| Keyboard_Mouse_Mode | Can be used at mame_start/stop    |
 | Null |      |
-
-
 
 
 But, what if you are playing a new game, and don’t have the signals. Hook Of The Reaper works like MAMEHooker does. If you choose Default Light Guns files first in Settings, and there is no game file of that game name for defaultLG or INI, Hook Of The Reaper will make a new game file in the defaultLG directory, with the name of the game dot txt. The top will have a standard top, and then list out all the signals observed during the time the game was open. So there must be no game file for both INI and Default Light Gun. 
 
 If the setting is not set for use Default Light Gun files first, it will make a new game file in the ini/MAME directory, with the name of the game dot ini. The top will be a standard INI file top, and then list out all the signals observed during the time the game was open. Also, if any new signals pop up later, that are not in the file, it will be added to the file, when the game closes, like MAMEHooker, does. 
 
-### Location of Default Light Gun Game Files
+
+### Recoil_R2S Command
+
+The command is used when the arcade gun used rumble for recoil. So when the trigger is held down, the motor is turned on, and when trigger is released, motor is off. So the signal is just 0 (motor off) and 1 (motor on). This doesn't work for at home light gun's which uses a solenoid. A solenoid, needs pulese (0 -> 1 -> 0) to work. Then the pulses are correctly delayed. Now Hook Of The Reaper can convert the rumble motor signal to work with the light gun's soleniod. When the signal goes high, it does a recoil and delay. Then it loops the recoil and delay, until the rumble signal goes back to 0. The delay is in milliseconds, and is located in the light gun's .hor file in the data directory. I pasted the RS3 Reaper below.
+
+Recoil_R2S=100 Z5
+
+The first variable after the '=' is the delay in milliseconds. Then next is the command(s) for a recoil. Currently, every gun is set to 100ms. I don't know if this is the best setting for every light gun. As I only have the Reapers right now. So you might have to increase or decrease the delay for your light gun. An easy game to try it out on, is Let's Go Island 3D. Instead of using PX_CtmRecoil signal with the Recoil command, use the PX_GunMotor signal with the Recoil_R2S command. Then you can increase/decrease the delay to what works best. Then you can report back to me the delay and light gun. Then I will use the average I get from everyone.
+
+I made this command because of Alien 3 game, which has the acceleration. Which means the signal goes 0 -> 1 for awhile, then starts going up and down, when the damage for the gun gets to zero. This happens in Terminator 2 too, but with deceleration. So the gun works good, until damage of the gun drops to 0, and it bounces around, which is to tell the player, you cannot hold the trigger all the time. In the 'alien3.txt' Default Light Gun game file, I put a number after the \>Recoil_R2S command, please see below.
+
+\>Recoil_R2S 125
+
+The 125 is a percentage, so it is 125% of the delay. Since the delay is at 100ms, then it would be 100ms * 1.25 (125%) = 125ms. I did a percentage, because in theory, if the light gun delay is set correctly, then every light gun would work, because it is based on percentage of said delay. I found that the Reaper worked good at 125% delay, and enough of a change to know the gun damage is up. You can remove the 125, or change it around to see what you like for Alien 3 and Terminator 2.
+
+
+
+## Location of Default Light Gun Game Files
 
 - path/to/HookOfTheReaper/defaultLG
 
-I put in nine games in the defaultLG directory, so a person can see how it is set up. Unlike above, every thing has its own line. The Damage example would be like this in the file.
+Majority of games are in the defaultLG directory, so a person can see how it is set up. Unlike above, every thing has its own line. The Damage example would be like this in the file.
+
 
 | File Line | What it Represents |
 |-----------|--------------------|
 | :P1_Damage | A Signal with a beginning : |
 | *P1 | A Player or ALL, with a beginning * |
-| >Damage | A Command, with a beginning >
+| \>Damage | A Command, with a beginning \>
 
 
-A signal can have no Player/All and no Command, or a Player/All and Command. Also Multiple Players and Commands can be after a Signal.
+A signal can have no Player/All and no Command, or a signal can have Player/All and Command. Also Multiple Players and Commands can be after a Signal.
 
 - :P1_Damage
 - *P1
@@ -118,7 +135,7 @@ A signal can have no Player/All and no Command, or a Player/All and Command. Als
 - *P3
 - \>Shake
 
-Also, multiple commands can be used, and be selected based on the Signal’s current value. It is implemented the same way MAMEHooker does, with the ‘|’. So If you had:
+Also, multiple commands can be used, and be selected based on the Signal’s current value. It is implemented the same way MAMEHooker does, with the ‘|’. The first command needs a '\>' infront of it. The other commands, it is optional. So If you had:
 
 - :P1_Damage
 - *P1
@@ -148,21 +165,18 @@ At the top of the file, it will start with 'Players' and then the next line is h
 | *P2 | Which is mapped to P4   |
 | >Ammo_Value | Send Ammo_Value to P4's Light Gun |
 
+## ChangePlayerNum Program
+
+I created a small program to modify the top section of the Default Light Gun game file. With the program, it can easily change player number, for all the *.txt files in a directory, or just one file. There are many options. Link to the repository is below, which has a release.
+
+https://github.com/6Bolt/ChangePlayerNum
+
+Can run the program with no inputs to get the help menu. 
+
 
 # Current Default Light Gun Files Included
 
-| Directoury | File Name | Game Name |
-|------------|-----------|-----------|
-| defaultLG/ |     |     |
-|     | alien3.txt | Alien 3 |
-|     | confmiss.txt | Confidential Mission |
-|     | hotd4.txt | House of the Gead 4 |
-|     | jp.txt | Jurassic Park |
-|     | lgi.txt | Let's Go Island |
-|     | lgi3d.txt | Let's Go Island 3D |
-|     | lgj.txt | Let's Go Jungle |
-|     | ptblank2.txt | Point Blank 2 |
-|     | rambo.txt | Rambo   |
+Most all games in the Default Light Gun game format, are included with Hook Of The Reaper program now. There is another directory, that uses Ammo_Value instead of Recoil. These will work for all light guns, but the RS3 Reaper will get the most use, as it will now use the Z0 & Z6 commands. Also, I put in multiple checks in, to make sure it cannot do multiple Z0 commands in a row, which will overheat the light gun. Also, try not to do the Z0 command when starting and stopping a game, which could reboot connection if using 2 Reapers. This is because of the power supply is only 3A, where 5-6A is needed. It seems the control side is not fully isolated from the 12-24V side. 
 
 
 # How to Use Hook Of The Reaper 
@@ -202,9 +216,16 @@ If you find any bugs, please report them here.
 
 
 
-# Compile the Code
+## Compile the Code
 
-Everything is in Qt, so you only need Qt and the MSVC 2022 tools. Below is what I used in Qt to compile the program.
+Everything is in Qt, so you only need Qt and the MSVC 2022 tools. Below is what I used in Qt to compile the program. 
 
-- Qt 6.8 with a CMake File with MSVC 2022
-- My CMake Version: 3.29.3
+- Qt 6.8.1 with a CMake File with MSVC 2022
+* My CMake Version: 3.29.3
+
+
+
+
+
+
+
