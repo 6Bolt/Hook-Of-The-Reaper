@@ -1,6 +1,3 @@
-# I am Out Sick from 3/12 - 3/16/17
-
-No Support will be giving at this time. All issues will have to wait. 
 
 
 # Hook-Of-The-Reaper
