@@ -3,6 +3,19 @@
 # Hook-Of-The-Reaper
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
+Best way to contact me, is to open a new issue, here on GitHub. It can be found at the top left of the webpage, just to the right of 'Code'. Click on the 'Issues' tab, which will bring up a new webpage, with all the current issues. Just above the issues, and to the right, is a green button called 'New Issuse'. Please click that, and create a new issue, which can be a quetion, bug, enhancment, and so on. 
+
+Also, I can be found on Discord from time to time. I totally suck at Discord, and have not used it much. Actually, I only have it, to play Fortnight with my daughter. Yeah, I am old. I was first of my friends to get DSL intenet at a blazing fast 256KBaud, and was always hosting games like GTA II.  
+>Discord Username: 6bolt_77860
+
+>Display Name: 6Bolt
+
+Also, when I get the Default Light Gun game file site up and running, I will have a way to contact me there too. Still working on it, and will be some time. 
+
+## Out from Time to Time
+
+My health is not great, as I am disabled. Sometimes I will be out for multiple days, and rare time for a week or more. Just wanted to let everyone know, as I am not ignoring anyone. As during these times, people might try to contact me, and it will take days to get a response back. I will do my best to warn people when I will be out. 
+
 # YouTube Videos
 
 ## Hook Of The Reaper - Project Introduction
