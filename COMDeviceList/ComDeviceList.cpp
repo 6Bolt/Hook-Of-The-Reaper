@@ -1064,6 +1064,11 @@ void ComDeviceList::SaveSettings()
     else
         out << "0\n";
 
+    if(ignoreUselessDLGGF)
+        out << "1\n";
+    else
+        out << "0\n";
+
 
     out << ENDOFFILE;
 
@@ -1178,14 +1183,29 @@ void ComDeviceList::LoadSettings()
     //Next Line is End of File
     line = in.readLine();
 
+    if(line.startsWith (ENDOFFILE))
+    {
+        ignoreUselessDLGGF = false;
+        loadSetData.close ();
+        this->SaveSettings();
+        return;
+    }
+    else if(line.startsWith ("1"))
+        ignoreUselessDLGGF = true;
+    else if(line.startsWith ("0"))
+        ignoreUselessDLGGF = false;
+
+
+    //Next Line is End of File
+    line = in.readLine();
+
     if(!line.startsWith (ENDOFFILE))
     {
         QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at the end. Please close program and solve file problem.", QMessageBox::Ok);
         return;
     }
 
-
-
+    loadSetData.close ();
 }
 
 //Get & Set of the Settings
@@ -1229,6 +1249,20 @@ void ComDeviceList::SetCloseComPortGameExit(bool ccpGameExit)
 {
     closeComPortGameExit = ccpGameExit;
 }
+
+
+bool ComDeviceList::GetIgnoreUselessDFLGGF()
+{
+    return ignoreUselessDLGGF;
+}
+
+void ComDeviceList::SetIgnoreUselessDFLGGF(bool ignoreUDFLGGF)
+{
+    ignoreUselessDLGGF = ignoreUDFLGGF;
+}
+
+
+
 
 void ComDeviceList::CopyUsedDipPlayersArray(bool *targetArray, quint8 size, quint8 hubComPort)
 {

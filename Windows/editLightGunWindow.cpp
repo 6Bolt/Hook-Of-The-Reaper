@@ -637,7 +637,7 @@ void editLightGunWindow::EditLightGun()
 
 
     //Check if COM Port Changed, if so update unusedComPorts list
-    oldComPort = p_comDeviceList->p_lightGunList[lightGunNum]->GetComPortNumberBypass ();
+    oldComPort = p_comDeviceList->p_lightGunList[lightGunNum]->GetComPortNumber ();
     if(oldComPort != comPortNum)
     {
         p_comDeviceList->SwitchComPortsInList(oldComPort, comPortNum);
@@ -707,7 +707,6 @@ void editLightGunWindow::EditLightGun()
         p_comPortInfo = new QSerialPortInfo(comPortName);
         p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortString (comPortName);
         p_comDeviceList->p_lightGunList[lightGunNum]->SetComPortInfo (*p_comPortInfo);
-
     }
     else if(defaultLightGun && (defaultLightGunNum == JBGUN4IR || defaultLightGunNum == OPENFIRE))
     {

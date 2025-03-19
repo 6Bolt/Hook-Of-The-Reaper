@@ -46,11 +46,13 @@ private:
     bool                useDefaultLGFirst;
     bool                useMultiThreading;
     bool                closeComPortGameExit;
+    bool                ignoreUselessDLGGF;
 
     //For Check Boxes
     Qt::CheckState      defaultLG;
     Qt::CheckState      multiThreading;
     Qt::CheckState      closeComPort;
+    Qt::CheckState      ignoreUDLGGF;
 
     //Refresh Time in Number and String
     quint32             refreshDisplayTime;

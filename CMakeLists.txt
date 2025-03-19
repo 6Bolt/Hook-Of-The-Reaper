@@ -42,6 +42,7 @@ qt_add_executable(HookOfTheReaper
     defaultLG/alien3.txt defaultLG/confmiss.txt defaultLG/ptblank2.txt
     data/fusion.hor
     data/blamcon.hor
+    HookerEngine/HookCOMPortWin.h HookerEngine/HookCOMPortWin.cpp
 
 )
 

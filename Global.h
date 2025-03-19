@@ -3,10 +3,10 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.1.0"
+#define VERSION                 "1.1.1"
 #define VERSIONMAIN             1
-#define VERSIONMID              0
-#define VERSIONLAST             8
+#define VERSIONMID              1
+#define VERSIONLAST             1
 
 //Global Settings
 #define MAXPLAYERLIGHTGUNS      8
@@ -236,11 +236,13 @@ extern S_DEFAULTLG DEFAULTLG_ARRAY[];
 #define MAMESTOPFRONT           "mame_stop"
 //Used In TCPReadReady
 #define MAMEENDLINE             "\r"
+#define FLYCASTENDLINE          "\n"
 #define STATECHANGE             "statechange"
 #define PAUSE                   "pause"
 #define ROTATE                  "rotate"
 #define REFRESHTIME             "refreshtime"
 #define ORIENTATION             "Orientation"
+#define GAMESTART               "game = "
 
 
 

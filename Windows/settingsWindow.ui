@@ -158,6 +158,24 @@
     <string>Refresh Display of Output Signals (msec)</string>
    </property>
   </widget>
+  <widget class="QCheckBox" name="ignoreUDLGGFCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>160</y>
+     <width>401</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Ignore Warning for Useless defaultLG Game Files</string>
+   </property>
+  </widget>
  </widget>
  <tabstops>
   <tabstop>useDefaultLGCheckBox</tabstop>

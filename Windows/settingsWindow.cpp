@@ -53,6 +53,16 @@ settingsWindow::settingsWindow(ComDeviceList *cdList, QWidget *parent)
     else
         ui->closeComCheckBox->setCheckState (Qt::Unchecked);
 
+    //Get Fifth Setting
+    ignoreUselessDLGGF = p_comDeviceList->GetIgnoreUselessDFLGGF ();
+
+    //If Set. then Check the Box
+    if(ignoreUselessDLGGF)
+        ui->ignoreUDLGGFCheckBox->setCheckState (Qt::Checked);
+    else
+        ui->ignoreUDLGGFCheckBox->setCheckState (Qt::Unchecked);
+
+
 
 }
 
@@ -95,12 +105,12 @@ void settingsWindow::CheckAndSaveSetting()
     defaultLG = ui->useDefaultLGCheckBox->checkState ();
     multiThreading = ui->useMultiThreadCheckBox->checkState ();
     closeComPort = ui->closeComCheckBox->checkState ();
+    ignoreUDLGGF = ui->ignoreUDLGGFCheckBox->checkState ();
 
     if(defaultLG == Qt::Checked)
         useDefaultLGFirst = true;
     else
         useDefaultLGFirst = false;
-
 
     if(multiThreading == Qt::Checked)
         useMultiThreading = true;
@@ -116,10 +126,16 @@ void settingsWindow::CheckAndSaveSetting()
     tempRTD = ui->refreshDisplayLineEdit->text ();
     refreshDisplayTime = tempRTD.toUInt (&isNumber);
 
+    if(ignoreUDLGGF == Qt::Checked)
+        ignoreUselessDLGGF = true;
+    else
+        ignoreUselessDLGGF = false;
+
 
     p_comDeviceList->SetUseDefaultLGFirst(useDefaultLGFirst);
     p_comDeviceList->SetUseMultiThreading (useMultiThreading);
     p_comDeviceList->SetCloseComPortGameExit (closeComPortGameExit);
+    p_comDeviceList->SetIgnoreUselessDFLGGF (ignoreUselessDLGGF);
 
 
     if(isNumber)

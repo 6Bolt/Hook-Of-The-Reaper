@@ -537,6 +537,9 @@ void HookOfTheReaper::SettingsWindowClosed()
     numberComDevices = p_comDeviceList->GetNumberComPortDevices();
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();
 
+    //Re-Load Settings in Hooker Engine
+    p_hookEngine->LoadSettingsFromList();
+
     p_hookEngine->Start ();
     engineRunning = true;
     ui->statusbar->showMessage ("Running");

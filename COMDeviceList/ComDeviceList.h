@@ -92,6 +92,10 @@ public:
     bool            GetCloseComPortGameExit();
     void            SetCloseComPortGameExit(bool ccpGameExit);
 
+    //Ignore Warning for Useless Default LG game files
+    bool            GetIgnoreUselessDFLGGF();
+    void            SetIgnoreUselessDFLGGF(bool ignoreUDFLGGF);
+
     //Copies Used Dip Players Array
     void            CopyUsedDipPlayersArray(bool *targetArray, quint8 size, quint8 hubComPort);
     void            ChangeUsedDipPlayersArray(quint8 hubComPort, quint8 dipPN, bool value);
@@ -148,6 +152,7 @@ private:
     bool                useMultiThreading;
     quint32             refreshTimeDisplay;
     bool                closeComPortGameExit;
+    bool                ignoreUselessDLGGF;
 
 
 

@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QThread>
 #include <QTimer>
+#include <QRegularExpression>
 
 
 #include <QByteArray>
@@ -17,7 +18,14 @@
 
 
 #include "HookTCPSocket.h"
+
+#ifdef Q_OS_WIN
+#include "HookCOMPortWin.h"
+#else
 #include "HookCOMPort.h"
+#endif
+
+
 #include "../COMDeviceList/ComDeviceList.h"
 
 class HookerEngine : public QObject
@@ -44,6 +52,9 @@ public:
 
     //Closes All COM Port Connections
     void CloseAllComPortConnections();
+
+    //Load Settings From COMDeviceList
+    void LoadSettingsFromList();
 
 public slots:
 
@@ -216,8 +227,16 @@ private:
     //TCP Socket that Connects to MAME and Demulshooter
     HookTCPSocket                   *p_hookSocket;
 
+#ifdef Q_OS_WIN
+
+    //Serial COM Port(s) for Writting to Light Guns & Other COM Devices
+    HookCOMPortWin                  *p_hookComPortWin;
+
+#else
     //Serial COM Port(s) for Writting to Light Guns & Other COM Devices
     HookCOMPort                     *p_hookComPort;
+
+ #endif
 
     //Needed to Display QMessages Boxes for Warnings & Errors
     QWidget                         *p_guiConnect;
@@ -343,6 +362,7 @@ private:
     quint32                         refreshTimeDisplay;
     bool                            closeComPortGameExit;
     bool                            newGameFileOrDefaultFile;
+    bool                            ignoreUselessDLGGF;
 
     ///////////////////////////////////////////////////////////////////////////
 

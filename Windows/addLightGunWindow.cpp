@@ -404,16 +404,23 @@ bool addLightGunWindow::IsDefaultLightGun()
 
 void addLightGunWindow::AddLightGun()
 {
+    quint8 tempHub;
+
     //Collect Light Gun Name, Number, COM Port Number & Name, and Serial Port Info
     lightGunName = ui->lightGunNameLineEdit->text();
     lightGunNum = p_comDeviceList->GetNumberLightGuns ();
 
     if(defaultLightGun && defaultLightGunNum == MX24)
+    {
         comPortNum = UNASSIGN;
+        tempHub = ui->hubComComboBox->currentIndex ();
+        comPortName = BEGINCOMPORTNAME+QString::number(tempHub);
+    }
     else
-        comPortNum = ui->comPortComboBox->currentIndex ();
-
-    comPortName = BEGINCOMPORTNAME+QString::number(comPortNum);
+    {
+        comPortNum = ui->comPortComboBox->currentIndex ();    
+        comPortName = BEGINCOMPORTNAME+QString::number(comPortNum);
+    }
     p_comPortInfo = new QSerialPortInfo(comPortName);
 
 
@@ -437,7 +444,7 @@ void addLightGunWindow::AddLightGun()
     {
         quint8 tempDS = ui->dipSwitchComboBox->currentIndex ();
 
-        quint8 tempHub = ui->hubComComboBox->currentIndex ();
+        tempHub = ui->hubComComboBox->currentIndex ();
 
         usedDipPlayers[tempDS] = true;
 

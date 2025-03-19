@@ -113,7 +113,7 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     useMultiThreading = p_comDeviceList->GetUseMultiThreading ();
     refreshTimeDisplay = p_comDeviceList->GetRefreshTimeDisplay ();
     closeComPortGameExit = p_comDeviceList->GetCloseComPortGameExit ();
-
+    ignoreUselessDLGGF = p_comDeviceList->GetIgnoreUselessDFLGGF ();
 
     //Set-Up Refresh Display Timer
     p_refreshDisplayTimer = new QTimer(this);
@@ -165,6 +165,25 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
 
 
     //Set Up the Serial COM Port(s)
+#ifdef Q_OS_WIN
+    p_hookComPortWin = new HookCOMPortWin();
+
+    if(useMultiThreading)
+    {
+        //Move Serial COM Port(s) onto Different Thread
+        p_hookComPortWin->moveToThread (&threadForCOMPort);
+        connect(&threadForCOMPort, &QThread::finished, p_hookComPortWin, &QObject::deleteLater);
+    }
+
+    //Connect the Signals & Slots for Multi-Thread Communication for Serial COM Port
+    connect(this, &HookerEngine::StartComPort, p_hookComPortWin, &HookCOMPortWin::Connect);
+    connect(this, &HookerEngine::StopComPort, p_hookComPortWin, &HookCOMPortWin::Disconnect);
+    connect(this, &HookerEngine::WriteComPortSig, p_hookComPortWin, &HookCOMPortWin::WriteData);
+
+    connect(this, &HookerEngine::StopAllComPorts, p_hookComPortWin, &HookCOMPortWin::DisconnectAll);
+    connect(p_hookComPortWin, &HookCOMPortWin::ErrorMessage, this, &HookerEngine::ErrorMessageCom);
+
+#else
     p_hookComPort = new HookCOMPort();
 
     if(useMultiThreading)
@@ -182,10 +201,14 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     connect(this, &HookerEngine::StopAllComPorts, p_hookComPort, &HookCOMPort::DisconnectAll);
     connect(p_hookComPort, &HookCOMPort::ErrorMessage, this, &HookerEngine::ErrorMessageCom);
 
+
+#endif
+
     if(useMultiThreading)
     {
         threadForCOMPort.start(QThread::HighPriority);
     }
+
 
     //Connect Recoil_R2S Timers To Slots
     connect(&pRecoilR2STimer[0], SIGNAL(timeout()), this, SLOT(P1RecoilR2S()));
@@ -222,7 +245,13 @@ HookerEngine::~HookerEngine()
     }
 
     delete p_hookSocket;
+
+#ifdef Q_OS_WIN
+    delete p_hookComPortWin;
+#else
     delete p_hookComPort;
+#endif
+
 }
 
 //Public Member Functions
@@ -538,10 +567,11 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
 
                 gotPlayer = false;
                 gotCommands = false;
-                commands.clear ();
 
-                if(!signal.startsWith (MAMESTAFTER))
+                if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
                     signalsAndCommandsCountTest++;
+
+                commands.clear ();
             }
             else if(gotSignal && !gotPlayer && !gotCommands)
             {
@@ -753,10 +783,10 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                     gotPlayer = false;
                     gotCommands = false;
                     gotSignal = false;
-                    commands.clear ();
-                    if(!signal.startsWith (MAMESTAFTER))
+                    if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
                         signalsAndCommandsCountTest++;
 
+                    commands.clear ();
                 }
             }
             else if(gotSignal && !gotPlayer && gotCommands)
@@ -787,7 +817,7 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
     {
         //qDebug() << "Last2 Signal: " << signal << " Commands: " << commands;
 
-        if(!signal.startsWith (MAMESTAFTER))
+        if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
             signalsAndCommandsCountTest++;
     }
 
@@ -813,7 +843,29 @@ void HookerEngine::CloseAllComPortConnections()
     emit StopAllComPorts();
 }
 
+void HookerEngine::LoadSettingsFromList()
+{
+    bool timerRunning = false;
 
+    //Settings Values
+    useDefaultLGFirst = p_comDeviceList->GetUseDefaultLGFirst ();
+    useMultiThreading = p_comDeviceList->GetUseMultiThreading ();
+    refreshTimeDisplay = p_comDeviceList->GetRefreshTimeDisplay ();
+    closeComPortGameExit = p_comDeviceList->GetCloseComPortGameExit ();
+    ignoreUselessDLGGF = p_comDeviceList->GetIgnoreUselessDFLGGF ();
+
+    if(p_refreshDisplayTimer->isActive ())
+    {
+        p_refreshDisplayTimer->stop ();
+        timerRunning = true;
+    }
+
+    //Set Interval to the Setting of refresh Time Display
+    p_refreshDisplayTimer->setInterval (refreshTimeDisplay);
+
+    if(timerRunning)
+        p_refreshDisplayTimer->start ();
+}
 
 //Public Slots
 
@@ -832,7 +884,9 @@ void HookerEngine::TCPReadyRead(const QByteArray &readBA)
 
     //If Multiple Data Lines, they will be seperated into lines, using \r
     //If if had 2 data lines together, then \r would be at end, and middle
-    QStringList tcpSocketReadData = message.split(MAMEENDLINE, Qt::SkipEmptyParts);
+    //QRegularExpression endLines("[\r\n]");
+    QStringList tcpSocketReadData = message.split(QRegularExpression("[\r\n]"), Qt::SkipEmptyParts);
+
 
 
     ProcessTCPData(tcpSocketReadData);
@@ -1144,11 +1198,14 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
         //Check if No Game is Found
         if(!isGameFound)
         {
-            //Look for "mame_start = " and not "mame_start = ___empty" to find game
-            if(tcpSocketData[i].startsWith(MAMESTART, Qt::CaseInsensitive) && tcpSocketData[i] != MAMESTARTNOGAME)
+            //Look for "mame_start = " and not "mame_start = ___empty" to find game, or look for 'game =' for flycast
+            if((tcpSocketData[i].startsWith(MAMESTART, Qt::CaseSensitive) && tcpSocketData[i] != MAMESTARTNOGAME) || tcpSocketData[i].startsWith(GAMESTART, Qt::CaseSensitive))
             {
                 //Game Found
-                gameName = tcpSocketData[i].remove(MAMESTART);
+                if(tcpSocketData[i][0] == 'm')
+                    gameName = tcpSocketData[i].remove(MAMESTART);
+                else
+                    gameName = tcpSocketData[i].remove(GAMESTART);
                 isGameFound = true;
                 gameHasRun = true;
                 isEmptyGame = false;
@@ -2405,10 +2462,11 @@ void HookerEngine::LoadLGFile()
                 signalsAndCommands.insert(signal, commands);
                 gotPlayer = false;
                 gotCommands = false;
-                commands.clear ();
 
-                if(!signal.startsWith (MAMESTAFTER))
+                if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
                     signalsAndCommandsCountTest++;
+
+                commands.clear ();
             }
             else if(gotSignal && !gotPlayer && !gotCommands)
             {
@@ -2630,11 +2688,11 @@ void HookerEngine::LoadLGFile()
                     gotPlayer = false;
                     gotCommands = false;
                     gotSignal = false;
-                    commands.clear ();
 
-                    if(!signal.startsWith (MAMESTAFTER))
+                    if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
                         signalsAndCommandsCountTest++;
 
+                    commands.clear ();
                 }
             }
             else if(gotSignal && !gotPlayer && gotCommands)
@@ -2669,7 +2727,7 @@ void HookerEngine::LoadLGFile()
 
         signalsAndCommands.insert(signal, commands);
 
-        if(!signal.startsWith (MAMESTAFTER))
+        if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
             signalsAndCommandsCountTest++;
     }
     else if(gotSignal && !gotPlayer && !gotCommands)
@@ -2680,14 +2738,14 @@ void HookerEngine::LoadLGFile()
     }
 
 
-    if(signalsAndCommandsCountTest == 0)
+    if(signalsAndCommandsCountTest == 0 && ignoreUselessDLGGF == false)
     {
         //No Signal, Player, & Command was Loaded
         lgFileLoadFail = true;
         lgFile.close();
-        QString tempCrit = "No Signal, Player, and Command (not counting mame_start/mame_stop) was loaded into the QMap. If No signals to watch out for, then nothing to do, but to connect and disconnect.\nFile: "+gameLGFilePath;
+        QString tempCrit = "Hook Of The Reaper is only connecting & disconnecting to the light gun(s) for this game. There are no signals to watch out for, so there is nothing to do for this game. This warning can be turned off in Settings.\nFile: "+gameLGFilePath;
         if(displayMB)
-            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+            QMessageBox::warning (p_guiConnect, "Default Light Gun Game File Warning", tempCrit, QMessageBox::Ok);
         return;
     }
 
@@ -3096,6 +3154,7 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
             {
                 for(j = 0; j < cmdCount; j++)
                 {
+                    //qDebug() << "Closing COM Port: " << tempCPNum << " Command: " << commands[j];
                     WriteLGComPort(tempCPNum, commands[j]);
                 }
             }
