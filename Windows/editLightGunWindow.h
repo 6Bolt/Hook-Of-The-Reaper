@@ -10,6 +10,9 @@
 
 #include "../COMDeviceList/ComDeviceList.h"
 
+#include <Windows.h>
+#include "hidapi_winapi.h"
+
 namespace Ui {
 class editLightGunWindow;
 }
@@ -50,6 +53,10 @@ private slots:
 
     void on_hubComComboBox_currentIndexChanged(int index);
 
+    void on_usbDevicesComboBox_currentIndexChanged(int index);
+
+    void on_allHIDDevicesCheckBox_checkStateChanged(const Qt::CheckState &arg1);
+
 private:
 
     //Checks if Data is Valid for a LightGun
@@ -84,6 +91,15 @@ private:
 
     //Loads Up data on a Saved Light Gun
     void LoadSavedLightGun(quint8 index);
+
+    //Fills In the USB Devices Combo Box
+    void FillUSBDevicesComboBox();
+
+    //Process the HID Devices into the QList
+    void ProcessHIDInfo();
+
+    //Find The Light Gun Vendor ID, Product ID and Serial Number (optional) in the HID Devices
+    qint16 FindLightGunHID(quint8 lgNum);
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -134,6 +150,13 @@ private:
     quint8                  parityIndex;
     quint8                  stopBitsIndex;
     quint8                  flowIndex;
+
+    //USB HID Info
+    hid_device_info         *devs;
+    quint16                 numberHIDDevices;
+    QList<HIDInfo>          hidInfoList;
+    bool                    getAllHIDs;
+    bool                    isHIDInit;
 
 
 };

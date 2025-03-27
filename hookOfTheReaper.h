@@ -73,7 +73,6 @@ public slots:
     void UpdateTCPConnectionStatus(bool tcpConStatus);
 
 
-
 private slots:
 
     //Open Add Light Gun Windows

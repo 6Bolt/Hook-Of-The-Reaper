@@ -1,12 +1,12 @@
-Open_COM=
+Open_COM=0400000000000000
 Close_COM=
 Damage=
-Recoil=
-Recoil_R2S=
+Recoil=0201
+Recoil_R2S=100 0201
 Reload=
 Ammo=
 Ammo_Value=
-Display_Ammo=
+Display_Ammo=03%d1%%d0%
 Shake=
 Auto_LED=
 AspectRatio_16:9=

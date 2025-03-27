@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>489</width>
-    <height>245</height>
+    <height>332</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>220</x>
-     <y>210</y>
+     <x>230</x>
+     <y>300</y>
      <width>254</width>
      <height>26</height>
     </rect>
@@ -176,15 +176,48 @@
     <string>Ignore Warning for Useless defaultLG Game Files</string>
    </property>
   </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>220</y>
+     <width>56</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Debug</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="bypassSerialWriteCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>250</y>
+     <width>251</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Bypass Serial Port Write Checks</string>
+   </property>
+  </widget>
  </widget>
  <tabstops>
   <tabstop>useDefaultLGCheckBox</tabstop>
   <tabstop>useMultiThreadCheckBox</tabstop>
   <tabstop>refreshDisplayLineEdit</tabstop>
   <tabstop>closeComCheckBox</tabstop>
-  <tabstop>updatePushButton</tabstop>
-  <tabstop>okPushButton</tabstop>
-  <tabstop>cancelPushButton</tabstop>
  </tabstops>
  <resources/>
  <connections/>

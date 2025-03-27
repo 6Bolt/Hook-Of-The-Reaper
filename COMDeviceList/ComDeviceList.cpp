@@ -11,6 +11,14 @@ ComDeviceList::ComDeviceList()
     numberComPortDevices = 0;
     useDefaultLGFirst = true;
 
+    //Set Settings to Defaults
+    useDefaultLGFirst = true;
+    useMultiThreading = true;
+    refreshTimeDisplay = DEFAULTREFRESHDISPLAY;
+    closeComPortGameExit = true;
+    ignoreUselessDLGGF = false;
+    bypassSerialWriteChecks = false;
+
     //More Set Defaults
     for(quint8 comPortIndx=0;comPortIndx<MAXCOMPORTS;comPortIndx++)
     {
@@ -189,6 +197,16 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
 
     numberLightGuns++;
 }
+
+
+//For Alien USB Light Gun
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct)
+{
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, hidInfoStruct);
+
+    numberLightGuns++;
+}
+
 
 
 //Add COM Devices to the List
@@ -486,77 +504,101 @@ void ComDeviceList::SaveLightGunList()
             out << "0\n";
         }
 
-        //COM Port Data
-        out << p_lightGunList[i]->GetComPortNumberBypass() << "\n";
-        out << p_lightGunList[i]->GetComPortString() << "\n";
-        out << p_lightGunList[i]->GetComPortBaud() << "\n";
-        out << p_lightGunList[i]->GetComPortDataBits() << "\n";
-        out << p_lightGunList[i]->GetComPortParity() << "\n";
-        out << p_lightGunList[i]->GetComPortStopBits() << "\n";
-        out << p_lightGunList[i]->GetComPortFlow() << "\n";
-
-        if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == RS3_REAPER)
+        //Check if Ligth Gun is a Serial COM Port
+        if(!p_lightGunList[i]->IsLightGunUSB ())
         {
-            bool mxAmmoSet = p_lightGunList[i]->IsMaxAmmoSet();
-            bool rlValueSet = p_lightGunList[i]->IsReloadValueSet();
 
-            if(mxAmmoSet)
+            //COM Port Data
+            out << p_lightGunList[i]->GetComPortNumberBypass() << "\n";
+            out << p_lightGunList[i]->GetComPortString() << "\n";
+            out << p_lightGunList[i]->GetComPortBaud() << "\n";
+            out << p_lightGunList[i]->GetComPortDataBits() << "\n";
+            out << p_lightGunList[i]->GetComPortParity() << "\n";
+            out << p_lightGunList[i]->GetComPortStopBits() << "\n";
+            out << p_lightGunList[i]->GetComPortFlow() << "\n";
+
+            if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == RS3_REAPER)
             {
-                out << "1\n";
-                out << p_lightGunList[i]->GetMaxAmmo() << "\n";
+                bool mxAmmoSet = p_lightGunList[i]->IsMaxAmmoSet();
+                bool rlValueSet = p_lightGunList[i]->IsReloadValueSet();
+
+                if(mxAmmoSet)
+                {
+                    out << "1\n";
+                    out << p_lightGunList[i]->GetMaxAmmo() << "\n";
+                }
+                else
+                {
+                    out << "0\n";
+                    out << "69\n";
+                }
+
+                if(rlValueSet)
+                {
+                    out << "1\n";
+                    out << p_lightGunList[i]->GetReloadValue() << "\n";
+                }
+                else
+                {
+                    out << "0\n";
+                    out << "69\n";
+                }
             }
-            else
+            else if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == MX24)
             {
-                out << "0\n";
-                out << "69\n";
+                bool isDipSet;
+                quint8 dipNumber = p_lightGunList[i]->GetDipSwitchPlayerNumber (&isDipSet);
+
+                if(isDipSet)
+                {
+                    out << "1\n";
+                    out << dipNumber << "\n";
+                }
+                else
+                {
+                    out << "0\n";
+                    out << "69\n";
+                }
+
+                out << p_lightGunList[i]->GetHubComPortNumber () << "\n";
+            }
+            else if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == JBGUN4IR)
+            {
+                bool isAnalSet;
+                quint8 analNumber = p_lightGunList[i]->GetAnalogStrength (&isAnalSet);
+
+                if(isAnalSet)
+                {
+                    out << "1\n";
+                    out << analNumber << "\n";
+                }
+                else
+                {
+                    out << "0\n";
+                    out << "69\n";
+                }
             }
 
-            if(rlValueSet)
-            {
-                out << "1\n";
-                out << p_lightGunList[i]->GetReloadValue() << "\n";
-            }
-            else
-            {
-                out << "0\n";
-                out << "69\n";
-            }
-        }
-        else if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == MX24)
+        } //Light Gun is a USB Light Gun
+        else
         {
-            bool isDipSet;
-            quint8 dipNumber = p_lightGunList[i]->GetDipSwitchPlayerNumber (&isDipSet);
+            HIDInfo tempHIDInfo = p_lightGunList[i]->GetUSBHIDInfo ();
 
-            if(isDipSet)
-            {
-                out << "1\n";
-                out << dipNumber << "\n";
-            }
-            else
-            {
-                out << "0\n";
-                out << "69\n";
-            }
-
-            out << p_lightGunList[i]->GetHubComPortNumber () << "\n";
+            out << tempHIDInfo.path << "\n";
+            out << tempHIDInfo.vendorID << "\n";
+            out << tempHIDInfo.vendorIDString << "\n";
+            out << tempHIDInfo.productID << "\n";
+            out << tempHIDInfo.productIDString << "\n";
+            out << tempHIDInfo.serialNumber << "\n";
+            out << tempHIDInfo.releaseNumber << "\n";
+            out << tempHIDInfo.releaseString << "\n";
+            out << tempHIDInfo.manufacturer << "\n";
+            out << tempHIDInfo.productDiscription << "\n";
+            out << tempHIDInfo.usagePage << "\n";
+            out << tempHIDInfo.usage << "\n";
+            out << tempHIDInfo.usageString << "\n";
+            out << tempHIDInfo.interfaceNumber << "\n";
         }
-        else if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == JBGUN4IR)
-        {
-            bool isAnalSet;
-            quint8 analNumber = p_lightGunList[i]->GetAnalogStrength (&isAnalSet);
-
-            if(isAnalSet)
-            {
-                out << "1\n";
-                out << analNumber << "\n";
-            }
-            else
-            {
-                out << "0\n";
-                out << "69\n";
-            }
-        }
-
     }
 
     out << PLAYERSASSIGNMENTS << "\n";
@@ -587,7 +629,7 @@ void ComDeviceList::LoadLightGunList()
     quint8 tempDefaultGunNum;
     quint8 tempComPortNum;
     QString tempComPortName;
-    QSerialPortInfo *p_tempComPortInfo;
+
     quint32 tempComPortBaud;
     quint16 tempComPortDataBits;
     quint16 tempComPortParity;
@@ -637,6 +679,8 @@ void ComDeviceList::LoadLightGunList()
 
     for(i = 0; i < tempNumLightGuns; i++)
     {
+        QSerialPortInfo *p_tempComPortInfo;
+
         //Get New Line From File
         line = in.readLine();
 
@@ -667,107 +711,169 @@ void ComDeviceList::LoadLightGunList()
         line = in.readLine();
         tempDefaultGunNum = line.toUInt ();
 
-        //COM Port Number
-        line = in.readLine();
-        tempComPortNum = line.toUInt ();
-
-        //COM Port Name
-        tempComPortName = in.readLine();
-
-        //COM Port Info
-        p_tempComPortInfo = new QSerialPortInfo(tempComPortName);
-
-        //COM Port BAUD
-        line = in.readLine();
-        tempComPortBaud = line.toUInt ();
-
-        //COM Port Data Bits
-        line = in.readLine();
-        tempComPortDataBits = line.toUInt ();
-
-        //COM Port Parity
-        line = in.readLine();
-        tempComPortParity = line.toUInt ();
-
-        //COM Port Stop Bits
-        line = in.readLine();
-        tempComPortStopBits = line.toUInt ();
-
-        //COM Port Flow
-        line = in.readLine();
-        tempComPortFlow = line.toUInt ();
-
-        if(tempIsDefaultGun && tempDefaultGunNum==RS3_REAPER)
+        //For Serial Port Light Guns
+        if(!tempIsDefaultGun || (tempIsDefaultGun && tempDefaultGunNum != ALIENUSB))
         {
+
+            //COM Port Number
             line = in.readLine();
+            tempComPortNum = line.toUInt ();
 
-            if(line == "1")
-                tempMaxAmmoSet = true;
-            else
-                tempMaxAmmoSet = false;
+            //COM Port Name
+            tempComPortName = in.readLine();
 
+            //COM Port Info
+
+            p_tempComPortInfo = new QSerialPortInfo(tempComPortName);
+
+            //COM Port BAUD
             line = in.readLine();
-            tempMaxAmmo = line.toUInt ();
+            tempComPortBaud = line.toUInt ();
 
+            //COM Port Data Bits
             line = in.readLine();
+            tempComPortDataBits = line.toUInt ();
 
-            if(line == "1")
-                tempReloadValueSet = true;
-            else
-                tempReloadValueSet = false;
-
+            //COM Port Parity
             line = in.readLine();
-            tempReloadValue = line.toUInt ();
+            tempComPortParity = line.toUInt ();
 
-
-            if(tempMaxAmmoSet && tempReloadValueSet)
-                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, tempMaxAmmo, tempReloadValue);
-            else
-                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
-        }
-        else if(tempIsDefaultGun && tempDefaultGunNum==MX24)
-        {
+            //COM Port Stop Bits
             line = in.readLine();
-            if(line == "0")
-                dipSet = false;
-            else
-                dipSet = true;
+            tempComPortStopBits = line.toUInt ();
 
+            //COM Port Flow
             line = in.readLine();
-            dipNumber = line.toUInt ();
+            tempComPortFlow = line.toUInt ();
 
-            line = in.readLine();
-            hcpNumber = line.toUInt ();
-
-            AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, dipSet, dipNumber, hcpNumber);
-        }
-        else if(tempIsDefaultGun && tempDefaultGunNum==JBGUN4IR)
-        {
-            //Is Analog Strength Set
-            line = in.readLine();
-            if(line == "0")
-                analSet = false;
-            else
-                analSet = true;
-
-            //Analog Strength, If Set Above
-            line = in.readLine();
-
-            if(analSet)
+            if(tempIsDefaultGun && tempDefaultGunNum==RS3_REAPER)
             {
-                analNumber = line.toUInt ();
-                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, analNumber);
+                line = in.readLine();
+
+                if(line == "1")
+                    tempMaxAmmoSet = true;
+                else
+                    tempMaxAmmoSet = false;
+
+                line = in.readLine();
+                tempMaxAmmo = line.toUInt ();
+
+                line = in.readLine();
+
+                if(line == "1")
+                    tempReloadValueSet = true;
+                else
+                    tempReloadValueSet = false;
+
+                line = in.readLine();
+                tempReloadValue = line.toUInt ();
+
+
+                if(tempMaxAmmoSet && tempReloadValueSet)
+                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, tempMaxAmmo, tempReloadValue);
+                else
+                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
+            }
+            else if(tempIsDefaultGun && tempDefaultGunNum==MX24)
+            {
+                line = in.readLine();
+                if(line == "0")
+                    dipSet = false;
+                else
+                    dipSet = true;
+
+                line = in.readLine();
+                dipNumber = line.toUInt ();
+
+                line = in.readLine();
+                hcpNumber = line.toUInt ();
+
+                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, dipSet, dipNumber, hcpNumber);
+            }
+            else if(tempIsDefaultGun && tempDefaultGunNum==JBGUN4IR)
+            {
+                //Is Analog Strength Set
+                line = in.readLine();
+                if(line == "0")
+                    analSet = false;
+                else
+                    analSet = true;
+
+                //Analog Strength, If Set Above
+                line = in.readLine();
+
+                if(analSet)
+                {
+                    analNumber = line.toUInt ();
+                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, analNumber);
+                }
+                else
+                {
+                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
+                }
+
             }
             else
             {
                 AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
             }
+
+
+            delete p_tempComPortInfo;
+            p_tempComPortInfo = nullptr;
 
         }
         else
         {
-            AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
+            //This is For USB Light Guns
+            HIDInfo tempHIDInfo;
+
+            line = in.readLine();
+            tempHIDInfo.path = line;
+
+            line = in.readLine();
+            tempHIDInfo.vendorID = line.toUShort ();
+
+            line = in.readLine();
+            tempHIDInfo.vendorIDString = line;
+
+            line = in.readLine();
+            tempHIDInfo.productID = line.toUShort ();
+
+            line = in.readLine();
+            tempHIDInfo.productIDString = line;
+
+            line = in.readLine();
+            tempHIDInfo.serialNumber = line;
+
+            line = in.readLine();
+            tempHIDInfo.releaseNumber = line.toUShort ();
+
+            line = in.readLine();
+            tempHIDInfo.releaseString = line;
+
+            line = in.readLine();
+            tempHIDInfo.manufacturer = line;
+
+            line = in.readLine();
+            tempHIDInfo.productDiscription = line;
+
+            line = in.readLine();
+            tempHIDInfo.usagePage = line.toUShort ();
+
+            line = in.readLine();
+            tempHIDInfo.usage = line.toUShort ();
+
+            line = in.readLine();
+            tempHIDInfo.usageString = line;
+
+            line = in.readLine();
+            tempHIDInfo.interfaceNumber = line.toUShort ();
+
+           AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempHIDInfo);
         }
+
+
 
     }
 
@@ -1069,6 +1175,11 @@ void ComDeviceList::SaveSettings()
     else
         out << "0\n";
 
+    if(bypassSerialWriteChecks)
+        out << "1\n";
+    else
+        out << "0\n";
+
 
     out << ENDOFFILE;
 
@@ -1179,21 +1290,38 @@ void ComDeviceList::LoadSettings()
         return;
     }
 
+    //Next Line is Ignore Useless Default LG Game File
+    line = in.readLine();
+
+    if(line.startsWith ("1"))
+    {
+        ignoreUselessDLGGF = true;
+    }
+    else if(line.startsWith ("0"))
+    {
+        ignoreUselessDLGGF = false;
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at fifth setting. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
+
 
     //Next Line is End of File
     line = in.readLine();
 
     if(line.startsWith (ENDOFFILE))
     {
-        ignoreUselessDLGGF = false;
+        bypassSerialWriteChecks = false;
         loadSetData.close ();
         this->SaveSettings();
         return;
     }
     else if(line.startsWith ("1"))
-        ignoreUselessDLGGF = true;
+        bypassSerialWriteChecks = true;
     else if(line.startsWith ("0"))
-        ignoreUselessDLGGF = false;
+        bypassSerialWriteChecks = false;
 
 
     //Next Line is End of File
@@ -1261,7 +1389,15 @@ void ComDeviceList::SetIgnoreUselessDFLGGF(bool ignoreUDFLGGF)
     ignoreUselessDLGGF = ignoreUDFLGGF;
 }
 
+bool ComDeviceList::GetSerialPortWriteCheckBypass()
+{
+    return bypassSerialWriteChecks;
+}
 
+void ComDeviceList::SetSerialPortWriteCheckBypass(bool spwCB)
+{
+    bypassSerialWriteChecks = spwCB;
+}
 
 
 void ComDeviceList::CopyUsedDipPlayersArray(bool *targetArray, quint8 size, quint8 hubComPort)
@@ -1340,11 +1476,154 @@ void ComDeviceList::ResetLightGun(quint8 lgNeedReset)
     p_lightGunList[lgNeedReset]->ResetLightGun ();
 }
 
+bool ComDeviceList::CheckUSBVIDAndPID(quint16 checkVID, quint16 checkPID)
+{
+    if(numberLightGuns == 0)
+        return false;
 
+    bool foundMatch = false;
 
+    for(quint8 i = 0; i < numberLightGuns; i++)
+    {
+        if(p_lightGunList[i]->IsLightGunUSB () && !foundMatch)
+            foundMatch = p_lightGunList[i]->CheckUSBVIDAndPID(checkVID, checkPID);
+    }
 
+    return foundMatch;
+}
 
+bool ComDeviceList::CheckUSBParams(quint16 checkVID, quint16 checkPID, QString checkSN)
+{
+    if(numberLightGuns == 0)
+        return false;
 
+    bool foundMatch = false;
+
+    for(quint8 i = 0; i < numberLightGuns; i++)
+    {
+        if(p_lightGunList[i]->IsLightGunUSB () && !foundMatch)
+            foundMatch = p_lightGunList[i]->CheckUSBParams(checkVID, checkPID, checkSN);
+    }
+
+    return foundMatch;
+}
+
+bool ComDeviceList::CheckUSBVIDAndPID(quint16 checkVID, quint16 checkPID, quint8 lgNumber)
+{
+    if(numberLightGuns == 0)
+        return false;
+
+    bool foundMatch = false;
+
+    for(quint8 i = 0; i < numberLightGuns; i++)
+    {
+        //Don't Check Yoourself, Before You Wreck Yourself
+        if(i != lgNumber)
+        {
+            if(p_lightGunList[i]->IsLightGunUSB () && !foundMatch)
+                foundMatch = p_lightGunList[i]->CheckUSBVIDAndPID(checkVID, checkPID);
+        }
+    }
+
+    return foundMatch;
+}
+
+bool ComDeviceList::CheckUSBParams(quint16 checkVID, quint16 checkPID, QString checkSN, quint8 lgNumber)
+{
+    if(numberLightGuns == 0)
+        return false;
+
+    bool foundMatch = false;
+
+    for(quint8 i = 0; i < numberLightGuns; i++)
+    {
+        if(i != lgNumber)
+        {
+            if(p_lightGunList[i]->IsLightGunUSB () && !foundMatch)
+                foundMatch = p_lightGunList[i]->CheckUSBParams(checkVID, checkPID, checkSN);
+        }
+    }
+
+    return foundMatch;
+}
+
+QString ComDeviceList::ProcessHIDUsage(quint16 usagePage, quint16 usage)
+{
+    if(usagePage == 1)
+    {
+        if(usage == 1)
+            return "Pointer";
+        else if(usage == 2)
+            return "Mouse";
+        else if(usage == 4)
+            return "Joystick";
+        else if(usage == 5)
+            return "GamePad";
+        else if(usage == 6)
+            return "Keybaord";
+        else if(usage == 7)
+            return "Keypad";
+        else if(usage == 8)
+            return "Multi-Axis Controller";
+        else if(usage == 9)
+            return "Tablet PC System Controls";
+        else if(usage == 0x0A)
+            return "Water Cooling Device";
+        else if(usage == 0x0B)
+            return "Computer Chassis Device";
+        else if(usage == 0x0C)
+            return "Wireless Radio Controls";
+        else if(usage == 0x0D)
+            return "Portable Device Control";
+        else if(usage == 0x0E)
+            return "System Multi-Axis Controller";
+        else if(usage == 0x0F)
+            return "Spatial Controller";
+        else if(usage == 0x10)
+            return "Assistive Control";
+        else if(usage == 0x11)
+            return "Device Dock";
+        else if(usage == 0x12)
+            return "Dockable Device";
+        else if(usage == 0x13)
+            return "Call State Management Control";
+        else if(usage == 0x3A)
+            return "Counted Buffer";
+        else if(usage == 0x80)
+            return "System Control";
+        else if(usage == 0x96)
+            return "Thumbstick";
+        else if(usage == 0xC5)
+            return "Chassis Enclosure";
+        else
+            return "";
+    }
+    else if(usagePage == 0x0C)
+    {
+        if(usage == 1)
+            return "Consumer Control";
+        else if(usage == 2)
+            return "Numeric Key Pad";
+        else if(usage == 3)
+            return "Programmable Buttons";
+        else if(usage == 4)
+            return "Microphone";
+        else if(usage == 5)
+            return "Headphone";
+        else if(usage == 6)
+            return "Graphic Equalizer";
+        else if(usage == 0x36)
+            return "Function Buttons";
+        else if(usage == 0x80)
+            return "Selection";
+        else
+            return "";
+    }
+    else if(usagePage >= 0xFF00)
+        return "Vendor Defined";
+
+    return "";
+}
 
 
 

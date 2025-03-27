@@ -3,10 +3,10 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.1.1"
+#define VERSION                 "1.1.2"
 #define VERSIONMAIN             1
 #define VERSIONMID              1
-#define VERSIONLAST             1
+#define VERSIONLAST             2
 
 //Global Settings
 #define MAXPLAYERLIGHTGUNS      8
@@ -28,6 +28,9 @@
 #define STOPBITS_NUMBER         3
 #define FLOW_NUMBER             3
 
+#define DATABITS_MAX            8
+#define DATABITS_MIN            5
+
 #define DIPSWITCH_NUMBER        4
 
 #define DEFAULTANALOGSTRENGTH   63
@@ -48,7 +51,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Default Light Gun Definition - There is No Zero, as that is blan and nonDefaultLG
-#define NUM_DEFAULTLG           7
+#define NUM_DEFAULTLG           8
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -137,21 +140,24 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define OPENFIREMAXAMMONUM        0
 #define OPENFIRERELOADNUM         0
 
-//Struct that Stores the Default Light gun Data
-struct S_DEFAULTLG
-{
-    quint8 BAUD;
-    quint8 DATA;
-    quint8 PARITY;
-    quint8 STOP;
-    quint8 FLOW;
-    QString MAXAMMO;
-    QString RELOADVALUE;
-    quint16 MAXAMMON;
-    quint16 RELOADVALUEN;
-};
 
-extern S_DEFAULTLG DEFAULTLG_ARRAY[];
+//Seventh Default Light Gun
+//Alien USB Light Gun
+#define ALIENUSB                  7
+#define ALIENUSBNAME              "Alien USB"
+#define ALIENUSBBAUD              0
+#define ALIENUSBDATA              0
+#define ALIENUSBPARITY            0
+#define ALIENUSBSTOP              0
+#define ALIENUSBFLOW              0
+#define ALIENUSBMAXAMMO           "0"
+#define ALIENUSBRELOAD            "0"
+#define ALIENUSBMAXAMMONUM        0
+#define ALIENUSBRELOADNUM         0
+
+#define ALIENUSBVENDORID          0x04B4
+#define ALIENUSBPRODUCTID         0x6870
+
 
 
 //TCP Socket
@@ -200,10 +206,19 @@ extern S_DEFAULTLG DEFAULTLG_ARRAY[];
 #define STARTSETTINGSFILE       "Settings"
 #define DEFAULTREFRESHDISPLAY   400
 
+/////////
+/// MASKS
+
 //Input Masks for Refresh Display Time in Settings
 #define REFRESHDISPLAYMASK      "000000"
 //Input Mask for Analog Strength 8bit 0-255
 #define ANALOGSTRENGTHMASK      "000"
+
+#define USBDEVICEMASK           "000"
+#define USBINPUTMASKHEX         "HHHH"
+
+#define TESTHIDMASK             "HHHHHHHHHHHHHHHHHHHHHHHH"
+#define TESTCOMMASK             "NNNNNNNNNNNNNNNNNNNNNNNN"
 
 //Display
 #define GAMEINFO                "Game Info:"
@@ -267,14 +282,12 @@ extern S_DEFAULTLG DEFAULTLG_ARRAY[];
 #define STOPREMOVE               0,5
 #define SIGNALDATAVARIBLE       "%s%"
 #define ININULLCMD              "nll"
+#define USBHIDCMD               "ghd"
+#define DIGIT1                  "%d1%"
+#define DIGIT0                  "%d0%"
+#define PERCENTAGESYMBOL        "%"
 
-struct INIPortStruct
-{
-    qint32 baud;
-    quint8 data;
-    quint8 parity;
-    quint8 stop;
-};
+
 
 
 //Process Default LG Game File
@@ -310,6 +323,8 @@ struct INIPortStruct
 #define RECOIL_R2SCMD           ">Recoil_R2S"
 #define RECOILCMDCNT            8
 #define RECOIL_R2SCMDCNT        12
+#define RECOIL_R2SMINPERCT      30
+#define DISPLAYAMMOCMD          ">Display_Ammo"
 
 #define OPENCOMPORTONLY         "Open_COM"
 #define CLOSECOMPORTONLY        "Close_COM"
@@ -326,9 +341,85 @@ struct INIPortStruct
 #define KANDMMODECMDONLY        "Keyboard_Mouse_Mode"
 #define DLGNULLCMDONLY          "Null"
 #define RECOIL_R2SONLY          "Recoil_R2S"
+#define DISPLAYAMMOONLY         "Display_Ammo"
+
+
+
 
 //Not Used Yet, But Needed for Future
 //#define DEFAULTCDDIR            "defaultCD"
+
+////////////////////////
+/// Structs
+////////////////////////
+
+//Struct that Stores the Default Light gun Data
+struct S_DEFAULTLG
+{
+    quint8  BAUD;
+    quint8  DATA;
+    quint8  PARITY;
+    quint8  STOP;
+    quint8  FLOW;
+    QString MAXAMMO;
+    QString RELOADVALUE;
+    quint16 MAXAMMON;
+    quint16 RELOADVALUEN;
+};
+
+extern S_DEFAULTLG DEFAULTLG_ARRAY[];
+
+struct INIPortStruct
+{
+    qint32 baud;
+    quint8 data;
+    quint8 parity;
+    quint8 stop;
+};
+
+
+struct HIDInfo
+{
+    QString     path;
+    quint16     vendorID;
+    QString     vendorIDString;
+    quint16     productID;
+    QString     productIDString;
+    QString     serialNumber;
+    quint16     releaseNumber;
+    QString     releaseString;
+    QString     manufacturer;
+    QString     productDiscription;
+    quint16     usagePage;
+    quint16     usage;
+    QString     usageString;
+    qint8       interfaceNumber;
+
+    bool operator==(const HIDInfo& other) const {
+        return (path == other.path) && (vendorID == other.vendorID) && (vendorIDString == other.vendorIDString) && (productID == other.productID) && (productIDString == other.productIDString) && (serialNumber == other.serialNumber) && (releaseNumber == other.releaseNumber)
+               && (releaseString == other.releaseString)  && (manufacturer == other.manufacturer) && (productDiscription == other.productDiscription) && (usagePage == other.usagePage) && (usage == other.usage) && (usageString == other.usageString) && (interfaceNumber == other.interfaceNumber);
+    }
+};
+
+struct SerialPortInfo
+{
+    QString     path;
+    QString     productDiscription;
+    QString     manufacturer;
+    QString     serialNumber;
+    bool        hasVendorID;
+    bool        hasProductID;
+    quint16     vendorID;
+    QString     vendorIDString;
+    quint16     productID;
+    QString     productIDString;
+    QString     portName;
+};
+
+
+
+
+
 
 
 #endif // GLOBAL_H

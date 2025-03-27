@@ -9,6 +9,9 @@
 
 #include "../COMDeviceList/ComDeviceList.h"
 
+#include <Windows.h>
+#include "hidapi_winapi.h"
+
 namespace Ui {
 class testComPortWindow;
 }
@@ -37,6 +40,8 @@ private:
 
     bool ConnectComPort();
 
+    bool ConnectUSBHID();
+
     Ui::testComPortWindow *ui;
 
     //ComDeviceList to Add the Light Gun Too. Do Not Delete!
@@ -49,6 +54,9 @@ private:
     //Number of Light Gun in the List
     quint8 numberLightGuns;
 
+    //Current Light Gun Number
+    quint8 currentLG;
+
     //Light Gun Data
     QString lightGunName;
     quint8 lightGunNum;
@@ -59,6 +67,12 @@ private:
     quint8 comPortParity;
     quint8 comPortStopBits;
     quint8 comPortFlow;
+
+    //Light Gun USB HID Data
+    HIDInfo lgHIDInfo;
+    bool isUSB;
+    hid_device *p_hidConnection;
+    bool isUSBConnected;
 
 };
 

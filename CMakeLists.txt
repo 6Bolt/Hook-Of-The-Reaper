@@ -46,12 +46,27 @@ qt_add_executable(HookOfTheReaper
 
 )
 
+target_include_directories(HookOfTheReaper
+    PRIVATE
+    ${Qt6Core_INCLUDE_DIRS}
+    ${Qt6Widgets_INCLUDE_DIRS}
+    ${Qt6SerialPort_INCLUDE_DIRS}
+    ${Qt6Network_INCLUDE_DIRS}
+    D:/QtProjects/HookOfTheReaperGit/HIDAPI/include
+)
+target_link_directories(HookOfTheReaper
+    PRIVATE
+    D:/QtProjects/HookOfTheReaperGit/HIDAPI/x64
+)
+
+
 target_link_libraries(HookOfTheReaper
     PRIVATE
         Qt::Core
         Qt::Widgets
         Qt6::SerialPort
         Qt6::Network
+        hidapi
 )
 
 include(GNUInstallDirs)
@@ -71,3 +86,9 @@ install(SCRIPT ${deploy_script})
 
 set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/data/icons/icons.rc")
 
+
+
+#target_link_libraries(HookOfTheReaper
+#    PRIVATE
+#    hidapi
+#)

@@ -29,6 +29,8 @@ private slots:
     //Close Window
     void on_cancelPushButton_clicked();
 
+    void on_bypassSerialWriteCheckBox_checkStateChanged(const Qt::CheckState &arg1);
+
 private:
 
     //Check the Setting and then Save Them
@@ -42,17 +44,21 @@ private:
     //ComDeviceList to Add the Light Gun Too. Do Not Delete!
     ComDeviceList       *p_comDeviceList;
 
-    //Two Settings
+    bool                finishedInit = false;
+
+    //Bool Settings
     bool                useDefaultLGFirst;
     bool                useMultiThreading;
     bool                closeComPortGameExit;
     bool                ignoreUselessDLGGF;
+    bool                bypassSerialWriteChecks;
 
     //For Check Boxes
     Qt::CheckState      defaultLG;
     Qt::CheckState      multiThreading;
     Qt::CheckState      closeComPort;
     Qt::CheckState      ignoreUDLGGF;
+    Qt::CheckState      bypassSWC;
 
     //Refresh Time in Number and String
     quint32             refreshDisplayTime;

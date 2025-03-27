@@ -37,11 +37,12 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     //Used For INI COM Port Read
     bufferNum = 0;
 
+    isUSBHIDInit = false;
 
     commandLGList << OPENCOMPORT << CLOSECOMPORT << DAMAGECMD << RECOILCMD << RELOADCMD;
     commandLGList << AMMOCMD << AMMOVALUECMD << SHAKECMD << AUTOLEDCMD << ARATIO169CMD;
     commandLGList << ARATIO43CMD << JOYMODECMD << KANDMMODECMD << DLGNULLCMD << RECOIL_R2SCMD;
-
+    commandLGList << DISPLAYAMMOCMD;
 
 
     //qDebug() << "Hooker Engine Started";
@@ -108,12 +109,9 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
         playersLGAssignment[i] = p_comDeviceList->GetPlayerLightGunAssignment(i);
     }
 
-    //Settings Values
-    useDefaultLGFirst = p_comDeviceList->GetUseDefaultLGFirst ();
+    //Needed Settings Values
     useMultiThreading = p_comDeviceList->GetUseMultiThreading ();
     refreshTimeDisplay = p_comDeviceList->GetRefreshTimeDisplay ();
-    closeComPortGameExit = p_comDeviceList->GetCloseComPortGameExit ();
-    ignoreUselessDLGGF = p_comDeviceList->GetIgnoreUselessDFLGGF ();
 
     //Set-Up Refresh Display Timer
     p_refreshDisplayTimer = new QTimer(this);
@@ -123,8 +121,6 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
 
     //Set Up the Signal and Slots for the timer
     connect(p_refreshDisplayTimer, SIGNAL(timeout()), this, SLOT(UpdateDisplayTimeOut()));
-
-
 
     //Set Up the TCP Socket
     p_hookSocket = new HookTCPSocket();
@@ -175,12 +171,19 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
         connect(&threadForCOMPort, &QThread::finished, p_hookComPortWin, &QObject::deleteLater);
     }
 
-    //Connect the Signals & Slots for Multi-Thread Communication for Serial COM Port
+    //Connect the Signals & Slots for Serial COM Port
     connect(this, &HookerEngine::StartComPort, p_hookComPortWin, &HookCOMPortWin::Connect);
     connect(this, &HookerEngine::StopComPort, p_hookComPortWin, &HookCOMPortWin::Disconnect);
     connect(this, &HookerEngine::WriteComPortSig, p_hookComPortWin, &HookCOMPortWin::WriteData);
+    connect(this, &HookerEngine::SetComPortBypassWriteChecks, p_hookComPortWin, &HookCOMPortWin::SetBypassSerialWriteChecks);
 
-    connect(this, &HookerEngine::StopAllComPorts, p_hookComPortWin, &HookCOMPortWin::DisconnectAll);
+    //Connect the Signals & Slots for USB HID
+    connect(this, &HookerEngine::StartUSBHID, p_hookComPortWin, &HookCOMPortWin::ConnectHID);
+    connect(this, &HookerEngine::StopUSBHID, p_hookComPortWin, &HookCOMPortWin::DisconnectHID);
+    connect(this, &HookerEngine::WriteUSBHID, p_hookComPortWin, &HookCOMPortWin::WriteDataHID);
+
+
+    connect(this, &HookerEngine::StopAllConnections, p_hookComPortWin, &HookCOMPortWin::DisconnectAll);
     connect(p_hookComPortWin, &HookCOMPortWin::ErrorMessage, this, &HookerEngine::ErrorMessageCom);
 
 #else
@@ -198,7 +201,7 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     connect(this, &HookerEngine::StopComPort, p_hookComPort, &HookCOMPort::Disconnect);
     connect(this, &HookerEngine::WriteComPortSig, p_hookComPort, &HookCOMPort::WriteData);
     connect(p_hookComPort, &HookCOMPort::ReadDataSig, this, &HookerEngine::ReadComPortSig);
-    connect(this, &HookerEngine::StopAllComPorts, p_hookComPort, &HookCOMPort::DisconnectAll);
+    connect(this, &HookerEngine::StopAllConnections, p_hookComPort, &HookCOMPort::DisconnectAll);
     connect(p_hookComPort, &HookCOMPort::ErrorMessage, this, &HookerEngine::ErrorMessageCom);
 
 
@@ -209,6 +212,8 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
         threadForCOMPort.start(QThread::HighPriority);
     }
 
+    //Load Up Settings
+    LoadSettingsFromList();
 
     //Connect Recoil_R2S Timers To Slots
     connect(&pRecoilR2STimer[0], SIGNAL(timeout()), this, SLOT(P1RecoilR2S()));
@@ -232,8 +237,8 @@ HookerEngine::~HookerEngine()
     if(p_newFile != nullptr)
         delete p_newFile;
 
-    //Close all COM Port Connections
-    emit StopAllComPorts();
+    //Close all COM Port & USB HID Connections
+    emit StopAllConnections();
 
     //Clean Up threads
     if(useMultiThreading)
@@ -838,9 +843,9 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
 }
 
 
-void HookerEngine::CloseAllComPortConnections()
+void HookerEngine::CloseAllLightGunConnections()
 {
-    emit StopAllComPorts();
+    emit StopAllConnections();
 }
 
 void HookerEngine::LoadSettingsFromList()
@@ -853,12 +858,15 @@ void HookerEngine::LoadSettingsFromList()
     refreshTimeDisplay = p_comDeviceList->GetRefreshTimeDisplay ();
     closeComPortGameExit = p_comDeviceList->GetCloseComPortGameExit ();
     ignoreUselessDLGGF = p_comDeviceList->GetIgnoreUselessDFLGGF ();
+    bypassSerialWriteChecks = p_comDeviceList->GetSerialPortWriteCheckBypass ();
 
     if(p_refreshDisplayTimer->isActive ())
     {
         p_refreshDisplayTimer->stop ();
         timerRunning = true;
     }
+
+    emit SetComPortBypassWriteChecks(bypassSerialWriteChecks);
 
     //Set Interval to the Setting of refresh Time Display
     p_refreshDisplayTimer->setInterval (refreshTimeDisplay);
@@ -873,7 +881,6 @@ void HookerEngine::TCPReadyRead(const QByteArray &readBA)
 {
     //qDebug() << "Got Data from TCP Socket";
 
-
     QByteArray messageBA = readBA;
     QString message = QString::fromStdString (messageBA.toStdString ());
 
@@ -882,12 +889,10 @@ void HookerEngine::TCPReadyRead(const QByteArray &readBA)
 
     //qDebug() << message;
 
-    //If Multiple Data Lines, they will be seperated into lines, using \r
-    //If if had 2 data lines together, then \r would be at end, and middle
+    //If Multiple Data Lines, they will be seperated into lines, using \r or \n
+    //If it had 2 data lines together, then \r would be at end which is chopped off, and middle
     //QRegularExpression endLines("[\r\n]");
     QStringList tcpSocketReadData = message.split(QRegularExpression("[\r\n]"), Qt::SkipEmptyParts);
-
-
 
     ProcessTCPData(tcpSocketReadData);
 }
@@ -1599,6 +1604,10 @@ void HookerEngine::LoadINIFile()
     iniFileLoadFail = false;
     openComPortCheck.clear();
 
+    //Close Any Old USB HIDs from INI Side
+    CloseINIUSBHID();
+    hidPlayerMap.clear ();
+
     //Open File. If Failed to Open, so Critical Message Box
     QFile iniFile(gameINIFilePath);
 
@@ -1628,7 +1637,7 @@ void HookerEngine::LoadINIFile()
             //Get the Index of the Equal
             indexEqual = line.indexOf('=',0);
 
-            //If there is Nothing After '=', but in NoCommnds List
+            //If there is Nothing After '=', put in NoCommnds List
             //If something after '=' then Split it up into Signals and Command(s)
             if(line.length() != indexEqual+1)
             {
@@ -1988,12 +1997,145 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber, QSt
             return true;
 
         }
-        else if(commndNotChk.startsWith(ININULLCMD, Qt::CaseInsensitive))
-        {
-            //Null Command - Do Nothing, but return true;
-            return true;
-        }
     }//COM Port Commands, Starts with "cm" or "cs"
+    else if(commndNotChk.startsWith(USBHIDCMD, Qt::CaseSensitive) == true)
+    {
+        //USB HID Write Command
+        //Sample command: ghd 1 &H04B4 &H6870 2 &h02:&h0%s%
+        //ghd - Command, 1 - Device, &H04B4 - VendorID, &H6870 - ProductID, 2 - Number of Bytes, &h02 - Byte 0, &h0%s% - Byte 1
+
+        //This will give 6 Strings 1: ghd  2: Device#  3: VendorID 4: ProductID 5: Number of Bytes 6: Bytes
+        temp1 = commndNotChk.split(' ', Qt::SkipEmptyParts);
+
+        if(temp1.count () != 6)
+        {
+            QString tempCrit = "In USB HID write command, doesn't have enough or too many variables. It should be ghd and 5 variables.\nLine Number: "+QString::number(lineNumber)+"\nCommand: "+commndNotChk+"\nFile: "+filePathName;
+            if(displayMB)
+                QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+            return false;
+        }
+
+
+        bool isNumber;
+        quint8 deviceNumber = temp1[1].toUInt (&isNumber);
+        quint16 vendorID;
+        quint16 productID;
+
+        if(!isNumber)
+        {
+            QString tempCrit = "In USB HID write command, Device is not a number.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+            if(displayMB)
+                QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+            return false;
+        }
+
+        if(temp1[2][0] == '&' && temp1[2][1] == 'H')
+        {
+            //Remove the '&H' So just have Hex Number Left
+            temp1[2].remove(0,2);
+            vendorID = temp1[2].toUShort (&isNumber, 16);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In USB HID write command, VendorID is not a hex number.\nLine Number: "+QString::number(lineNumber)+"\nVendorID Number: "+temp1[2]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+        }
+        else
+        {
+            QString tempCrit = "In USB HID write command, VendorID doesn't have the needed &H in front of number.\nLine Number: "+QString::number(lineNumber)+"\nVendorID: "+temp1[2]+"\nFile: "+filePathName;
+            if(displayMB)
+                QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+            return false;
+        }
+
+        if(temp1[3][0] == '&' && temp1[3][1] == 'H')
+        {
+            //Remove the '&H' So just have Hex Number Left
+            temp1[3].remove(0,2);
+            productID = temp1[3].toUShort (&isNumber, 16);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In USB HID write command, ProductID is not a hex number.\nLine Number: "+QString::number(lineNumber)+"\nProductID Number: "+temp1[3]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+        }
+        else
+        {
+            QString tempCrit = "In USB HID write command, ProductID doesn't have the needed &H in front of number.\nLine Number: "+QString::number(lineNumber)+"\nProductID: "+temp1[3]+"\nFile: "+filePathName;
+            if(displayMB)
+                QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+            return false;
+        }
+
+        bool foundHID = FindUSBHIDDeviceINI(vendorID, productID, deviceNumber);
+
+        if(!foundHID)
+        {
+            QString tempCrit = "In USB HID write command, Cannot find the HID with the vendorID, productID, and device number.\nLine Number: "+QString::number(lineNumber)+"\nProductID: "+temp1[3]+"\nFile: "+filePathName;
+            if(displayMB)
+                QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+            return false;
+        }
+
+        quint8 byteNumber = temp1[4].toUInt (&isNumber);
+
+        if(!isNumber)
+        {
+            QString tempCrit = "In USB HID write command, Number of Bytes is not a number.\nLine Number: "+QString::number(lineNumber)+"\nNumber of Bytes: "+temp1[4]+"\nFile: "+filePathName;
+            if(displayMB)
+                QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+            return false;
+        }
+
+        temp2 = temp1[5].split(':', Qt::SkipEmptyParts);
+
+        if(temp2.count () != byteNumber)
+        {
+            QString tempCrit = "In USB HID write command, Number of Bytes doesn't equal number of data bytes.\nLine Number: "+QString::number(lineNumber)+"\nNumber of Bytes: "+temp1[4]+"\nData Bytes: "+temp1[5]+"\nFile: "+filePathName;
+            if(displayMB)
+                QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+            return false;
+        }
+
+        for(quint8 i = 0; i < temp2.count (); i++)
+        {
+            if(temp2[i][0] == '&' && temp2[i][1] == 'h')
+            {
+                //Remove the '&H' So just have Hex Number Left
+                temp2[i].remove(0,2);
+                quint16 byteData = temp2[i].toUShort (&isNumber, 16);
+
+                if(!isNumber)
+                {
+                    QString tempCrit = "In USB HID write command, Data Byte is not a hex number.\nLine Number: "+QString::number(lineNumber)+"\nData Byte: "+temp2[i]+"\nFile: "+filePathName;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                    return false;
+                }
+            }
+            else
+            {
+                QString tempCrit = "In USB HID write command, Data Byte doesn't have the needed &h in front of number.\nLine Number: "+QString::number(lineNumber)+"\nData Byte: "+temp2[i]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+        }
+
+        //Ran the gaunlet
+        return true;
+    }
+    else if(commndNotChk.startsWith(ININULLCMD, Qt::CaseInsensitive))
+    {
+        //Null Command - Do Nothing, but return true;
+        return true;
+    }
     else
     {
         return false;
@@ -2002,6 +2144,133 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber, QSt
     //Something Bad happen to get here
     return false;
 }
+
+
+bool HookerEngine::FindUSBHIDDeviceINI(quint16 vendorID, quint16 productID, quint8 deviceNumber)
+{
+    HIDInfo foundHIDInfo;
+    QString serialNumber;
+    QStringList serialNumberList;
+    quint8 numberOfDevices = 0;
+    QString hidKey;
+
+    //USB HID Init
+    if(!isUSBHIDInit)
+    {
+        //Init the USB HID
+        if (hid_init())
+        {
+            QString tempCrit = "The USB HID Init failed in the Hooker Engine. Something got fucked up.";
+            if(displayMB)
+                QMessageBox::critical (p_guiConnect, "Hooker Engine: USB HID Init", tempCrit, QMessageBox::Ok);
+            return false;
+        }
+        else
+            isUSBHIDInit = true;
+    }
+
+    //Key used for the QMap
+    hidKey = QString::number(vendorID, 16);
+    hidKey.append (QString::number(productID, 16));
+    hidKey.append (QString::number(deviceNumber, 10));
+
+    //Check to See If in QMap Already
+    if(hidPlayerMap.contains (hidKey))
+        return true;
+
+    hid_device_info *devs;
+
+    //Find USB HID Devices with the same vendorID & productID
+    devs = hid_enumerate(vendorID, productID);
+
+    //Go Through the USB HID Devices.
+    //Multiple Devices can have Same vendorID, productID, and Serial Number
+    for (; devs; devs = devs->next)
+    {
+        if(numberOfDevices == 0)
+        {
+            serialNumber = QString::fromWCharArray(devs->serial_number);
+            serialNumberList << serialNumber;
+            numberOfDevices++;
+        }
+        else
+        {
+            serialNumber = QString::fromWCharArray(devs->serial_number);
+
+            if(!serialNumberList.contains (serialNumber))
+            {
+                serialNumberList << serialNumber;
+                numberOfDevices++;
+            }
+        }
+
+
+        if(numberOfDevices == deviceNumber)
+        {
+
+            foundHIDInfo.vendorID = devs->vendor_id;
+            QString tempVID = QString::number(devs->vendor_id, 16).rightJustified(4, '0');
+            tempVID = tempVID.toUpper ();
+            tempVID.prepend ("0x");
+            foundHIDInfo.vendorIDString = tempVID;
+
+            foundHIDInfo.productID = devs->product_id;
+            QString tempPID = QString::number(devs->product_id, 16).rightJustified(4, '0');
+            tempPID = tempPID.toUpper ();
+            tempPID.prepend ("0x");
+            foundHIDInfo.productIDString = tempPID;
+
+            foundHIDInfo.path = QString::fromLatin1(devs->path);
+            foundHIDInfo.serialNumber = QString::fromWCharArray(devs->serial_number);
+            foundHIDInfo.releaseNumber = devs->release_number;
+            QString tempR = QString::number(devs->release_number, 16).rightJustified(4, '0');
+            tempR = tempR.toUpper ();
+            tempR.prepend ("0x");
+            foundHIDInfo.releaseString = tempR;
+
+
+            foundHIDInfo.manufacturer = QString::fromWCharArray(devs->manufacturer_string);
+            foundHIDInfo.productDiscription = QString::fromWCharArray(devs->product_string);
+            foundHIDInfo.interfaceNumber = devs->interface_number;
+            foundHIDInfo.usagePage = devs->usage_page;
+            foundHIDInfo.usage = devs->usage;
+            foundHIDInfo.usageString = p_comDeviceList->ProcessHIDUsage(foundHIDInfo.usagePage, foundHIDInfo.usage);
+
+            quint8 playerNum = hidPlayerMap.count ();
+
+            if(playerNum == 4)
+            {
+                QString tempCrit = "The USB HID can only have 4 HIDs open at one time for the light guns. This is for P1 to P4.\nVendorID: "+QString::number(vendorID, 16)+"\nProductID: "+QString::number(productID, 16)+"\nDevice Number: "+QString::number(deviceNumber);
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Hooker Engine: USB HID INI", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            hidPlayerMap.insert(hidKey, playerNum);
+
+            //Connect the USB HID
+            emit StartUSBHID(playerNum, foundHIDInfo);
+
+            //qDebug() << "Starting USB HID, playerNum: " << playerNum << " hidKey: " << hidKey;
+
+            //Release HID enumeration
+            hid_free_enumeration(devs);
+
+            return true;
+        }
+    }
+
+    //Release HID enumeration
+    hid_free_enumeration(devs);
+
+    QString tempCrit = "The USB HID search cannot find the device. Something got fucked up.\nVendorID: "+QString::number(vendorID, 16)+"\nProductID: "+QString::number(productID, 16)+"\nDevice Number: "+QString::number(deviceNumber);
+    if(displayMB)
+        QMessageBox::critical (p_guiConnect, "Hooker Engine: USB HID INI", tempCrit, QMessageBox::Ok);
+    return false;
+
+}
+
+
 
 
 void HookerEngine::NewINIFile()
@@ -2092,7 +2361,7 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
         }
 
         //Second, Check if there is the %s% variable. If so, replace with value
-        if(commands[i].contains(SIGNALDATAVARIBLE))
+        if(commands[i].contains(SIGNALDATAVARIBLE) && !commands[i].startsWith(USBHIDCMD))
         {
             commands[i].replace(SIGNALDATAVARIBLE, value);
         }
@@ -2193,13 +2462,105 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
 
                 WriteINIComPort(comPortNumber, temp1[2]);
             }
-            else if(commands[i].startsWith(ININULLCMD, Qt::CaseInsensitive))
-            {
-                //Null Command - Do Nothing
-            }
         }//COM Port Commands, Starts with "cm" or "cs"
+        else if(commands[i].startsWith(ININULLCMD, Qt::CaseInsensitive))
+        {
+            //Null Command - Do Nothing
+        }
+        else if(commands[i].startsWith(USBHIDCMD, Qt::CaseSensitive) == true)
+        {
+            //USB HID Write Command
+            //Sample command: ghd 1 &H04B4 &H6870 2 &h02:&h0%s%
+            //ghd - Command, 1 - Device, &H04B4 - VendorID, &H6870 - ProductID, 2 - Number of Bytes, &h02 - Byte 0, &h0%s% - Byte 1
+
+            //This will give 6 Strings 1: ghd  2: Device#  3: VendorID 4: ProductID 5: Number of Bytes 6: Bytes
+            temp1 = commands[i].split(' ', Qt::SkipEmptyParts);
+
+            QString hidKey;
+            bool isNumber;
+            quint8 deviceNumber = temp1[1].toUInt (&isNumber);
+
+            //Remove the '&H' So just have Hex Number Left
+            temp1[2].remove(0,2);
+            quint16 vendorID = temp1[2].toUShort (&isNumber, 16);
+
+            //Remove the '&H' So just have Hex Number Left
+            temp1[3].remove(0,2);
+            quint16 productID = temp1[3].toUShort (&isNumber, 16);
+
+            //Not Needed, since can find size already
+            //quint8 byteNumber = temp1[4].toUInt (&isNumber);
+
+            quint8 valueMarkers = temp1[5].count (SIGNALDATAVARIBLE);
+            quint16 valueNum = value.toUShort ();
+            QString upperDigit, lowerDigit;
+
+            if(valueMarkers > 1)
+            {
+                if(valueNum > 9)
+                {
+                    upperDigit = value[0];
+                    lowerDigit = value[1];
+                }
+                else
+                {
+                    upperDigit= '0';
+                    lowerDigit = value[0];
+                }
+            }
+            else if(valueMarkers == 1)
+                lowerDigit = value[0];
+
+            //Split up the Data Bytes
+            temp2 = temp1[5].split(':', Qt::SkipEmptyParts);
+
+            QString dataBytes;
+
+            for(quint8 j = 0; j < temp2.count (); j++)
+            {
+                //Remove the '&h' So just have Hex Number Left
+                temp2[j].remove(0,2);
+
+                if(temp2[j].contains(SIGNALDATAVARIBLE))
+                {
+                    if(valueMarkers > 1)
+                    {
+                        temp2[j].replace(SIGNALDATAVARIBLE, upperDigit);
+                        valueMarkers--;
+                    }
+                    else if(valueMarkers == 1)
+                        temp2[j].replace(SIGNALDATAVARIBLE, lowerDigit);
+                }
+
+
+                if(temp2[j].length () == 1)
+                    temp2[j].prepend ('0');
+
+                dataBytes.append (temp2[j]);
+            }
+
+            //qDebug() << "dataBytes: " << dataBytes;
+
+            //Got All the Data Now
+
+            //Find the USB HID Device
+            //Key used for the QMap
+            hidKey = QString::number(vendorID, 16);
+            hidKey.append (QString::number(productID, 16));
+            hidKey.append (QString::number(deviceNumber, 10));
+
+            quint8 player = hidPlayerMap[hidKey];
+
+            //Convert String to Hex QByteArray
+            QByteArray cpBA = QByteArray::fromHex(dataBytes.toUtf8());
+
+            //Send Data to USB HID
+            emit WriteUSBHID(player, cpBA);
+        }
     }//for(i
 }
+
+
 
 
 void HookerEngine::OpenINIComPort(quint8 cpNum)
@@ -2228,7 +2589,17 @@ void HookerEngine::WriteINIComPort(quint8 cpNum, QString cpData)
     emit WriteComPortSig(cpNum, cpBA);
 }
 
+void HookerEngine::CloseINIUSBHID()
+{
+    quint8 numberPlayers = hidPlayerMap.count ();
+    quint8 i;
 
+    if(numberPlayers > 0)
+    {
+        for(i = 0; i < numberPlayers; i++)
+            emit StopUSBHID(i);
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -2321,6 +2692,9 @@ void HookerEngine::LoadLGFile()
     bool isOutput = false;
     quint8 unassignLG = 0;
     quint16 signalsAndCommandsCountTest = 0;
+
+    //Close Any Old USB HIDs from INI Side
+    CloseINIUSBHID();
 
     lgFileLoadFail = false;
 
@@ -2779,6 +3153,8 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
     bool dlgCMDFound;
     bool findDLGCMDs;
     quint8 charToNumber;
+    bool isUSB;
+
 
     //qDebug() << "Signal: " << signalName << " Value: " << value;
 
@@ -2876,6 +3252,8 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                 //Check if light gun has an assign value, if not then don't run
                 if(lightGun != UNASSIGN)
                 {
+                    //Check if it is a USB HID, or Serial COM Port
+                    isUSB = p_comDeviceList->p_lightGunList[lightGun]->IsLightGunUSB ();
 
                     //tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
                     tempCPNum = loadedLGComPortNumber[player];
@@ -2899,7 +3277,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                 if(commands[i].size() > AMMOCMDCOUNT)
                                 {
                                     //Must Be Ammo_Value Command
-                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(&dlgCMDFound, value.toUInt ());
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(&dlgCMDFound, value.toUShort());
                                 }
                                 else if(value != "0") //Must Be Ammo Command, and only do if not zero
                                     dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoCommands(&dlgCMDFound);
@@ -2916,14 +3294,17 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                             }
                             else if(commands[i][2] == AUTOLEDCMD3CHAR)
                                 dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AutoLEDCommands(&dlgCMDFound);
-
                         }
-                        else if(commands[i][1] == 'D' && value != "0")
+                        else if(commands[i][1] == 'D')
                         {
-                            //Must Be Damage Command, Only Do Damage if Value != 0
-                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DamageCommands(&dlgCMDFound);
+                            if(commands[i][2] == 'a' && value != "0")
+                            {
+                                //Must Be Damage Command, Only Do Damage if Value != 0
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DamageCommands(&dlgCMDFound);
+                            }
+                            else if(commands[i][2] == 'i')
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DisplayAmmoCommands(&dlgCMDFound, value.toUShort());
                         }
-
                     }
                     else  //E-Z
                     {
@@ -2939,7 +3320,6 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                             {
                                 if(commands[i].size() > RECOILCMDCNT)
                                 {
-
                                     if(isPRecoilR2SFirstTime[player])
                                     {
                                         tmpCMDs = p_comDeviceList->p_lightGunList[lightGun]->RecoilR2SCommands(&dlgCMDFound);
@@ -2949,6 +3329,9 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
 
                                             if(recoilR2SSkewPrec[player] != 100)
                                             {
+                                                if(recoilR2SSkewPrec[player] < RECOIL_R2SMINPERCT)
+                                                    recoilR2SSkewPrec[player] = RECOIL_R2SMINPERCT;
+
                                                 delay = delay * recoilR2SSkewPrec[player];
                                                 delay = delay/100;
                                             }
@@ -2961,25 +3344,26 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                                 pRecoilR2SCommands[player] << tmpCMDs[x];
 
                                             isPRecoilR2SFirstTime[player] = false;
+                                            tmpCMDs.clear();
                                         }
-                                    }
-
-                                    if(value != "0" && !isPRecoilR2SFirstTime[player])
-                                    {
-                                        pRecoilR2STimer[player].start ();
-
-                                        for(quint8 x = 0; x < pRecoilR2SCommands[player].count(); x++)
-                                            dlgCommands << pRecoilR2SCommands[player][x];
-
-                                        dlgCMDFound = true;
                                     }
                                     else
                                     {
-                                        pRecoilR2STimer[player].stop ();
-                                        dlgCMDFound = false;
-                                    }
-                                    tmpCMDs.clear();
+                                        if(value != "0")
+                                        {
+                                            pRecoilR2STimer[player].start ();
 
+                                            for(quint8 x = 0; x < pRecoilR2SCommands[player].count(); x++)
+                                                dlgCommands << pRecoilR2SCommands[player][x];
+
+                                            dlgCMDFound = true;
+                                        }
+                                        else
+                                        {
+                                            pRecoilR2STimer[player].stop ();
+                                            dlgCMDFound = false;
+                                        }
+                                    }
                                 }
                                 else if(value != "0")
                                 {
@@ -3019,8 +3403,13 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                         for(k = 0; k < dlgCommands.count(); k++)
                         {
                             //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
-                            WriteLGComPort(tempCPNum, dlgCommands[k]);
+                            if(isUSB)
+                                WriteLGUSBHID(player, dlgCommands[k]);
+                            else
+                                WriteLGComPort(tempCPNum, dlgCommands[k]);
                         }
+
+
                     }
 
                 } //if(lightGun != UNASSIGN)
@@ -3059,6 +3448,7 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum)
     QStringList commands;
     quint8 cmdCount;
     bool isCommands;
+    bool isUSB;
 
     if(allPlayers)
         howManyPlayers = numberLGPlayers;
@@ -3079,21 +3469,35 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum)
         //Check if Light Gun is not Unassign
         if(lightGun != UNASSIGN)
         {
+            //See if Light Gun is USB HID
+            isUSB = p_comDeviceList->p_lightGunList[lightGun]->IsLightGunUSB ();
 
-            //qDebug() << "Player Number: " << player << " Light Gun Number: " << lightGun;
+            if(!isUSB)
+            {
+                //For Serial Port Connection
 
-            //Gets COM Port Settings
-            //tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
-            tempCPNum = loadedLGComPortNumber[player];
-            tempCPName = p_comDeviceList->p_lightGunList[lightGun]->GetComPortString();
-            tempBaud = p_comDeviceList->p_lightGunList[lightGun]->GetComPortBaud();
-            tempData = p_comDeviceList->p_lightGunList[lightGun]->GetComPortDataBits();
-            tempParity = p_comDeviceList->p_lightGunList[lightGun]->GetComPortParity();
-            tempStop = p_comDeviceList->p_lightGunList[lightGun]->GetComPortStopBits();
-            tempFlow = p_comDeviceList->p_lightGunList[lightGun]->GetComPortFlow();
+                //qDebug() << "Player Number: " << player << " Light Gun Number: " << lightGun;
 
-            //Opens the COM Port
-            emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, true);
+                //Gets COM Port Settings
+                //tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
+                tempCPNum = loadedLGComPortNumber[player];
+                tempCPName = p_comDeviceList->p_lightGunList[lightGun]->GetComPortString();
+                tempBaud = p_comDeviceList->p_lightGunList[lightGun]->GetComPortBaud();
+                tempData = p_comDeviceList->p_lightGunList[lightGun]->GetComPortDataBits();
+                tempParity = p_comDeviceList->p_lightGunList[lightGun]->GetComPortParity();
+                tempStop = p_comDeviceList->p_lightGunList[lightGun]->GetComPortStopBits();
+                tempFlow = p_comDeviceList->p_lightGunList[lightGun]->GetComPortFlow();
+
+                //Opens the COM Port
+                emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, true);
+
+            }
+            else
+            {
+                //For USB HID Connection
+                HIDInfo lgHIDInfo = p_comDeviceList->p_lightGunList[lightGun]->GetUSBHIDInfo ();
+                emit StartUSBHID(player, lgHIDInfo);
+            }
 
             //Get the Commnds for Open COM Port
             commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
@@ -3106,9 +3510,13 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum)
             {
                 for(j = 0; j < cmdCount; j++)
                 {
-                    WriteLGComPort(tempCPNum, commands[j]);
+                    if(isUSB)
+                        WriteLGUSBHID(player, commands[j]);
+                    else
+                        WriteLGComPort(tempCPNum, commands[j]);
                 }
             }
+
 
         } //if(lightGun != UNASSIGN)
     } //for(i = 0; i < howManyPlayers; i++)
@@ -3121,6 +3529,7 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
     QStringList commands;
     quint8 cmdCount;
     bool isCommands;
+    bool isUSB;
 
     if(allPlayers)
         howManyPlayers = numberLGPlayers;
@@ -3141,9 +3550,15 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
         if(lightGun != UNASSIGN)
         {
 
-            //Get COM Port For Light Gun
-            //tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
-            tempCPNum = loadedLGComPortNumber[player];
+            //See if Light Gun is USB HID
+            isUSB = p_comDeviceList->p_lightGunList[lightGun]->IsLightGunUSB ();
+
+            if(!isUSB)
+            {
+                //Get COM Port For Light Gun
+                //tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
+                tempCPNum = loadedLGComPortNumber[player];
+            }
 
             //Get Close COM Port Commands for Light Gun
             commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
@@ -3155,13 +3570,21 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
                 for(j = 0; j < cmdCount; j++)
                 {
                     //qDebug() << "Closing COM Port: " << tempCPNum << " Command: " << commands[j];
-                    WriteLGComPort(tempCPNum, commands[j]);
+                    if(isUSB)
+                        WriteLGUSBHID(player, commands[j]);
+                    else
+                        WriteLGComPort(tempCPNum, commands[j]);
                 }
             }
 
             //Closes The COM Port
             if(closeComPortGameExit)
-                emit StopComPort(tempCPNum);
+            {
+                if(isUSB)
+                    emit StopUSBHID(player);
+                else
+                    emit StopComPort(tempCPNum);
+            }
 
         }
     }
@@ -3177,6 +3600,27 @@ void HookerEngine::WriteLGComPort(quint8 cpNum, QString cpData)
     //Send Data to COM Port
     emit WriteComPortSig(cpNum, cpBA);
 }
+
+void HookerEngine::WriteLGUSBHID(quint8 playerNum, QString cpData)
+{
+    //Check to make Sure Even Number of Hex Values as 2 Hex Values = 1 Byte
+    if (cpData.length() % 2 != 0)
+    {
+        //cpData.prepend ('0');
+        QString tempCrit = "The USB HID data needs to have even number of hex values. As two hex values is one byte. Cannot transfer a half of a byte. Please correct the data";
+        if(displayMB)
+            QMessageBox::warning (p_guiConnect, "USB HID Data Not Correct", tempCrit, QMessageBox::Ok);
+        return;
+    }
+
+    //Convert String to Hex QByteArray
+    QByteArray cpBA = QByteArray::fromHex(cpData.toUtf8 ());
+
+    //Send Data to USB HID
+    emit WriteUSBHID(playerNum, cpBA);
+}
+
+
 
 void HookerEngine::AddSignalForDisplay(QString sig, QString dat)
 {

@@ -1,10 +1,12 @@
-Open_COM=ZS ZZ Z6
-Close_COM=ZX Z6
+Open_COM=ZS ZZ
+Close_COM=ZX
 Damage=ZZ
 Recoil=Z5
+Recoil_R2S=100 Z5
 Reload=Z6
 Ammo=Z5
 Ammo_Value=Z%s%
+Display_Ammo=
 Shake=ZZ
 Auto_LED=ZR
 AspectRatio_16:9=ZW

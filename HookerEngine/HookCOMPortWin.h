@@ -12,6 +12,10 @@
 
 #include <Windows.h>
 
+#include <Windows.h>
+#include "hidapi_winapi.h"
+
+
 class HookCOMPortWin : public QObject
 {
     Q_OBJECT
@@ -33,9 +37,20 @@ public slots:
     //Read Data from COM Port
     //void ReadData();
 
-    //Disconnect All Open COM Ports
+    //Disconnect All Open COM Ports & USB HIDs
     void DisconnectAll();
 
+    //Connect to an USB HID
+    void ConnectHID(const quint8 &playerNum, const HIDInfo &lgHIDInfo);
+
+    //Disconnect the USB HID Connection
+    void DisconnectHID(const quint8 &playerNum);
+
+    //Write Data to USB HID
+    void WriteDataHID(const quint8 &playerNum, const QByteArray &writeData);
+
+    //Slot to get setting for to Bypass Serial Port Write Checks or Not
+    void SetBypassSerialWriteChecks(const bool &bypassSPWC);
 
 signals:
 
@@ -61,6 +76,17 @@ private:
     //Error char Array
     LPWSTR                          messageBuffer = nullptr;
 
+    //Pointer Array of USB HIDs
+    hid_device                      *p_hidConnection[MAXGAMEPLAYERS];
+
+    //Bool List to Keep Track on What USB HID that are Open
+    bool                            hidOpen[MAXGAMEPLAYERS];
+
+    //HID Info Array of the HIDs being Used
+    HIDInfo                         hidInfoArray[MAXGAMEPLAYERS];
+
+    //Debug Setting to Bypass Serial Port Write Checks
+    bool                            bypassSerialWriteChecks;
 
 };
 

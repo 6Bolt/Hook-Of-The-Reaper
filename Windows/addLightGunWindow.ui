@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>675</width>
-    <height>517</height>
+    <width>701</width>
+    <height>731</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -24,7 +24,7 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>71</width>
+     <width>131</width>
      <height>41</height>
     </rect>
    </property>
@@ -37,7 +37,7 @@
     <enum>Qt::LayoutDirection::LeftToRight</enum>
    </property>
    <property name="text">
-    <string>Light Gun</string>
+    <string>Default Light Gun:</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
@@ -46,9 +46,9 @@
   <widget class="QComboBox" name="defaultLightGunComboBox">
    <property name="geometry">
     <rect>
-     <x>90</x>
+     <x>140</x>
      <y>20</y>
-     <width>231</width>
+     <width>191</width>
      <height>22</height>
     </rect>
    </property>
@@ -84,7 +84,7 @@
     <rect>
      <x>140</x>
      <y>80</y>
-     <width>171</width>
+     <width>191</width>
      <height>22</height>
     </rect>
    </property>
@@ -142,9 +142,9 @@
   <widget class="QComboBox" name="baudSpeedComboBox">
    <property name="geometry">
     <rect>
-     <x>100</x>
+     <x>140</x>
      <y>200</y>
-     <width>71</width>
+     <width>81</width>
      <height>22</height>
     </rect>
    </property>
@@ -196,7 +196,7 @@
   <widget class="QComboBox" name="comPortComboBox">
    <property name="geometry">
     <rect>
-     <x>90</x>
+     <x>140</x>
      <y>160</y>
      <width>81</width>
      <height>22</height>
@@ -229,9 +229,9 @@
   <widget class="QComboBox" name="dataBitsComboBox">
    <property name="geometry">
     <rect>
-     <x>80</x>
+     <x>140</x>
      <y>240</y>
-     <width>41</width>
+     <width>81</width>
      <height>22</height>
     </rect>
    </property>
@@ -244,9 +244,9 @@
   <widget class="QComboBox" name="parityComboBox">
    <property name="geometry">
     <rect>
-     <x>60</x>
+     <x>140</x>
      <y>280</y>
-     <width>61</width>
+     <width>81</width>
      <height>22</height>
     </rect>
    </property>
@@ -295,9 +295,9 @@
   <widget class="QComboBox" name="stopBitsComboBox">
    <property name="geometry">
     <rect>
-     <x>80</x>
+     <x>140</x>
      <y>320</y>
-     <width>51</width>
+     <width>81</width>
      <height>22</height>
     </rect>
    </property>
@@ -310,9 +310,9 @@
   <widget class="QComboBox" name="flowControlComboBox">
    <property name="geometry">
     <rect>
-     <x>110</x>
+     <x>140</x>
      <y>360</y>
-     <width>161</width>
+     <width>141</width>
      <height>22</height>
     </rect>
    </property>
@@ -325,8 +325,8 @@
   <widget class="QPushButton" name="cancelPushButton">
    <property name="geometry">
     <rect>
-     <x>590</x>
-     <y>490</y>
+     <x>620</x>
+     <y>700</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -341,8 +341,8 @@
   <widget class="QPushButton" name="okPushButton">
    <property name="geometry">
     <rect>
-     <x>510</x>
-     <y>490</y>
+     <x>540</x>
+     <y>700</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -357,8 +357,8 @@
   <widget class="QPushButton" name="addPushButton">
    <property name="geometry">
     <rect>
-     <x>430</x>
-     <y>490</y>
+     <x>460</x>
+     <y>700</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -373,8 +373,8 @@
   <widget class="QLabel" name="label_13">
    <property name="geometry">
     <rect>
-     <x>380</x>
-     <y>130</y>
+     <x>310</x>
+     <y>190</y>
      <width>71</width>
      <height>41</height>
     </rect>
@@ -391,8 +391,8 @@
   <widget class="QLabel" name="label_14">
    <property name="geometry">
     <rect>
-     <x>380</x>
-     <y>170</y>
+     <x>310</x>
+     <y>230</y>
      <width>91</width>
      <height>41</height>
     </rect>
@@ -409,8 +409,8 @@
   <widget class="QLabel" name="label_15">
    <property name="geometry">
     <rect>
-     <x>380</x>
-     <y>210</y>
+     <x>310</x>
+     <y>270</y>
      <width>101</width>
      <height>41</height>
     </rect>
@@ -427,8 +427,8 @@
   <widget class="QLabel" name="label_16">
    <property name="geometry">
     <rect>
-     <x>380</x>
-     <y>250</y>
+     <x>310</x>
+     <y>310</y>
      <width>111</width>
      <height>41</height>
     </rect>
@@ -445,8 +445,8 @@
   <widget class="QLabel" name="label_17">
    <property name="geometry">
     <rect>
-     <x>380</x>
-     <y>290</y>
+     <x>310</x>
+     <y>350</y>
      <width>81</width>
      <height>41</height>
     </rect>
@@ -457,14 +457,14 @@
     </font>
    </property>
    <property name="text">
-    <string>Vender ID:</string>
+    <string>Vendor ID:</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_18">
    <property name="geometry">
     <rect>
-     <x>380</x>
-     <y>330</y>
+     <x>310</x>
+     <y>390</y>
      <width>81</width>
      <height>41</height>
     </rect>
@@ -481,9 +481,9 @@
   <widget class="QLineEdit" name="locationLlineEdit">
    <property name="geometry">
     <rect>
-     <x>450</x>
-     <y>140</y>
-     <width>211</width>
+     <x>380</x>
+     <y>200</y>
+     <width>311</width>
      <height>22</height>
     </rect>
    </property>
@@ -499,9 +499,9 @@
   <widget class="QLineEdit" name="descriptionLineEdit">
    <property name="geometry">
     <rect>
-     <x>470</x>
-     <y>180</y>
-     <width>191</width>
+     <x>400</x>
+     <y>240</y>
+     <width>291</width>
      <height>22</height>
     </rect>
    </property>
@@ -517,9 +517,9 @@
   <widget class="QLineEdit" name="manufactureLineEdit">
    <property name="geometry">
     <rect>
-     <x>480</x>
-     <y>220</y>
-     <width>181</width>
+     <x>410</x>
+     <y>280</y>
+     <width>281</width>
      <height>22</height>
     </rect>
    </property>
@@ -535,9 +535,9 @@
   <widget class="QLineEdit" name="serialNumLineEdit">
    <property name="geometry">
     <rect>
-     <x>490</x>
-     <y>260</y>
-     <width>171</width>
+     <x>420</x>
+     <y>320</y>
+     <width>271</width>
      <height>22</height>
     </rect>
    </property>
@@ -553,9 +553,9 @@
   <widget class="QLineEdit" name="vendorIDLineEdit">
    <property name="geometry">
     <rect>
-     <x>460</x>
-     <y>300</y>
-     <width>201</width>
+     <x>390</x>
+     <y>360</y>
+     <width>301</width>
      <height>22</height>
     </rect>
    </property>
@@ -571,9 +571,9 @@
   <widget class="QLineEdit" name="productIDLineEdit">
    <property name="geometry">
     <rect>
-     <x>460</x>
-     <y>340</y>
-     <width>201</width>
+     <x>390</x>
+     <y>400</y>
+     <width>301</width>
      <height>22</height>
     </rect>
    </property>
@@ -589,9 +589,9 @@
   <widget class="QLabel" name="label_19">
    <property name="geometry">
     <rect>
-     <x>380</x>
-     <y>90</y>
-     <width>111</width>
+     <x>310</x>
+     <y>150</y>
+     <width>161</width>
      <height>41</height>
     </rect>
    </property>
@@ -601,7 +601,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Serial Port Info</string>
+    <string>Serial Port &amp; USB Info</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_10">
@@ -627,7 +627,7 @@
     <rect>
      <x>140</x>
      <y>400</y>
-     <width>51</width>
+     <width>81</width>
      <height>22</height>
     </rect>
    </property>
@@ -641,7 +641,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>430</y>
+     <y>470</y>
      <width>121</width>
      <height>41</height>
     </rect>
@@ -661,8 +661,8 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>130</x>
-     <y>440</y>
+     <x>140</x>
+     <y>480</y>
      <width>51</width>
      <height>24</height>
     </rect>
@@ -679,8 +679,8 @@
   <widget class="QLabel" name="label_12">
    <property name="geometry">
     <rect>
-     <x>190</x>
-     <y>430</y>
+     <x>200</x>
+     <y>470</y>
      <width>51</width>
      <height>41</height>
     </rect>
@@ -697,8 +697,8 @@
   <widget class="QLabel" name="label_20">
    <property name="geometry">
     <rect>
-     <x>210</x>
-     <y>390</y>
+     <x>10</x>
+     <y>430</y>
      <width>111</width>
      <height>41</height>
     </rect>
@@ -715,8 +715,8 @@
   <widget class="QComboBox" name="hubComComboBox">
    <property name="geometry">
     <rect>
-     <x>320</x>
-     <y>400</y>
+     <x>140</x>
+     <y>440</y>
      <width>81</width>
      <height>22</height>
     </rect>
@@ -725,6 +725,303 @@
     <font>
      <pointsize>10</pointsize>
     </font>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_21">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>510</y>
+     <width>131</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>USB Options</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_23">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>590</y>
+     <width>81</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Vendor ID:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="vendorIDUSBLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>600</y>
+     <width>41</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_24">
+   <property name="geometry">
+    <rect>
+     <x>190</x>
+     <y>590</y>
+     <width>101</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>In Hex Format</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_25">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>630</y>
+     <width>81</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Product ID:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="productIDUSBLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>640</y>
+     <width>41</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_26">
+   <property name="geometry">
+    <rect>
+     <x>190</x>
+     <y>630</y>
+     <width>101</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>In Hex Format</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_27">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>550</y>
+     <width>121</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>USB HID Device:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="usbDevicesComboBox">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>560</y>
+     <width>301</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_22">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>430</y>
+     <width>131</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Usage:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="usageLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>440</y>
+     <width>331</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_28">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>470</y>
+     <width>271</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Release Number (In BCD):</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="releaseNumLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>500</x>
+     <y>480</y>
+     <width>191</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_29">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>670</y>
+     <width>111</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Serial Number:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="serialUSBLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>680</y>
+     <width>111</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="allHIDDevicesCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>560</y>
+     <width>191</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Get All USB HID Devices</string>
    </property>
   </widget>
  </widget>

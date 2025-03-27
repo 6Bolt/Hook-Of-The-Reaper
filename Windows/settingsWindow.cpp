@@ -63,6 +63,15 @@ settingsWindow::settingsWindow(ComDeviceList *cdList, QWidget *parent)
         ui->ignoreUDLGGFCheckBox->setCheckState (Qt::Unchecked);
 
 
+    bypassSerialWriteChecks = p_comDeviceList->GetSerialPortWriteCheckBypass ();
+
+    //If Set. then Check the Box
+    if(bypassSerialWriteChecks)
+        ui->bypassSerialWriteCheckBox->setCheckState (Qt::Checked);
+    else
+        ui->bypassSerialWriteCheckBox->setCheckState (Qt::Unchecked);
+
+    finishedInit = true;
 
 }
 
@@ -106,6 +115,7 @@ void settingsWindow::CheckAndSaveSetting()
     multiThreading = ui->useMultiThreadCheckBox->checkState ();
     closeComPort = ui->closeComCheckBox->checkState ();
     ignoreUDLGGF = ui->ignoreUDLGGFCheckBox->checkState ();
+    bypassSWC = ui->bypassSerialWriteCheckBox->checkState ();
 
     if(defaultLG == Qt::Checked)
         useDefaultLGFirst = true;
@@ -131,11 +141,16 @@ void settingsWindow::CheckAndSaveSetting()
     else
         ignoreUselessDLGGF = false;
 
+    if(bypassSWC == Qt::Checked)
+        bypassSerialWriteChecks = true;
+    else
+        bypassSerialWriteChecks = false;
 
     p_comDeviceList->SetUseDefaultLGFirst(useDefaultLGFirst);
     p_comDeviceList->SetUseMultiThreading (useMultiThreading);
     p_comDeviceList->SetCloseComPortGameExit (closeComPortGameExit);
     p_comDeviceList->SetIgnoreUselessDFLGGF (ignoreUselessDLGGF);
+    p_comDeviceList->SetSerialPortWriteCheckBypass (bypassSerialWriteChecks);
 
 
     if(isNumber)
@@ -145,5 +160,21 @@ void settingsWindow::CheckAndSaveSetting()
     }
 
     p_comDeviceList->SaveSettings();
+}
+
+
+void settingsWindow::on_bypassSerialWriteCheckBox_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if(arg1 == Qt::Checked && finishedInit)
+    {
+        //If Box is Checked, then Display the Warning About turning it on. Only if clicked 'Yes' then box remains checked. Default button is No
+        QString qes = "This option is only for debug, and should not be used for normal use. It can be used to find hardware fails, for example if the USB port or wires are bad and corrupting the data.";
+        qes.append (" It is higly recommanded not to enable this setting in normal use. It is like turning off your check engine light. The program will just throw the data on to the serial port interface, and hopes it gets there");
+        qes.append (" Only press 'Yes' if you know what you are doing, as this can mask hardware failure that could potenially harm your USB, motherboard, light gun, and your whole computer. Press 'No' not to enable bypass of checks.");
+        int ret = QMessageBox::question (this, "Bypass Serial Port Write Checks", qes, QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+        if(ret != QMessageBox::Yes)
+            ui->bypassSerialWriteCheckBox->setCheckState (Qt::Unchecked);
+    }
 }
 

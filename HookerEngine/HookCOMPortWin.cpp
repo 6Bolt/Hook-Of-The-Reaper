@@ -12,7 +12,18 @@ HookCOMPortWin::HookCOMPortWin(QObject *parent)
         comPortArray[i] = nullptr;
     }
 
+    //Init the USB HID
+    if (hid_init())
+    {
+        QString critMessage = "The USB HID Init failed. Something is really wrong, or got fucked up";
+        emit ErrorMessage("USB HID Init Failed",critMessage);
+    }
 
+    for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
+    {
+        //p_hidConnection[i] = nullptr;
+        hidOpen[i] = false;
+    }
 }
 
 
@@ -25,6 +36,20 @@ HookCOMPortWin::~HookCOMPortWin()
         if(comPortOpen[i])
            this->Disconnect(i);
     }
+
+    //Close All Open USB HID Connections
+    for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
+    {
+        if(hidOpen[i])
+        {
+            hid_close(p_hidConnection[i]);
+            hidOpen[i] = false;
+        }
+    }
+
+    //Exit the USB HID
+    hid_exit ();
+
 }
 
 
@@ -54,6 +79,8 @@ HookCOMPortWin::~HookCOMPortWin()
         else
             comPortArray[comPortNum] = CreateFile(portNameLPC, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
+
+        //If Serial COM Port Connection Failed
         if (comPortArray[comPortNum] == INVALID_HANDLE_VALUE)
         {
             COMSTAT status;
@@ -81,6 +108,7 @@ HookCOMPortWin::~HookCOMPortWin()
         DCB dcbSerialParam = {0};
         dcbSerialParam.DCBlength = sizeof(dcbSerialParam);
 
+        //Get Serial Port Params, and fail handling
         if (!GetCommState(comPortArray[comPortNum], &dcbSerialParam))
         {
             COMSTAT status;
@@ -97,19 +125,43 @@ HookCOMPortWin::~HookCOMPortWin()
             return;
         }
 
+        //Setting Params Based on Old Qt Values
+
+        //Baud Rates
+        //115200, 57600, 38400, 19200, 9600, 4800, 2400, 1200
+
         if(comPortBaud == 115200)
             dcbSerialParam.BaudRate = CBR_115200;
         else if(comPortBaud == 9600)
             dcbSerialParam.BaudRate = CBR_9600;
+        else if(comPortBaud == 57600)
+            dcbSerialParam.BaudRate = CBR_57600;
+        else if(comPortBaud == 38400)
+            dcbSerialParam.BaudRate = CBR_38400;
+        else if(comPortBaud == 19200)
+            dcbSerialParam.BaudRate = CBR_19200;
+        else if(comPortBaud == 4800)
+            dcbSerialParam.BaudRate = CBR_4800;
+        else if(comPortBaud == 2400)
+            dcbSerialParam.BaudRate = CBR_2400;
+        else if(comPortBaud == 1200)
+            dcbSerialParam.BaudRate = CBR_1200;
+        else
+            dcbSerialParam.BaudRate = CBR_115200;  //Default to 115200 as it is most common
 
-        dcbSerialParam.ByteSize = comPortData;
+        if(comPortData >= DATABITS_MIN && comPortData <= DATABITS_MAX)
+            dcbSerialParam.ByteSize = comPortData;
+        else
+            dcbSerialParam.ByteSize = DATABITS_MAX; //Default to 8, as it is most common
 
         if(comPortStop == 1)
             dcbSerialParam.StopBits = ONESTOPBIT;
         else if(comPortStop == 2)
             dcbSerialParam.StopBits = TWOSTOPBITS;
-        else
+        else if(comPortStop == 3)
             dcbSerialParam.StopBits = ONE5STOPBITS;
+        else
+            dcbSerialParam.StopBits = ONESTOPBIT;  //Default to 1, as it is most common
 
         if(comPortParity == 0)
             dcbSerialParam.Parity = NOPARITY;
@@ -117,33 +169,39 @@ HookCOMPortWin::~HookCOMPortWin()
             dcbSerialParam.Parity = EVENPARITY;
         else if(comPortParity == 3)
             dcbSerialParam.Parity = ODDPARITY;
+        else if(comPortParity == 4)
+            dcbSerialParam.Parity = SPACEPARITY;
+        else if(comPortParity == 5)
+            dcbSerialParam.Parity = MARKPARITY;
+        else
+            dcbSerialParam.Parity = NOPARITY;  //Default to No Parity, as it is most common
 
-
+        /*
         // setup flowcontrol
-        if (comPortFlow == 0)  //None
+        if (comPortFlow == 0)  //None - based on Qt Numbering
         {
             dcbSerialParam.fOutxCtsFlow = false;
             dcbSerialParam.fRtsControl = RTS_CONTROL_DISABLE;
             dcbSerialParam.fOutX = false;
             dcbSerialParam.fInX = false;
         }
-        else if (comPortFlow == 2)  //Software
+        else if (comPortFlow == 2)  //Software - based on Qt Numbering
         {
             dcbSerialParam.fOutxCtsFlow = false;
             dcbSerialParam.fRtsControl = RTS_CONTROL_DISABLE;
             dcbSerialParam.fOutX = true;
             dcbSerialParam.fInX = true;
         }
-        else if (comPortFlow == 1)  //Hardware
+        else if (comPortFlow == 1)  //Hardware - based on Qt Numbering
         {
             dcbSerialParam.fOutxCtsFlow = true;
             dcbSerialParam.fRtsControl = RTS_CONTROL_HANDSHAKE;
             dcbSerialParam.fOutX = false;
             dcbSerialParam.fInX = false;
         }
+        */
 
-
-
+        //Set the Params to the Serial Port, and fail handling
         if (!SetCommState(comPortArray[comPortNum], &dcbSerialParam))
         {
             COMSTAT status;
@@ -161,14 +219,31 @@ HookCOMPortWin::~HookCOMPortWin()
         }
 
 
-        //Set the Times Out for the COM Port
+        //Set the Times Out for the Serial COM Port
 
         COMMTIMEOUTS timeout = {0};
-        timeout.ReadIntervalTimeout = 60;
-        timeout.ReadTotalTimeoutConstant = 60;
-        timeout.ReadTotalTimeoutMultiplier = 15;
-        timeout.WriteTotalTimeoutConstant = 60;
-        timeout.WriteTotalTimeoutMultiplier = 8;
+        //Safe
+        //timeout.ReadIntervalTimeout = 60;
+        //timeout.ReadTotalTimeoutConstant = 60;
+        //timeout.ReadTotalTimeoutMultiplier = 15;
+        //timeout.WriteTotalTimeoutConstant = 60;
+        //timeout.WriteTotalTimeoutMultiplier = 8;
+
+        //Works Good So Far
+        //timeout.ReadIntervalTimeout = 15;
+        //timeout.ReadTotalTimeoutConstant = 15;
+        //timeout.ReadTotalTimeoutMultiplier = 5;
+        //timeout.WriteTotalTimeoutConstant = 15;
+        //timeout.WriteTotalTimeoutMultiplier = 2;
+
+        //Max Out
+        timeout.ReadIntervalTimeout = MAXDWORD;
+        timeout.ReadTotalTimeoutConstant = 0;
+        timeout.ReadTotalTimeoutMultiplier = 0;
+        timeout.WriteTotalTimeoutConstant = 0;
+        timeout.WriteTotalTimeoutMultiplier = 0;
+
+        //Set the Timeouts to the Serial Port, and fail handling
         if (!SetCommTimeouts(comPortArray[comPortNum], &timeout))
         {
             COMSTAT status;
@@ -186,7 +261,7 @@ HookCOMPortWin::~HookCOMPortWin()
         }
 
 
-        //Done, COM Port is Set-Up
+        //Done, COM Port is Set-Up, Set Connection bools
 
         comPortOpen[comPortNum] = true;
         numPortOpen++;
@@ -227,46 +302,52 @@ void HookCOMPortWin::WriteData(const quint8 &comPortNum, const QByteArray &write
         charArray[size] = '\0';
 
         DWORD dwWrite = 0;
-        if (!WriteFile(comPortArray[comPortNum], charArray, size, &dwWrite, NULL))
+
+        if(bypassSerialWriteChecks)
+            WriteFile(comPortArray[comPortNum], charArray, size, &dwWrite, NULL);
+        else
         {
-            COMSTAT status;
-            DWORD errors;
 
-            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                          GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                          (LPWSTR)&messageBuffer, 1020, NULL);
+            if (!WriteFile(comPortArray[comPortNum], charArray, size, &dwWrite, NULL))
+            {
+                COMSTAT status;
+                DWORD errors;
 
-            ClearCommError(comPortArray[comPortNum], &errors, &status);
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                              (LPWSTR)&messageBuffer, 1020, NULL);
 
-            QString critMessage = "Serial COM Port write failed on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
-            emit ErrorMessage("Serial COM Port Error",critMessage);
-            return;
-        }
+                ClearCommError(comPortArray[comPortNum], &errors, &status);
 
-        if(size != dwWrite)
-        {
-            COMSTAT status;
-            DWORD errors;
+                QString critMessage = "Serial COM Port write failed on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
+                emit ErrorMessage("Serial COM Port Error",critMessage);
+                return;
+            }
 
-            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                          GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                          (LPWSTR)&messageBuffer, 1020, NULL);
+            if(size != dwWrite)
+            {
+                COMSTAT status;
+                DWORD errors;
 
-            ClearCommError(comPortArray[comPortNum], &errors, &status);
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                              (LPWSTR)&messageBuffer, 1020, NULL);
 
-            QString critMessage = "Serial COM Port write still has data to write on Port: "+QString::number(comPortNum)+". Size is "+QString::number(size)+" Bytes Written is "+QString::number(dwWrite)+". Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
-            emit ErrorMessage("Serial COM Port Error",critMessage);
+                ClearCommError(comPortArray[comPortNum], &errors, &status);
+
+                QString critMessage = "Serial COM Port write still has data to write on Port: "+QString::number(comPortNum)+". Size is "+QString::number(size)+" Bytes Written is "+QString::number(dwWrite)+". Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
+                emit ErrorMessage("Serial COM Port Error",critMessage);
+            }
         }
 
         delete [] charArray;
-
     }
-
 }
 
 
 void HookCOMPortWin::DisconnectAll()
 {
+    //Close Down Serial Port Connections
     if(isPortOpen)
     {
         //Close All Connections
@@ -274,9 +355,99 @@ void HookCOMPortWin::DisconnectAll()
         {
             if(comPortOpen[i])
             {
-                this->Disconnect(i);
+                CloseHandle(comPortArray[i]);
+                comPortOpen[i] = false;
+                //this->Disconnect(i);
             }
         }
         isPortOpen = false;
+        numPortOpen = 0;
     }
+
+    //Close All Open USB HID Connections
+    for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
+    {
+        if(hidOpen[i])
+        {
+            hid_close(p_hidConnection[i]);
+            hidOpen[i] = false;
+        }
+    }
+}
+
+
+void HookCOMPortWin::ConnectHID(const quint8 &playerNum, const HIDInfo &lgHIDInfo)
+{
+    //Check if Connection is Already Made for USB HID
+    if(!hidOpen[playerNum])
+    {
+        hidInfoArray[playerNum] = lgHIDInfo;
+        unsigned short vendorID = lgHIDInfo.vendorID;
+        unsigned short productID = lgHIDInfo.productID;
+
+        //If Serial Number, then use It. If Not, then just use NULL
+        if(!lgHIDInfo.serialNumber.isEmpty ())
+        {
+            std::wstring wstr = lgHIDInfo.serialNumber.toStdWString();
+            const wchar_t* serialNumPtr = wstr.c_str();
+            p_hidConnection[playerNum] = hid_open(vendorID, productID, serialNumPtr);
+        }
+        else
+            p_hidConnection[playerNum] = hid_open(vendorID, productID, NULL);
+
+        if(!p_hidConnection[playerNum])
+        {
+            //Failed to Open USB HID
+            const wchar_t* errorWChar = hid_error(p_hidConnection[playerNum]);
+            QString errorMSG = QString::fromWCharArray(errorWChar);
+            QString critMessage = "The USB HID failed to connect for player: "+QString::number(playerNum+1)+"\nError Message: "+errorMSG;
+            emit ErrorMessage("USB HID Failed to Open",critMessage);
+        }
+        else
+        {
+            //Connection Made, Ready to Go
+            hidOpen[playerNum] = true;
+        }
+    }
+}
+
+
+void HookCOMPortWin::DisconnectHID(const quint8 &playerNum)
+{
+    //Check if it is Open
+    if(hidOpen[playerNum])
+    {
+        hid_close(p_hidConnection[playerNum]);
+        hidOpen[playerNum] = false;
+    }
+}
+
+
+void HookCOMPortWin::WriteDataHID(const quint8 &playerNum, const QByteArray &writeData)
+{
+    //Check if it is Open
+    if(hidOpen[playerNum])
+    {
+        //qDebug() << "USB HID Write - playerNum: " << QString::number(playerNum) << " writeData: " << writeData.toHex ();
+
+        const unsigned char *constDataPtr = reinterpret_cast<const unsigned char*>(writeData.constData());
+        std::size_t size = writeData.size();
+        qint16 bytesWritten = hid_write(p_hidConnection[playerNum], constDataPtr, size);
+
+        if(bytesWritten == -1)
+        {
+            //Write Failed
+            const wchar_t* errorWChar = hid_error(p_hidConnection[playerNum]);
+            QString errorMSG = QString::fromWCharArray(errorWChar);
+            QString critMessage = "The USB HID failed to write data.\nError Message: "+errorMSG;
+            emit ErrorMessage("USB HID Write Failed",critMessage);
+        }
+
+    }
+}
+
+
+void HookCOMPortWin::SetBypassSerialWriteChecks(const bool &bypassSPWC)
+{
+    bypassSerialWriteChecks = bypassSPWC;
 }

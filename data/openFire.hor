@@ -1,4 +1,4 @@
-Open_COM=S6
+Open_COM=S6 MDx2
 Close_COM=E
 Damage=F1x2x1 F2x2x1
 Recoil=F0x2x1
@@ -6,6 +6,7 @@ Recoil_R2S=100 F0x2x1
 Reload=F1x2x1 F3x2x1
 Ammo=F0x2x1
 Ammo_Value=F0x2x1
+Display_Ammo=FDAx%s%
 Shake=F1x2x1
 Auto_LED=
 AspectRatio_16:9=M3x0

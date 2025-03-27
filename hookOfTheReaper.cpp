@@ -17,10 +17,10 @@ quint8  PARITYDATA_ARRAY[PARITY_NUMBER] = {0, 2, 3, 4, 5};
 QString STOPBITSNAME_ARRAY[STOPBITS_NUMBER] = {"1", "2", "1.5"};
 quint8  STOPBITSDATA_ARRAY[STOPBITS_NUMBER] = {1, 2, 3};
 
-QString FLOWNAME_ARRAY[FLOW_NUMBER] = {"No Flow Control", "RTS/CTS - Hardware", "Xon/Xoff - Software"};
+QString FLOWNAME_ARRAY[FLOW_NUMBER] = {"No Flow Control", "RTS/CTS Hardware", "Xon/Xoff Software"};
 quint8  FLOWDATA_ARRAY[FLOW_NUMBER] = {0, 1, 2};
 
-QString DEFAULTLGFILENAMES_ARRAY[NUM_DEFAULTLG] = {"nonDefaultLG.hor","rs3Reaper.hor","mx24.hor","jbgun4ir.hor","fusion.hor","blamcon.hor","openFire.hor"};
+QString DEFAULTLGFILENAMES_ARRAY[NUM_DEFAULTLG] = {"nonDefaultLG.hor","rs3Reaper.hor","mx24.hor","jbgun4ir.hor","fusion.hor","blamcon.hor","openFire.hor","alienUSB.hor"};
 
 //Constructor
 HookOfTheReaper::HookOfTheReaper(QWidget *parent)
@@ -95,6 +95,18 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
     DEFAULTLG_ARRAY[OPENFIRE].RELOADVALUE = OPENFIRERELOAD;
     DEFAULTLG_ARRAY[OPENFIRE].MAXAMMON = OPENFIREMAXAMMONUM;
     DEFAULTLG_ARRAY[OPENFIRE].RELOADVALUEN = OPENFIRERELOADNUM;
+
+    //Set Up Alien USB Default Light Gun Settings
+    DEFAULTLG_ARRAY[ALIENUSB].BAUD = ALIENUSBBAUD;
+    DEFAULTLG_ARRAY[ALIENUSB].DATA = ALIENUSBDATA;
+    DEFAULTLG_ARRAY[ALIENUSB].PARITY = ALIENUSBPARITY;
+    DEFAULTLG_ARRAY[ALIENUSB].STOP = ALIENUSBSTOP;
+    DEFAULTLG_ARRAY[ALIENUSB].FLOW = ALIENUSBFLOW;
+    DEFAULTLG_ARRAY[ALIENUSB].MAXAMMO = ALIENUSBMAXAMMO;
+    DEFAULTLG_ARRAY[ALIENUSB].RELOADVALUE = ALIENUSBRELOAD;
+    DEFAULTLG_ARRAY[ALIENUSB].MAXAMMON = ALIENUSBMAXAMMONUM;
+    DEFAULTLG_ARRAY[ALIENUSB].RELOADVALUEN = ALIENUSBRELOADNUM;
+
 
 
     //TCP Socket is Not Connected Yet
@@ -286,6 +298,7 @@ void HookOfTheReaper::UpdateTCPConnectionStatus(bool tcpConStatus)
 
     DisplayText();
 }
+
 
 //Private Slots
 
@@ -589,7 +602,7 @@ void HookOfTheReaper::on_actionTest_COM_Port_triggered()
         if (!p_tcpW)
         {
             //Close All COM Port Connections to Light Guns, so that the can be Tested
-            p_hookEngine->CloseAllComPortConnections();
+            p_hookEngine->CloseAllLightGunConnections();
 
             if(engineRunning)
             {

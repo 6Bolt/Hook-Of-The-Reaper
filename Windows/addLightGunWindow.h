@@ -14,6 +14,8 @@
 
 #include "../COMDeviceList/ComDeviceList.h"
 
+#include <Windows.h>
+#include "hidapi_winapi.h"
 
 namespace Ui {
 class addLightGunWindow;
@@ -45,6 +47,10 @@ private slots:
     void on_cancelPushButton_clicked();
 
     void on_hubComComboBox_currentIndexChanged(int index);
+
+    void on_usbDevicesComboBox_currentIndexChanged(int index);
+
+    void on_allHIDDevicesCheckBox_checkStateChanged(const Qt::CheckState &arg1);
 
 private:
 
@@ -78,6 +84,13 @@ private:
     //Enable or Disable Combo Boxes if a Default Light Gun is Selected
     void SetEnableComboBoxes(bool enableCB);
 
+    //Fills In the USB Devices Combo Box
+    void FillUSBDevicesComboBox();
+
+    void ProcessHIDInfo();
+
+    //void PrintHIDInfo();
+
     ///////////////////////////////////////////////////////////////////////////
 
     //For Window
@@ -107,6 +120,14 @@ private:
 
     //Dip Switch PLayers
     bool                    usedDipPlayers[DIPSWITCH_NUMBER];
+
+    //USB HID Info
+    hid_device_info         *devs;
+    quint16                 numberHIDDevices;
+    QList<HIDInfo>          hidInfoList;
+    bool                    getAllHIDs;
+    bool                    isHIDInit;
+
 
 };
 

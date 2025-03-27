@@ -11,6 +11,8 @@
 #include <QTextStream>
 //#include <QDebug>
 
+#include "../Global.h"
+
 class LightGun
 {
 public:
@@ -18,14 +20,16 @@ public:
 
     //RS3 Reaper
     LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber);
-    //Normal Light Gun
+    //Normal Light Gun & Fusion & Blamcon
     LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow);
     //Copy Light Gun
     LightGun(LightGun const &lgMember);
     //MX24
     LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber);
-    //JB Gun4IR
+    //JB Gun4IR & OpenFire
     LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength);
+    //For Alien USB Light Gun
+    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct);
 
     //Set Functions that Sets the Stated Variable
     void SetDefaultLightGun(bool lgDefault);
@@ -45,6 +49,7 @@ public:
     void SetDipSwitchPlayerNumber(quint8 dsNumber);
     void SetAnalogStrength(quint8 analStrength);
     void SetHubComPortNumber(quint8 hcpNumber);
+    void SetHIDInfo(HIDInfo hidInfoStruct);
 
     //Get Functions that Gets the Stated Variable
     bool GetDefaultLightGun();
@@ -55,6 +60,7 @@ public:
     quint8 GetComPortNumberBypass();
     QString GetComPortString();
     QSerialPortInfo GetComPortInfo();
+    SerialPortInfo GetSerialProtInfo();
     qint32 GetComPortBaud();
     quint8 GetComPortDataBits();
     quint8 GetComPortParity();
@@ -69,6 +75,8 @@ public:
     quint8 GetAnalogStrength();
     bool GetIsAnalogStrengthSet();
     quint8 GetHubComPortNumber();
+    HIDInfo GetUSBHIDInfo();
+    bool IsLightGunUSB();
 
 
     //If a Default Light Gun, is Needed Varibles Set
@@ -95,19 +103,28 @@ public:
     QStringList ReloadCommands(bool *isSet);
     QStringList AmmoCommands(bool *isSet);
     QStringList AmmoValueCommands(bool *isSet, quint16 ammoValue);
+    QStringList DisplayAmmoCommands(bool *isSet, quint16 ammoValue);
     QStringList ShakeCommands(bool *isSet);
     QStringList AutoLEDCommands(bool *isSet);
     QStringList AspectRatio16b9Commands(bool *isSet);
     QStringList AspectRatio4b3Commands(bool *isSet);
     QStringList JoystickModeCommands(bool *isSet);
     QStringList MouseAndKeyboardModeCommands(bool *isSet);
-
+    //Rumble Recoil to Solenoid Recoil Command
     QStringList RecoilR2SCommands(bool *isSet);
 
+    //Resets Light Gun Back to Starting Start when Game Ends
     void ResetLightGun();
+
+    //Check USB Light Guns against Vendor ID & Product ID, and if available Serial Number
+    //To make sure the Same USB is not used twice
+    bool CheckUSBVIDAndPID(quint16 checkVID, quint16 checkPID);
+    bool CheckUSBParams(quint16 checkVID, quint16 checkPID, QString checkSN);
 
 private:
 
+    //Fills in Serial Port Info Struct with Qt Values
+    void FillSerialPortInfo();
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -142,8 +159,11 @@ private:
     quint8              comPortParity;
     quint8              comPortStopBits;
     quint8              comPortFlow;
+    SerialPortInfo      serialPortInfo;
 
-
+    //USB Info
+    bool                isUSBLightGun;
+    HIDInfo             usbHIDInfo;
 
     QString             currentPath;
     QString             dataPath;
@@ -158,6 +178,7 @@ private:
     QStringList         reloadCmds;
     QStringList         ammoCmds;
     QStringList         ammoValueCmds;
+    QStringList         displayAmmoCmds;
     QStringList         shakeCmds;
     QStringList         autoLedCmds;
     QStringList         aspect16x9Cmds;
@@ -173,6 +194,7 @@ private:
     bool                reloadCmdsSet;
     bool                ammoCmdsSet;
     bool                ammoValueCmdsSet;
+    bool                displayAmmoCmdsSet;
     bool                shakeCmdsSet;
     bool                autoLedCmdsSet;
     bool                aspect16x9CmdsSet;

@@ -39,11 +39,15 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     hubComPortNumber = UNASSIGN;
 
+    isUSBLightGun = false;
+
+    FillSerialPortInfo();
+
     LoadDefaultLGCommands();
 
 }
 
-//For Normal Light Gun
+//For Normal Serial Port Light Gun
 LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow)
 {
     defaultLightGun = lgDefault;
@@ -92,6 +96,10 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isAnalogStrengthSet = false;
 
     lastAmmoValue =0;
+
+    isUSBLightGun = false;
+
+    FillSerialPortInfo();
 
     LoadDefaultLGCommands();
 }
@@ -170,6 +178,10 @@ LightGun::LightGun(LightGun const &lgMember)
 
     lastAmmoValue =0;
 
+    isUSBLightGun = lgMember.isUSBLightGun;
+
+    serialPortInfo = lgMember.serialPortInfo;
+
     LoadDefaultLGCommands();
 
 }
@@ -225,6 +237,10 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isAnalogStrengthSet = false;
 
     lastAmmoValue =0;
+
+    isUSBLightGun = false;
+
+    FillSerialPortInfo();
 
     LoadDefaultLGCommands();
 }
@@ -282,8 +298,45 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     lastAmmoValue =0;
 
+    isUSBLightGun = false;
+
+    FillSerialPortInfo();
+
     LoadDefaultLGCommands();
 }
+
+//Alien USB Light Gun
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct)
+{
+    defaultLightGun = lgDefault;
+    defaultLightGunNum = dlgNum;
+    lightGunName = lgName;
+    lightGunNum = lgNumber;
+
+    usbHIDInfo = hidInfoStruct;
+
+    comPortNum = UNASSIGN;
+    comPortBaud = UNASSIGN;
+    comPortDataBits = UNASSIGN;
+    comPortParity = UNASSIGN;
+    comPortStopBits = UNASSIGN;
+    comPortFlow = UNASSIGN;
+
+    isDipSwitchPlayerNumberSet = false;
+    hubComPortNumber = UNASSIGN;
+    maxAmmoSet = false;
+    reloadValueSet = false;
+    isAnalogStrengthSet = false;
+
+    lastAmmoValue =0;
+
+    isUSBLightGun = true;
+
+    LoadDefaultLGCommands();
+}
+
+
+
 
 //public member functions
 
@@ -379,6 +432,11 @@ void LightGun::SetHubComPortNumber(quint8 hcpNumber)
     hubComPortNumber = hcpNumber;
 }
 
+void LightGun::SetHIDInfo(HIDInfo hidInfoStruct)
+{
+    usbHIDInfo = hidInfoStruct;
+}
+
 //Get Member Functions
 
 bool LightGun::GetDefaultLightGun()
@@ -422,6 +480,11 @@ QString LightGun::GetComPortString()
 QSerialPortInfo LightGun::GetComPortInfo()
 {
     return comPortInfo;
+}
+
+SerialPortInfo LightGun::GetSerialProtInfo()
+{
+    return serialPortInfo;
 }
 
 qint32 LightGun::GetComPortBaud()
@@ -528,6 +591,16 @@ quint8 LightGun::GetHubComPortNumber()
     return hubComPortNumber;
 }
 
+HIDInfo LightGun::GetUSBHIDInfo()
+{
+    return usbHIDInfo;
+}
+
+bool LightGun::IsLightGunUSB()
+{
+    return isUSBLightGun;
+}
+
 void LightGun::CopyLightGun(LightGun const &lgMember)
 {
     *this = lgMember;
@@ -550,6 +623,7 @@ void LightGun::LoadDefaultLGCommands()
     reloadCmdsSet = false;
     ammoCmdsSet = false;
     ammoValueCmdsSet = false;
+    displayAmmoCmdsSet = false;
     shakeCmdsSet = false;
     autoLedCmdsSet = false;
     aspect16x9CmdsSet = false;
@@ -565,6 +639,7 @@ void LightGun::LoadDefaultLGCommands()
     reloadCmds.clear();
     ammoCmds.clear();
     ammoValueCmds.clear();
+    displayAmmoCmds.clear();
     shakeCmds.clear();
     autoLedCmds.clear();
     aspect16x9Cmds.clear();
@@ -711,6 +786,15 @@ void LightGun::LoadDefaultLGCommands()
                     }
                     ammoValueCmdsSet = true;
                 }
+                else if(splitLines[0] == DISPLAYAMMOONLY)
+                {
+                    for(i = 0; i < numberCommands; i++)
+                    {
+                        commands[i] = commands[i].trimmed ();
+                        displayAmmoCmds << commands[i];
+                    }
+                    displayAmmoCmdsSet = true;
+                }
                 else if(splitLines[0] == SHAKECMDONLY)
                 {
                     for(i = 0; i < numberCommands; i++)
@@ -789,6 +873,7 @@ void LightGun::LoadDefaultLGCommands()
     qDebug() << aspect4x3CmdsSet;
     qDebug() << joystickCmdsSet;
     qDebug() << keyMouseCmdsSet;
+    qDebug() << displayAmmoCmdsSet;
 
     qDebug() << openComPortCmds;
     qDebug() << closeComPortCmds;
@@ -804,6 +889,7 @@ void LightGun::LoadDefaultLGCommands()
     qDebug() << aspect4x3Cmds;
     qDebug() << joystickCmds;
     qDebug() << keyMouseCmds;
+    qDebug() << displayAmmoCmds;
 
 */
 }
@@ -954,7 +1040,6 @@ QStringList LightGun::AmmoCommands(bool *isSet)
 
 QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
 {
-
     QString tempAVS;
     QString cmdString;
     QStringList tempSL;
@@ -965,38 +1050,52 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
 
     if(ammoValueCmdsSet)
     {
-
-        if(maxAmmoSet && reloadValueSet)
+        if(!isUSBLightGun)
         {
-            quint16 tempAV;
+            if(maxAmmoSet && reloadValueSet)
+            {
+                quint16 tempAV;
 
-            if(ammoValue > maxAmmo) //If ammoValue is higher than maxAmmo, then = to maxValue
-                tempAV = maxAmmo;
-            else if(lastAmmoValue == 0 && ammoValue > 0) //If Last Value is 0, and ammoValue is Higher, then reload happen
-                tempAV = reloadValue;
-            else if(lastAmmoValue == 1 && ammoValue == 0) // If Last Ammo is 1 and ammoValue is 0, for Z0, to hold slide back
-                tempAV = ammoValue;
-            else if((lastAmmoValue == 0 && ammoValue == 0) || (lastAmmoValue > 1 && ammoValue == 0))
-            {   //This is to make sure slide doesn't get held back multiple time or at start/end of game
-                //Do noting
-                *isSet = false;
-                return tempSL;
+                if(ammoValue > maxAmmo) //If ammoValue is higher than maxAmmo, then = to maxValue
+                    tempAV = maxAmmo;
+                else if(lastAmmoValue == 0 && ammoValue > 0) //If Last Value is 0, and ammoValue is Higher, then reload happen
+                    tempAV = reloadValue;
+                else if(lastAmmoValue == 1 && ammoValue == 0) // If Last Ammo is 1 and ammoValue is 0, for Z0, to hold slide back
+                    tempAV = ammoValue;
+                else if((lastAmmoValue == 0 && ammoValue == 0) || (lastAmmoValue > 1 && ammoValue == 0))
+                {   //This is to make sure slide doesn't get held back multiple times at start/end of game
+                    //Do noting
+                    *isSet = false;
+                    return tempSL;
+                }
+                else
+                    tempAV = ammoValue;
+
+                tempAVS = QString::number (tempAV);
+                lastAmmoValue = ammoValue;
             }
             else
-                tempAV = ammoValue;
+            {   //If not a Reaper, and Ammo is 0, Don't Do Anything
+                if(ammoValue == 0)
+                {
+                    *isSet = false;
+                    return tempSL;
+                }
 
-            tempAVS = QString::number (tempAV);
-            lastAmmoValue = ammoValue;
+                tempAVS = QString::number (ammoValue);
+                lastAmmoValue = ammoValue;
+            }
         }
         else
-        {   //If not a Reaper, and Ammo is 0, Don't Do Anything
+        {
+            //If Ammo Value is 0, do nothing
             if(ammoValue == 0)
             {
                 *isSet = false;
                 return tempSL;
             }
 
-            tempAVS = QString::number (ammoValue);
+            tempAVS = QString::number(ammoValue, 10);
             lastAmmoValue = ammoValue;
         }
 
@@ -1013,6 +1112,62 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
     //Return the Commands
     return tempSL;
 }
+
+//QString tempAVS = QString::number(ammoValue, 16).rightJustified(2, '0');
+
+
+QStringList LightGun::DisplayAmmoCommands(bool *isSet, quint16 ammoValue)
+{
+    QString tempAVS, ammoValueD1, ammoValueD0;
+    QString cmdString;
+    QStringList tempSL;
+    quint8 cmdCount = displayAmmoCmds.length ();
+
+
+    //If Command Set Loaded
+    *isSet = displayAmmoCmdsSet;
+
+    if(displayAmmoCmdsSet)
+    {
+        if(isUSBLightGun)
+        {
+            //For Alien USB Light Gun Ammo Counter which is 2 Digits, so 0-99
+            //Convert the ammoValue to 2 Hex character IE 170 = AA and 7 = 07
+            tempAVS = QString::number(ammoValue, 10).rightJustified(2, '0');
+
+            ammoValueD1 = '0'+tempAVS[0];
+            ammoValueD0 = '0'+tempAVS[1];
+
+            //qDebug() << "ammoValueD1: " << ammoValueD1 << " ammoValueD0: " << ammoValueD0 << " tempAVS: " << tempAVS;
+
+            //Replace the %d1% & %d0% with the ammoValueD[1:0]. Also for USB HID %dX% is 2 Hex Values which is 1 Byte
+            for(quint8 i = 0; i < cmdCount; i++)
+            {
+                cmdString = displayAmmoCmds[i];
+                cmdString.replace (DIGIT1,ammoValueD1);
+                cmdString.replace (DIGIT0,ammoValueD0);
+                tempSL << cmdString;
+                //qDebug() << "cmdString: " << cmdString;
+            }
+        }
+        else
+        {
+            //Replace the %s% with the ammo value (ammoValue)
+            for(quint8 i = 0; i < cmdCount; i++)
+            {
+                cmdString = displayAmmoCmds[i];
+                cmdString.replace (SIGNALDATAVARIBLE,QString::number(ammoValue));
+                tempSL << cmdString;
+            }
+        }
+    }
+    //Return the Commands
+    return tempSL;
+}
+
+
+
+
 
 QStringList LightGun::ShakeCommands(bool *isSet)
 {
@@ -1106,14 +1261,84 @@ QStringList LightGun::RecoilR2SCommands(bool *isSet)
     }
 }
 
+
+
 void LightGun::ResetLightGun()
 {
     lastAmmoValue = 0;
 }
 
+bool LightGun::CheckUSBVIDAndPID(quint16 checkVID, quint16 checkPID)
+{
+    if(!isUSBLightGun)
+        return false;
+    else
+    {
+        if(checkVID == usbHIDInfo.vendorID && checkPID == usbHIDInfo.productID)
+        {
+            if(usbHIDInfo.serialNumber.isEmpty ())
+                return true;
+            else
+                return false;
+        }
+        else
+            return false;
+    }
+}
+
+bool LightGun::CheckUSBParams(quint16 checkVID, quint16 checkPID, QString checkSN)
+{
+    if(!isUSBLightGun)
+        return false;
+    else
+    {
+        if(checkVID == usbHIDInfo.vendorID && checkPID == usbHIDInfo.productID)
+        {
+            if(checkSN == usbHIDInfo.serialNumber)
+                return true;
+            else
+                return false;
+        }
+        else
+            return false;
+    }
+}
+
+/////////////////////////////////////////////
+/// private
 
 
+void LightGun::FillSerialPortInfo()
+{
+    serialPortInfo.path = comPortInfo.systemLocation();
+    serialPortInfo.productDiscription = comPortInfo.description();
+    serialPortInfo.manufacturer = comPortInfo.manufacturer();
+    serialPortInfo.serialNumber = comPortInfo.serialNumber();
+    serialPortInfo.hasVendorID = comPortInfo.hasVendorIdentifier();
 
+    if(serialPortInfo.hasVendorID)
+    {
+        serialPortInfo.vendorID = comPortInfo.vendorIdentifier();
+        QString tempVID = QString::number(serialPortInfo.vendorID, 16).rightJustified(4, '0');
+        tempVID = tempVID.toUpper ();
+        tempVID.prepend ("0x");
+        serialPortInfo.vendorIDString = tempVID;
+    }
+
+    serialPortInfo.hasProductID = comPortInfo.hasProductIdentifier();
+
+    if(serialPortInfo.hasProductID)
+    {
+        serialPortInfo.productID = comPortInfo.productIdentifier();
+        QString tempPID = QString::number(serialPortInfo.productID, 16).rightJustified(4, '0');
+        tempPID = tempPID.toUpper ();
+        tempPID.prepend ("0x");
+        serialPortInfo.productIDString = tempPID;
+    }
+
+    serialPortInfo.portName = comPortInfo.portName ();
+    //qDebug() << "Port Name: " << serialPortInfo.portName << " Path: " << serialPortInfo.path << " Port Num: " << comPortNum;
+}
 
 
 

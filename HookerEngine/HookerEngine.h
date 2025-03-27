@@ -25,6 +25,9 @@
 #include "HookCOMPort.h"
 #endif
 
+//For USB HID
+#include <Windows.h>
+#include "hidapi_winapi.h"
 
 #include "../COMDeviceList/ComDeviceList.h"
 
@@ -50,8 +53,8 @@ public:
     //Loads defaultLG Game file for Checks
     bool LoadLGFileTest(QString fileNamePath);
 
-    //Closes All COM Port Connections
-    void CloseAllComPortConnections();
+    //Closes All COM Port & USB HID Light Gun Connections
+    void CloseAllLightGunConnections();
 
     //Load Settings From COMDeviceList
     void LoadSettingsFromList();
@@ -76,15 +79,26 @@ signals:
 
     void TCPStatus(bool tcpConStatus);
 
-    //Starts and Stops a Certain Serial COM Port (different thread)
+    //Connects & Disconnects a Certain Serial COM Port (different thread)
     void StartComPort(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const bool &isWriteOnly);
     void StopComPort(const quint8 &comPortNum);
 
     //Write Data on a Certain Serail COM Port (different thread)
     void WriteComPortSig(const quint8 &comPortNum, const QByteArray &writeData);
 
-    //Closes All Open Serial COM Ports (different thread)
-    void StopAllComPorts();
+    //Set the Bypass of the Serial Port Write Checks
+    void SetComPortBypassWriteChecks(const bool &cpBWC);
+
+    //Connects & Disconnects USB HID Device (different thread)
+    void StartUSBHID(const quint8 &playerNum, const HIDInfo &lgHIDInfo);
+    void StopUSBHID(const quint8 &playerNum);
+
+    //Write data to USB HID Device (different thread)
+    void WriteUSBHID(const quint8 &playerNum, const QByteArray &writeData);
+
+
+    //Closes All Open Serial COM Ports and Open USB HIDs (different thread)
+    void StopAllConnections();
 
     //Update the Display Data
     void MameConnectedNoGame();
@@ -149,6 +163,8 @@ private:
     //Checks a Signle Command Loaded in from INI File
     bool CheckINICommand(QString commndNotChk, quint16 lineNumber, QString filePathName);
 
+    //Find USB HID Device HIDInfo Struct
+    bool FindUSBHIDDeviceINI(quint16 vendorID, quint16 productID, quint8 deviceNumber);
 
     //If No Game File Exists for INI & Default LG, then make New INI File with all Signals
     void NewINIFile();
@@ -168,38 +184,42 @@ private:
     //Write to COM Port Based on INI
     void WriteINIComPort(quint8 cpNum, QString cpData);
 
+    //Close All USB HID INI Connections
+    void CloseINIUSBHID();
 
     ///////////////////////////////////////////////////////////////////////////
     //Default LG Side, New Way of Doing Light Guns
     ///////////////////////////////////////////////////////////////////////////
 
-    //Checks if Default LG Game file Exists
+    //Checks if DefaultLG Game file Exists
     bool IsDefaultLGFile();
 
-    //Checks if Default LG Default file Exists default.txt
+    //Checks if DefaultLG Default file Exists default.txt
     bool IsDefaultDefaultLGFile();
 
-    //Loads INI file for Game
+    //Loads DefaultLG file for Game
     void LoadLGFile();
 
     //Check if Loaded Command is Good or Not
     bool CheckLGCommand(QString commndNotChk);
 
-    //If No Game File Exists for INI & Default LG, then make New INI File with all Signals
+    //If No Game File Exists for INI & DefaultLG, then make New DefaultLG File with all Signals
     void NewLGFile();
 
-    //Gets the Signal and its Value, then Process it Based on INI file
+    //Gets the Signal and its Value, then Process it Based on DefaultLG file
     void ProcessLGCommands(QString signalName, QString value);
 
-    //Open COM Port Based on INI
+    //Open COM Port or USB HID Based on DefaultLG
     void OpenLGComPort(bool allPlayers, quint8 playerNum);
 
-    //Close COM Port Based on INI
+    //Close COM Port or USB HID Based on DefaultLG
     void CloseLGComPort(bool allPlayers, quint8 playerNum);
 
-    //Write to COM Port Based on INI
+    //Write to COM Port Based on DefaultLG
     void WriteLGComPort(quint8 playerNum, QString cpData);
 
+    //Write to USB HID
+    void WriteLGUSBHID(quint8 playerNum, QString cpData);
 
     ///////////////////////////////////////////////////////////////////////////
     //Saves Signal and Data, Until the Display Timer Runs Out
@@ -363,6 +383,7 @@ private:
     bool                            closeComPortGameExit;
     bool                            newGameFileOrDefaultFile;
     bool                            ignoreUselessDLGGF;
+    bool                            bypassSerialWriteChecks;
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -382,6 +403,14 @@ private:
     bool                            isPRecoilR2SFirstTime[MAXGAMEPLAYERS];
     QStringList                     pRecoilR2SCommands[MAXGAMEPLAYERS];
     quint32                         recoilR2SSkewPrec[MAXGAMEPLAYERS];
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    //USB HID
+
+    //If the USB HID Info Has Been Init Or Not
+    bool                            isUSBHIDInit;
+    QMap<QString,quint8>            hidPlayerMap;
 
 
 };

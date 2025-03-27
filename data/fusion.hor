@@ -5,6 +5,7 @@ Recoil=F0x2
 Reload=F0x0
 Ammo=F0x2
 Ammo_Value=F1x2
+Display_Ammo=
 Shake=F1x2
 Auto_LED=
 AspectRatio_16:9=
