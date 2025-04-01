@@ -92,12 +92,17 @@ Light guns only have so many commands, as they can recoil, shake, and few other 
 
 | Command | Notes |
 |---------|-------|
+| Open_COM | Connects to the Serial Port or USB HID. Also Enters External Control for Light Gun  |
+| Close_COM | Disconnects to the Serial Port or USB HID. Also Exit out of External Control for Light Gun   |
+| Open_COM_NoInit | Connects tp the Serial Port or USB HID only  |
+| Close_COM_NoInit | Disconnects tp the Serial Port or USB HID only
 | Damage | Doesn't Happen on 0, no need for '\|' |
 | Recoil | Doesn't Happen on 0, no need for '\|' |
 | Recoil_R2S | Converts Rumble Recoil to Solenoid Recoil |
 | Reload |     |
 | Ammo   | Doesn't Happen on 0, no need for '\|'    |
 | Ammo_Value|  Doesn't Happen on 0, no need for '\|', except for Reapers for Z0    |
+| Display_Ammo | For Light Guns that have Displays, like OpenFire & Alien  |
 | Shake | Doesn't Happen on 0, no need for '\|' |
 | Auto_LED |     |
 | AspectRatio_16:9 | Can be used at mame_start/stop   |
@@ -239,8 +244,33 @@ Everything is in Qt, so you only need Qt and the MSVC 2022 tools. Below is what 
 * My CMake Version: 3.29.3
 
 
+# FAQ
+
+### Is Hook Of The Reaper complete?
+
+No, currently Hook Of The Reaper is a work in progress. I am almost done with the light gun work. When the light gun work is done, I will then work on the game data base. After that, I will work on getting the LED & I/O controller into Hook Of The Reaper. After that, I plan on getting the wiki done. Then it will be complete.
 
 
+### Other Peoples Light Guns work, but Mine Doesn't, Can you Help Me Out?
+
+Sorry, I cannot help you. But you can use the debug setting that was put in v1.1.1. The debug setting is safe for sort term use. If your light gun starts working in the debug mode, then something is most likely wrong with your USB or USB cabling. 
+
+
+### Can you Help Me Set-Up my Light Gun and Light Gun Games? Or Help Make a Game File?
+
+No.
+
+### Can you Help Me Set-UP my Hook Of The Reaper?
+
+No. Sorry, there will be no tech support now or ever for this program. It is a free open source project, that comes with no warrenty or guarantees. 
+
+### No Tech Support, but What if I Need Help?
+
+Sorry your are on your own. I do my best to test eveerything out before a release. The number of bugs have been really low. Most Issues are not Hook Of The Reaper bugs. I think I have only gotten 2-3 bugs so far from Issues. Most bugs have been caught by myself. Also, many others have gotten Hook Of The Reaper working with no problems. I know people have gotten all the supported light gun working.  
+
+### Do you Have the Game File XXXXX? It is Not Included with Hook Of The Reaper?
+
+No. All the game files that I have, are include with Hook Of The Reaper. 
 
 
 
