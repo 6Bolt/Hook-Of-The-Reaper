@@ -208,7 +208,7 @@ void testComPortWindow::on_sendDataPushButton_clicked()
         {
             const wchar_t* errorWChar = hid_error(p_hidConnection);
             QString errorMSG = QString::fromWCharArray(errorWChar);
-            QString critMessage = "The USB HID write failed to the device. Something got fucked up.\nError Message: "+errorMSG;
+            QString critMessage = "The USB HID write failed to the device.\nError Message: "+errorMSG;
             QMessageBox::critical (nullptr, "USB HID Write Failed", critMessage, QMessageBox::Ok);
         }
     }
@@ -233,18 +233,11 @@ bool testComPortWindow::ConnectUSBHID()
 {
     lgHIDInfo = p_comDeviceList->p_lightGunList[currentLG]->GetUSBHIDInfo ();
 
-    unsigned short vendorID = lgHIDInfo.vendorID;
-    unsigned short productID = lgHIDInfo.productID;
+    QByteArray pathBA = lgHIDInfo.path.toUtf8();
 
-    //If Serial Number, then use It. If Not, then just use NULL
-    if(!lgHIDInfo.serialNumber.isEmpty ())
-    {
-        std::wstring wstr = lgHIDInfo.serialNumber.toStdWString();
-        const wchar_t* serialNumPtr = wstr.c_str();
-        p_hidConnection = hid_open(vendorID, productID, serialNumPtr);
-    }
-    else
-        p_hidConnection = hid_open(vendorID, productID, NULL);
+    char* pathPtr = pathBA.data();
+
+    p_hidConnection = hid_open_path(pathPtr);
 
     if(!p_hidConnection)
     {

@@ -8,6 +8,10 @@
 #include <QMessageBox>
 #include <QSerialPortInfo>
 
+#include <QSoundEffect>
+#include <QUrl>
+
+
 #include "../COMDeviceList/ComDeviceList.h"
 
 #include <Windows.h>
@@ -155,8 +159,13 @@ private:
     hid_device_info         *devs;
     quint16                 numberHIDDevices;
     QList<HIDInfo>          hidInfoList;
+    QList<HIDInfo>          lgHIDInfoList;
     bool                    getAllHIDs;
     bool                    isHIDInit;
+
+    //Sound Effects of Edit & Delete Light Gun
+    QSoundEffect            editLightGunSound;
+    QSoundEffect            deleteLightGunSound;
 
 
 };

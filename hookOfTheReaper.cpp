@@ -130,7 +130,8 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
 
     //Set Up Tray Icon and show it
     trayIcon = new QSystemTrayIcon(this);
-    trayIcon->setIcon(QIcon("./data/icons/hOTRIcon256.ico"));
+    //trayIcon->setIcon(QIcon("./data/icons/hOTRIcon256.ico"));
+    trayIcon->setIcon(QIcon(":/icons/hOTRIcon256.ico"));
     trayIcon->show ();
 
     //Set Up Quit in tray Icon Menu
@@ -161,7 +162,8 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
         }
     });
 
-    trayIcon->showMessage ("Hook Of The Reaper", "Now Hooking", QIcon("./data/icons/hOTRIcon256.ico"));
+    //trayIcon->showMessage ("Hook Of The Reaper", "Now Hooking", QIcon("./data/icons/hOTRIcon256.ico"));
+    trayIcon->showMessage ("Hook Of The Reaper", "Now Hooking", QIcon(":/icons/hOTRIcon256.ico"));
 
 #else
 

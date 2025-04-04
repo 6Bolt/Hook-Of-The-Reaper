@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>hOTRIcon256.ico</file>
+        <file>hOTRIcon256.png</file>
+        <file>hOTRIcon48.ico</file>
+    </qresource>
+</RCC>

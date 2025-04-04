@@ -19,6 +19,11 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     //Fixes the Size of the Window, so it Cannot Be Expanded
     this->setFixedSize(this->size());
 
+    editLightGunSound.setSource (QUrl::fromLocalFile(":/sounds/editLightGun.wav"));
+    deleteLightGunSound.setSource (QUrl::fromLocalFile(":/sounds/deleteLightGun.wav"));
+    editLightGunSound.setVolume(0.7);
+    deleteLightGunSound.setVolume(0.7);
+
     //Move Over the ComDevice List and Get a Copy of the Unused COM Ports & Used Dip Players
     p_comDeviceList = cdList;
     p_comDeviceList->CopyAvailableComPortsArray(unusedComPort, MAXCOMPORTS);
@@ -104,8 +109,9 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
 
 
     //USB Input Mask
-    ui->vendorIDUSBLineEdit->setInputMask (USBINPUTMASKHEX);
-    ui->productIDUSBLineEdit->setInputMask (USBINPUTMASKHEX);
+    //ui->vendorIDUSBLineEdit->setInputMask (USBINPUTMASKHEX);
+    //ui->productIDUSBLineEdit->setInputMask (USBINPUTMASKHEX);
+    ui->recoilDelayLineEdit->setInputMask (USBRECOILDELAYMASK);
 
     //Get USB HID Devices
     FillUSBDevicesComboBox();
@@ -151,11 +157,12 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
             {
                 //HID Device Not Found in HID List. Fill in VendorID, ProductID, and Serial Number
                 HIDInfo tempHIDInfo = p_comDeviceList->p_lightGunList[0]->GetUSBHIDInfo ();
+                quint16 rcDelay = p_comDeviceList->p_lightGunList[0]->GetRecoilDelay ();
 
                 //Clear Out Line Edits
                 ui->vendorIDUSBLineEdit->clear ();
                 ui->productIDUSBLineEdit->clear ();
-                ui->serialUSBLineEdit->clear ();
+                ui->displayPathUSBLineEdit->clear ();
 
                 QString tempVID = tempHIDInfo.vendorIDString;
                 tempVID.remove (0,2);
@@ -165,7 +172,11 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
                 tempPID.remove (0,2);
                 ui->productIDUSBLineEdit->insert (tempPID);
 
-                ui->serialUSBLineEdit->insert(tempHIDInfo.serialNumber);
+                ui->displayPathUSBLineEdit->insert(tempHIDInfo.displayPath);
+
+                ui->recoilDelayLineEdit->clear();
+                ui->recoilDelayLineEdit->setEnabled (true);
+                ui->recoilDelayLineEdit->insert (QString::number(rcDelay));
             }
         }
         else
@@ -175,6 +186,7 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
             ui->hubComComboBox->setEnabled(false);
             ui->analogLineEdit->setEnabled(false);
             dipSwitchNumber = UNASSIGN;
+            ui->recoilDelayLineEdit->setEnabled (false);
         }
     }
     else
@@ -275,6 +287,10 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     ui->flowControlComboBox->setCurrentIndex(flowIndex);
 
 
+    ui->lgLCDNumber->setSegmentStyle(QLCDNumber::Flat);
+    numberLightGuns = p_comDeviceList->GetNumberLightGuns ();
+    ui->lgLCDNumber->setDigitCount(3);
+    ui->lgLCDNumber->display (numberLightGuns);
 
 }
 
@@ -425,6 +441,10 @@ void editLightGunWindow::on_deletePushButton_clicked()
     //Delete Selected Light Gun
     p_comDeviceList->DeleteLightGun (dlgIndex);
 
+    deleteLightGunSound.play();
+    numberLightGuns = p_comDeviceList->GetNumberLightGuns ();
+    ui->lgLCDNumber->display (numberLightGuns);
+
     //Load First Combo Box with the Saved Light Guns; Number, Name, and COM Port
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();
 
@@ -497,6 +517,8 @@ void editLightGunWindow::on_editPushButton_clicked()
 
         //Add New Light Gun to ComDeviceList
         EditLightGun();
+
+        editLightGunSound.play ();
 
         //Rebuild COM Port Combo Box, Now with the Used COM port Removed
         p_comDeviceList->CopyAvailableComPortsArray(unusedComPort, MAXCOMPORTS);
@@ -577,8 +599,10 @@ bool editLightGunWindow::IsValidData()
     bool analNotRange = false;
     bool badDipIndex = false;
     bool hubComLG = false;
-    bool usbVPIDMatch = false;
-    bool usbParamsMatch = false;
+    bool usbDisPMatch = false;
+    bool emptyUSBdelay = false;
+    bool usbDelayNotNum = false;
+    bool usbDelayRange = false;
     quint8 numLightGuns = p_comDeviceList->GetNumberLightGuns();
     quint8 i;
     quint8 currentIndex = ui->savedLightGunsComboBox->currentIndex ();
@@ -643,34 +667,28 @@ bool editLightGunWindow::IsValidData()
 
     if(defaultLGIndex == ALIENUSB)
     {
-        quint16 tempVID, tempPID;
-        QString tempSN;
+        QString tempDP;
         bool isNumber;
 
-        ivTemp = ui->vendorIDUSBLineEdit->text();
-        tempVID = ivTemp.toUShort (&isNumber, 16);
+        ivTemp = ui->recoilDelayLineEdit->text();
+        if(ivTemp.isEmpty ())
+            emptyUSBdelay = true;
 
-        ivTemp = ui->productIDUSBLineEdit->text();
-        tempPID = ivTemp.toUShort (&isNumber, 16);
+        quint16 tempDelay = ivTemp.toUShort (&isNumber);
 
-        tempSN = ui->serialUSBLineEdit->text();
-        //If their is no serial number, then have to check if VID & PID is in Use Already
-        if(tempSN.isEmpty ())
-        {
-            usbVPIDMatch = p_comDeviceList->CheckUSBVIDAndPID(tempVID, tempPID, currentIndex);
-        }
-        else
-        {
-            usbParamsMatch = p_comDeviceList->CheckUSBParams(tempVID, tempPID, tempSN, currentIndex);
-        }
+        if(!isNumber)
+            usbDelayNotNum = true;
+        else if(tempDelay < ALIENUSBMINDELAY)
+            usbDelayRange = true;
+
+        tempDP = ui->displayPathUSBLineEdit->text();
+        usbDisPMatch = p_comDeviceList->CheckUSBPath(tempDP, currentIndex);
     }
-
-
 
 
     //Check All the bools, If They are false, data is good and return true.
     //If false, then make a Warning string, and Pop Up a Warning Message Box on What is Wrong and return false
-    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubComLG == false && usbVPIDMatch == false && usbParamsMatch == false)
+    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubComLG == false && usbDisPMatch == false && emptyUSBdelay == false && usbDelayRange == false)
     {
         return true;
     }
@@ -690,10 +708,12 @@ bool editLightGunWindow::IsValidData()
             message.append ("Analog Strength is not a number.");
         if(analNotRange == true)
             message.append ("Analog Strength is out of range. Needs to be 0-255");
-        if(usbVPIDMatch == true)
-            message.append ("An Exsiting USB Light Gun already has the Vendor ID and Product ID, with no Serial number. There cannot be duplicates of Vendor ID, Product ID, and serial number. As it is used to send data to the device.");
-        if(usbParamsMatch == true)
-            message.append ("An Exsiting USB Light Gun already has the Vendor ID, Product ID, and Serial number. There cannot be duplicates of Vendor ID, Product ID, and Serial number. As it is used to send data to the device.");
+        if(usbDisPMatch == true)
+            message.append ("An Exsiting USB Light Gun already has that path/location. There cannot be duplicates of the path/location. As it is used to send data to the device.");
+        if(emptyUSBdelay == true)
+            message.append ("The USB Recoil Delay is empty. It needs at least 40ms or higher");
+        if(usbDelayRange == true)
+            message.append ("The USB Recoil Delay is too small. It needs at least 40ms or higher");
 
         QMessageBox::warning (this, "Can Not Edit Light Gun", message);
 
@@ -860,8 +880,12 @@ void editLightGunWindow::EditLightGun()
     {
         //Need to Get the HIDInfo -So Much Easier
         qint16 hidIndex = ui->usbDevicesComboBox->currentIndex ();
-
         p_comDeviceList->p_lightGunList[lightGunNum]->SetHIDInfo (hidInfoList[hidIndex]);
+
+        //Recoil Delay
+        QString rcDelayS = ui->recoilDelayLineEdit->text ();
+        quint16 rcDelay = rcDelayS.toUShort ();
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetRecoilDelay (rcDelay);
     }
 
 }
@@ -1012,8 +1036,9 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
 
             ui->vendorIDUSBLineEdit->setEnabled(false);
             ui->productIDUSBLineEdit->setEnabled(false);
-            ui->serialUSBLineEdit->setEnabled(false);
+            ui->displayPathUSBLineEdit->setEnabled(false);
             ui->usbDevicesComboBox->setEnabled(false);
+            ui->recoilDelayLineEdit->setEnabled (false);
         }
         else if(defaultLightGunNum == JBGUN4IR || defaultLightGunNum == OPENFIRE)
         {
@@ -1027,8 +1052,9 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
             ui->comPortComboBox->setEnabled(true);
             ui->vendorIDUSBLineEdit->setEnabled(false);
             ui->productIDUSBLineEdit->setEnabled(false);
-            ui->serialUSBLineEdit->setEnabled(false);
+            ui->displayPathUSBLineEdit->setEnabled(false);
             ui->usbDevicesComboBox->setEnabled(false);
+            ui->recoilDelayLineEdit->setEnabled (false);
         }
         else if(defaultLightGunNum == ALIENUSB)
         {
@@ -1039,13 +1065,21 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
 
             ui->vendorIDUSBLineEdit->setEnabled(true);
             ui->productIDUSBLineEdit->setEnabled(true);
-            ui->serialUSBLineEdit->setEnabled(true);
+            ui->displayPathUSBLineEdit->setEnabled(true);
             ui->usbDevicesComboBox->setEnabled(true);
+
+            quint16 rcDelay = p_comDeviceList->p_lightGunList[index]->GetRecoilDelay ();
+            ui->recoilDelayLineEdit->clear();
+            ui->recoilDelayLineEdit->setEnabled (true);
+            ui->recoilDelayLineEdit->insert (QString::number(rcDelay));
+
+            FillUSBDevicesComboBox();
 
             //First Light Gun is an USB HID Light Gun
             qint16 hidIndex = FindLightGunHID(index);
 
             //qDebug() << "hidIndex: " << hidIndex;
+
 
             //If Found, then load up that HID, if not Load LG Info into Line Edits
             if(hidIndex != -1)
@@ -1062,7 +1096,7 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
                 //Clear Out Line Edits
                 ui->vendorIDUSBLineEdit->clear ();
                 ui->productIDUSBLineEdit->clear ();
-                ui->serialUSBLineEdit->clear ();
+                ui->displayPathUSBLineEdit->clear ();
 
                 QString tempVID = tempHIDInfo.vendorIDString;
                 tempVID.remove (0,2);
@@ -1072,8 +1106,11 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
                 tempPID.remove (0,2);
                 ui->productIDUSBLineEdit->insert (tempPID);
 
-                ui->serialUSBLineEdit->insert(tempHIDInfo.serialNumber);
+                ui->displayPathUSBLineEdit->insert(tempHIDInfo.displayPath);
+
+
             }
+
         }
         else
         {
@@ -1085,8 +1122,9 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
             ui->comPortComboBox->setEnabled(true);
             ui->vendorIDUSBLineEdit->setEnabled(false);
             ui->productIDUSBLineEdit->setEnabled(false);
-            ui->serialUSBLineEdit->setEnabled(false);
+            ui->displayPathUSBLineEdit->setEnabled(false);
             ui->usbDevicesComboBox->setEnabled(false);
+            ui->recoilDelayLineEdit->setEnabled (false);
         }
     }
     else
@@ -1102,8 +1140,9 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
         ui->comPortComboBox->setEnabled(true);
         ui->vendorIDUSBLineEdit->setEnabled(false);
         ui->productIDUSBLineEdit->setEnabled(false);
-        ui->serialUSBLineEdit->setEnabled(false);
+        ui->displayPathUSBLineEdit->setEnabled(false);
         ui->usbDevicesComboBox->setEnabled(false);
+        ui->recoilDelayLineEdit->setEnabled (false);
     }
 
     if((defaultLightGun && defaultLightGunNum != ALIENUSB) || !defaultLightGun)
@@ -1257,6 +1296,8 @@ void editLightGunWindow::FillUSBDevicesComboBox()
         devs = hid_enumerate(0x0, 0x0);
     }
 
+    lgHIDInfoList = p_comDeviceList->GetLightGunHIDInfo ();
+
     //Process System HID Device Info
     for (; devs; devs = devs->next)
     {
@@ -1265,19 +1306,61 @@ void editLightGunWindow::FillUSBDevicesComboBox()
     //Release HID enumeration
     hid_free_enumeration(devs);
 
+    //quint8 numberLG = ui->savedLightGunsComboBox->count ();
+    quint8 currentIndex = ui->savedLightGunsComboBox->currentIndex ();
+    HIDInfo tempHIDInfo;
+    //qint16 lgUSBIndex;
+    //bool isUSB;
+
+    if(p_comDeviceList->p_lightGunList[currentIndex]->IsLightGunUSB ())
+    {
+        tempHIDInfo = p_comDeviceList->p_lightGunList[currentIndex]->GetUSBHIDInfo ();
+        if(!hidInfoList.contains (tempHIDInfo))
+        {
+            hidInfoList << tempHIDInfo;
+            numberHIDDevices++;
+        }
+    }
+
+    /*
+    for(quint8 i = 0; i < numberLG; i++)
+    {
+        isUSB = p_comDeviceList->p_lightGunList[i]->IsLightGunUSB ();
+
+        if(isUSB)
+        {
+            lgUSBIndex = FindLightGunHID(i);
+
+            if(lgUSBIndex == -1)
+            {
+                tempHIDInfo = p_comDeviceList->p_lightGunList[i]->GetUSBHIDInfo ();
+                hidInfoList << tempHIDInfo;
+                numberHIDDevices++;
+            }
+        }
+    }
+    */
+
     if(numberHIDDevices > 0)
     {
         for(quint16 i = 0; i < numberHIDDevices; i++)
         {
             QString tempS;
             QTextStream tempTS(&tempS);
-            tempTS << "VID: " << hidInfoList[i].vendorIDString << " PID: " << hidInfoList[i].productIDString << " S/N: " << hidInfoList[i].serialNumber;
+            tempTS << "VID: " << hidInfoList[i].vendorIDString << " PID: " << hidInfoList[i].productIDString << " " << hidInfoList[i].displayPath.first(ALIENUSBPATHFIRST);
             ui->usbDevicesComboBox->insertItem(i,tempS);
             //qDebug() << "Item: " << i << " is: " << tempS;
         }
+
+        if(p_comDeviceList->p_lightGunList[currentIndex]->IsLightGunUSB ())
+            ui->usbDevicesComboBox->setCurrentIndex (FindLightGunHID(currentIndex));
+        else
+            ui->usbDevicesComboBox->setCurrentIndex (0);
     }
     else
+    {
         ui->usbDevicesComboBox->setCurrentIndex (-1);
+    }
 
 }
 
@@ -1287,25 +1370,24 @@ void editLightGunWindow::ProcessHIDInfo()
     HIDInfo tempHIDInfo;
 
     tempHIDInfo.vendorID = devs->vendor_id;
-    QString tempVID = QString::number(devs->vendor_id, 16).rightJustified(4, '0');
-    tempVID = tempVID.toUpper ();
-    tempVID.prepend ("0x");
-    tempHIDInfo.vendorIDString = tempVID;
+    tempHIDInfo.vendorIDString = QString::number(devs->vendor_id, 16).rightJustified(4, '0');
+    tempHIDInfo.vendorIDString = tempHIDInfo.vendorIDString.toUpper ();
+    tempHIDInfo.vendorIDString.prepend ("0x");
 
     tempHIDInfo.productID = devs->product_id;
-    QString tempPID = QString::number(devs->product_id, 16).rightJustified(4, '0');
-    tempPID = tempPID.toUpper ();
-    tempPID.prepend ("0x");
-    tempHIDInfo.productIDString = tempPID;
+    tempHIDInfo.productIDString = QString::number(devs->product_id, 16).rightJustified(4, '0');
+    tempHIDInfo.productIDString = tempHIDInfo.productIDString.toUpper ();
+    tempHIDInfo.productIDString.prepend ("0x");
 
     tempHIDInfo.path = QString::fromLatin1(devs->path);
+    tempHIDInfo.displayPath = tempHIDInfo.path;
+    tempHIDInfo.displayPath.remove(0,ALIENUSBFRONTPATHREM);
+
     tempHIDInfo.serialNumber = QString::fromWCharArray(devs->serial_number);
     tempHIDInfo.releaseNumber = devs->release_number;
-    QString tempR = QString::number(devs->release_number, 16).rightJustified(4, '0');
-    tempR = tempR.toUpper ();
-    tempR.prepend ("0x");
-    tempHIDInfo.releaseString = tempR;
-
+    tempHIDInfo.releaseString = QString::number(devs->release_number, 16).rightJustified(4, '0');
+    tempHIDInfo.releaseString = tempHIDInfo.releaseString.toUpper ();
+    tempHIDInfo.releaseString.prepend ("0x");
 
     tempHIDInfo.manufacturer = QString::fromWCharArray(devs->manufacturer_string);
     tempHIDInfo.productDiscription = QString::fromWCharArray(devs->product_string);
@@ -1314,8 +1396,11 @@ void editLightGunWindow::ProcessHIDInfo()
     tempHIDInfo.usage = devs->usage;
     tempHIDInfo.usageString = p_comDeviceList->ProcessHIDUsage(tempHIDInfo.usagePage, tempHIDInfo.usage);
 
-    hidInfoList << tempHIDInfo;
-    numberHIDDevices++;
+    if(!lgHIDInfoList.contains (tempHIDInfo))
+    {
+        hidInfoList << tempHIDInfo;
+        numberHIDDevices++;
+    }
 }
 
 
@@ -1337,7 +1422,7 @@ void editLightGunWindow::on_usbDevicesComboBox_currentIndexChanged(int index)
         ui->releaseNumLineEdit->clear ();
         ui->vendorIDUSBLineEdit->clear ();
         ui->productIDUSBLineEdit->clear ();
-        ui->serialUSBLineEdit->clear ();
+        ui->displayPathUSBLineEdit->clear ();
 
         //Turn On The 2 USB Info Line Edits
         ui->usageLineEdit->setEnabled (true);
@@ -1362,14 +1447,15 @@ void editLightGunWindow::on_usbDevicesComboBox_currentIndexChanged(int index)
         ui->releaseNumLineEdit->insert(hidInfoList[index].releaseString);
 
         QString tempVID = hidInfoList[index].vendorIDString;
-        tempVID.remove (0,2);
+        //tempVID.remove (0,2);
         ui->vendorIDUSBLineEdit->insert (tempVID);
 
         QString tempPID = hidInfoList[index].productIDString;
-        tempPID.remove (0,2);
+        //tempPID.remove (0,2);
         ui->productIDUSBLineEdit->insert (tempPID);
 
-        ui->serialUSBLineEdit->insert(hidInfoList[index].serialNumber);
+        ui->displayPathUSBLineEdit->insert(hidInfoList[index].displayPath);
+        ui->displayPathUSBLineEdit->setCursorPosition (0);
 
     }
     else if(index == -1)
@@ -1385,7 +1471,7 @@ void editLightGunWindow::on_usbDevicesComboBox_currentIndexChanged(int index)
         ui->releaseNumLineEdit->clear ();
         ui->vendorIDUSBLineEdit->clear ();
         ui->productIDUSBLineEdit->clear ();
-        ui->serialUSBLineEdit->clear ();
+        ui->displayPathUSBLineEdit->clear ();
     }
 }
 
@@ -1393,7 +1479,7 @@ void editLightGunWindow::on_usbDevicesComboBox_currentIndexChanged(int index)
 qint16 editLightGunWindow::FindLightGunHID(quint8 lgNum)
 {
     //Check if Light Gun is Not USB, if so return -1
-    if(!p_comDeviceList->p_lightGunList[lgNum]->IsLightGunUSB ())
+    if(!p_comDeviceList->p_lightGunList[lgNum]->IsLightGunUSB () || numberHIDDevices == 0)
         return -1;
 
     bool isSerialNumber;

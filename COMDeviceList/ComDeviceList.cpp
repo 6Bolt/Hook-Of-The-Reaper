@@ -200,9 +200,9 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
 
 
 //For Alien USB Light Gun
-void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct)
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay)
 {
-    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, hidInfoStruct);
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, hidInfoStruct, rcDelay);
 
     numberLightGuns++;
 }
@@ -598,6 +598,9 @@ void ComDeviceList::SaveLightGunList()
             out << tempHIDInfo.usage << "\n";
             out << tempHIDInfo.usageString << "\n";
             out << tempHIDInfo.interfaceNumber << "\n";
+
+            quint16 rcDelay = p_lightGunList[i]->GetRecoilDelay ();
+            out << rcDelay << "\n";
         }
     }
 
@@ -870,7 +873,13 @@ void ComDeviceList::LoadLightGunList()
             line = in.readLine();
             tempHIDInfo.interfaceNumber = line.toUShort ();
 
-           AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempHIDInfo);
+            tempHIDInfo.displayPath = tempHIDInfo.path;
+            tempHIDInfo.displayPath.remove(0,ALIENUSBFRONTPATHREM);
+
+            line = in.readLine();
+            quint16 rcDelay = line.toUShort ();
+
+           AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempHIDInfo, rcDelay);
         }
 
 
@@ -1476,7 +1485,8 @@ void ComDeviceList::ResetLightGun(quint8 lgNeedReset)
     p_lightGunList[lgNeedReset]->ResetLightGun ();
 }
 
-bool ComDeviceList::CheckUSBVIDAndPID(quint16 checkVID, quint16 checkPID)
+
+bool ComDeviceList::CheckUSBPath(QString lgPath)
 {
     if(numberLightGuns == 0)
         return false;
@@ -1486,29 +1496,13 @@ bool ComDeviceList::CheckUSBVIDAndPID(quint16 checkVID, quint16 checkPID)
     for(quint8 i = 0; i < numberLightGuns; i++)
     {
         if(p_lightGunList[i]->IsLightGunUSB () && !foundMatch)
-            foundMatch = p_lightGunList[i]->CheckUSBVIDAndPID(checkVID, checkPID);
+            foundMatch = p_lightGunList[i]->CheckUSBPath(lgPath);
     }
 
     return foundMatch;
 }
 
-bool ComDeviceList::CheckUSBParams(quint16 checkVID, quint16 checkPID, QString checkSN)
-{
-    if(numberLightGuns == 0)
-        return false;
-
-    bool foundMatch = false;
-
-    for(quint8 i = 0; i < numberLightGuns; i++)
-    {
-        if(p_lightGunList[i]->IsLightGunUSB () && !foundMatch)
-            foundMatch = p_lightGunList[i]->CheckUSBParams(checkVID, checkPID, checkSN);
-    }
-
-    return foundMatch;
-}
-
-bool ComDeviceList::CheckUSBVIDAndPID(quint16 checkVID, quint16 checkPID, quint8 lgNumber)
+bool ComDeviceList::CheckUSBPath(QString lgPath, quint8 lgNumber)
 {
     if(numberLightGuns == 0)
         return false;
@@ -1521,31 +1515,30 @@ bool ComDeviceList::CheckUSBVIDAndPID(quint16 checkVID, quint16 checkPID, quint8
         if(i != lgNumber)
         {
             if(p_lightGunList[i]->IsLightGunUSB () && !foundMatch)
-                foundMatch = p_lightGunList[i]->CheckUSBVIDAndPID(checkVID, checkPID);
+                foundMatch = p_lightGunList[i]->CheckUSBPath(lgPath);
         }
     }
 
     return foundMatch;
 }
 
-bool ComDeviceList::CheckUSBParams(quint16 checkVID, quint16 checkPID, QString checkSN, quint8 lgNumber)
+QList<HIDInfo> ComDeviceList::GetLightGunHIDInfo()
 {
-    if(numberLightGuns == 0)
-        return false;
+    QList<HIDInfo> lgHIDInfo;
 
-    bool foundMatch = false;
+    if(numberLightGuns == 0)
+        return lgHIDInfo;
 
     for(quint8 i = 0; i < numberLightGuns; i++)
     {
-        if(i != lgNumber)
-        {
-            if(p_lightGunList[i]->IsLightGunUSB () && !foundMatch)
-                foundMatch = p_lightGunList[i]->CheckUSBParams(checkVID, checkPID, checkSN);
-        }
+        if(p_lightGunList[i]->IsLightGunUSB ())
+            lgHIDInfo << p_lightGunList[i]->GetUSBHIDInfo ();
     }
 
-    return foundMatch;
+    return lgHIDInfo;
 }
+
+
 
 QString ComDeviceList::ProcessHIDUsage(quint16 usagePage, quint16 usage)
 {

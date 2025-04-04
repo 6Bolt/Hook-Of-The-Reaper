@@ -19,6 +19,7 @@
 class HookCOMPortWin : public QObject
 {
     Q_OBJECT
+
 public:
     explicit HookCOMPortWin(QObject *parent = nullptr);
     ~HookCOMPortWin();
@@ -26,7 +27,7 @@ public:
 public slots:
 
     //Connect to COM Port
-    void Connect(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const bool &isWriteOnly);
+    void Connect(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const QString &comPortPath, const bool &isWriteOnly);
 
     //Disconnect to COM Port
     void Disconnect(const quint8 &comPortNum);
@@ -87,6 +88,8 @@ private:
 
     //Debug Setting to Bypass Serial Port Write Checks
     bool                            bypassSerialWriteChecks;
+
+    bool                            noLightGunWarning[MAXCOMPORTS];
 
 };
 

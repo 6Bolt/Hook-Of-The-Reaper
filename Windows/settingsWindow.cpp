@@ -169,8 +169,7 @@ void settingsWindow::on_bypassSerialWriteCheckBox_checkStateChanged(const Qt::Ch
     {
         //If Box is Checked, then Display the Warning About turning it on. Only if clicked 'Yes' then box remains checked. Default button is No
         QString qes = "This option is only for debug, and should not be used for normal use. It can be used to find hardware fails, for example if the USB port or wires are bad and corrupting the data.";
-        qes.append (" It is higly recommanded not to enable this setting in normal use. It is like turning off your check engine light. The program will just throw the data on to the serial port interface, and hopes it gets there");
-        qes.append (" Only press 'Yes' if you know what you are doing, as this can mask hardware failure that could potenially harm your USB, motherboard, light gun, and your whole computer. Press 'No' not to enable bypass of checks.");
+        qes.append (" It is higly recommanded not to enable this setting in normal use.");
         int ret = QMessageBox::question (this, "Bypass Serial Port Write Checks", qes, QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
         if(ret != QMessageBox::Yes)

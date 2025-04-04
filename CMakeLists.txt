@@ -4,10 +4,11 @@ project(HookOfTheReaper LANGUAGES CXX)
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
 find_package(Qt6 REQUIRED COMPONENTS SerialPort)
 find_package(Qt6 REQUIRED COMPONENTS Network)
-
+find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 
 qt_standard_project_setup()
 
+set(CMAKE_AUTORCC ON)
 
 
 qt_add_executable(HookOfTheReaper
@@ -17,7 +18,7 @@ qt_add_executable(HookOfTheReaper
     hookOfTheReaper.h
     hookOfTheReaper.ui
     Global.h
-    resources.qrc
+
     data/icons/icons.rc
     data/icons/hOTRIcon256.ico
     data/iniDefault.hor data/lgDefault.hor data/settings.hor
@@ -43,8 +44,12 @@ qt_add_executable(HookOfTheReaper
     data/fusion.hor
     data/blamcon.hor
     HookerEngine/HookCOMPortWin.h HookerEngine/HookCOMPortWin.cpp
+    data/sounds/sounds.qrc
+    data/icons/icons.qrc
 
 )
+
+
 
 target_include_directories(HookOfTheReaper
     PRIVATE
@@ -66,6 +71,7 @@ target_link_libraries(HookOfTheReaper
         Qt::Widgets
         Qt6::SerialPort
         Qt6::Network
+        Qt6::Multimedia
         hidapi
 )
 

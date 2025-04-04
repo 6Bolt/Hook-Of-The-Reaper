@@ -39,8 +39,8 @@ class HookerEngine : public QObject
     QThread threadForCOMPort;
 
 public:
-    //explicit HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiConnect, QObject *parent = nullptr);
-    HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiConnect, QObject *parent = nullptr);
+    explicit HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiConnect, QObject *parent = nullptr);
+    //HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiConnect, QObject *parent = nullptr);
     ~HookerEngine();
 
     //Start & Stop the Hooker Engine
@@ -80,7 +80,7 @@ signals:
     void TCPStatus(bool tcpConStatus);
 
     //Connects & Disconnects a Certain Serial COM Port (different thread)
-    void StartComPort(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const bool &isWriteOnly);
+    void StartComPort(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const QString &comPortPath, const bool &isWriteOnly);
     void StopComPort(const quint8 &comPortNum);
 
     //Write Data on a Certain Serail COM Port (different thread)
@@ -210,10 +210,10 @@ private:
     void ProcessLGCommands(QString signalName, QString value);
 
     //Open COM Port or USB HID Based on DefaultLG
-    void OpenLGComPort(bool allPlayers, quint8 playerNum);
+    void OpenLGComPort(bool allPlayers, quint8 playerNum, bool noInit);
 
     //Close COM Port or USB HID Based on DefaultLG
-    void CloseLGComPort(bool allPlayers, quint8 playerNum);
+    void CloseLGComPort(bool allPlayers, quint8 playerNum, bool noInit, bool initOnly);
 
     //Write to COM Port Based on DefaultLG
     void WriteLGComPort(quint8 playerNum, QString cpData);

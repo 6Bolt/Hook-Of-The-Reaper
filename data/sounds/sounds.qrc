@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/sounds">
+        <file>addLightGun.wav</file>
+        <file>editLightGun.wav</file>
+        <file>deleteLightGun.wav</file>
+    </qresource>
+</RCC>

@@ -9,8 +9,9 @@
 //#include <QString>
 #include <QMessageBox>
 #include <QSerialPortInfo>
-
-
+#include <QSoundEffect>
+#include <QUrl>
+#include <QLCDNumber>
 
 #include "../COMDeviceList/ComDeviceList.h"
 
@@ -114,6 +115,7 @@ private:
     quint8                  comPortParity;
     quint8                  comPortStopBits;
     quint8                  comPortFlow;
+    quint8                  numberLightGuns;
 
     //Lists Used for the Combo Boxes
     bool                    unusedComPort[MAXCOMPORTS];
@@ -125,8 +127,12 @@ private:
     hid_device_info         *devs;
     quint16                 numberHIDDevices;
     QList<HIDInfo>          hidInfoList;
+    QList<HIDInfo>          lgHIDInfoList;
     bool                    getAllHIDs;
     bool                    isHIDInit;
+
+    //Sound Effects of Add Light Gun
+    QSoundEffect            addLightGunSound;
 
 
 };

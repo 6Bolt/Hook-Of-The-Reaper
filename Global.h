@@ -3,10 +3,10 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.1.2"
+#define VERSION                 "1.1.3b"
 #define VERSIONMAIN             1
 #define VERSIONMID              1
-#define VERSIONLAST             2
+#define VERSIONLAST             3
 
 //Global Settings
 #define MAXPLAYERLIGHTGUNS      8
@@ -20,6 +20,7 @@
 #define MAXCOMPORTS             50
 #define BEGINCOMPORTNAME        "COM"
 #define COMPORTWAITFORWRITE     50
+#define COMPORTPATHFRONT        "\\\\.\\"
 
 //Number of Different Settings
 #define BAUD_NUMBER             8
@@ -27,6 +28,8 @@
 #define PARITY_NUMBER           5
 #define STOPBITS_NUMBER         3
 #define FLOW_NUMBER             3
+
+#define WRITERETRYATTEMPTS      2
 
 #define DATABITS_MAX            8
 #define DATABITS_MIN            5
@@ -157,8 +160,11 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 #define ALIENUSBVENDORID          0x04B4
 #define ALIENUSBPRODUCTID         0x6870
-
-
+#define ALIENUSBFRONTPATHREM      26
+#define ALIENUSBPATHFIRST         15
+#define ALIENUSBMINDELAY          40
+#define ALIENUSBDELAYDFLT         75
+#define ALIENUSBDELAYDFLTS        "75"
 
 //TCP Socket
 //Address Name & Port Number
@@ -216,6 +222,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 #define USBDEVICEMASK           "000"
 #define USBINPUTMASKHEX         "HHHH"
+#define USBRECOILDELAYMASK      "9999"
 
 #define TESTHIDMASK             "HHHHHHHHHHHHHHHHHHHHHHHH"
 #define TESTCOMMASK             "NNNNNNNNNNNNNNNNNNNNNNNN"
@@ -301,8 +308,10 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 //Process Default LG Commands
 #define CMDSIGNAL               '>'
 #define OPENCOMPORT             ">Open_COM"
+#define OPENCOMPORTLENGTH       9
 #define OPENCOMPORT2CHAR        "O"
 #define CLOSECOMPORT            ">Close_COM"
+#define CLOSECOMPORTLENGTH      10
 #define CLOSECOMPORT2CHAR       "C"
 #define DAMAGECMD               ">Damage"
 #define RECOILCMD               ">Recoil"
@@ -324,7 +333,17 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define RECOILCMDCNT            8
 #define RECOIL_R2SCMDCNT        12
 #define RECOIL_R2SMINPERCT      30
+#define OPENCOMPORTNOINIT       ">Open_COM_NoInit"
+#define CLOSECOMPORTNOINIT      ">Close_COM_NoInit"
+#define CLOSECOMPORTINITCHK     11
+#define CLOSECOMPORTNOINIT11    'N'
+#define CLOSECOMPORTINITONLY    ">Close_COM_InitOnly"
 #define DISPLAYAMMOCMD          ">Display_Ammo"
+#define DISPLAYAMMOINITCMD      ">Display_Ammo_Init"
+#define DISPLAYLIFECMD          ">Display_Life"
+#define DISPLAYLIFEINITCMD      ">Display_Life_Init"
+#define DISPLAYOTHERCMD         ">Display_Other"
+#define DISPLAYOTHERINITCMD     ">Display_Other_Init"
 
 #define OPENCOMPORTONLY         "Open_COM"
 #define CLOSECOMPORTONLY        "Close_COM"
@@ -341,9 +360,15 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define KANDMMODECMDONLY        "Keyboard_Mouse_Mode"
 #define DLGNULLCMDONLY          "Null"
 #define RECOIL_R2SONLY          "Recoil_R2S"
+#define OPENCOMPORTNOINITONLY   "Open_COM_NoInit"
+#define CLOSECOMPORTNOINITONLY  "Close_COM_NoInit"
+#define CLOSECOMPORTINITONLYON  "Close_COM_InitOnly"
 #define DISPLAYAMMOONLY         "Display_Ammo"
-
-
+#define DISPLAYAMMOINITONLY     "Display_Ammo_Init"
+#define DISPLAYLIFEONLY         "Display_Life"
+#define DISPLAYLIFEINITONLY     "Display_Life_Init"
+#define DISPLAYOTHERONLY        "Display_Other"
+#define DISPLAYOTHERINITONLY    "Display_Other_Init"
 
 
 //Not Used Yet, But Needed for Future
@@ -381,6 +406,7 @@ struct INIPortStruct
 struct HIDInfo
 {
     QString     path;
+    QString     displayPath;
     quint16     vendorID;
     QString     vendorIDString;
     quint16     productID;
@@ -395,9 +421,12 @@ struct HIDInfo
     QString     usageString;
     qint8       interfaceNumber;
 
-    bool operator==(const HIDInfo& other) const {
-        return (path == other.path) && (vendorID == other.vendorID) && (vendorIDString == other.vendorIDString) && (productID == other.productID) && (productIDString == other.productIDString) && (serialNumber == other.serialNumber) && (releaseNumber == other.releaseNumber)
-               && (releaseString == other.releaseString)  && (manufacturer == other.manufacturer) && (productDiscription == other.productDiscription) && (usagePage == other.usagePage) && (usage == other.usage) && (usageString == other.usageString) && (interfaceNumber == other.interfaceNumber);
+    bool operator==(const HIDInfo& other) const
+    {
+        return (path == other.path) && (displayPath == other.displayPath) && (vendorID == other.vendorID) && (vendorIDString == other.vendorIDString)
+               && (productID == other.productID) && (productIDString == other.productIDString) && (serialNumber == other.serialNumber) && (releaseNumber == other.releaseNumber)
+               && (releaseString == other.releaseString)  && (manufacturer == other.manufacturer) && (productDiscription == other.productDiscription)
+               && (usagePage == other.usagePage) && (usage == other.usage) && (usageString == other.usageString) && (interfaceNumber == other.interfaceNumber);
     }
 };
 

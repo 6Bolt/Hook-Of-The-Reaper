@@ -40,6 +40,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     hubComPortNumber = UNASSIGN;
 
     isUSBLightGun = false;
+    isRecoilDelaySet = false;
+    blockRecoil = false;
 
     FillSerialPortInfo();
 
@@ -98,6 +100,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     lastAmmoValue =0;
 
     isUSBLightGun = false;
+    isRecoilDelaySet = false;
+    blockRecoil = false;
 
     FillSerialPortInfo();
 
@@ -107,6 +111,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 //For Copy Light Gun
 LightGun::LightGun(LightGun const &lgMember)
 {
+    //*this = lgMember;
+
     defaultLightGun = lgMember.defaultLightGun;
     if(defaultLightGun)
         defaultLightGunNum = lgMember.defaultLightGunNum;
@@ -176,11 +182,33 @@ LightGun::LightGun(LightGun const &lgMember)
         isAnalogStrengthSet = false;
     }
 
-    lastAmmoValue =0;
-
     isUSBLightGun = lgMember.isUSBLightGun;
+    isRecoilDelaySet = lgMember.isRecoilDelaySet;
+
+    if(isUSBLightGun)
+        usbHIDInfo = lgMember.usbHIDInfo;
+
+    if(isRecoilDelaySet)
+    {
+        recoilDelay = lgMember.recoilDelay;
+
+        InitRecoilDelayTimer();
+    }
+    else
+        recoilDelay = 0;
+
+    blockRecoil = false;
 
     serialPortInfo = lgMember.serialPortInfo;
+
+    if(!isUSBLightGun)
+        FillSerialPortInfo();
+
+    currentPath = lgMember.currentPath;
+    dataPath = lgMember.dataPath;
+    defaultLGFilePath = lgMember.defaultLGFilePath;
+
+    lastAmmoValue =0;
 
     LoadDefaultLGCommands();
 
@@ -239,6 +267,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     lastAmmoValue =0;
 
     isUSBLightGun = false;
+    isRecoilDelaySet = false;
+    blockRecoil = false;
 
     FillSerialPortInfo();
 
@@ -299,6 +329,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     lastAmmoValue =0;
 
     isUSBLightGun = false;
+    isRecoilDelaySet = false;
+    blockRecoil = false;
 
     FillSerialPortInfo();
 
@@ -306,7 +338,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 }
 
 //Alien USB Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay)
 {
     defaultLightGun = lgDefault;
     defaultLightGunNum = dlgNum;
@@ -331,6 +363,12 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     lastAmmoValue =0;
 
     isUSBLightGun = true;
+    isRecoilDelaySet = true;
+    blockRecoil = false;
+
+    recoilDelay = rcDelay;
+
+    InitRecoilDelayTimer();
 
     LoadDefaultLGCommands();
 }
@@ -435,6 +473,11 @@ void LightGun::SetHubComPortNumber(quint8 hcpNumber)
 void LightGun::SetHIDInfo(HIDInfo hidInfoStruct)
 {
     usbHIDInfo = hidInfoStruct;
+}
+
+void LightGun::SetRecoilDelay(quint16 rcDelay)
+{
+    recoilDelay = rcDelay;
 }
 
 //Get Member Functions
@@ -601,9 +644,126 @@ bool LightGun::IsLightGunUSB()
     return isUSBLightGun;
 }
 
+quint16 LightGun::GetRecoilDelay()
+{
+    if(isRecoilDelaySet)
+        return recoilDelay;
+    else
+        return 0;
+}
+
+QString LightGun::GetComPortPath()
+{
+    if(!isUSBLightGun)
+    {
+        if(serialPortInfo.path.isEmpty ())
+            return comPortInfo.systemLocation();
+        else
+            return serialPortInfo.path;
+    }
+    else
+        return "";
+}
+
+
 void LightGun::CopyLightGun(LightGun const &lgMember)
 {
-    *this = lgMember;
+
+    //*this = lgMember;
+
+
+    defaultLightGun = lgMember.defaultLightGun;
+    if(defaultLightGun)
+        defaultLightGunNum = lgMember.defaultLightGunNum;
+    else
+        defaultLightGunNum = 0;
+
+    lightGunName = lgMember.lightGunName;
+    lightGunNum = lgMember.lightGunNum;
+
+    comPortNum = lgMember.comPortNum;
+    comPortString = lgMember.comPortString;
+    comPortInfo = lgMember.comPortInfo;
+    comPortBaud = lgMember.comPortBaud;
+    comPortDataBits = lgMember.comPortDataBits;
+    comPortParity = lgMember.comPortParity;
+    comPortStopBits = lgMember.comPortStopBits;
+    comPortFlow = lgMember.comPortFlow;
+
+    if(lgMember.maxAmmoSet)
+    {
+        maxAmmo = lgMember.maxAmmo;
+        maxAmmoSet = true;
+    }
+    else if(defaultLightGun && defaultLightGunNum == RS3_REAPER)
+    {
+        maxAmmo = DEFAULTLG_ARRAY[defaultLightGunNum].MAXAMMON;
+        maxAmmoSet = true;
+    }
+    else
+    {
+        maxAmmoSet = false;
+    }
+
+    if(lgMember.reloadValueSet)
+    {
+        reloadValue = lgMember.reloadValue;
+        reloadValueSet = true;
+    }
+    else if(defaultLightGun && defaultLightGunNum == RS3_REAPER)
+    {
+        reloadValue = DEFAULTLG_ARRAY[defaultLightGunNum].RELOADVALUEN;
+        reloadValueSet = true;
+    }
+    else
+    {
+        reloadValueSet = false;
+    }
+
+    if(lgMember.isDipSwitchPlayerNumberSet)
+    {
+        dipSwitchPlayerNumber = lgMember.dipSwitchPlayerNumber;
+        isDipSwitchPlayerNumberSet = true;
+    }
+    else
+        isDipSwitchPlayerNumberSet = false;
+
+    hubComPortNumber = lgMember.hubComPortNumber;
+
+    if(lgMember.isAnalogStrengthSet)
+    {
+        analogStrength = lgMember.analogStrength;
+        isAnalogStrengthSet = true;
+    }
+    else
+    {
+        analogStrength = DEFAULTANALOGSTRENGTH;
+        isAnalogStrengthSet = false;
+    }
+
+    isUSBLightGun = lgMember.isUSBLightGun;
+    isRecoilDelaySet = lgMember.isRecoilDelaySet;
+
+    if(isUSBLightGun)
+        usbHIDInfo = lgMember.usbHIDInfo;
+
+    if(isRecoilDelaySet)
+        recoilDelay = lgMember.recoilDelay;
+
+
+    serialPortInfo = lgMember.serialPortInfo;
+
+    if(!isUSBLightGun)
+        FillSerialPortInfo();
+
+    currentPath = lgMember.currentPath;
+    dataPath = lgMember.dataPath;
+    defaultLGFilePath = lgMember.defaultLGFilePath;
+
+    lastAmmoValue =0;
+
+    LoadDefaultLGCommands();
+
 }
 
 
@@ -963,79 +1123,70 @@ QStringList LightGun::SplitLoadedCommands(QString commandList)
 QStringList LightGun::OpenComPortCommands(bool *isSet)
 {
     *isSet = openComPortCmdsSet;
-
-    if(openComPortCmdsSet)
-        return openComPortCmds;
-    else
-    {
-        QStringList tempSL;
-        return tempSL;
-    }
+    return openComPortCmds;
 }
 
 QStringList LightGun::CloseComPortCommands(bool *isSet)
 {
     *isSet = closeComPortCmdsSet;
-
-    if(closeComPortCmdsSet)
-        return closeComPortCmds;
-    else
-    {
-        QStringList tempSL;
-        return tempSL;
-    }
+    return closeComPortCmds;
 }
 
 QStringList LightGun::DamageCommands(bool *isSet)
 {
     *isSet = damageCmdsSet;
-
-    if(damageCmdsSet)
-        return damageCmds;
-    else
-    {
-        QStringList tempSL;
-        return tempSL;
-    }
+    return damageCmds;
 }
 
 QStringList LightGun::RecoilCommands(bool *isSet)
 {
     *isSet = recoilCmdsSet;
 
-    if(recoilCmdsSet)
-        return recoilCmds;
-    else
+    if(isRecoilDelaySet)
     {
-        QStringList tempSL;
-        return tempSL;
+        if(blockRecoil)
+        {
+            *isSet = false;
+            QStringList tempSL;
+            return tempSL;
+        }
+        else
+        {
+            blockRecoil = true;
+            //Start the Timer
+            p_recoilDelayTimer->start ();
+        }
     }
+    return recoilCmds;
 }
 
 QStringList LightGun::ReloadCommands(bool *isSet)
 {
     *isSet = reloadCmdsSet;
-
-    if(reloadCmdsSet)
-        return reloadCmds;
-    else
-    {
-        QStringList tempSL;
-        return tempSL;
-    }
+    return reloadCmds;
 }
 
 QStringList LightGun::AmmoCommands(bool *isSet)
 {
     *isSet = ammoCmdsSet;
 
-    if(ammoCmdsSet)
-        return ammoCmds;
-    else
+    if(isRecoilDelaySet)
     {
-        QStringList tempSL;
-        return tempSL;
+        if(blockRecoil)
+        {
+            *isSet = false;
+            QStringList tempSL;
+            return tempSL;
+        }
+        else
+        {
+            blockRecoil = true;
+            //Start the Timer
+            p_recoilDelayTimer->start ();
+        }
     }
+
+    return ammoCmds;
 }
 
 QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
@@ -1089,10 +1240,16 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
         else
         {
             //If Ammo Value is 0, do nothing
-            if(ammoValue == 0)
+            if(ammoValue == 0 || blockRecoil)
             {
                 *isSet = false;
                 return tempSL;
+            }
+            else
+            {
+                blockRecoil = true;
+                //Start the Timer
+                p_recoilDelayTimer->start ();
             }
 
             tempAVS = QString::number(ammoValue, 10);
@@ -1172,93 +1329,44 @@ QStringList LightGun::DisplayAmmoCommands(bool *isSet, quint16 ammoValue)
 QStringList LightGun::ShakeCommands(bool *isSet)
 {
     *isSet = shakeCmdsSet;
-
-    if(shakeCmdsSet)
-        return shakeCmds;
-    else
-    {
-        QStringList tempSL;
-        return tempSL;
-    }
+    return shakeCmds;
 }
 
 QStringList LightGun::AutoLEDCommands(bool *isSet)
 {
     *isSet = autoLedCmdsSet;
-
-    if(autoLedCmdsSet)
-        return autoLedCmds;
-    else
-    {
-        QStringList tempSL;
-        return tempSL;
-    }
+    return autoLedCmds;
 }
 
 QStringList LightGun::AspectRatio16b9Commands(bool *isSet)
 {
     *isSet = aspect16x9CmdsSet;
-
-    if(aspect16x9CmdsSet)
-        return aspect16x9Cmds;
-    else
-    {
-        QStringList tempSL;
-        return tempSL;
-    }
+    return aspect16x9Cmds;
 }
 
 QStringList LightGun::AspectRatio4b3Commands(bool *isSet)
 {
     *isSet = aspect4x3CmdsSet;
-
-    if(aspect4x3CmdsSet)
-        return aspect4x3Cmds;
-    else
-    {
-        QStringList tempSL;
-        return tempSL;
-    }
+    return aspect4x3Cmds;
 }
 
 QStringList LightGun::JoystickModeCommands(bool *isSet)
 {
     *isSet = joystickCmdsSet;
-
-    if(joystickCmdsSet)
-        return joystickCmds;
-    else
-    {
-        QStringList tempSL;
-        return tempSL;
-    }
+    return joystickCmds;
 }
 
 
 QStringList LightGun::MouseAndKeyboardModeCommands(bool *isSet)
 {
     *isSet = keyMouseCmdsSet;
-
-    if(keyMouseCmdsSet)
-        return keyMouseCmds;
-    else
-    {
-        QStringList tempSL;
-        return tempSL;
-    }
+    return keyMouseCmds;
 }
 
 QStringList LightGun::RecoilR2SCommands(bool *isSet)
 {
     *isSet = recoilR2SCmdsSet;
-
-    if(recoilR2SCmdsSet)
-        return recoilR2SCmds;
-    else
-    {
-        QStringList tempSL;
-        return tempSL;
-    }
+    return recoilR2SCmds;
 }
 
 
@@ -1268,40 +1376,28 @@ void LightGun::ResetLightGun()
     lastAmmoValue = 0;
 }
 
-bool LightGun::CheckUSBVIDAndPID(quint16 checkVID, quint16 checkPID)
+
+bool LightGun::CheckUSBPath(QString lgPath)
 {
     if(!isUSBLightGun)
         return false;
     else
     {
-        if(checkVID == usbHIDInfo.vendorID && checkPID == usbHIDInfo.productID)
-        {
-            if(usbHIDInfo.serialNumber.isEmpty ())
-                return true;
-            else
-                return false;
-        }
+        if(lgPath == usbHIDInfo.displayPath)
+            return true;
         else
             return false;
     }
 }
 
-bool LightGun::CheckUSBParams(quint16 checkVID, quint16 checkPID, QString checkSN)
+
+/////////////////////////////////////////////
+/// private slots
+
+
+void LightGun::ClearRecoilDelayBlock()
 {
-    if(!isUSBLightGun)
-        return false;
-    else
-    {
-        if(checkVID == usbHIDInfo.vendorID && checkPID == usbHIDInfo.productID)
-        {
-            if(checkSN == usbHIDInfo.serialNumber)
-                return true;
-            else
-                return false;
-        }
-        else
-            return false;
-    }
+    blockRecoil = false;
 }
 
 /////////////////////////////////////////////
@@ -1319,10 +1415,9 @@ void LightGun::FillSerialPortInfo()
     if(serialPortInfo.hasVendorID)
     {
         serialPortInfo.vendorID = comPortInfo.vendorIdentifier();
-        QString tempVID = QString::number(serialPortInfo.vendorID, 16).rightJustified(4, '0');
-        tempVID = tempVID.toUpper ();
-        tempVID.prepend ("0x");
-        serialPortInfo.vendorIDString = tempVID;
+        serialPortInfo.vendorIDString = QString::number(serialPortInfo.vendorID, 16).rightJustified(4, '0');
+        serialPortInfo.vendorIDString = serialPortInfo.vendorIDString.toUpper ();
+        serialPortInfo.vendorIDString.prepend ("0x");
     }
 
     serialPortInfo.hasProductID = comPortInfo.hasProductIdentifier();
@@ -1330,10 +1425,9 @@ void LightGun::FillSerialPortInfo()
     if(serialPortInfo.hasProductID)
     {
         serialPortInfo.productID = comPortInfo.productIdentifier();
-        QString tempPID = QString::number(serialPortInfo.productID, 16).rightJustified(4, '0');
-        tempPID = tempPID.toUpper ();
-        tempPID.prepend ("0x");
-        serialPortInfo.productIDString = tempPID;
+        serialPortInfo.productIDString = QString::number(serialPortInfo.productID, 16).rightJustified(4, '0');
+        serialPortInfo.productIDString = serialPortInfo.productIDString.toUpper ();
+        serialPortInfo.productIDString.prepend ("0x");
     }
 
     serialPortInfo.portName = comPortInfo.portName ();
@@ -1341,7 +1435,17 @@ void LightGun::FillSerialPortInfo()
 }
 
 
+void LightGun::InitRecoilDelayTimer()
+{
+    p_recoilDelayTimer = new QTimer(this);
 
+    //Set Interval to the Setting of refresh Time Display
+    p_recoilDelayTimer->setInterval (recoilDelay);
+
+    //Set Up the Signal and Slots for the timer
+    connect(p_recoilDelayTimer, SIGNAL(timeout()), this, SLOT(ClearRecoilDelayBlock()));
+
+}
 
 
 

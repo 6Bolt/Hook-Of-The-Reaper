@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>701</width>
-    <height>731</height>
+    <height>791</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -326,7 +326,7 @@
    <property name="geometry">
     <rect>
      <x>620</x>
-     <y>700</y>
+     <y>760</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -342,7 +342,7 @@
    <property name="geometry">
     <rect>
      <x>540</x>
-     <y>700</y>
+     <y>760</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -358,7 +358,7 @@
    <property name="geometry">
     <rect>
      <x>460</x>
-     <y>700</y>
+     <y>760</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -752,7 +752,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>590</y>
+     <y>630</y>
      <width>81</width>
      <height>41</height>
     </rect>
@@ -770,8 +770,8 @@
    <property name="geometry">
     <rect>
      <x>140</x>
-     <y>600</y>
-     <width>41</width>
+     <y>640</y>
+     <width>51</width>
      <height>24</height>
     </rect>
    </property>
@@ -787,29 +787,11 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="label_24">
-   <property name="geometry">
-    <rect>
-     <x>190</x>
-     <y>590</y>
-     <width>101</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>In Hex Format</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="label_25">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>630</y>
+     <y>670</y>
      <width>81</width>
      <height>41</height>
     </rect>
@@ -827,8 +809,8 @@
    <property name="geometry">
     <rect>
      <x>140</x>
-     <y>640</y>
-     <width>41</width>
+     <y>680</y>
+     <width>51</width>
      <height>24</height>
     </rect>
    </property>
@@ -842,24 +824,6 @@
    </property>
    <property name="readOnly">
     <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_26">
-   <property name="geometry">
-    <rect>
-     <x>190</x>
-     <y>630</y>
-     <width>101</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>In Hex Format</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_27">
@@ -971,8 +935,8 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>670</y>
-     <width>111</width>
+     <y>590</y>
+     <width>121</width>
      <height>41</height>
     </rect>
    </property>
@@ -982,15 +946,15 @@
     </font>
    </property>
    <property name="text">
-    <string>Serial Number:</string>
+    <string>Path:</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="serialUSBLineEdit">
+  <widget class="QLineEdit" name="displayPathUSBLineEdit">
    <property name="geometry">
     <rect>
      <x>140</x>
-     <y>680</y>
-     <width>111</width>
+     <y>600</y>
+     <width>551</width>
      <height>24</height>
     </rect>
    </property>
@@ -1000,7 +964,7 @@
     </font>
    </property>
    <property name="alignment">
-    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+    <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
    </property>
    <property name="readOnly">
     <bool>true</bool>
@@ -1022,6 +986,94 @@
    </property>
    <property name="text">
     <string>Get All USB HID Devices</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_26">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>710</y>
+     <width>91</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Recoil Delay:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="recoilDelayLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>720</y>
+     <width>51</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+   </property>
+   <property name="readOnly">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_30">
+   <property name="geometry">
+    <rect>
+     <x>200</x>
+     <y>710</y>
+     <width>31</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>ms</string>
+   </property>
+  </widget>
+  <widget class="QLCDNumber" name="lgLCDNumber">
+   <property name="geometry">
+    <rect>
+     <x>590</x>
+     <y>40</y>
+     <width>64</width>
+     <height>23</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_24">
+   <property name="geometry">
+    <rect>
+     <x>440</x>
+     <y>30</y>
+     <width>141</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Light Gun(s) In List:</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
    </property>
   </widget>
  </widget>

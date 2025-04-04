@@ -42,7 +42,8 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     commandLGList << OPENCOMPORT << CLOSECOMPORT << DAMAGECMD << RECOILCMD << RELOADCMD;
     commandLGList << AMMOCMD << AMMOVALUECMD << SHAKECMD << AUTOLEDCMD << ARATIO169CMD;
     commandLGList << ARATIO43CMD << JOYMODECMD << KANDMMODECMD << DLGNULLCMD << RECOIL_R2SCMD;
-    commandLGList << DISPLAYAMMOCMD;
+    commandLGList << OPENCOMPORTNOINIT << CLOSECOMPORTNOINIT << DISPLAYAMMOCMD << DISPLAYAMMOINITCMD;
+    commandLGList << DISPLAYLIFECMD << DISPLAYLIFEINITCMD << DISPLAYOTHERCMD << DISPLAYOTHERINITCMD << CLOSECOMPORTINITONLY;
 
 
     //qDebug() << "Hooker Engine Started";
@@ -2149,8 +2150,8 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber, QSt
 bool HookerEngine::FindUSBHIDDeviceINI(quint16 vendorID, quint16 productID, quint8 deviceNumber)
 {
     HIDInfo foundHIDInfo;
-    QString serialNumber;
-    QStringList serialNumberList;
+    QString path;
+    QStringList pathList;
     quint8 numberOfDevices = 0;
     QString hidKey;
 
@@ -2187,19 +2188,18 @@ bool HookerEngine::FindUSBHIDDeviceINI(quint16 vendorID, quint16 productID, quin
     //Multiple Devices can have Same vendorID, productID, and Serial Number
     for (; devs; devs = devs->next)
     {
+        path = QString::fromLatin1(devs->path);
+
         if(numberOfDevices == 0)
         {
-            serialNumber = QString::fromWCharArray(devs->serial_number);
-            serialNumberList << serialNumber;
+            pathList << path;
             numberOfDevices++;
         }
         else
         {
-            serialNumber = QString::fromWCharArray(devs->serial_number);
-
-            if(!serialNumberList.contains (serialNumber))
+            if(!pathList.contains (path))
             {
-                serialNumberList << serialNumber;
+                pathList << path;
                 numberOfDevices++;
             }
         }
@@ -2221,6 +2221,10 @@ bool HookerEngine::FindUSBHIDDeviceINI(quint16 vendorID, quint16 productID, quin
             foundHIDInfo.productIDString = tempPID;
 
             foundHIDInfo.path = QString::fromLatin1(devs->path);
+            QString tempDP = foundHIDInfo.path;
+            tempDP.remove(0,ALIENUSBFRONTPATHREM);
+            foundHIDInfo.displayPath = tempDP;
+
             foundHIDInfo.serialNumber = QString::fromWCharArray(devs->serial_number);
             foundHIDInfo.releaseNumber = devs->release_number;
             QString tempR = QString::number(devs->release_number, 16).rightJustified(4, '0');
@@ -2238,7 +2242,7 @@ bool HookerEngine::FindUSBHIDDeviceINI(quint16 vendorID, quint16 productID, quin
 
             quint8 playerNum = hidPlayerMap.count ();
 
-            if(playerNum == 4)
+            if(playerNum >= 4)
             {
                 QString tempCrit = "The USB HID can only have 4 HIDs open at one time for the light guns. This is for P1 to P4.\nVendorID: "+QString::number(vendorID, 16)+"\nProductID: "+QString::number(productID, 16)+"\nDevice Number: "+QString::number(deviceNumber);
                 if(displayMB)
@@ -2566,10 +2570,13 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
 void HookerEngine::OpenINIComPort(quint8 cpNum)
 {
     QString cpName = BEGINCOMPORTNAME+QString::number(cpNum);
+    QString cpPath = cpName;
+    cpPath.prepend (COMPORTPATHFRONT);
+
 
     //qDebug() << "OpenINIComPort with name: " << cpName << " Emitting StartComPort";
 
-    emit StartComPort(cpNum, cpName, iniPortMap[cpNum].baud, iniPortMap[cpNum].data, iniPortMap[cpNum].parity, iniPortMap[cpNum].stop, 0, true);
+    emit StartComPort(cpNum, cpName, iniPortMap[cpNum].baud, iniPortMap[cpNum].data, iniPortMap[cpNum].parity, iniPortMap[cpNum].stop, 0, cpPath, true);
 }
 
 void HookerEngine::CloseINIComPort(quint8 cpNum)
@@ -3143,7 +3150,7 @@ bool HookerEngine::CheckLGCommand(QString commndNotChk)
 
 void HookerEngine::ProcessLGCommands(QString signalName, QString value)
 {
-    QStringList commands, dlgCommands, multiValue, tmpCMDs;
+    QStringList commands, dlgCommands, multiValue;
     quint8 cmdCount;
     bool allPlayers;
     quint8 playerNum = 69;
@@ -3215,19 +3222,26 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
         //Check Chars for Faster Processing
         if(commands[i][1] == OPENCOMPORT2CHAR)
         {
-            if(commands[i] == OPENCOMPORT)
-            {
-                //Open COM Port from Players Info
-                OpenLGComPort(allPlayers, playerNum);
-            }
+
+            if(commands[i].length () > OPENCOMPORTLENGTH)
+                OpenLGComPort(allPlayers, playerNum, true);
+            else
+                OpenLGComPort(allPlayers, playerNum, false);
+
         }
         else if(commands[i][1] == CLOSECOMPORT2CHAR)
         {
-            if(commands[i] == CLOSECOMPORT)
+
+            if(commands[i].length () > CLOSECOMPORTLENGTH)
             {
-                //Close COM Port from Players Info
-                CloseLGComPort(allPlayers, playerNum);
+                if(commands[i][CLOSECOMPORTINITCHK] == CLOSECOMPORTNOINIT11)
+                    CloseLGComPort(allPlayers, playerNum, true, false);   // NoInit
+                else
+                    CloseLGComPort(allPlayers, playerNum, false, true);   // InitOnly
             }
+            else
+                CloseLGComPort(allPlayers, playerNum, false, false);      // Regular
+
         }
         else if(commands[i][0] == CMDSIGNAL)
         {
@@ -3322,7 +3336,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                 {
                                     if(isPRecoilR2SFirstTime[player])
                                     {
-                                        tmpCMDs = p_comDeviceList->p_lightGunList[lightGun]->RecoilR2SCommands(&dlgCMDFound);
+                                        QStringList tmpCMDs = p_comDeviceList->p_lightGunList[lightGun]->RecoilR2SCommands(&dlgCMDFound);
                                         if(dlgCMDFound && tmpCMDs.count() > 1)
                                         {
                                             quint32 delay = tmpCMDs[0].toULong();
@@ -3344,7 +3358,6 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                                 pRecoilR2SCommands[player] << tmpCMDs[x];
 
                                             isPRecoilR2SFirstTime[player] = false;
-                                            tmpCMDs.clear();
                                         }
                                     }
                                     else
@@ -3434,7 +3447,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
     }//for(i = 1; i < cmdCount; i++) Main Command Loop
 }
 
-void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum)
+void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum, bool noInit)
 {
     quint8 howManyPlayers, i, player, lightGun, j;
 
@@ -3445,6 +3458,7 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum)
     quint8 tempParity;
     quint8 tempStop;
     quint8 tempFlow;
+    QString tempPath;
     QStringList commands;
     quint8 cmdCount;
     bool isCommands;
@@ -3487,9 +3501,10 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum)
                 tempParity = p_comDeviceList->p_lightGunList[lightGun]->GetComPortParity();
                 tempStop = p_comDeviceList->p_lightGunList[lightGun]->GetComPortStopBits();
                 tempFlow = p_comDeviceList->p_lightGunList[lightGun]->GetComPortFlow();
+                tempPath = p_comDeviceList->p_lightGunList[lightGun]->GetComPortPath();
 
                 //Opens the COM Port
-                emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, true);
+                emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, tempPath, true);
 
             }
             else
@@ -3499,30 +3514,32 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum)
                 emit StartUSBHID(player, lgHIDInfo);
             }
 
-            //Get the Commnds for Open COM Port
-            commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
-            cmdCount = commands.count();
-
-            //qDebug() << "Command Count: " << cmdCount << " Commands: " << commands;
-
-            //Write Commands to the COM Port
-            if(isCommands)
+            if(!noInit)
             {
-                for(j = 0; j < cmdCount; j++)
+
+                //Get the Commnds for Open COM Port
+                commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
+                cmdCount = commands.count();
+
+                //qDebug() << "Command Count: " << cmdCount << " Commands: " << commands;
+
+                //Write Commands to the COM Port
+                if(isCommands)
                 {
-                    if(isUSB)
-                        WriteLGUSBHID(player, commands[j]);
-                    else
-                        WriteLGComPort(tempCPNum, commands[j]);
+                    for(j = 0; j < cmdCount; j++)
+                    {
+                        if(isUSB)
+                            WriteLGUSBHID(player, commands[j]);
+                        else
+                            WriteLGComPort(tempCPNum, commands[j]);
+                    }
                 }
             }
-
-
         } //if(lightGun != UNASSIGN)
     } //for(i = 0; i < howManyPlayers; i++)
 }
 
-void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
+void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum, bool noInit, bool initOnly)
 {
     quint8 howManyPlayers, i, j, player, lightGun;
     quint8 tempCPNum;
@@ -3556,39 +3573,40 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum)
             if(!isUSB)
             {
                 //Get COM Port For Light Gun
-                //tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
                 tempCPNum = loadedLGComPortNumber[player];
             }
 
-            //Get Close COM Port Commands for Light Gun
-            commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
-            cmdCount = commands.count();
-
-            //Write Commnds to COM Port
-            if(isCommands)
+            if(!noInit || initOnly)
             {
-                for(j = 0; j < cmdCount; j++)
+
+                //Get Close COM Port Commands for Light Gun
+                commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
+                cmdCount = commands.count();
+
+                //Write Commnds to COM Port
+                if(isCommands)
                 {
-                    //qDebug() << "Closing COM Port: " << tempCPNum << " Command: " << commands[j];
-                    if(isUSB)
-                        WriteLGUSBHID(player, commands[j]);
-                    else
-                        WriteLGComPort(tempCPNum, commands[j]);
+                    for(j = 0; j < cmdCount; j++)
+                    {
+                        //qDebug() << "Closing COM Port: " << tempCPNum << " Command: " << commands[j];
+                        if(isUSB)
+                            WriteLGUSBHID(player, commands[j]);
+                        else
+                            WriteLGComPort(tempCPNum, commands[j]);
+                    }
                 }
             }
 
             //Closes The COM Port
-            if(closeComPortGameExit)
+            if(closeComPortGameExit && !initOnly)
             {
                 if(isUSB)
                     emit StopUSBHID(player);
                 else
                     emit StopComPort(tempCPNum);
             }
-
         }
     }
-
 }
 
 void HookerEngine::WriteLGComPort(quint8 cpNum, QString cpData)

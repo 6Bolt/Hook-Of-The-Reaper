@@ -37,7 +37,7 @@ public:
     //For JB Gun4IR & OpenFire Light Gun
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint8 analStrength);
     //For Alien USB Light Gun
-    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct);
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay);
 
 
     //Adds a COM Device in the List
@@ -113,10 +113,10 @@ public:
     void            ResetLightGun(quint8 lgNeedReset);
 
     //Check is the USB Light Gun Already Exsits
-    bool            CheckUSBVIDAndPID(quint16 checkVID, quint16 checkPID);
-    bool            CheckUSBParams(quint16 checkVID, quint16 checkPID, QString checkSN);
-    bool            CheckUSBVIDAndPID(quint16 checkVID, quint16 checkPID, quint8 lgNumber);
-    bool            CheckUSBParams(quint16 checkVID, quint16 checkPID, QString checkSN, quint8 lgNumbeer);
+    bool            CheckUSBPath(QString lgPath);
+    bool            CheckUSBPath(QString lgPath, quint8 lgNumbeer);
+
+    QList<HIDInfo>  GetLightGunHIDInfo();
 
     //Processes usage & usagePage from USB HID Data
     QString         ProcessHIDUsage(quint16 usagePage, quint16 usage);

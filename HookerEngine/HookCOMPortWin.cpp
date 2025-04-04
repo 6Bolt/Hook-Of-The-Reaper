@@ -10,6 +10,7 @@ HookCOMPortWin::HookCOMPortWin(QObject *parent)
     {
         comPortOpen[i] = false;
         comPortArray[i] = nullptr;
+        noLightGunWarning[i] = false;
     }
 
     //Init the USB HID
@@ -55,7 +56,7 @@ HookCOMPortWin::~HookCOMPortWin()
 
 //public slots
 
- void HookCOMPortWin::Connect(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const bool &isWriteOnly)
+ void HookCOMPortWin::Connect(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const QString &comPortPath, const bool &isWriteOnly)
 {
     //Check if it is Already Open, if so, do nothing
     if(comPortOpen[comPortNum] == false)
@@ -80,27 +81,53 @@ HookCOMPortWin::~HookCOMPortWin()
             comPortArray[comPortNum] = CreateFile(portNameLPC, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
 
+        //Use Old COM Port Naming, for people who cannot update their drivers. Not naming anyone
+        if (comPortArray[comPortNum] == INVALID_HANDLE_VALUE)
+        {
+            portName = comPortPath.toStdWString ();
+            portNameLPC = portName.c_str ();
+
+            if(isWriteOnly)
+                comPortArray[comPortNum] = CreateFile(portNameLPC, GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+            else
+                comPortArray[comPortNum] = CreateFile(portNameLPC, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+        }
+
         //If Serial COM Port Connection Failed
         if (comPortArray[comPortNum] == INVALID_HANDLE_VALUE)
         {
             COMSTAT status;
             DWORD errors;
+            quint16 lastError = GetLastError();
+
+            qDebug() << "lastError: " << lastError;
+             qDebug() << "comPortArray[comPortNum]: " << comPortArray[comPortNum] << "GetLastError(): " << lastError;
 
             FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
                           GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                           (LPWSTR)&messageBuffer, 1020, NULL);
 
-            if (GetLastError() == ERROR_FILE_NOT_FOUND)
+            if ((lastError == ERROR_FILE_NOT_FOUND || lastError == ERROR_PATH_NOT_FOUND) && !noLightGunWarning[comPortNum])
             {
                 // serial port not found. Handle error here.
-                QString critMessage = "Can not open the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". COM port not found. Make sure a light gun or a COM device is on that port number.";
+                QString critMessage = "Can not open the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". COM port not found. Make sure a light gun is on that port number.\n Error MSG: "+QString::number(lastError);
+                critMessage.append ("\nThis message will only happen once, but will try to connect to light gun for every game.");
+                emit ErrorMessage("Serial COM Port Error",critMessage);
+                noLightGunWarning[comPortNum] = true;
+                return;
+            }
+            else if((lastError == ERROR_FILE_NOT_FOUND || lastError == ERROR_PATH_NOT_FOUND) && noLightGunWarning[comPortNum])
+            {
+                //Do nothing, as already gave warning. Light Gun may not be plugged in.
+                return;
+            }
+            else
+            {
+                QString critMessage = "Can not open the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". Uknown error. Error Number: "+QString::number(lastError);
                 emit ErrorMessage("Serial COM Port Error",critMessage);
                 return;
             }
-            // any other error. Handle error here.
-            QString critMessage = "Can not open the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". Unknown error. Make sure a light gun or a COM device is on that port number. "+QString::fromWCharArray(messageBuffer);
-            emit ErrorMessage("Serial COM Port Error",critMessage);
-            return;
+
         }
 
         //Set COM Port Params
@@ -120,7 +147,13 @@ HookCOMPortWin::~HookCOMPortWin()
 
             ClearCommError(comPortArray[comPortNum], &errors, &status);
 
-            QString critMessage = "Can not get the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the default settings for the serial port. "+QString::fromWCharArray(messageBuffer);
+            QString critMessage;
+
+            if(messageBuffer == nullptr)
+                critMessage = "Can not get the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the default settings for the serial port.";
+            else
+                critMessage = "Can not get the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the default settings for the serial port. "+QString::fromWCharArray(messageBuffer);
+
             emit ErrorMessage("Serial COM Port Error",critMessage);
             return;
         }
@@ -176,7 +209,7 @@ HookCOMPortWin::~HookCOMPortWin()
         else
             dcbSerialParam.Parity = NOPARITY;  //Default to No Parity, as it is most common
 
-        /*
+
         // setup flowcontrol
         if (comPortFlow == 0)  //None - based on Qt Numbering
         {
@@ -199,7 +232,7 @@ HookCOMPortWin::~HookCOMPortWin()
             dcbSerialParam.fOutX = false;
             dcbSerialParam.fInX = false;
         }
-        */
+
 
         //Set the Params to the Serial Port, and fail handling
         if (!SetCommState(comPortArray[comPortNum], &dcbSerialParam))
@@ -213,7 +246,12 @@ HookCOMPortWin::~HookCOMPortWin()
 
             ClearCommError(comPortArray[comPortNum], &errors, &status);
 
-            QString critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. "+QString::fromWCharArray(messageBuffer);
+            QString critMessage;
+
+            if(messageBuffer == nullptr)
+                critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. ";
+            else
+                critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. "+QString::fromWCharArray(messageBuffer);
             emit ErrorMessage("Serial COM Port Error",critMessage);
             return;
         }
@@ -255,7 +293,12 @@ HookCOMPortWin::~HookCOMPortWin()
 
             ClearCommError(comPortArray[comPortNum], &errors, &status);
 
-            QString critMessage = "Can not set the CommTimeouts for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. "+QString::fromWCharArray(messageBuffer);
+            QString critMessage;
+
+            if(messageBuffer == nullptr)
+                critMessage = "Serial COM Port failed to set TimeOuts, on COM Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
+            else
+                critMessage = "Serial COM Port failed to set TimeOuts, on COM Port: : "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
             emit ErrorMessage("Serial COM Port Error",critMessage);
             return;
         }
@@ -300,42 +343,67 @@ void HookCOMPortWin::WriteData(const quint8 &comPortNum, const QByteArray &write
         //strcpy_s(charArray, size+1, writeData.constData ());
         std::memcpy(charArray, writeData.constData (), size);
         charArray[size] = '\0';
-
+        quint8 retry = 0;
         DWORD dwWrite = 0;
+        qint16 writeOutput;
+        COMSTAT status;
+        DWORD errors;
 
-        if(bypassSerialWriteChecks)
-            WriteFile(comPortArray[comPortNum], charArray, size, &dwWrite, NULL);
-        else
+        //qDebug() << "COM Port: " << comPortNum << " Data: " << writeData.toStdString ();
+
+        writeOutput = WriteFile(comPortArray[comPortNum], charArray, size, &dwWrite, NULL);
+
+        //If Failed Write, then Retry
+        while(writeOutput == 0 && retry != WRITERETRYATTEMPTS)
         {
+            //Clean Out Error & Set dwWrite back to 0
+            ClearCommError(comPortArray[comPortNum], &errors, &status);
+            dwWrite = 0;
 
-            if (!WriteFile(comPortArray[comPortNum], charArray, size, &dwWrite, NULL))
+            //Retry Write Again
+            writeOutput = WriteFile(comPortArray[comPortNum], charArray, size, &dwWrite, NULL);
+
+            retry++;
+        }
+
+        //Bypass Errors if bypassSerialWriteChecks is True
+        if(!bypassSerialWriteChecks)
+        {
+            //If Write Failed
+            if (writeOutput == 0)
             {
-                COMSTAT status;
-                DWORD errors;
-
                 FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
                               GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                               (LPWSTR)&messageBuffer, 1020, NULL);
 
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
-                QString critMessage = "Serial COM Port write failed on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
+                QString critMessage;
+
+                if(messageBuffer == nullptr)
+                    critMessage = "Serial COM Port write failed on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
+                else
+                    critMessage = "Serial COM Port write failed on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
                 emit ErrorMessage("Serial COM Port Error",critMessage);
+                delete [] charArray;
                 return;
             }
 
+            //If Size Doesn't Match Byte Written
             if(size != dwWrite)
             {
-                COMSTAT status;
-                DWORD errors;
-
                 FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
                               GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                               (LPWSTR)&messageBuffer, 1020, NULL);
 
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
-                QString critMessage = "Serial COM Port write still has data to write on Port: "+QString::number(comPortNum)+". Size is "+QString::number(size)+" Bytes Written is "+QString::number(dwWrite)+". Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
+                QString critMessage;
+
+                if(messageBuffer == nullptr)
+                    critMessage = "Serial COM Port write failed on number of bytes written on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
+                else
+                    critMessage = "Serial COM Port write failed on number of bytes written on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
                 emit ErrorMessage("Serial COM Port Error",critMessage);
             }
         }
@@ -382,18 +450,12 @@ void HookCOMPortWin::ConnectHID(const quint8 &playerNum, const HIDInfo &lgHIDInf
     if(!hidOpen[playerNum])
     {
         hidInfoArray[playerNum] = lgHIDInfo;
-        unsigned short vendorID = lgHIDInfo.vendorID;
-        unsigned short productID = lgHIDInfo.productID;
 
-        //If Serial Number, then use It. If Not, then just use NULL
-        if(!lgHIDInfo.serialNumber.isEmpty ())
-        {
-            std::wstring wstr = lgHIDInfo.serialNumber.toStdWString();
-            const wchar_t* serialNumPtr = wstr.c_str();
-            p_hidConnection[playerNum] = hid_open(vendorID, productID, serialNumPtr);
-        }
-        else
-            p_hidConnection[playerNum] = hid_open(vendorID, productID, NULL);
+        QByteArray pathBA = lgHIDInfo.path.toUtf8();
+
+        char* pathPtr = pathBA.data();
+
+        p_hidConnection[playerNum] = hid_open_path(pathPtr);
 
         if(!p_hidConnection[playerNum])
         {
@@ -432,7 +494,15 @@ void HookCOMPortWin::WriteDataHID(const quint8 &playerNum, const QByteArray &wri
 
         const unsigned char *constDataPtr = reinterpret_cast<const unsigned char*>(writeData.constData());
         std::size_t size = writeData.size();
+        quint8 retry = 0;
         qint16 bytesWritten = hid_write(p_hidConnection[playerNum], constDataPtr, size);
+
+        while(bytesWritten == -1 && retry != WRITERETRYATTEMPTS)
+        {
+            bytesWritten = hid_write(p_hidConnection[playerNum], constDataPtr, size);
+            retry++;
+        }
+
 
         if(bytesWritten == -1)
         {

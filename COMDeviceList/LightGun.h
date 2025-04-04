@@ -1,7 +1,7 @@
 #ifndef LIGHTGUN_H
 #define LIGHTGUN_H
 
-
+#include <QObject>
 #include <QSerialPortInfo>
 #include <QApplication>
 #include <QObject>
@@ -9,27 +9,31 @@
 #include <QFile>
 #include <QMessageBox>
 #include <QTextStream>
+#include <QTimer>
 //#include <QDebug>
 
 #include "../Global.h"
 
-class LightGun
+class LightGun : public QObject
 {
+    Q_OBJECT
+
+
 public:
     //Constructors
 
     //RS3 Reaper
-    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber);
     //Normal Light Gun & Fusion & Blamcon
-    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow);
     //Copy Light Gun
-    LightGun(LightGun const &lgMember);
+    explicit LightGun(LightGun const &lgMember);
     //MX24
-    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber);
     //JB Gun4IR & OpenFire
-    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength);
     //For Alien USB Light Gun
-    LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay);
 
     //Set Functions that Sets the Stated Variable
     void SetDefaultLightGun(bool lgDefault);
@@ -50,6 +54,7 @@ public:
     void SetAnalogStrength(quint8 analStrength);
     void SetHubComPortNumber(quint8 hcpNumber);
     void SetHIDInfo(HIDInfo hidInfoStruct);
+    void SetRecoilDelay(quint16 rcDelay);
 
     //Get Functions that Gets the Stated Variable
     bool GetDefaultLightGun();
@@ -77,6 +82,8 @@ public:
     quint8 GetHubComPortNumber();
     HIDInfo GetUSBHIDInfo();
     bool IsLightGunUSB();
+    quint16 GetRecoilDelay();
+    QString GetComPortPath();
 
 
     //If a Default Light Gun, is Needed Varibles Set
@@ -116,15 +123,21 @@ public:
     //Resets Light Gun Back to Starting Start when Game Ends
     void ResetLightGun();
 
-    //Check USB Light Guns against Vendor ID & Product ID, and if available Serial Number
+    //Check USB Light Guns against Display Path
     //To make sure the Same USB is not used twice
-    bool CheckUSBVIDAndPID(quint16 checkVID, quint16 checkPID);
-    bool CheckUSBParams(quint16 checkVID, quint16 checkPID, QString checkSN);
+    bool CheckUSBPath(QString lgPath);
+
+private slots:
+
+    void ClearRecoilDelayBlock();
 
 private:
 
     //Fills in Serial Port Info Struct with Qt Values
     void FillSerialPortInfo();
+
+    //Init The Recoil Delay Timer
+    void InitRecoilDelayTimer();
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -164,6 +177,10 @@ private:
     //USB Info
     bool                isUSBLightGun;
     HIDInfo             usbHIDInfo;
+    bool                isRecoilDelaySet;
+    quint16             recoilDelay;
+    QTimer              *p_recoilDelayTimer;
+    bool                blockRecoil;
 
     QString             currentPath;
     QString             dataPath;
