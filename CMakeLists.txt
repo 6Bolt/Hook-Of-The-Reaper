@@ -57,6 +57,7 @@ target_include_directories(HookOfTheReaper
     ${Qt6Widgets_INCLUDE_DIRS}
     ${Qt6SerialPort_INCLUDE_DIRS}
     ${Qt6Network_INCLUDE_DIRS}
+    ${Qt6Multimedia_INCLUDE_DIRS}
     D:/QtProjects/HookOfTheReaperGit/HIDAPI/include
 )
 target_link_directories(HookOfTheReaper
