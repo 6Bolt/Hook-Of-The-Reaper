@@ -2,6 +2,7 @@ Open_COM=S6
 Close_COM=E
 Damage=F1x2
 Recoil=F0x2
+Recoil_R2S=100
 Reload=F0x0
 Ammo=F0x2
 Ammo_Value=F1x2

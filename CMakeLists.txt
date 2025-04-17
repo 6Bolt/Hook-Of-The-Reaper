@@ -46,6 +46,7 @@ qt_add_executable(HookOfTheReaper
     HookerEngine/HookCOMPortWin.h HookerEngine/HookCOMPortWin.cpp
     data/sounds/sounds.qrc
     data/icons/icons.qrc
+    data/alienUSB.hor data/openFire.hor data/xGunner.hor
 
 )
 
