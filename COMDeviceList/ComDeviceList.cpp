@@ -18,6 +18,7 @@ ComDeviceList::ComDeviceList()
     closeComPortGameExit = true;
     ignoreUselessDLGGF = false;
     bypassSerialWriteChecks = false;
+    disbleReaperLEDs = false;
 
     //More Set Defaults
     for(quint8 comPortIndx=0;comPortIndx<MAXCOMPORTS;comPortIndx++)
@@ -562,7 +563,7 @@ void ComDeviceList::SaveLightGunList()
 
                 out << p_lightGunList[i]->GetHubComPortNumber () << "\n";
             }
-            else if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == JBGUN4IR)
+            else if(p_lightGunList[i]->GetDefaultLightGun() && (p_lightGunList[i]->GetDefaultLightGunNumber () == JBGUN4IR || p_lightGunList[i]->GetDefaultLightGunNumber () == OPENFIRE))
             {
                 bool isAnalSet;
                 quint8 analNumber = p_lightGunList[i]->GetAnalogStrength (&isAnalSet);
@@ -645,6 +646,8 @@ void ComDeviceList::LoadLightGunList()
     QString line, cmpLine;
     bool dipSet, analSet;
     quint8 dipNumber, analNumber, hcpNumber;
+    bool isOpenFireLG = false;
+    bool gotNextLine = false;
 
     QFile loadLGData(lightGunsSaveFile);
 
@@ -684,8 +687,8 @@ void ComDeviceList::LoadLightGunList()
     {
         QSerialPortInfo *p_tempComPortInfo;
 
-        //Get New Line From File
-        line = in.readLine();
+        if(!gotNextLine)
+            line = in.readLine();
 
         //Line Should be "Light Gun #i"
         cmpLine = LIGHTGUNNUMBERFILE + QString::number (i);
@@ -816,6 +819,40 @@ void ComDeviceList::LoadLightGunList()
                 }
 
             }
+            else if(tempIsDefaultGun && tempDefaultGunNum==OPENFIRE)
+            {
+                line = in.readLine();
+
+                if(line.startsWith (LIGHTGUNNUMBERFILE))
+                {
+                    isOpenFireLG = true;
+                    gotNextLine = true;
+                    analNumber = DEFAULTANALOGSTRENGTH;
+                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, analNumber);
+                }
+                else if(line == "0" || line == "1")
+                {
+                    if(line == "0")
+                        analSet = false;
+                    else
+                        analSet = true;
+
+                    //Analog Strength, If Set Above
+                    line = in.readLine();
+
+                    if(analSet)
+                    {
+                        analNumber = line.toUInt ();
+                        AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, analNumber);
+                    }
+                    else
+                    {
+                        AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
+                    }
+
+                    gotNextLine = false;
+                }
+            }
             else
             {
                 AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
@@ -914,6 +951,9 @@ void ComDeviceList::LoadLightGunList()
 
     //Close the File
     loadLGData.close();
+
+    if(isOpenFireLG)
+        SaveLightGunList();
 
 }
 
@@ -1189,6 +1229,11 @@ void ComDeviceList::SaveSettings()
     else
         out << "0\n";
 
+    if(disbleReaperLEDs)
+        out << "1\n";
+    else
+        out << "0\n";
+
 
     out << ENDOFFILE;
 
@@ -1316,21 +1361,38 @@ void ComDeviceList::LoadSettings()
         return;
     }
 
+    //Next Line is to Bypass the Serial Port Write Checks
+    line = in.readLine();
+
+    if(line.startsWith ("1"))
+    {
+        bypassSerialWriteChecks = true;
+    }
+    else if(line.startsWith ("0"))
+    {
+        bypassSerialWriteChecks = false;
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Bypass Serial Port Write Checks. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
+
 
     //Next Line is End of File
     line = in.readLine();
 
     if(line.startsWith (ENDOFFILE))
     {
-        bypassSerialWriteChecks = false;
+        disbleReaperLEDs = false;
         loadSetData.close ();
         this->SaveSettings();
         return;
     }
     else if(line.startsWith ("1"))
-        bypassSerialWriteChecks = true;
+        disbleReaperLEDs = true;
     else if(line.startsWith ("0"))
-        bypassSerialWriteChecks = false;
+        disbleReaperLEDs = false;
 
 
     //Next Line is End of File
@@ -1408,6 +1470,27 @@ void ComDeviceList::SetSerialPortWriteCheckBypass(bool spwCB)
     bypassSerialWriteChecks = spwCB;
 }
 
+bool ComDeviceList::GetDisableReaperLEDs()
+{
+    return disbleReaperLEDs;
+}
+
+void ComDeviceList::SetDisableReaperLEDs(bool drLED)
+{
+    if(disbleReaperLEDs != drLED)
+    {
+        for(quint8 x = 0; x < numberLightGuns; x++)
+        {
+            if(p_lightGunList[x]->GetDefaultLightGun() && p_lightGunList[x]->GetDefaultLightGunNumber() == RS3_REAPER)
+            {
+                p_lightGunList[x]->SetDisableReaperLEDs(drLED);
+                p_lightGunList[x]->LoadDefaultLGCommands();
+            }
+        }
+    }
+
+    disbleReaperLEDs = drLED;
+}
 
 void ComDeviceList::CopyUsedDipPlayersArray(bool *targetArray, quint8 size, quint8 hubComPort)
 {

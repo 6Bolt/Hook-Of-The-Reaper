@@ -10,7 +10,7 @@
 
 #include <QSoundEffect>
 #include <QUrl>
-
+#include <QThread>
 
 #include "../COMDeviceList/ComDeviceList.h"
 

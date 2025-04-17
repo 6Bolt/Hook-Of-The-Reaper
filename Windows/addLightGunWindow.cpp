@@ -3,6 +3,7 @@
 #include "../Global.h"
 
 
+
 //Code to Pring out Serial Port Info
 /*
     const auto serialPortInfos = QSerialPortInfo::availablePorts();
@@ -62,6 +63,7 @@ addLightGunWindow::addLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     ui->defaultLightGunComboBox->insertItem(BLAMCON,BLAMCONNAME);
     ui->defaultLightGunComboBox->insertItem(OPENFIRE,OPENFIRENAME);
     ui->defaultLightGunComboBox->insertItem(ALIENUSB,ALIENUSBNAME);
+    ui->defaultLightGunComboBox->insertItem(XGUNNER,XGUNNERNAME);
     ui->defaultLightGunComboBox->setCurrentIndex (0);
 
     //COM Port Combo Box - Adding Available COM Ports
@@ -348,6 +350,9 @@ void addLightGunWindow::on_okPushButton_clicked()
 
         //Add New Light Gun to ComDeviceList
         AddLightGun();
+
+        QThread::sleep(1);
+
         //Close and Destroy the Window
         accept ();
     }

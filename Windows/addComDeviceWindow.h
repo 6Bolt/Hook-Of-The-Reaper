@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QSerialPortInfo>
 
+
 #include "../COMDeviceList/ComPortDevice.h"
 #include "../COMDeviceList/ComDeviceList.h"
 

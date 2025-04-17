@@ -12,6 +12,7 @@
 #include <QSoundEffect>
 #include <QUrl>
 #include <QLCDNumber>
+#include <QThread>
 
 #include "../COMDeviceList/ComDeviceList.h"
 

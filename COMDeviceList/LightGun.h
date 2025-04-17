@@ -55,6 +55,7 @@ public:
     void SetHubComPortNumber(quint8 hcpNumber);
     void SetHIDInfo(HIDInfo hidInfoStruct);
     void SetRecoilDelay(quint16 rcDelay);
+    void SetDisableReaperLEDs(bool disableRLED);
 
     //Get Functions that Gets the Stated Variable
     bool GetDefaultLightGun();
@@ -84,6 +85,7 @@ public:
     bool IsLightGunUSB();
     quint16 GetRecoilDelay();
     QString GetComPortPath();
+    bool SetDisableReaperLEDs();
 
 
     //If a Default Light Gun, is Needed Varibles Set
@@ -150,6 +152,7 @@ private:
     quint16             reloadValue;
     bool                maxAmmoSet;
     bool                reloadValueSet;
+    bool                disableReaperLEDs;
     //MX24
     quint8              dipSwitchPlayerNumber;
     bool                isDipSwitchPlayerNumberSet;

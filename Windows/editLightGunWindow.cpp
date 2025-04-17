@@ -74,6 +74,7 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     ui->defaultLightGunComboBox->insertItem(BLAMCON,BLAMCONNAME);
     ui->defaultLightGunComboBox->insertItem(OPENFIRE,OPENFIRENAME);
     ui->defaultLightGunComboBox->insertItem(ALIENUSB,ALIENUSBNAME);
+    ui->defaultLightGunComboBox->insertItem(XGUNNER,XGUNNERNAME);
 
     //Check if the First Light Gun is a Default Light Gun
     defaultLightGun = p_comDeviceList->p_lightGunList[0]->GetDefaultLightGun();
@@ -109,8 +110,6 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
 
 
     //USB Input Mask
-    //ui->vendorIDUSBLineEdit->setInputMask (USBINPUTMASKHEX);
-    //ui->productIDUSBLineEdit->setInputMask (USBINPUTMASKHEX);
     ui->recoilDelayLineEdit->setInputMask (USBRECOILDELAYMASK);
 
     //Get USB HID Devices
@@ -199,8 +198,6 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
         ui->hubComComboBox->setEnabled(false);
         ui->analogLineEdit->setEnabled(false);
     }
-
-
 
     //COM Port Combo Box - List Unused COM Port and Select Light Gun COM Port
     if((defaultLightGun && defaultLightGunNum != MX24 && defaultLightGunNum != ALIENUSB) || !defaultLightGun)
@@ -574,6 +571,12 @@ void editLightGunWindow::on_okPushButton_clicked()
 
         //Add New Light Gun to ComDeviceList
         EditLightGun();
+
+        //Play Edit Sound
+        editLightGunSound.play ();
+
+        QThread::sleep(1);
+
         //Close and Destroy the Window
         accept ();
     }

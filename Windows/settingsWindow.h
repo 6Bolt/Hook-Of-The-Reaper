@@ -52,6 +52,7 @@ private:
     bool                closeComPortGameExit;
     bool                ignoreUselessDLGGF;
     bool                bypassSerialWriteChecks;
+    bool                disbleReaperLEDs;
 
     //For Check Boxes
     Qt::CheckState      defaultLG;
@@ -59,6 +60,7 @@ private:
     Qt::CheckState      closeComPort;
     Qt::CheckState      ignoreUDLGGF;
     Qt::CheckState      bypassSWC;
+    Qt::CheckState      disableRLED;
 
     //Refresh Time in Number and String
     quint32             refreshDisplayTime;

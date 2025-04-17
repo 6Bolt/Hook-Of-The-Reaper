@@ -30,6 +30,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     maxAmmoSet = true;
     reloadValueSet = true;
 
+    disableReaperLEDs = false;
+
     lastAmmoValue =0;
 
     isDipSwitchPlayerNumberSet = false;
@@ -42,6 +44,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isUSBLightGun = false;
     isRecoilDelaySet = false;
     blockRecoil = false;
+
 
     FillSerialPortInfo();
 
@@ -90,6 +93,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
         maxAmmoSet = false;
         reloadValueSet = false;
     }
+
+    disableReaperLEDs = false;
 
     isDipSwitchPlayerNumberSet = false;
     hubComPortNumber = UNASSIGN;
@@ -160,6 +165,8 @@ LightGun::LightGun(LightGun const &lgMember)
     {
         reloadValueSet = false;
     }
+
+    disableReaperLEDs = lgMember.disableReaperLEDs;
 
     if(lgMember.isDipSwitchPlayerNumberSet)
     {
@@ -261,6 +268,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
         reloadValueSet = false;
     }
 
+    disableReaperLEDs = false;
+
     analogStrength = DEFAULTANALOGSTRENGTH;
     isAnalogStrengthSet = false;
 
@@ -323,6 +332,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
         reloadValueSet = false;
     }
 
+    disableReaperLEDs = false;
+
     analogStrength = analStrength;
     isAnalogStrengthSet = true;
 
@@ -358,6 +369,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     hubComPortNumber = UNASSIGN;
     maxAmmoSet = false;
     reloadValueSet = false;
+    disableReaperLEDs = false;
     isAnalogStrengthSet = false;
 
     lastAmmoValue =0;
@@ -478,6 +490,11 @@ void LightGun::SetHIDInfo(HIDInfo hidInfoStruct)
 void LightGun::SetRecoilDelay(quint16 rcDelay)
 {
     recoilDelay = rcDelay;
+}
+
+void LightGun::SetDisableReaperLEDs(bool disableRLED)
+{
+    disableReaperLEDs = disableRLED;
 }
 
 //Get Member Functions
@@ -665,6 +682,11 @@ QString LightGun::GetComPortPath()
         return "";
 }
 
+bool LightGun::SetDisableReaperLEDs()
+{
+    return disableReaperLEDs;
+}
+
 
 void LightGun::CopyLightGun(LightGun const &lgMember)
 {
@@ -719,6 +741,8 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
     {
         reloadValueSet = false;
     }
+
+    disableReaperLEDs = lgMember.disableReaperLEDs;
 
     if(lgMember.isDipSwitchPlayerNumberSet)
     {
@@ -878,7 +902,14 @@ void LightGun::LoadDefaultLGCommands()
                     for(i = 0; i < numberCommands; i++)
                     {
                         commands[i] = commands[i].trimmed ();
-                        openComPortCmds << commands[i];
+
+                        if(disableReaperLEDs)
+                        {
+                            if(commands[i] != DISABLEREAPERLEDSOPEN)
+                                openComPortCmds << commands[i];
+                        }
+                        else
+                            openComPortCmds << commands[i];
                     }
                     openComPortCmdsSet = true;
                 }
@@ -887,7 +918,14 @@ void LightGun::LoadDefaultLGCommands()
                     for(i = 0; i < numberCommands; i++)
                     {
                         commands[i] = commands[i].trimmed ();
-                        closeComPortCmds << commands[i];
+
+                        if(disableReaperLEDs)
+                        {
+                            if(commands[i] != DISABLEREAPERLEDSCLOSE)
+                                closeComPortCmds << commands[i];
+                        }
+                        else
+                            closeComPortCmds << commands[i];
                     }
                     closeComPortCmdsSet = true;
                 }
@@ -1222,13 +1260,14 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
                 else
                     tempAV = ammoValue;
 
+
                 tempAVS = QString::number (tempAV);
                 lastAmmoValue = ammoValue;
             }
             else
             {   //If not a Reaper, and Ammo is 0, Don't Do Anything
                 if(ammoValue == 0)
-                {
+                {   
                     *isSet = false;
                     return tempSL;
                 }

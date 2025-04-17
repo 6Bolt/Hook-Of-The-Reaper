@@ -357,6 +357,8 @@ private:
     quint8                          loadedLGNumbers[MAXPLAYERLIGHTGUNS];
     //Array of the Loaded Light guns COM Port Number
     quint8                          loadedLGComPortNumber[MAXPLAYERLIGHTGUNS];
+    //Array of Loaded Light Guns are USB HID or Serial
+    bool                            isLoadedLGUSB[MAXPLAYERLIGHTGUNS];
 
 
 
@@ -401,7 +403,6 @@ private:
 
     QTimer                          pRecoilR2STimer[MAXGAMEPLAYERS];
     bool                            isPRecoilR2SFirstTime[MAXGAMEPLAYERS];
-    QStringList                     pRecoilR2SCommands[MAXGAMEPLAYERS];
     quint32                         recoilR2SSkewPrec[MAXGAMEPLAYERS];
 
     ///////////////////////////////////////////////////////////////////////////

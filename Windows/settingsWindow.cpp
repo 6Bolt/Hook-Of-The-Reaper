@@ -71,6 +71,15 @@ settingsWindow::settingsWindow(ComDeviceList *cdList, QWidget *parent)
     else
         ui->bypassSerialWriteCheckBox->setCheckState (Qt::Unchecked);
 
+
+    disbleReaperLEDs = p_comDeviceList->GetDisableReaperLEDs ();
+
+    //If Set. then Check the Box
+    if(disbleReaperLEDs)
+        ui->reaperLEDCheckBox->setCheckState (Qt::Checked);
+    else
+        ui->reaperLEDCheckBox->setCheckState (Qt::Unchecked);
+
     finishedInit = true;
 
 }
@@ -116,6 +125,7 @@ void settingsWindow::CheckAndSaveSetting()
     closeComPort = ui->closeComCheckBox->checkState ();
     ignoreUDLGGF = ui->ignoreUDLGGFCheckBox->checkState ();
     bypassSWC = ui->bypassSerialWriteCheckBox->checkState ();
+    disableRLED = ui->reaperLEDCheckBox->checkState ();
 
     if(defaultLG == Qt::Checked)
         useDefaultLGFirst = true;
@@ -146,12 +156,17 @@ void settingsWindow::CheckAndSaveSetting()
     else
         bypassSerialWriteChecks = false;
 
+    if(disableRLED == Qt::Checked)
+        disbleReaperLEDs = true;
+    else
+        disbleReaperLEDs = false;
+
     p_comDeviceList->SetUseDefaultLGFirst(useDefaultLGFirst);
     p_comDeviceList->SetUseMultiThreading (useMultiThreading);
     p_comDeviceList->SetCloseComPortGameExit (closeComPortGameExit);
     p_comDeviceList->SetIgnoreUselessDFLGGF (ignoreUselessDLGGF);
     p_comDeviceList->SetSerialPortWriteCheckBypass (bypassSerialWriteChecks);
-
+    p_comDeviceList->SetDisableReaperLEDs (disbleReaperLEDs);
 
     if(isNumber)
     {

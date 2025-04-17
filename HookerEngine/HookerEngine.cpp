@@ -1005,15 +1005,35 @@ void HookerEngine::P1RecoilR2S()
 {
     if(!isPRecoilR2SFirstTime[0])
     {
-        quint8 tempCPNum = loadedLGComPortNumber[0];
+        bool dlgCMDFound;
+        QStringList dlgCommands;
 
-        for(quint8 k = 0; k < pRecoilR2SCommands[0].count(); k++)
+        //Get Recoil Commands
+        dlgCommands = p_comDeviceList->p_lightGunList[0]->RecoilCommands(&dlgCMDFound);
+
+        if(dlgCMDFound)
         {
-            //qDebug() << "Recoil_R2S Timer - Writting to Port: " << tempCPNum << " with Commands: " << pRecoilR2SCommands[0][k];
-            WriteLGComPort(tempCPNum, pRecoilR2SCommands[0][k]);
-        }
+            if(!isLoadedLGUSB[0])
+            {
+                quint8 tempCPNum = loadedLGComPortNumber[0];
 
-        pRecoilR2STimer[0].start();
+                for(quint8 k = 0; k < dlgCommands.count(); k++)
+                {
+                    //qDebug() << "Recoil_R2S Timer - Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
+                    WriteLGComPort(tempCPNum, dlgCommands[k]);
+                }
+            }
+            else
+            {
+                for(quint8 k = 0; k < dlgCommands.count(); k++)
+                {
+                    WriteLGUSBHID(0, dlgCommands[k]);
+                }
+            }
+
+
+            pRecoilR2STimer[0].start();
+        }
     }
 }
 
@@ -1021,15 +1041,35 @@ void HookerEngine::P2RecoilR2S()
 {
     if(!isPRecoilR2SFirstTime[1])
     {
-        quint8 tempCPNum = loadedLGComPortNumber[1];
+        bool dlgCMDFound;
+        QStringList dlgCommands;
 
-        for(quint8 k = 0; k < pRecoilR2SCommands[1].count(); k++)
+        //Get Recoil Commands
+        dlgCommands = p_comDeviceList->p_lightGunList[1]->RecoilCommands(&dlgCMDFound);
+
+        if(dlgCMDFound)
         {
-            //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
-            WriteLGComPort(tempCPNum, pRecoilR2SCommands[1][k]);
-        }
+            if(!isLoadedLGUSB[1])
+            {
+                quint8 tempCPNum = loadedLGComPortNumber[1];
 
-        pRecoilR2STimer[1].start();
+                for(quint8 k = 0; k < dlgCommands.count(); k++)
+                {
+                    //qDebug() << "Recoil_R2S Timer - Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
+                    WriteLGComPort(tempCPNum, dlgCommands[k]);
+                }
+            }
+            else
+            {
+                for(quint8 k = 0; k < dlgCommands.count(); k++)
+                {
+                    WriteLGUSBHID(1, dlgCommands[k]);
+                }
+            }
+
+
+            pRecoilR2STimer[1].start();
+        }
     }
 }
 
@@ -1037,15 +1077,35 @@ void HookerEngine::P3RecoilR2S()
 {
     if(!isPRecoilR2SFirstTime[2])
     {
-        quint8 tempCPNum = loadedLGComPortNumber[2];
+        bool dlgCMDFound;
+        QStringList dlgCommands;
 
-        for(quint8 k = 0; k < pRecoilR2SCommands[2].count(); k++)
+        //Get Recoil Commands
+        dlgCommands = p_comDeviceList->p_lightGunList[2]->RecoilCommands(&dlgCMDFound);
+
+        if(dlgCMDFound)
         {
-            //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
-            WriteLGComPort(tempCPNum, pRecoilR2SCommands[2][k]);
-        }
+            if(!isLoadedLGUSB[2])
+            {
+                quint8 tempCPNum = loadedLGComPortNumber[2];
 
-        pRecoilR2STimer[2].start();
+                for(quint8 k = 0; k < dlgCommands.count(); k++)
+                {
+                    //qDebug() << "Recoil_R2S Timer - Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
+                    WriteLGComPort(tempCPNum, dlgCommands[k]);
+                }
+            }
+            else
+            {
+                for(quint8 k = 0; k < dlgCommands.count(); k++)
+                {
+                    WriteLGUSBHID(2, dlgCommands[k]);
+                }
+            }
+
+
+            pRecoilR2STimer[2].start();
+        }
     }
 }
 
@@ -1053,15 +1113,35 @@ void HookerEngine::P4RecoilR2S()
 {
     if(!isPRecoilR2SFirstTime[3])
     {
-        quint8 tempCPNum = loadedLGComPortNumber[3];
+        bool dlgCMDFound;
+        QStringList dlgCommands;
 
-        for(quint8 k = 0; k < pRecoilR2SCommands[3].count(); k++)
+        //Get Recoil Commands
+        dlgCommands = p_comDeviceList->p_lightGunList[3]->RecoilCommands(&dlgCMDFound);
+
+        if(dlgCMDFound)
         {
-            //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
-            WriteLGComPort(tempCPNum, pRecoilR2SCommands[3][k]);
-        }
+            if(!isLoadedLGUSB[3])
+            {
+                quint8 tempCPNum = loadedLGComPortNumber[3];
 
-        pRecoilR2STimer[3].start();
+                for(quint8 k = 0; k < dlgCommands.count(); k++)
+                {
+                    //qDebug() << "Recoil_R2S Timer - Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
+                    WriteLGComPort(tempCPNum, dlgCommands[k]);
+                }
+            }
+            else
+            {
+                for(quint8 k = 0; k < dlgCommands.count(); k++)
+                {
+                    WriteLGUSBHID(3, dlgCommands[k]);
+                }
+            }
+
+
+            pRecoilR2STimer[3].start();
+        }
     }
 }
 
@@ -2804,11 +2884,18 @@ void HookerEngine::LoadLGFile()
                         unassignLG++;
                     else
                     {
-                        //Since There is a Light Gun Get COM Port Number
-                        loadedLGComPortNumber[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetComPortNumber();
+                        if(p_comDeviceList->p_lightGunList[lgNumber]->IsLightGunUSB ())
+                        {
+                            isLoadedLGUSB[i] = true;
+                            loadedLGComPortNumber[i] = UNASSIGN;
+                        }
+                        else
+                        {
+                            isLoadedLGUSB[i] = false;
+                            loadedLGComPortNumber[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetComPortNumber();
+                        }
                     }
-
-                }
+                }  //for(quint8 i = 0; i < numberLGPlayers; i++)
 
                 if(unassignLG == numberLGPlayers)
                 {
@@ -3160,7 +3247,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
     bool dlgCMDFound;
     bool findDLGCMDs;
     quint8 charToNumber;
-    bool isUSB;
+
 
 
     //qDebug() << "Signal: " << signalName << " Value: " << value;
@@ -3266,15 +3353,11 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                 //Check if light gun has an assign value, if not then don't run
                 if(lightGun != UNASSIGN)
                 {
-                    //Check if it is a USB HID, or Serial COM Port
-                    isUSB = p_comDeviceList->p_lightGunList[lightGun]->IsLightGunUSB ();
-
-                    //tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
+                    //Get COM Port Number
                     tempCPNum = loadedLGComPortNumber[player];
 
                     //Set True. If No Command or Null, then it is set to false
                     dlgCMDFound = false;
-
 
                     charToNumber = static_cast<quint8>(commands[i][1].toLatin1 ());
 
@@ -3337,7 +3420,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                     if(isPRecoilR2SFirstTime[player])
                                     {
                                         QStringList tmpCMDs = p_comDeviceList->p_lightGunList[lightGun]->RecoilR2SCommands(&dlgCMDFound);
-                                        if(dlgCMDFound && tmpCMDs.count() > 1)
+                                        if(dlgCMDFound && tmpCMDs.count() > 0)
                                         {
                                             quint32 delay = tmpCMDs[0].toULong();
 
@@ -3354,22 +3437,25 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
 
                                             pRecoilR2STimer[player].setInterval(delay);
 
-                                            for(quint8 x = 1; x < tmpCMDs.count(); x++)
-                                                pRecoilR2SCommands[player] << tmpCMDs[x];
-
                                             isPRecoilR2SFirstTime[player] = false;
+                                        }
+
+                                        if(value != "0")
+                                        {
+                                            //Get Recoil Commands
+                                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
+
+                                            pRecoilR2STimer[player].start ();
                                         }
                                     }
                                     else
                                     {
                                         if(value != "0")
                                         {
+                                            //Get Recoil Commands
+                                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
+
                                             pRecoilR2STimer[player].start ();
-
-                                            for(quint8 x = 0; x < pRecoilR2SCommands[player].count(); x++)
-                                                dlgCommands << pRecoilR2SCommands[player][x];
-
-                                            dlgCMDFound = true;
                                         }
                                         else
                                         {
@@ -3416,7 +3502,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                         for(k = 0; k < dlgCommands.count(); k++)
                         {
                             //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
-                            if(isUSB)
+                            if(isLoadedLGUSB[player])
                                 WriteLGUSBHID(player, dlgCommands[k]);
                             else
                                 WriteLGComPort(tempCPNum, dlgCommands[k]);
@@ -3462,7 +3548,6 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum, bool noInit)
     QStringList commands;
     quint8 cmdCount;
     bool isCommands;
-    bool isUSB;
 
     if(allPlayers)
         howManyPlayers = numberLGPlayers;
@@ -3483,10 +3568,7 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum, bool noInit)
         //Check if Light Gun is not Unassign
         if(lightGun != UNASSIGN)
         {
-            //See if Light Gun is USB HID
-            isUSB = p_comDeviceList->p_lightGunList[lightGun]->IsLightGunUSB ();
-
-            if(!isUSB)
+            if(!isLoadedLGUSB[player])
             {
                 //For Serial Port Connection
 
@@ -3505,7 +3587,6 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum, bool noInit)
 
                 //Opens the COM Port
                 emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, tempPath, true);
-
             }
             else
             {
@@ -3528,7 +3609,7 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum, bool noInit)
                 {
                     for(j = 0; j < cmdCount; j++)
                     {
-                        if(isUSB)
+                        if(isLoadedLGUSB[player])
                             WriteLGUSBHID(player, commands[j]);
                         else
                             WriteLGComPort(tempCPNum, commands[j]);
@@ -3546,7 +3627,6 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum, bool noInit
     QStringList commands;
     quint8 cmdCount;
     bool isCommands;
-    bool isUSB;
 
     if(allPlayers)
         howManyPlayers = numberLGPlayers;
@@ -3566,11 +3646,7 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum, bool noInit
         //Check if Light Gun is not Unassign
         if(lightGun != UNASSIGN)
         {
-
-            //See if Light Gun is USB HID
-            isUSB = p_comDeviceList->p_lightGunList[lightGun]->IsLightGunUSB ();
-
-            if(!isUSB)
+            if(!isLoadedLGUSB[player])
             {
                 //Get COM Port For Light Gun
                 tempCPNum = loadedLGComPortNumber[player];
@@ -3589,7 +3665,7 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum, bool noInit
                     for(j = 0; j < cmdCount; j++)
                     {
                         //qDebug() << "Closing COM Port: " << tempCPNum << " Command: " << commands[j];
-                        if(isUSB)
+                        if(isLoadedLGUSB[player])
                             WriteLGUSBHID(player, commands[j]);
                         else
                             WriteLGComPort(tempCPNum, commands[j]);
@@ -3600,7 +3676,7 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum, bool noInit
             //Closes The COM Port
             if(closeComPortGameExit && !initOnly)
             {
-                if(isUSB)
+                if(isLoadedLGUSB[player])
                     emit StopUSBHID(player);
                 else
                     emit StopComPort(tempCPNum);

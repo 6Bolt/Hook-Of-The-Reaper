@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.1.3b"
+#define VERSION                 "1.1.3c"
 #define VERSIONMAIN             1
 #define VERSIONMID              1
 #define VERSIONLAST             3
@@ -54,7 +54,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Default Light Gun Definition - There is No Zero, as that is blan and nonDefaultLG
-#define NUM_DEFAULTLG           8
+#define NUM_DEFAULTLG           9
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -117,54 +117,70 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 //Fifth Default Light Gun
 //Blamcon Light Gun
-#define BLAMCON                  5
-#define BLAMCONNAME              "Blamcon"
-#define BLAMCONBAUD              4
-#define BLAMCONDATA              0
-#define BLAMCONPARITY            0
-#define BLAMCONSTOP              0
-#define BLAMCONFLOW              0
-#define BLAMCONMAXAMMO           "0"
-#define BLAMCONRELOAD            "0"
-#define BLAMCONMAXAMMONUM        0
-#define BLAMCONRELOADNUM         0
+#define BLAMCON                 5
+#define BLAMCONNAME             "Blamcon"
+#define BLAMCONBAUD             4
+#define BLAMCONDATA             0
+#define BLAMCONPARITY           0
+#define BLAMCONSTOP             0
+#define BLAMCONFLOW             0
+#define BLAMCONMAXAMMO          "0"
+#define BLAMCONRELOAD           "0"
+#define BLAMCONMAXAMMONUM       0
+#define BLAMCONRELOADNUM        0
 
 //Sixth Default Light Gun
 //OpenFire Light Gun
-#define OPENFIRE                  6
-#define OPENFIRENAME              "OpenFire"
-#define OPENFIREBAUD              4
-#define OPENFIREDATA              0
-#define OPENFIREPARITY            0
-#define OPENFIRESTOP              0
-#define OPENFIREFLOW              0
-#define OPENFIREMAXAMMO           "0"
-#define OPENFIRERELOAD            "0"
-#define OPENFIREMAXAMMONUM        0
-#define OPENFIRERELOADNUM         0
+#define OPENFIRE                6
+#define OPENFIRENAME            "OpenFire"
+#define OPENFIREBAUD            4
+#define OPENFIREDATA            0
+#define OPENFIREPARITY          0
+#define OPENFIRESTOP            0
+#define OPENFIREFLOW            0
+#define OPENFIREMAXAMMO         "0"
+#define OPENFIRERELOAD          "0"
+#define OPENFIREMAXAMMONUM      0
+#define OPENFIRERELOADNUM       0
 
 
 //Seventh Default Light Gun
 //Alien USB Light Gun
-#define ALIENUSB                  7
-#define ALIENUSBNAME              "Alien USB"
-#define ALIENUSBBAUD              0
-#define ALIENUSBDATA              0
-#define ALIENUSBPARITY            0
-#define ALIENUSBSTOP              0
-#define ALIENUSBFLOW              0
-#define ALIENUSBMAXAMMO           "0"
-#define ALIENUSBRELOAD            "0"
-#define ALIENUSBMAXAMMONUM        0
-#define ALIENUSBRELOADNUM         0
+#define ALIENUSB                7
+#define ALIENUSBNAME            "Alien USB"
+#define ALIENUSBBAUD            0
+#define ALIENUSBDATA            0
+#define ALIENUSBPARITY          0
+#define ALIENUSBSTOP            0
+#define ALIENUSBFLOW            0
+#define ALIENUSBMAXAMMO         "0"
+#define ALIENUSBRELOAD          "0"
+#define ALIENUSBMAXAMMONUM      0
+#define ALIENUSBRELOADNUM       0
 
-#define ALIENUSBVENDORID          0x04B4
-#define ALIENUSBPRODUCTID         0x6870
-#define ALIENUSBFRONTPATHREM      26
-#define ALIENUSBPATHFIRST         15
-#define ALIENUSBMINDELAY          40
-#define ALIENUSBDELAYDFLT         75
-#define ALIENUSBDELAYDFLTS        "75"
+#define ALIENUSBVENDORID        0x04B4
+#define ALIENUSBPRODUCTID       0x6870
+#define ALIENUSBFRONTPATHREM    26
+#define ALIENUSBPATHFIRST       15
+#define ALIENUSBMINDELAY        40
+#define ALIENUSBDELAYDFLT       75
+#define ALIENUSBDELAYDFLTS      "75"
+
+//Eighth Default Light Gun
+//X-Gunner
+#define XGUNNER                 8
+#define XGUNNERNAME             "X-Gunner"
+#define XGUNNERBAUD             4
+#define XGUNNERDATA             0
+#define XGUNNERPARITY           0
+#define XGUNNERSTOP             0
+#define XGUNNERFLOW             0
+#define XGUNNERMAXAMMO          "0"
+#define XGUNNERRELOAD           "0"
+#define XGUNNERMAXAMMONUM       0
+#define XGUNNERRELOADNUM        0
+
+
 
 //TCP Socket
 //Address Name & Port Number
@@ -175,7 +191,9 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 //Time for the TCP Socket Timer (msec)
 #define TCPTIMERTIME            10200
 
-
+//Light Gun Specifics
+#define DISABLEREAPERLEDSOPEN   "ZS"
+#define DISABLEREAPERLEDSCLOSE  "ZX"
 
 //File & Dir Data
 

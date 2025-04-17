@@ -103,6 +103,10 @@ public:
     bool            GetSerialPortWriteCheckBypass();
     void            SetSerialPortWriteCheckBypass(bool spwCB);
 
+    //Disable Reaper 5 LEDs
+    bool            GetDisableReaperLEDs();
+    void            SetDisableReaperLEDs(bool drLED);
+
     //Copies Used Dip Players Array
     void            CopyUsedDipPlayersArray(bool *targetArray, quint8 size, quint8 hubComPort);
     void            ChangeUsedDipPlayersArray(quint8 hubComPort, quint8 dipPN, bool value);
@@ -170,6 +174,7 @@ private:
     bool                closeComPortGameExit;
     bool                ignoreUselessDLGGF;
     bool                bypassSerialWriteChecks;
+    bool                disbleReaperLEDs;
 
 
 
