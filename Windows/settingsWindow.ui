@@ -235,7 +235,7 @@
     <rect>
      <x>10</x>
      <y>240</y>
-     <width>251</width>
+     <width>351</width>
      <height>22</height>
     </rect>
    </property>
@@ -245,7 +245,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Remove the 5 LED Init Commands</string>
+    <string>Remove the 5 LED Open/Close Init Commands</string>
    </property>
   </widget>
  </widget>
