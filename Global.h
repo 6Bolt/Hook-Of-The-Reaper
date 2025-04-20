@@ -70,6 +70,9 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define REAPERMAXAMMONUM        5
 #define REAPERRELOADNUM         6
 
+#define DISABLEREAPERLEDSOPEN   "ZS"
+#define DISABLEREAPERLEDSCLOSE  "ZX"
+
 //Second Default Light Gun
 //Retro Shooter: MX24
 #define MX24                    2
@@ -191,9 +194,6 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 //Time for the TCP Socket Timer (msec)
 #define TCPTIMERTIME            10200
 
-//Light Gun Specifics
-#define DISABLEREAPERLEDSOPEN   "ZS"
-#define DISABLEREAPERLEDSCLOSE  "ZX"
 
 //File & Dir Data
 

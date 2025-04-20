@@ -690,6 +690,8 @@ void ComDeviceList::LoadLightGunList()
         if(!gotNextLine)
             line = in.readLine();
 
+        gotNextLine = false;
+
         //Line Should be "Light Gun #i"
         cmpLine = LIGHTGUNNUMBERFILE + QString::number (i);
 
@@ -823,7 +825,7 @@ void ComDeviceList::LoadLightGunList()
             {
                 line = in.readLine();
 
-                if(line.startsWith (LIGHTGUNNUMBERFILE))
+                if(line.startsWith (LIGHTGUNNUMBERFILE) || line.startsWith (PLAYERSASSIGNMENTS))
                 {
                     isOpenFireLG = true;
                     gotNextLine = true;
@@ -924,7 +926,10 @@ void ComDeviceList::LoadLightGunList()
     }
 
     //Next up is the players light gun assignments
-    line = in.readLine();
+    if(!gotNextLine)
+        line = in.readLine();
+
+    gotNextLine = false;
 
     if(line != PLAYERSASSIGNMENTS)
     {
