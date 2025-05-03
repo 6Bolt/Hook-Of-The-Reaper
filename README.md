@@ -77,9 +77,9 @@ I am working on a new game file format for light guns, I call it Default Light G
 
 | Light Gun | MAMEHooker INI | HOTR Default LG |
 |-----------|----------------|-----------------|
-| RS3 Reaper | P1_Damage=cmr 4 ZZ |:P1_Damage *P1 >Damage |
-| Default Gun #2 | P1_Damage=cmr 7 M0(Z)%s% | :P1_Damage *P1 >Damage |
-| Default Gun #3 | P1_Damage=cmr 9 TTXER#7 | :P1_Damage *P1 >Damage |
+| RS3 Reaper | P1_Damage=nll\|cmr 4 ZZ |:P1_Damage *P1 >Damage |
+| Default Gun #2 | P1_Damage=nll\|cmr 7 M0(Z)%s% | :P1_Damage *P1 >Damage |
+| Default Gun #3 | P1_Damage=nll\|cmr 9 TTXER#7 | :P1_Damage *P1 >Damage |
 
 
  As you can see, the Hook Of The Reaper, didn’t change. The program will load up the command, based on the Default Light Gun being used. Then the same game files can be used for every light gun. So Default Light Gun game files can be slowly built, and used by everyone. Instead of everyone making custom INI game files. 
@@ -93,9 +93,10 @@ Light guns only have so many commands, as they can recoil, shake, and few other 
 | Command | Notes |
 |---------|-------|
 | Open_COM | Connects to the Serial Port or USB HID. Also Enters External Control for Light Gun  |
-| Close_COM | Disconnects to the Serial Port or USB HID. Also Exit out of External Control for Light Gun   |
-| Open_COM_NoInit | Connects tp the Serial Port or USB HID only  |
-| Close_COM_NoInit | Disconnects tp the Serial Port or USB HID only
+| Close_COM | Disconnects to the Serial Port or USB HID. Also Exit out of External Control for Light Gun |  
+| Open_COM_NoInit | Connects to the Serial Port or USB HID only  |
+| Close_COM_NoInit | Disconnects to the Serial Port or USB HID only |
+| Close_COM_InitOnly | Only Exit out of External Control for Light Gun |
 | Damage | Doesn't Happen on 0, no need for '\|' |
 | Recoil | Doesn't Happen on 0, no need for '\|' |
 | Recoil_R2S | Converts Rumble Recoil to Solenoid Recoil |
@@ -121,15 +122,15 @@ If the setting is not set for use Default Light Gun files first, it will make a 
 
 The command is used when the arcade gun used rumble for recoil. So when the trigger is held down, the motor is turned on, and when trigger is released, motor is off. So the signal is just 0 (motor off) and 1 (motor on). This doesn't work for at home light gun's which uses a solenoid. A solenoid, needs pulese (0 -> 1 -> 0) to work. Then the pulses are correctly delayed. Now Hook Of The Reaper can convert the rumble motor signal to work with the light gun's soleniod. When the signal goes high, it does a recoil and delay. Then it loops the recoil and delay, until the rumble signal goes back to 0. The delay is in milliseconds, and is located in the light gun's .hor file in the data directory. I pasted the RS3 Reaper below.
 
-Recoil_R2S=100 Z5
+Recoil_R2S=100
 
-The first variable after the '=' is the delay in milliseconds. Then next is the command(s) for a recoil. Currently, every gun is set to 100ms. I don't know if this is the best setting for every light gun. As I only have the Reapers right now. So you might have to increase or decrease the delay for your light gun. An easy game to try it out on, is Let's Go Island 3D. Instead of using PX_CtmRecoil signal with the Recoil command, use the PX_GunMotor signal with the Recoil_R2S command. Then you can increase/decrease the delay to what works best. Then you can report back to me the delay and light gun. Then I will use the average I get from everyone.
+The first and only variable after the '=' is the delay in milliseconds. The recoil data is taken from the Recoil command. Currently, every gun is set to 100ms. I don't know if this is the best setting for every light gun. As I only have the Reapers right now. So you might have to increase or decrease the delay for your light gun. An easy game to try it out on, is Let's Go Island 3D. Instead of using PX_CtmRecoil signal with the Recoil command, use the PX_GunMotor signal with the Recoil_R2S command. Then you can increase/decrease the delay to what works best for the light gun. Then you can report back to me the delay and light gun. Then I will use the average I get from everyone.
 
-I made this command because of Alien 3 game, which has the acceleration. Which means the signal goes 0 -> 1 for awhile, then starts going up and down, when the damage for the gun gets to zero. This happens in Terminator 2 too, but with deceleration. So the gun works good, until damage of the gun drops to 0, and it bounces around, which is to tell the player, you cannot hold the trigger all the time. In the 'alien3.txt' Default Light Gun game file, I put a number after the \>Recoil_R2S command, please see below.
+I made this command because of Alien 3 game, which has the acceleration. Which means the signal goes 0 -> 1 for awhile, then starts going up and down, when the damage for the gun gets close to zero. This happens in Terminator 2 too, but with deceleration. So the gun works good, until damage of the gun drops to ~1/4, and it bounces around, which is to tell the player, you cannot hold the trigger all the time. In the 'alien3.txt' Default Light Gun game file, I put a number after the \>Recoil_R2S command, please see below.
 
 \>Recoil_R2S 125
 
-The 125 is a percentage, so it is 125% of the delay. Since the delay is at 100ms, then it would be 100ms * 1.25 (125%) = 125ms. I did a percentage, because in theory, if the light gun delay is set correctly, then every light gun would work, because it is based on percentage of said delay. I found that the Reaper worked good at 125% delay, and enough of a change to know the gun damage is up. You can remove the 125, or change it around to see what you like for Alien 3 and Terminator 2.
+The 125 is a percentage, so it is 125% of the delay. Since the delay is at 100ms, then it would be 100ms * 1.25 (125%) = 125ms. I did a percentage, because in theory, if the light gun delay is set correctly, then every light gun would work, because it is based on percentage of said delay. I found that the Reaper worked good at 125% delay, and enough of a change to know the gun damage is has dropped. You can remove the 125, or change it around to see what you like for Alien 3 and Terminator 2.
 
 
 
