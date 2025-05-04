@@ -352,6 +352,9 @@ void HookOfTheReaper::Add_Light_Gun_Window_Closed()
     {
         p_comDeviceList->SaveLightGunList();
         numberLightGuns = newNumberLightGuns;
+
+        //To be safe, reload settings to Light guns
+        p_comDeviceList->UpdateLightGunWithSettings ();
     }
 
     numberComDevices = p_comDeviceList->GetNumberComPortDevices();
@@ -447,6 +450,9 @@ void HookOfTheReaper::Edit_Light_Gun_Window_Closed()
 
     numberComDevices = p_comDeviceList->GetNumberComPortDevices();
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();
+
+    //To be safe, reload settings to Light guns
+    p_comDeviceList->UpdateLightGunWithSettings ();
 
     p_hookEngine->Start ();
     engineRunning = true;

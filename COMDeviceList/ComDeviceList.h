@@ -103,9 +103,24 @@ public:
     bool            GetSerialPortWriteCheckBypass();
     void            SetSerialPortWriteCheckBypass(bool spwCB);
 
-    //Disable Reaper 5 LEDs
+    //Reaper - Disable Reaper's 5 LEDs
     bool            GetDisableReaperLEDs();
     void            SetDisableReaperLEDs(bool drLED);
+
+    //Normal Display Priority
+    void            GetDisplayPriority(bool *ammo, bool *life);
+    void            SetDisplayPriority(bool ammo, bool life);
+
+    //Other Display Priority
+    bool            GetDisplayOtherPriority();
+    void            SetDisplayOtherPriority(bool other);
+
+    //OpenFire - Enable OpenFire Display Ammo & Life
+    bool            GetDisplayAmmoAndLife(bool *displayLG, bool *displayLB, bool *displayLN);
+    void            SetDisplayAmmoAndLife(bool displayAAL, bool displayLG, bool displayLB, bool displayLN);
+
+    //Update Light Gun Settings
+    void            UpdateLightGunWithSettings();
 
     //Copies Used Dip Players Array
     void            CopyUsedDipPlayersArray(bool *targetArray, quint8 size, quint8 hubComPort);
@@ -175,8 +190,15 @@ private:
     bool                ignoreUselessDLGGF;
     bool                bypassSerialWriteChecks;
     bool                disbleReaperLEDs;
+    bool                displayAmmoPriority;
+    bool                displayLifePriority;
+    bool                displayOtherPriority;
 
-
+    //OpenFire Settings
+    bool                displayAmmoLife;
+    bool                displayAmmoLifeGlyphs;
+    bool                displayAmmoLifeBar;
+    bool                displayAmmoLifeNumber;
 
 
 };

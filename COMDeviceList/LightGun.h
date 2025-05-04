@@ -56,6 +56,9 @@ public:
     void SetHIDInfo(HIDInfo hidInfoStruct);
     void SetRecoilDelay(quint16 rcDelay);
     void SetDisableReaperLEDs(bool disableRLED);
+    void SetDisplayPriority(bool ammo, bool life);
+    void SetDisplayOtherPriority(bool other);
+    void SetDisplayAmmoAndLife(bool displayAAL, bool displayLG, bool displayLB, bool displayLN);
 
     //Get Functions that Gets the Stated Variable
     bool GetDefaultLightGun();
@@ -85,7 +88,11 @@ public:
     bool IsLightGunUSB();
     quint16 GetRecoilDelay();
     QString GetComPortPath();
-    bool SetDisableReaperLEDs();
+    bool GetDisableReaperLEDs();
+    void GetDisplayPriority(bool *ammo, bool *life);
+    bool GetDisplayOtherPriority();
+    bool GetDisplayAmmoAndLife(bool *displayLG, bool *displayLB, bool *displayLN);
+    quint16 GetDisplayRefresh(bool *isRDS);
 
 
     //If a Default Light Gun, is Needed Varibles Set
@@ -109,10 +116,10 @@ public:
     QStringList CloseComPortCommands(bool *isSet);
     QStringList DamageCommands(bool *isSet);
     QStringList RecoilCommands(bool *isSet);
+    QStringList RecoilValueCommands(bool *isSet, quint16 recoilValue);
     QStringList ReloadCommands(bool *isSet);
     QStringList AmmoCommands(bool *isSet);
     QStringList AmmoValueCommands(bool *isSet, quint16 ammoValue);
-    QStringList DisplayAmmoCommands(bool *isSet, quint16 ammoValue);
     QStringList ShakeCommands(bool *isSet);
     QStringList AutoLEDCommands(bool *isSet);
     QStringList AspectRatio16b9Commands(bool *isSet);
@@ -121,6 +128,9 @@ public:
     QStringList MouseAndKeyboardModeCommands(bool *isSet);
     //Rumble Recoil to Solenoid Recoil Command
     QStringList RecoilR2SCommands(bool *isSet);
+    QStringList DisplayAmmoCommands(bool *isSet, quint16 ammoValue);
+    QStringList DisplayLifeCommands(bool *isSet, quint16 lifeValue);
+    QStringList DisplayOtherCommands(bool *isSet, quint16 otherValue);
 
     //Resets Light Gun Back to Starting Start when Game Ends
     void ResetLightGun();
@@ -157,9 +167,16 @@ private:
     quint8              dipSwitchPlayerNumber;
     bool                isDipSwitchPlayerNumberSet;
     quint8              hubComPortNumber;
-    //JB Gun4IR
+    //JB Gun4IR & OpenFire
     quint8              analogStrength;
     bool                isAnalogStrengthSet;
+
+    //OpenFire
+    bool                displayAmmoLife;
+    bool                displayAmmoLifeGlyphs;
+    bool                displayAmmoLifeBar;
+    bool                displayAmmoLifeNumber;
+    quint16             lifeBarMaxLife;
 
 
     //Light Gun Name & Number
@@ -195,36 +212,62 @@ private:
     QStringList         damageCmds;
     QStringList         recoilCmds;
     QStringList         recoilR2SCmds;
+    QStringList         recoilValueCmds;
     QStringList         reloadCmds;
     QStringList         ammoCmds;
     QStringList         ammoValueCmds;
-    QStringList         displayAmmoCmds;
     QStringList         shakeCmds;
     QStringList         autoLedCmds;
     QStringList         aspect16x9Cmds;
     QStringList         aspect4x3Cmds;
     QStringList         joystickCmds;
     QStringList         keyMouseCmds;
+    QStringList         displayAmmoCmds;
+    QStringList         displayAmmoInitCmds;
+    QStringList         displayLifeCmds;
+    QStringList         displayLifeInitCmds;
+    QStringList         displayOtherCmds;
+    QStringList         displayOtherInitCmds;
 
     bool                openComPortCmdsSet;
     bool                closeComPortCmdsSet;
     bool                damageCmdsSet;
     bool                recoilCmdsSet;
     bool                recoilR2SCmdsSet;
+    bool                recoilValueCmdsSet;
     bool                reloadCmdsSet;
     bool                ammoCmdsSet;
     bool                ammoValueCmdsSet;
-    bool                displayAmmoCmdsSet;
     bool                shakeCmdsSet;
     bool                autoLedCmdsSet;
     bool                aspect16x9CmdsSet;
     bool                aspect4x3CmdsSet;
     bool                joystickCmdsSet;
     bool                keyMouseCmdsSet;
+    bool                displayAmmoCmdsSet;
+    bool                displayAmmoInitCmdsSet;
+    bool                displayLifeCmdsSet;
+    bool                displayLifeInitCmdsSet;
+    bool                displayOtherCmdsSet;
+    bool                displayOtherInitCmdsSet;
+    bool                displayRefreshSet;
 
     quint16             lastAmmoValue;
 
+    //Display
+    bool                hasDisplayAmmoInited;
+    bool                hasDisplayLifeInited;
+    bool                hasDisplayOtherInited;
+    bool                hasDisplayAmmoAndLifeInited;
+    qint16              ammoDisplayValue;
+    qint16              lifeDisplayValue;
+    qint16              otherDisplayValue;
 
+    quint16              displayRefresh;
+
+    bool                displayAmmoPriority;
+    bool                displayLifePriority;
+    bool                displayOtherPriority;
 
 };
 

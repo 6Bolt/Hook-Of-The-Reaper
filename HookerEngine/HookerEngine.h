@@ -15,6 +15,7 @@
 #include <QFile>
 #include <QDir>
 #include <QMessageBox>
+#include <QQueue>
 
 
 #include "HookTCPSocket.h"
@@ -127,7 +128,23 @@ private slots:
     void P2RecoilR2S();
     void P3RecoilR2S();
     void P4RecoilR2S();
+    void PXRecoilR2S(quint8 player);
 
+    //For Light Gun Display Delay
+    void P1LGDisplayDelay();
+    void P2LGDisplayDelay();
+    void P3LGDisplayDelay();
+    void P4LGDisplayDelay();
+    void PXLGDisplayDelay(quint8 player);
+
+    void WriteDisplayDelayCMD(quint8 player, QString command);
+
+    //For Open Solenoid Safety Timer
+    void P1CloseSolenoid();
+    void P2CloseSolenoid();
+    void P3CloseSolenoid();
+    void P4CloseSolenoid();
+    void PXCloseSolenoid(quint8 player);
 
 
 private:
@@ -412,6 +429,29 @@ private:
     //If the USB HID Info Has Been Init Or Not
     bool                            isUSBHIDInit;
     QMap<QString,quint8>            hidPlayerMap;
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    //Display & Display Refresh
+
+    QTimer                          lgDisplayDelayTimer[MAXGAMEPLAYERS];
+    bool                            isLGDisplayOnDelay[MAXGAMEPLAYERS];
+    QString                         lgDisplayDelayAmmoCMDs[MAXGAMEPLAYERS];
+    QString                         lgDisplayDelayLifeCMDs[MAXGAMEPLAYERS];
+    QString                         lgDisplayDelayOtherCMDs[MAXGAMEPLAYERS];
+    bool                            didDisplayWrite[MAXGAMEPLAYERS];
+    quint16                         displayRefresh[MAXGAMEPLAYERS];
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    //For Recoil_Value and Safety Timer
+
+    QTimer                          openSolenoidSafetyTimer[MAXGAMEPLAYERS];
+    QStringList                     closeSolenoidCMDs[MAXGAMEPLAYERS];
+    bool                            isLGSolenoidOpen[MAXGAMEPLAYERS];
+    bool                            blockRecoilValue[MAXGAMEPLAYERS];
+    quint8                          timesStuckOpenSolenoid[MAXGAMEPLAYERS];
+
 
 
 };

@@ -43,8 +43,8 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     commandLGList << AMMOCMD << AMMOVALUECMD << SHAKECMD << AUTOLEDCMD << ARATIO169CMD;
     commandLGList << ARATIO43CMD << JOYMODECMD << KANDMMODECMD << DLGNULLCMD << RECOIL_R2SCMD;
     commandLGList << OPENCOMPORTNOINIT << CLOSECOMPORTNOINIT << DISPLAYAMMOCMD << DISPLAYAMMOINITCMD;
-    commandLGList << DISPLAYLIFECMD << DISPLAYLIFEINITCMD << DISPLAYOTHERCMD << DISPLAYOTHERINITCMD << CLOSECOMPORTINITONLY;
-
+    commandLGList << DISPLAYLIFECMD << DISPLAYLIFEINITCMD << DISPLAYOTHERCMD << DISPLAYOTHERINITCMD;
+    commandLGList << CLOSECOMPORTINITONLYCMD << RECOILVALUECMD;
 
     //qDebug() << "Hooker Engine Started";
 
@@ -222,10 +222,34 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     connect(&pRecoilR2STimer[2], SIGNAL(timeout()), this, SLOT(P3RecoilR2S()));
     connect(&pRecoilR2STimer[3], SIGNAL(timeout()), this, SLOT(P4RecoilR2S()));
 
+    //Connect Display Delay Timers
+    connect(&lgDisplayDelayTimer[0], SIGNAL(timeout()), this, SLOT(P1LGDisplayDelay()));
+    connect(&lgDisplayDelayTimer[1], SIGNAL(timeout()), this, SLOT(P2LGDisplayDelay()));
+    connect(&lgDisplayDelayTimer[2], SIGNAL(timeout()), this, SLOT(P3LGDisplayDelay()));
+    connect(&lgDisplayDelayTimer[3], SIGNAL(timeout()), this, SLOT(P4LGDisplayDelay()));
+
+    //Connect Open Solenoid Safety Timers
+    connect(&openSolenoidSafetyTimer[0], SIGNAL(timeout()), this, SLOT(P1CloseSolenoid()));
+    connect(&openSolenoidSafetyTimer[1], SIGNAL(timeout()), this, SLOT(P2CloseSolenoid()));
+    connect(&openSolenoidSafetyTimer[2], SIGNAL(timeout()), this, SLOT(P3CloseSolenoid()));
+    connect(&openSolenoidSafetyTimer[3], SIGNAL(timeout()), this, SLOT(P4CloseSolenoid()));
+
+
     for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
     {
         isPRecoilR2SFirstTime[i] = true;
         recoilR2SSkewPrec[i] = 100;
+        isLGDisplayOnDelay[i] = false;
+        lgDisplayDelayTimer[i].setInterval (DISPLAYREFRESHDEFAULT);
+        lgDisplayDelayTimer[i].setSingleShot(true);
+        lgDisplayDelayTimer[i].setTimerType (Qt::PreciseTimer);
+        didDisplayWrite[i] = false;
+        isLGSolenoidOpen[i] = false;
+        openSolenoidSafetyTimer[i].setInterval (OPENSOLENOIDDEFAULTTIME);
+        openSolenoidSafetyTimer[i].setSingleShot(true);
+        openSolenoidSafetyTimer[i].setTimerType (Qt::PreciseTimer);
+        blockRecoilValue[i] = false;
+        timesStuckOpenSolenoid[i] = 0;
     }
 
 
@@ -1003,150 +1027,181 @@ void HookerEngine::UpdateDisplayTimeOut()
 
 void HookerEngine::P1RecoilR2S()
 {
-    if(!isPRecoilR2SFirstTime[0])
-    {
-        bool dlgCMDFound;
-        QStringList dlgCommands;
-
-        //Get Recoil Commands
-        dlgCommands = p_comDeviceList->p_lightGunList[0]->RecoilCommands(&dlgCMDFound);
-
-        if(dlgCMDFound)
-        {
-            if(!isLoadedLGUSB[0])
-            {
-                quint8 tempCPNum = loadedLGComPortNumber[0];
-
-                for(quint8 k = 0; k < dlgCommands.count(); k++)
-                {
-                    //qDebug() << "Recoil_R2S Timer - Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
-                    WriteLGComPort(tempCPNum, dlgCommands[k]);
-                }
-            }
-            else
-            {
-                for(quint8 k = 0; k < dlgCommands.count(); k++)
-                {
-                    WriteLGUSBHID(0, dlgCommands[k]);
-                }
-            }
-
-
-            pRecoilR2STimer[0].start();
-        }
-    }
+    PXRecoilR2S(0);
 }
 
 void HookerEngine::P2RecoilR2S()
 {
-    if(!isPRecoilR2SFirstTime[1])
-    {
-        bool dlgCMDFound;
-        QStringList dlgCommands;
-
-        //Get Recoil Commands
-        dlgCommands = p_comDeviceList->p_lightGunList[1]->RecoilCommands(&dlgCMDFound);
-
-        if(dlgCMDFound)
-        {
-            if(!isLoadedLGUSB[1])
-            {
-                quint8 tempCPNum = loadedLGComPortNumber[1];
-
-                for(quint8 k = 0; k < dlgCommands.count(); k++)
-                {
-                    //qDebug() << "Recoil_R2S Timer - Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
-                    WriteLGComPort(tempCPNum, dlgCommands[k]);
-                }
-            }
-            else
-            {
-                for(quint8 k = 0; k < dlgCommands.count(); k++)
-                {
-                    WriteLGUSBHID(1, dlgCommands[k]);
-                }
-            }
-
-
-            pRecoilR2STimer[1].start();
-        }
-    }
+    PXRecoilR2S(1);
 }
 
 void HookerEngine::P3RecoilR2S()
 {
-    if(!isPRecoilR2SFirstTime[2])
-    {
-        bool dlgCMDFound;
-        QStringList dlgCommands;
-
-        //Get Recoil Commands
-        dlgCommands = p_comDeviceList->p_lightGunList[2]->RecoilCommands(&dlgCMDFound);
-
-        if(dlgCMDFound)
-        {
-            if(!isLoadedLGUSB[2])
-            {
-                quint8 tempCPNum = loadedLGComPortNumber[2];
-
-                for(quint8 k = 0; k < dlgCommands.count(); k++)
-                {
-                    //qDebug() << "Recoil_R2S Timer - Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
-                    WriteLGComPort(tempCPNum, dlgCommands[k]);
-                }
-            }
-            else
-            {
-                for(quint8 k = 0; k < dlgCommands.count(); k++)
-                {
-                    WriteLGUSBHID(2, dlgCommands[k]);
-                }
-            }
-
-
-            pRecoilR2STimer[2].start();
-        }
-    }
+    PXRecoilR2S(2);
 }
 
 void HookerEngine::P4RecoilR2S()
 {
-    if(!isPRecoilR2SFirstTime[3])
+    PXRecoilR2S(3);
+}
+
+void HookerEngine::PXRecoilR2S(quint8 player)
+{
+    if(!isPRecoilR2SFirstTime[player])
     {
         bool dlgCMDFound;
         QStringList dlgCommands;
 
         //Get Recoil Commands
-        dlgCommands = p_comDeviceList->p_lightGunList[3]->RecoilCommands(&dlgCMDFound);
+        dlgCommands = p_comDeviceList->p_lightGunList[loadedLGNumbers[player]]->RecoilCommands(&dlgCMDFound);
 
         if(dlgCMDFound)
         {
-            if(!isLoadedLGUSB[3])
+            if(!isLoadedLGUSB[player])
             {
-                quint8 tempCPNum = loadedLGComPortNumber[3];
-
                 for(quint8 k = 0; k < dlgCommands.count(); k++)
                 {
-                    //qDebug() << "Recoil_R2S Timer - Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
-                    WriteLGComPort(tempCPNum, dlgCommands[k]);
+                    //qDebug() << "Recoil_R2S Timer - Writting to Port: " << loadedLGComPortNumber[3] << " with Commands: " << dlgCommands[k];
+                    WriteLGComPort(loadedLGComPortNumber[player], dlgCommands[k]);
                 }
             }
             else
             {
                 for(quint8 k = 0; k < dlgCommands.count(); k++)
                 {
-                    WriteLGUSBHID(3, dlgCommands[k]);
+                    WriteLGUSBHID(player, dlgCommands[k]);
                 }
             }
-
-
-            pRecoilR2STimer[3].start();
         }
     }
 }
 
 
+void HookerEngine::P1LGDisplayDelay()
+{
+    PXLGDisplayDelay(0);
+}
 
+void HookerEngine::P2LGDisplayDelay()
+{
+    PXLGDisplayDelay(1);
+}
+
+void HookerEngine::P3LGDisplayDelay()
+{
+    PXLGDisplayDelay(2);
+}
+
+void HookerEngine::P4LGDisplayDelay()
+{
+    PXLGDisplayDelay(3);
+}
+
+void HookerEngine::PXLGDisplayDelay(quint8 player)
+{
+    if(didDisplayWrite[player])
+    {
+        didDisplayWrite[player] = false;
+    }
+    else
+    {
+        if(!lgDisplayDelayOtherCMDs[player].isEmpty())
+        {
+            WriteDisplayDelayCMD(player, lgDisplayDelayOtherCMDs[player]);
+            lgDisplayDelayOtherCMDs[player].clear();
+        }
+        else if(!lgDisplayDelayAmmoCMDs[player].isEmpty())
+        {
+            WriteDisplayDelayCMD(player, lgDisplayDelayAmmoCMDs[player]);
+            lgDisplayDelayAmmoCMDs[player].clear();
+        }
+        else if(!lgDisplayDelayLifeCMDs[player].isEmpty())
+        {
+            WriteDisplayDelayCMD(player, lgDisplayDelayLifeCMDs[player]);
+            lgDisplayDelayLifeCMDs[player].clear();
+        }
+        else
+            isLGDisplayOnDelay[player] = false;
+    }
+
+    //If Queue is not Empty, re-start Delay Timer
+    if(isLGDisplayOnDelay[player])
+        lgDisplayDelayTimer[player].start();
+}
+
+
+void HookerEngine::WriteDisplayDelayCMD(quint8 player, QString command)
+{
+    if(!isLoadedLGUSB[player])
+        WriteLGComPort(loadedLGComPortNumber[player], command);
+    else
+        WriteLGUSBHID(player, command);
+}
+
+
+void HookerEngine::P1CloseSolenoid()
+{
+    //Solenoid been Open Too Long, Need to Close it
+    PXCloseSolenoid(0);
+}
+
+
+void HookerEngine::P2CloseSolenoid()
+{
+    //Solenoid been Open Too Long, Need to Close it
+    PXCloseSolenoid(1);
+}
+
+void HookerEngine::P3CloseSolenoid()
+{
+    //Solenoid been Open Too Long, Need to Close it
+    PXCloseSolenoid(2);
+}
+
+
+void HookerEngine::P4CloseSolenoid()
+{
+    //Solenoid been Open Too Long, Need to Close it
+    PXCloseSolenoid(3);
+}
+
+void HookerEngine::PXCloseSolenoid(quint8 player)
+{
+    if(closeSolenoidCMDs[player].isEmpty ())
+    {
+        QStringList dlgCommands;
+        bool dlgCMDFound;
+
+        dlgCommands = p_comDeviceList->p_lightGunList[loadedLGNumbers[player]]->RecoilValueCommands(&dlgCMDFound, 0);
+
+        if(dlgCMDFound)
+            closeSolenoidCMDs[player] = dlgCommands;
+    }
+
+
+    for(quint8 i = 0; i < closeSolenoidCMDs[player].length(); i++)
+    {
+        if(!isLoadedLGUSB[player])
+            WriteLGComPort(loadedLGComPortNumber[player], closeSolenoidCMDs[player][i]);
+        else
+            WriteLGUSBHID(player, closeSolenoidCMDs[player][i]);
+    }
+
+    isLGSolenoidOpen[player] = false;
+    blockRecoilValue[player] = true;
+    timesStuckOpenSolenoid[player]++;
+
+    //Display Critical Warning that the Solenoid was Open Too long
+    QString tempCrit = "P"+QString::number(player+1)+" light gun's solenoid was open for longer than 200ms. Please fix this critical error urgently, as it can damage the light gun's solenoid. ";
+    tempCrit.append ("The affected player's Recoil_Value command will be blocked for the rest of the game, and reset when a new game starts.");
+
+    if(timesStuckOpenSolenoid[player] > 2)
+        tempCrit.append ("\n\nThis is the third time or more now! Don't be the reason why every shirt has \"Don't Iron while Wearing\" printed on it's tag");
+
+    if(displayMB)
+        QMessageBox::critical (p_guiConnect, "Solenoid Open Too Long", tempCrit, QMessageBox::Ok);
+
+}
 
 //Private Member Functions
 
@@ -1256,6 +1311,16 @@ void HookerEngine::ClearOnDisconnect()
     {
         isPRecoilR2SFirstTime[i] = true;
         recoilR2SSkewPrec[i] = 100;
+        isLGDisplayOnDelay[i] = false;
+        lgDisplayDelayAmmoCMDs[i].clear();
+        lgDisplayDelayLifeCMDs[i].clear();
+        lgDisplayDelayOtherCMDs[i].clear();
+        if(lgDisplayDelayTimer[i].isActive())
+            lgDisplayDelayTimer[i].stop();
+        didDisplayWrite[i] = false;
+        isLGSolenoidOpen[i] = false;
+        closeSolenoidCMDs[i].clear ();
+        blockRecoilValue[i] = false;
     }
 
 
@@ -1461,6 +1526,16 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
                 {
                     isPRecoilR2SFirstTime[i] = true;
                     recoilR2SSkewPrec[i] = 100;
+                    isLGDisplayOnDelay[i] = false;
+                    lgDisplayDelayAmmoCMDs[i].clear();
+                    lgDisplayDelayLifeCMDs[i].clear();
+                    lgDisplayDelayOtherCMDs[i].clear();
+                    if(lgDisplayDelayTimer[i].isActive())
+                        lgDisplayDelayTimer[i].stop();
+                    didDisplayWrite[i] = false;
+                    isLGSolenoidOpen[i] = false;
+                    closeSolenoidCMDs[i].clear ();
+                    blockRecoilValue[i] = false;
                 }
 
             }
@@ -2884,6 +2959,7 @@ void HookerEngine::LoadLGFile()
                         unassignLG++;
                     else
                     {
+                        //Check if Serial Port or USB HID. If Serial Port, get Serial Port Number
                         if(p_comDeviceList->p_lightGunList[lgNumber]->IsLightGunUSB ())
                         {
                             isLoadedLGUSB[i] = true;
@@ -2894,6 +2970,16 @@ void HookerEngine::LoadLGFile()
                             isLoadedLGUSB[i] = false;
                             loadedLGComPortNumber[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetComPortNumber();
                         }
+
+                        //Get Display Refresh, If None is set, Use Default Display Refresh
+                        bool isRefreshSet;
+                        displayRefresh[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetDisplayRefresh(&isRefreshSet);
+
+                        if(!isRefreshSet)
+                            displayRefresh[i] = DISPLAYREFRESHDEFAULT;
+
+                        //qDebug() << "For Player: " << i << " Setting Refresh Display: " << displayRefresh[i];
+                        lgDisplayDelayTimer[i].setInterval (displayRefresh[i]);
                     }
                 }  //for(quint8 i = 0; i < numberLGPlayers; i++)
 
@@ -3400,7 +3486,73 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                 dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DamageCommands(&dlgCMDFound);
                             }
                             else if(commands[i][2] == 'i')
-                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DisplayAmmoCommands(&dlgCMDFound, value.toUShort());
+                            {
+                                if(commands[i][DISPLAYCHECK] == DISPLAYAMMOCMD9CHAR)
+                                {
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DisplayAmmoCommands(&dlgCMDFound, value.toUShort());
+
+                                    if(dlgCMDFound)
+                                    {
+                                        //If LG Display is on Delay, store CMD in Queue and set dlgCMDFound to false, so nothing happens
+                                        if(isLGDisplayOnDelay[player])
+                                        {
+                                            lgDisplayDelayAmmoCMDs[player] = dlgCommands[0];
+                                            dlgCMDFound = false;
+                                        }
+                                        else
+                                        {
+                                            //If not on delay, let CMD go through, But on Delay & Start Timer
+                                            //qDebug() << "Display Ammo - No Delay: " << dlgCommands;
+                                            isLGDisplayOnDelay[player] = true;
+                                            didDisplayWrite[player] = true;
+                                            lgDisplayDelayTimer[player].start();
+                                        }
+                                    }
+                                }
+                                else if(commands[i][DISPLAYCHECK] == DISPLAYLIFECMD9CHAR)
+                                {
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DisplayLifeCommands(&dlgCMDFound, value.toUShort());
+
+                                    if(dlgCMDFound)
+                                    {
+                                        //If LG Display is on Delay, store CMD in Queue and set dlgCMDFound to false, so nothing happens
+                                        if(isLGDisplayOnDelay[player])
+                                        {
+                                            lgDisplayDelayLifeCMDs[player] = dlgCommands[0];
+                                            dlgCMDFound = false;
+                                        }
+                                        else
+                                        {
+                                            //If not on delay, let CMD go through, But on Delay & Start Timer
+                                            //qDebug() << "Display Life - No Delay: " << dlgCommands;
+                                            isLGDisplayOnDelay[player] = true;
+                                            didDisplayWrite[player] = true;
+                                            lgDisplayDelayTimer[player].start();
+                                        }
+                                    }
+                                }
+                                else if(commands[i][DISPLAYCHECK] == DISPLAYOTHERCMD9CHAR)
+                                {
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DisplayOtherCommands(&dlgCMDFound, value.toUShort());
+
+                                    if(dlgCMDFound)
+                                    {
+                                        //If LG Display is on Delay, store CMD in Queue and set dlgCMDFound to false, so nothing happens
+                                        if(isLGDisplayOnDelay[player])
+                                        {
+                                            lgDisplayDelayOtherCMDs[player] = dlgCommands[0];
+                                            dlgCMDFound = false;
+                                        }
+                                        else
+                                        {
+                                            //If not on delay, let CMD go through, But on Delay & Start Timer
+                                            isLGDisplayOnDelay[player] = true;
+                                            didDisplayWrite[player] = true;
+                                            lgDisplayDelayTimer[player].start();
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     else  //E-Z
@@ -3417,53 +3569,122 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                             {
                                 if(commands[i].size() > RECOILCMDCNT)
                                 {
-                                    if(isPRecoilR2SFirstTime[player])
+                                    if(commands[i][RECOILCMDCNT] == RECOIL_R2SCMD8CHAR)
                                     {
-                                        QStringList tmpCMDs = p_comDeviceList->p_lightGunList[lightGun]->RecoilR2SCommands(&dlgCMDFound);
-                                        if(dlgCMDFound && tmpCMDs.count() > 0)
+                                        //Recoil_R2S Command
+
+                                        //qDebug() << "In RecoilR2S, isPRecoilR2SFirstTime[player]: " << isPRecoilR2SFirstTime[player];
+
+                                        if(isPRecoilR2SFirstTime[player])
                                         {
-                                            quint32 delay = tmpCMDs[0].toULong();
-
-                                            if(recoilR2SSkewPrec[player] != 100)
+                                            QStringList tmpCMDs = p_comDeviceList->p_lightGunList[lightGun]->RecoilR2SCommands(&dlgCMDFound);
+                                            if(dlgCMDFound && tmpCMDs.count() > 0)
                                             {
-                                                if(recoilR2SSkewPrec[player] < RECOIL_R2SMINPERCT)
-                                                    recoilR2SSkewPrec[player] = RECOIL_R2SMINPERCT;
+                                                quint32 delay = tmpCMDs[0].toULong();
 
-                                                delay = delay * recoilR2SSkewPrec[player];
-                                                delay = delay/100;
+                                                if(recoilR2SSkewPrec[player] != 100)
+                                                {
+                                                    if(recoilR2SSkewPrec[player] < RECOIL_R2SMINPERCT)
+                                                        recoilR2SSkewPrec[player] = RECOIL_R2SMINPERCT;
+
+                                                    delay = delay * recoilR2SSkewPrec[player];
+                                                    delay = delay/100;
+                                                }
+
+                                                //qDebug() << "Delay for P" << QString::number(player+1) << " is " << delay;
+
+                                                //Set Timer Interval and Type to PreciseTimer
+                                                pRecoilR2STimer[player].setInterval(delay);
+                                                pRecoilR2STimer[player].setTimerType (Qt::PreciseTimer);
+
+                                                isPRecoilR2SFirstTime[player] = false;
                                             }
 
-                                            //qDebug() << "Delay for P" << QString::number(player+1) << " is " << delay;
+                                            if(value != "0")
+                                            {
+                                                //Get Recoil Commands
+                                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
 
-                                            pRecoilR2STimer[player].setInterval(delay);
-
-                                            isPRecoilR2SFirstTime[player] = false;
+                                                pRecoilR2STimer[player].start ();
+                                            }
                                         }
-
-                                        if(value != "0")
+                                        else
                                         {
-                                            //Get Recoil Commands
-                                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
+                                            if(value != "0")
+                                            {
+                                                //Get Recoil Commands
+                                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
 
-                                            pRecoilR2STimer[player].start ();
+                                                if(dlgCMDFound)
+                                                {
+                                                    //If a Recoil is going to Happen, then stop Timer if Running, and Start from Full
+                                                    if(pRecoilR2STimer[player].isActive())
+                                                        pRecoilR2STimer[player].stop ();
+
+                                                    pRecoilR2STimer[player].start ();
+                                                }
+                                                else
+                                                {
+                                                    //If A Recoil is Not Going to Happen, then Check if Timer is Running, if not, then Start it
+                                                    if(!pRecoilR2STimer[player].isActive())
+                                                        pRecoilR2STimer[player].start ();
+                                                }
+                                            }
+                                            else
+                                            {
+                                                //Value is 0, so stop timer and do nothing
+                                                pRecoilR2STimer[player].stop ();
+                                                dlgCMDFound = false;
+                                            }
                                         }
                                     }
                                     else
                                     {
-                                        if(value != "0")
-                                        {
-                                            //Get Recoil Commands
-                                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
+                                        //Recoil_Value Command
 
-                                            pRecoilR2STimer[player].start ();
-                                        }
+                                        //If Recoil_Value is blocked, do nothing
+                                        if(blockRecoilValue[player])
+                                            dlgCMDFound = false;
                                         else
                                         {
-                                            pRecoilR2STimer[player].stop ();
-                                            dlgCMDFound = false;
+                                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilValueCommands(&dlgCMDFound, value.toUShort());
+                                            //qDebug() << "Recoil_Value: " << value << " CMDs: " << dlgCommands[0];
+
+                                            if(dlgCMDFound)
+                                            {
+                                                if(value.toUShort() == 0)
+                                                {
+                                                    if(closeSolenoidCMDs[player].isEmpty ())
+                                                        closeSolenoidCMDs[player] = dlgCommands;
+
+                                                    if(isLGSolenoidOpen[player])
+                                                    {
+                                                        openSolenoidSafetyTimer[player].stop ();
+                                                        isLGSolenoidOpen[player] = false;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    //If Solenoid is Close, then mark it is Open and Start Timer
+                                                    if(!isLGSolenoidOpen[player])
+                                                    {
+                                                        isLGSolenoidOpen[player] = true;
+                                                        openSolenoidSafetyTimer[player].start ();
+                                                    }
+                                                    else
+                                                    {
+                                                        //If Solenoid is Already Open, then Do Nothing
+                                                        dlgCMDFound = false;
+
+                                                        //Make Sure if Timer is Running, if not Start it Then
+                                                        if(!openSolenoidSafetyTimer[player].isActive())
+                                                            openSolenoidSafetyTimer[player].start ();
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
-                                }
+                                }  //Recoil Command
                                 else if(value != "0")
                                 {
                                     //Must be Recoil Command, Only Do when Value != 0

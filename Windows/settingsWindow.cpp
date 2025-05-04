@@ -80,6 +80,70 @@ settingsWindow::settingsWindow(ComDeviceList *cdList, QWidget *parent)
     else
         ui->reaperLEDCheckBox->setCheckState (Qt::Unchecked);
 
+
+    ui->ammoRadioButton->setAutoExclusive (false);
+    ui->lifeRadioButton->setAutoExclusive (false);
+
+    p_comDeviceList->GetDisplayPriority (&displayAmmoPriority, &displayLifePriority);
+
+    if(displayAmmoPriority == displayLifePriority)
+    {
+        displayAmmoPriority = true;
+        displayLifePriority = false;
+    }
+
+    ui->ammoRadioButton->setChecked (displayAmmoPriority);
+    ui->lifeRadioButton->setChecked (displayLifePriority);
+
+    displayOtherPriority = p_comDeviceList->GetDisplayOtherPriority ();
+
+    //If Set. then Check the Box
+    if(displayOtherPriority)
+        ui->displayOtherCheckBox->setCheckState (Qt::Checked);
+    else
+        ui->displayOtherCheckBox->setCheckState (Qt::Unchecked);
+
+
+    ui->glyphsRadioButton->setAutoExclusive (false);
+    ui->lifeBarRadioButton->setAutoExclusive (false);
+    ui->glyphsRadioButton->setEnabled (true);
+    ui->lifeBarRadioButton->setEnabled (true);
+    ui->glyphsRadioButton->setCheckable(true);
+    ui->lifeBarRadioButton->setCheckable(true);
+
+    displayAmmoLife = p_comDeviceList->GetDisplayAmmoAndLife (&displayAmmoLifeGlyphs, &displayAmmoLifeBar, &displayAmmoLifeNumber);
+
+    if(displayAmmoLife)
+        ui->ammoLifeCheckBox->setCheckState (Qt::Checked);
+    else
+        ui->ammoLifeCheckBox->setCheckState (Qt::Unchecked);
+
+    if(displayAmmoLife)
+    {
+        if(displayAmmoLifeNumber)
+        {
+            displayAmmoLifeGlyphs = true;
+            displayAmmoLifeBar = false;
+            displayAmmoLifeNumber = false;
+        }
+
+        ui->glyphsRadioButton->setChecked (displayAmmoLifeGlyphs);
+        ui->lifeBarRadioButton->setChecked (displayAmmoLifeBar);
+        ui->lifeNumRadioButton->setChecked (displayAmmoLifeNumber);
+
+        ui->lifeNumRadioButton->setEnabled (false);
+
+    }
+    else
+    {
+        ui->lifeNumRadioButton->setEnabled (true);
+        ui->glyphsRadioButton->setChecked (displayAmmoLifeGlyphs);
+        ui->lifeBarRadioButton->setChecked (displayAmmoLifeBar);
+        ui->lifeNumRadioButton->setChecked (displayAmmoLifeNumber);
+    }
+
+
+
     finishedInit = true;
 
 }
@@ -126,6 +190,8 @@ void settingsWindow::CheckAndSaveSetting()
     ignoreUDLGGF = ui->ignoreUDLGGFCheckBox->checkState ();
     bypassSWC = ui->bypassSerialWriteCheckBox->checkState ();
     disableRLED = ui->reaperLEDCheckBox->checkState ();
+    otherDisplay = ui->displayOtherCheckBox->checkState ();
+    displayAL = ui->ammoLifeCheckBox->checkState ();
 
     if(defaultLG == Qt::Checked)
         useDefaultLGFirst = true;
@@ -161,12 +227,27 @@ void settingsWindow::CheckAndSaveSetting()
     else
         disbleReaperLEDs = false;
 
+    if(otherDisplay == Qt::Checked)
+        displayOtherPriority = true;
+    else
+        displayOtherPriority = false;
+
+    if(displayAL == Qt::Checked)
+        displayAmmoLife = true;
+    else
+        displayAmmoLife = false;
+
+
     p_comDeviceList->SetUseDefaultLGFirst(useDefaultLGFirst);
     p_comDeviceList->SetUseMultiThreading (useMultiThreading);
     p_comDeviceList->SetCloseComPortGameExit (closeComPortGameExit);
     p_comDeviceList->SetIgnoreUselessDFLGGF (ignoreUselessDLGGF);
     p_comDeviceList->SetSerialPortWriteCheckBypass (bypassSerialWriteChecks);
     p_comDeviceList->SetDisableReaperLEDs (disbleReaperLEDs);
+    p_comDeviceList->SetDisplayPriority (displayAmmoPriority, displayLifePriority);
+    p_comDeviceList->SetDisplayOtherPriority (displayOtherPriority);
+
+    p_comDeviceList->SetDisplayAmmoAndLife(displayAmmoLife, displayAmmoLifeGlyphs, displayAmmoLifeBar, displayAmmoLifeNumber);
 
     if(isNumber)
     {
@@ -190,5 +271,84 @@ void settingsWindow::on_bypassSerialWriteCheckBox_checkStateChanged(const Qt::Ch
         if(ret != QMessageBox::Yes)
             ui->bypassSerialWriteCheckBox->setCheckState (Qt::Unchecked);
     }
+}
+
+
+void settingsWindow::on_ammoRadioButton_clicked()
+{
+    displayAmmoPriority = true;
+    displayLifePriority = false;
+    ui->ammoRadioButton->setChecked (displayAmmoPriority);
+    ui->lifeRadioButton->setChecked (displayLifePriority);
+}
+
+
+void settingsWindow::on_lifeRadioButton_clicked()
+{
+    displayAmmoPriority = false;
+    displayLifePriority = true;
+    ui->ammoRadioButton->setChecked (displayAmmoPriority);
+    ui->lifeRadioButton->setChecked (displayLifePriority);
+}
+
+
+void settingsWindow::on_ammoLifeCheckBox_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if(arg1 == Qt::Checked)
+    {
+        displayAmmoLife = true;
+
+        if(displayAmmoLifeNumber)
+        {
+            displayAmmoLifeGlyphs = true;
+            displayAmmoLifeBar = false;
+            displayAmmoLifeNumber = false;
+            ui->glyphsRadioButton->setChecked (displayAmmoLifeGlyphs);
+            ui->lifeBarRadioButton->setChecked (displayAmmoLifeBar);
+            ui->lifeNumRadioButton->setChecked (displayAmmoLifeNumber);
+        }
+
+        ui->lifeNumRadioButton->setEnabled (false);
+    }
+    else
+    {
+        displayAmmoLife = false;
+        ui->lifeNumRadioButton->setEnabled (true);
+    }
+}
+
+
+
+
+void settingsWindow::on_glyphsRadioButton_clicked()
+{
+    displayAmmoLifeGlyphs = true;
+    displayAmmoLifeBar = false;
+    displayAmmoLifeNumber = false;
+    ui->glyphsRadioButton->setChecked (displayAmmoLifeGlyphs);
+    ui->lifeBarRadioButton->setChecked (displayAmmoLifeBar);
+    ui->lifeNumRadioButton->setChecked (displayAmmoLifeNumber);
+}
+
+
+void settingsWindow::on_lifeBarRadioButton_clicked()
+{
+    displayAmmoLifeGlyphs = false;
+    displayAmmoLifeBar = true;
+    displayAmmoLifeNumber = false;
+    ui->glyphsRadioButton->setChecked (displayAmmoLifeGlyphs);
+    ui->lifeBarRadioButton->setChecked (displayAmmoLifeBar);
+    ui->lifeNumRadioButton->setChecked (displayAmmoLifeNumber);
+}
+
+
+void settingsWindow::on_lifeNumRadioButton_clicked()
+{
+    displayAmmoLifeGlyphs = false;
+    displayAmmoLifeBar = false;
+    displayAmmoLifeNumber = true;
+    ui->glyphsRadioButton->setChecked (displayAmmoLifeGlyphs);
+    ui->lifeBarRadioButton->setChecked (displayAmmoLifeBar);
+    ui->lifeNumRadioButton->setChecked (displayAmmoLifeNumber);
 }
 

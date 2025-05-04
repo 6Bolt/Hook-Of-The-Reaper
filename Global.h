@@ -355,13 +355,20 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define CLOSECOMPORTNOINIT      ">Close_COM_NoInit"
 #define CLOSECOMPORTINITCHK     11
 #define CLOSECOMPORTNOINIT11    'N'
-#define CLOSECOMPORTINITONLY    ">Close_COM_InitOnly"
+#define CLOSECOMPORTINITONLYCMD ">Close_COM_InitOnly"
 #define DISPLAYAMMOCMD          ">Display_Ammo"
 #define DISPLAYAMMOINITCMD      ">Display_Ammo_Init"
 #define DISPLAYLIFECMD          ">Display_Life"
 #define DISPLAYLIFEINITCMD      ">Display_Life_Init"
 #define DISPLAYOTHERCMD         ">Display_Other"
 #define DISPLAYOTHERINITCMD     ">Display_Other_Init"
+#define DISPLAYAMMOCMD9CHAR     'A'
+#define DISPLAYLIFECMD9CHAR     'L'
+#define DISPLAYOTHERCMD9CHAR    'O'
+#define DISPLAYCHECK            9
+#define RECOILVALUECMD          ">Recoil_Value"
+#define RECOIL_R2SCMD8CHAR      'R'
+#define RECOILVALUECMD8CHAR     'V'
 
 #define OPENCOMPORTONLY         "Open_COM"
 #define CLOSECOMPORTONLY        "Close_COM"
@@ -387,6 +394,23 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define DISPLAYLIFEINITONLY     "Display_Life_Init"
 #define DISPLAYOTHERONLY        "Display_Other"
 #define DISPLAYOTHERINITONLY    "Display_Other_Init"
+#define DISPLAYREFRESHONLY      "Display_Refresh"
+#define RECOILVALUEONLY         "Recoil_Value"
+
+//Open Solenoid Safety Timer Default Time
+#define OPENSOLENOIDDEFAULTTIME 200
+
+//Display Refresh Default
+#define DISPLAYREFRESHDEFAULT   100
+
+#define OPENFIRELIFEBAR         'B'
+
+#define OPENFIREAMMOINIT        "MDx2"
+#define OPENFIRELIFEINIT        "MDx1"
+#define OPENFIREALGLYPHS        "MDx3"
+#define OPENFIREALBAR           "MDx3B"
+#define OPENFIRELIFENUMCMD      "FDAx%s%"
+
 
 
 //Not Used Yet, But Needed for Future

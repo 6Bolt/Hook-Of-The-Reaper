@@ -31,6 +31,18 @@ private slots:
 
     void on_bypassSerialWriteCheckBox_checkStateChanged(const Qt::CheckState &arg1);
 
+    void on_ammoRadioButton_clicked();
+
+    void on_lifeRadioButton_clicked();
+
+    void on_ammoLifeCheckBox_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_glyphsRadioButton_clicked();
+
+    void on_lifeBarRadioButton_clicked();
+
+    void on_lifeNumRadioButton_clicked();
+
 private:
 
     //Check the Setting and then Save Them
@@ -53,6 +65,13 @@ private:
     bool                ignoreUselessDLGGF;
     bool                bypassSerialWriteChecks;
     bool                disbleReaperLEDs;
+    bool                displayAmmoPriority;
+    bool                displayLifePriority;
+    bool                displayOtherPriority;
+    bool                displayAmmoLife;
+    bool                displayAmmoLifeGlyphs;
+    bool                displayAmmoLifeBar;
+    bool                displayAmmoLifeNumber;
 
     //For Check Boxes
     Qt::CheckState      defaultLG;
@@ -61,6 +80,8 @@ private:
     Qt::CheckState      ignoreUDLGGF;
     Qt::CheckState      bypassSWC;
     Qt::CheckState      disableRLED;
+    Qt::CheckState      otherDisplay;
+    Qt::CheckState      displayAL;
 
     //Refresh Time in Number and String
     quint32             refreshDisplayTime;

@@ -45,6 +45,25 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isRecoilDelaySet = false;
     blockRecoil = false;
 
+    //Display Init
+    hasDisplayAmmoInited = false;
+    hasDisplayLifeInited = false;
+    hasDisplayOtherInited = false;
+    hasDisplayAmmoAndLifeInited = false;
+    ammoDisplayValue = -1;
+    lifeDisplayValue = -1;
+    otherDisplayValue = -1;
+    displayAmmoPriority = true;
+    displayLifePriority = false;
+    displayOtherPriority = false;
+    displayRefresh = DISPLAYREFRESHDEFAULT;
+
+    displayAmmoLife = false;
+    displayAmmoLifeGlyphs = true;
+    displayAmmoLifeBar = false;
+    displayAmmoLifeNumber = false;
+    lifeBarMaxLife = 0;
+
 
     FillSerialPortInfo();
 
@@ -107,6 +126,25 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isUSBLightGun = false;
     isRecoilDelaySet = false;
     blockRecoil = false;
+
+    //Display Init
+    hasDisplayAmmoInited = false;
+    hasDisplayLifeInited = false;
+    hasDisplayOtherInited = false;
+    hasDisplayAmmoAndLifeInited = false;
+    ammoDisplayValue = -1;
+    lifeDisplayValue = -1;
+    otherDisplayValue = -1;
+    displayAmmoPriority = true;
+    displayLifePriority = false;
+    displayOtherPriority = false;
+    displayRefresh = DISPLAYREFRESHDEFAULT;
+
+    displayAmmoLife = false;
+    displayAmmoLifeGlyphs = true;
+    displayAmmoLifeBar = false;
+    displayAmmoLifeNumber = false;
+    lifeBarMaxLife = 0;
 
     FillSerialPortInfo();
 
@@ -217,6 +255,25 @@ LightGun::LightGun(LightGun const &lgMember)
 
     lastAmmoValue =0;
 
+    //Display Init
+    hasDisplayAmmoInited = lgMember.hasDisplayAmmoInited;
+    hasDisplayLifeInited = lgMember.hasDisplayLifeInited;
+    hasDisplayOtherInited = lgMember.hasDisplayOtherInited;
+    hasDisplayAmmoAndLifeInited = lgMember.hasDisplayAmmoAndLifeInited;
+    ammoDisplayValue = lgMember.ammoDisplayValue;
+    lifeDisplayValue = lgMember.lifeDisplayValue;
+    otherDisplayValue = lgMember.otherDisplayValue;
+    displayAmmoPriority = lgMember.displayAmmoPriority;
+    displayLifePriority = lgMember.displayLifePriority;
+    displayOtherPriority = lgMember.displayOtherPriority;
+    displayRefresh = lgMember.displayRefresh;
+
+    displayAmmoLife = lgMember.displayAmmoLife;
+    displayAmmoLifeGlyphs = lgMember.displayAmmoLifeGlyphs;
+    displayAmmoLifeBar = lgMember.displayAmmoLifeBar;
+    displayAmmoLifeNumber = lgMember.displayAmmoLifeNumber;
+    lifeBarMaxLife = lgMember.lifeBarMaxLife;
+
     LoadDefaultLGCommands();
 
 }
@@ -278,6 +335,25 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isUSBLightGun = false;
     isRecoilDelaySet = false;
     blockRecoil = false;
+
+    //Display Init
+    hasDisplayAmmoInited = false;
+    hasDisplayLifeInited = false;
+    hasDisplayOtherInited = false;
+    hasDisplayAmmoAndLifeInited = false;
+    ammoDisplayValue = -1;
+    lifeDisplayValue = -1;
+    otherDisplayValue = -1;
+    displayAmmoPriority = true;
+    displayLifePriority = false;
+    displayOtherPriority = false;
+    displayRefresh = DISPLAYREFRESHDEFAULT;
+
+    displayAmmoLife = false;
+    displayAmmoLifeGlyphs = true;
+    displayAmmoLifeBar = false;
+    displayAmmoLifeNumber = false;
+    lifeBarMaxLife = 0;
 
     FillSerialPortInfo();
 
@@ -343,6 +419,25 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isRecoilDelaySet = false;
     blockRecoil = false;
 
+    //Display Init
+    hasDisplayAmmoInited = false;
+    hasDisplayLifeInited = false;
+    hasDisplayOtherInited = false;
+    hasDisplayAmmoAndLifeInited = false;
+    ammoDisplayValue = -1;
+    lifeDisplayValue = -1;
+    otherDisplayValue = -1;
+    displayAmmoPriority = true;
+    displayLifePriority = false;
+    displayOtherPriority = false;
+    displayRefresh = DISPLAYREFRESHDEFAULT;
+
+    displayAmmoLife = false;
+    displayAmmoLifeGlyphs = true;
+    displayAmmoLifeBar = false;
+    displayAmmoLifeNumber = false;
+    lifeBarMaxLife = 0;
+
     FillSerialPortInfo();
 
     LoadDefaultLGCommands();
@@ -379,6 +474,25 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     blockRecoil = false;
 
     recoilDelay = rcDelay;
+
+    //Display Init
+    hasDisplayAmmoInited = false;
+    hasDisplayLifeInited = false;
+    hasDisplayOtherInited = false;
+    hasDisplayAmmoAndLifeInited = false;
+    ammoDisplayValue = -1;
+    lifeDisplayValue = -1;
+    otherDisplayValue = -1;
+    displayAmmoPriority = true;
+    displayLifePriority = false;
+    displayOtherPriority = false;
+    displayRefresh = DISPLAYREFRESHDEFAULT;
+
+    displayAmmoLife = false;
+    displayAmmoLifeGlyphs = true;
+    displayAmmoLifeBar = false;
+    displayAmmoLifeNumber = false;
+    lifeBarMaxLife = 0;
 
     InitRecoilDelayTimer();
 
@@ -495,6 +609,34 @@ void LightGun::SetRecoilDelay(quint16 rcDelay)
 void LightGun::SetDisableReaperLEDs(bool disableRLED)
 {
     disableReaperLEDs = disableRLED;
+}
+
+void LightGun::SetDisplayPriority(bool ammo, bool life)
+{
+    if((ammo && life) || (!ammo && !life))
+    {
+        displayAmmoPriority = true;
+        displayLifePriority = false;
+    }
+    else
+    {
+        displayAmmoPriority = ammo;
+        displayLifePriority = life;
+    }
+}
+
+void LightGun::SetDisplayOtherPriority(bool other)
+{
+    displayOtherPriority = other;
+}
+
+void LightGun::SetDisplayAmmoAndLife(bool displayAAL, bool displayLG, bool displayLB, bool displayLN)
+{
+    displayAmmoLife = displayAAL;
+    displayAmmoLifeGlyphs = displayLG;
+    displayAmmoLifeBar = displayLB;
+    displayAmmoLifeNumber = displayLN;
+
 }
 
 //Get Member Functions
@@ -682,11 +824,41 @@ QString LightGun::GetComPortPath()
         return "";
 }
 
-bool LightGun::SetDisableReaperLEDs()
+bool LightGun::GetDisableReaperLEDs()
 {
     return disableReaperLEDs;
 }
 
+void LightGun::GetDisplayPriority(bool *ammo, bool *life)
+{
+    *ammo = displayAmmoPriority;
+    *life = displayLifePriority;
+}
+
+bool LightGun::GetDisplayOtherPriority()
+{
+    return displayOtherPriority;
+}
+
+
+bool LightGun::GetDisplayAmmoAndLife(bool *displayLG, bool *displayLB, bool *displayLN)
+{
+    *displayLG = displayAmmoLifeGlyphs;
+    *displayLB = displayAmmoLifeBar;
+    *displayLN = displayAmmoLifeNumber;
+
+    return displayAmmoLife;
+}
+
+quint16 LightGun::GetDisplayRefresh(bool *isRDS)
+{
+    *isRDS = displayRefreshSet;
+
+    if(displayAmmoLife && displayAmmoLifeBar)
+        return displayRefresh+5;
+
+    return displayRefresh;
+}
 
 void LightGun::CopyLightGun(LightGun const &lgMember)
 {
@@ -786,6 +958,25 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
 
     lastAmmoValue =0;
 
+    //Display Init
+    hasDisplayAmmoInited = lgMember.hasDisplayAmmoInited;
+    hasDisplayLifeInited = lgMember.hasDisplayLifeInited;
+    hasDisplayOtherInited = lgMember.hasDisplayOtherInited;
+    hasDisplayAmmoAndLifeInited = lgMember.hasDisplayAmmoAndLifeInited;
+    ammoDisplayValue = lgMember.ammoDisplayValue;
+    lifeDisplayValue = lgMember.lifeDisplayValue;
+    otherDisplayValue = lgMember.otherDisplayValue;
+    displayAmmoPriority = lgMember.displayAmmoPriority;
+    displayLifePriority = lgMember.displayLifePriority;
+    displayOtherPriority = lgMember.displayOtherPriority;
+    displayRefresh = lgMember.displayRefresh;
+
+    displayAmmoLife = lgMember.displayAmmoLife;
+    displayAmmoLifeGlyphs = lgMember.displayAmmoLifeGlyphs;
+    displayAmmoLifeBar = lgMember.displayAmmoLifeBar;
+    displayAmmoLifeNumber = lgMember.displayAmmoLifeNumber;
+    lifeBarMaxLife = lgMember.lifeBarMaxLife;
+
     LoadDefaultLGCommands();
 
 }
@@ -807,29 +998,43 @@ void LightGun::LoadDefaultLGCommands()
     reloadCmdsSet = false;
     ammoCmdsSet = false;
     ammoValueCmdsSet = false;
-    displayAmmoCmdsSet = false;
     shakeCmdsSet = false;
     autoLedCmdsSet = false;
     aspect16x9CmdsSet = false;
     aspect4x3CmdsSet = false;
     joystickCmdsSet = false;
     keyMouseCmdsSet = false;
+    displayAmmoCmdsSet = false;
+    displayAmmoInitCmdsSet = false;
+    displayLifeCmdsSet = false;
+    displayLifeInitCmdsSet = false;
+    displayOtherCmdsSet = false;
+    displayOtherInitCmdsSet = false;
+    displayRefreshSet = false;
+    recoilValueCmdsSet = false;
+
 
     openComPortCmds.clear();
     closeComPortCmds.clear();
     damageCmds.clear();
     recoilCmds.clear();
     recoilR2SCmds.clear();
+    recoilValueCmds.clear();
     reloadCmds.clear();
     ammoCmds.clear();
     ammoValueCmds.clear();
-    displayAmmoCmds.clear();
     shakeCmds.clear();
     autoLedCmds.clear();
     aspect16x9Cmds.clear();
     aspect4x3Cmds.clear();
     joystickCmds.clear();
     keyMouseCmds.clear();
+    displayAmmoCmds.clear();
+    displayAmmoInitCmds.clear();
+    displayLifeCmds.clear();
+    displayLifeInitCmds.clear();
+    displayOtherCmds.clear();
+    displayOtherInitCmds.clear();
 
     //If Not a Default Light Gun, then make sure defaultLightGunNum is 0
     //To load in nonDefaultLG.hor file
@@ -957,6 +1162,15 @@ void LightGun::LoadDefaultLGCommands()
                     }
                     recoilR2SCmdsSet = true;
                 }
+                else if(splitLines[0] == RECOILVALUEONLY)
+                {
+                    for(i = 0; i < numberCommands; i++)
+                    {
+                        commands[i] = commands[i].trimmed ();
+                        recoilValueCmds << commands[i];
+                    }
+                    recoilValueCmdsSet = true;
+                }
                 else if(splitLines[0] == RELOADCMDONLY)
                 {
                     for(i = 0; i < numberCommands; i++)
@@ -983,15 +1197,6 @@ void LightGun::LoadDefaultLGCommands()
                         ammoValueCmds << commands[i];
                     }
                     ammoValueCmdsSet = true;
-                }
-                else if(splitLines[0] == DISPLAYAMMOONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        displayAmmoCmds << commands[i];
-                    }
-                    displayAmmoCmdsSet = true;
                 }
                 else if(splitLines[0] == SHAKECMDONLY)
                 {
@@ -1047,6 +1252,113 @@ void LightGun::LoadDefaultLGCommands()
                     }
                     keyMouseCmdsSet = true;
                 }
+                else if(splitLines[0] == DISPLAYAMMOONLY)
+                {
+                    for(i = 0; i < numberCommands; i++)
+                    {
+                        commands[i] = commands[i].trimmed ();
+                        displayAmmoCmds << commands[i];
+                    }
+                    displayAmmoCmdsSet = true;
+                }
+                else if(splitLines[0] == DISPLAYAMMOINITONLY)
+                {
+                    for(i = 0; i < numberCommands; i++)
+                    {
+                        commands[i] = commands[i].trimmed ();
+
+                        if(displayAmmoLife && !displayOtherPriority)
+                        {
+                            if(commands[i].startsWith (OPENFIREAMMOINIT))
+                            {
+                                if(displayAmmoLifeGlyphs)
+                                    commands[i] = OPENFIREALGLYPHS;
+                                else if(displayAmmoLifeBar)
+                                    commands[i] = OPENFIREALBAR;
+                            }
+                        }
+
+                        displayAmmoInitCmds << commands[i];
+                    }
+                    displayAmmoInitCmdsSet = true;
+                }
+                else if(splitLines[0] == DISPLAYLIFEONLY)
+                {
+                    for(i = 0; i < numberCommands; i++)
+                    {
+                        commands[i] = commands[i].trimmed ();
+
+                        if(defaultLightGun && defaultLightGunNum == OPENFIRE && displayAmmoLifeNumber)
+                            commands[i] = OPENFIRELIFENUMCMD;
+
+                        displayLifeCmds << commands[i];
+                    }
+                    displayLifeCmdsSet = true;
+                }
+                else if(splitLines[0] == DISPLAYLIFEINITONLY)
+                {
+                    for(i = 0; i < numberCommands; i++)
+                    {
+                        commands[i] = commands[i].trimmed ();
+
+                        if(displayAmmoLife && !displayOtherPriority)
+                        {
+                            if(commands[i].startsWith (OPENFIRELIFEINIT))
+                            {
+                                if(displayAmmoLifeGlyphs)
+                                    commands[i] = OPENFIREALGLYPHS;
+                                else if(displayAmmoLifeBar)
+                                    commands[i] = OPENFIREALBAR;
+                            }
+                        }
+                        else if(defaultLightGun && defaultLightGunNum == OPENFIRE)
+                        {
+                            if(displayAmmoLifeBar)
+                                commands[i].append(OPENFIRELIFEBAR);
+                            else if(displayAmmoLifeNumber)
+                                commands[i] = OPENFIREAMMOINIT;
+                        }
+
+                        //qDebug() << "Display Life Init CMD: " << commands[i] << " displayAmmoLifeNumber: " << displayAmmoLifeNumber;
+
+                        displayLifeInitCmds << commands[i];
+                    }
+                    displayLifeInitCmdsSet = true;
+                }
+                else if(splitLines[0] == DISPLAYOTHERONLY)
+                {
+                    for(i = 0; i < numberCommands; i++)
+                    {
+                        commands[i] = commands[i].trimmed ();
+                        displayOtherCmds << commands[i];
+                    }
+                    displayOtherCmdsSet = true;
+                }
+                else if(splitLines[0] == DISPLAYOTHERINITONLY)
+                {
+                    for(i = 0; i < numberCommands; i++)
+                    {
+                        commands[i] = commands[i].trimmed ();
+                        displayOtherInitCmds << commands[i];
+                    }
+                    displayOtherInitCmdsSet = true;
+                }
+                else if(splitLines[0] == DISPLAYREFRESHONLY)
+                {
+                    commands[0] = commands[0].trimmed ();
+                    bool isNumber;
+                    displayRefresh = commands[0].toShort (&isNumber);
+
+                    if(!isNumber)
+                    {
+                        displayRefresh = DISPLAYREFRESHDEFAULT;
+                    }
+                    else
+                        displayRefreshSet = true;
+                }
+
+
+
             }//if(numberCommands > 1)
 
         }//if(line != ENDOFFILE)
@@ -1198,6 +1510,34 @@ QStringList LightGun::RecoilCommands(bool *isSet)
     return recoilCmds;
 }
 
+QStringList LightGun::RecoilValueCommands(bool *isSet, quint16 recoilValue)
+{
+    QString cmdString;
+    QStringList tempSL;
+    quint16 recoilNum = recoilValue;
+
+    *isSet = recoilValueCmdsSet;
+
+    if(recoilValueCmdsSet)
+    {
+        if(recoilNum > 1)
+            recoilNum = 1;
+
+        for(quint8 i = 0; i < recoilValueCmds.length(); i++)
+        {
+            cmdString = recoilValueCmds[i];
+            if(cmdString.contains (SIGNALDATAVARIBLE))
+                cmdString.replace (SIGNALDATAVARIBLE,QString::number(recoilNum));
+            tempSL << cmdString;
+        }
+    }
+
+    return tempSL;
+}
+
+
+
+
 QStringList LightGun::ReloadCommands(bool *isSet)
 {
     *isSet = reloadCmdsSet;
@@ -1265,15 +1605,19 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
                 lastAmmoValue = ammoValue;
             }
             else
-            {   //If not a Reaper, and Ammo is 0, Don't Do Anything
-                if(ammoValue == 0)
+            {
+                qint16 delta = lastAmmoValue - ammoValue;
+                lastAmmoValue = ammoValue;
+
+                //If not a Reaper, and Ammo is 0, Don't Do Anything
+                if(delta != 1)
                 {   
                     *isSet = false;
                     return tempSL;
                 }
 
                 tempAVS = QString::number (ammoValue);
-                lastAmmoValue = ammoValue;
+
             }
         }
         else
@@ -1312,54 +1656,6 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
 //QString tempAVS = QString::number(ammoValue, 16).rightJustified(2, '0');
 
 
-QStringList LightGun::DisplayAmmoCommands(bool *isSet, quint16 ammoValue)
-{
-    QString tempAVS, ammoValueD1, ammoValueD0;
-    QString cmdString;
-    QStringList tempSL;
-    quint8 cmdCount = displayAmmoCmds.length ();
-
-
-    //If Command Set Loaded
-    *isSet = displayAmmoCmdsSet;
-
-    if(displayAmmoCmdsSet)
-    {
-        if(isUSBLightGun)
-        {
-            //For Alien USB Light Gun Ammo Counter which is 2 Digits, so 0-99
-            //Convert the ammoValue to 2 Hex character IE 170 = AA and 7 = 07
-            tempAVS = QString::number(ammoValue, 10).rightJustified(2, '0');
-
-            ammoValueD1 = '0'+tempAVS[0];
-            ammoValueD0 = '0'+tempAVS[1];
-
-            //qDebug() << "ammoValueD1: " << ammoValueD1 << " ammoValueD0: " << ammoValueD0 << " tempAVS: " << tempAVS;
-
-            //Replace the %d1% & %d0% with the ammoValueD[1:0]. Also for USB HID %dX% is 2 Hex Values which is 1 Byte
-            for(quint8 i = 0; i < cmdCount; i++)
-            {
-                cmdString = displayAmmoCmds[i];
-                cmdString.replace (DIGIT1,ammoValueD1);
-                cmdString.replace (DIGIT0,ammoValueD0);
-                tempSL << cmdString;
-                //qDebug() << "cmdString: " << cmdString;
-            }
-        }
-        else
-        {
-            //Replace the %s% with the ammo value (ammoValue)
-            for(quint8 i = 0; i < cmdCount; i++)
-            {
-                cmdString = displayAmmoCmds[i];
-                cmdString.replace (SIGNALDATAVARIBLE,QString::number(ammoValue));
-                tempSL << cmdString;
-            }
-        }
-    }
-    //Return the Commands
-    return tempSL;
-}
 
 
 
@@ -1409,10 +1705,263 @@ QStringList LightGun::RecoilR2SCommands(bool *isSet)
 }
 
 
+QStringList LightGun::DisplayAmmoCommands(bool *isSet, quint16 ammoValue)
+{
+    QString tempAVS, ammoValueD1, ammoValueD0;
+    QString cmdString;
+    QStringList tempSL;
+    quint8 cmdCount = displayAmmoCmds.length ();
+
+    //Set Light Guns Ammo Display Value
+    ammoDisplayValue = ammoValue;
+
+    if((displayLifePriority && hasDisplayLifeInited && !displayAmmoLife) || (displayOtherPriority && hasDisplayOtherInited))
+    {
+        //Send False on CMDs, and Send No CMDs, when other displays have priority & have been Display INIted
+        *isSet = false;
+        return tempSL;
+    }
+
+    //If Command Set Loaded
+    *isSet = displayAmmoCmdsSet;
+
+    //Init Ammo Display
+    if(!hasDisplayAmmoInited)
+    {
+        if(displayAmmoInitCmdsSet && displayAmmoCmdsSet && !hasDisplayAmmoAndLifeInited)
+        {
+            for(quint8 i = 0; i < displayAmmoInitCmds.length(); i++)
+                tempSL << displayAmmoInitCmds[i];
+        }
+
+        if(displayAmmoLife)
+            hasDisplayAmmoAndLifeInited = true;
+
+        hasDisplayAmmoInited = true;
+    }
+
+
+    if(displayAmmoCmdsSet)
+    {
+        if(isUSBLightGun)
+        {
+            //For Alien USB Light Gun Ammo Counter which is 2 Digits, so 0-99
+            tempAVS = QString::number(ammoValue, 10).rightJustified(2, '0');
+
+            ammoValueD1 = '0'+tempAVS[0];
+            ammoValueD0 = '0'+tempAVS[1];
+
+            //qDebug() << "ammoValueD1: " << ammoValueD1 << " ammoValueD0: " << ammoValueD0 << " tempAVS: " << tempAVS;
+
+            //Replace the %d1% & %d0% with the ammoValueD[1:0]. Also for USB HID %dX% is 2 Hex Values which is 1 Byte
+            for(quint8 i = 0; i < cmdCount; i++)
+            {
+                cmdString = displayAmmoCmds[i];
+                cmdString.replace (DIGIT1,ammoValueD1);
+                cmdString.replace (DIGIT0,ammoValueD0);
+                tempSL << cmdString;
+                //qDebug() << "cmdString: " << cmdString;
+            }
+        }
+        else
+        {
+            //Replace the %s% with the ammo value (ammoValue)
+            for(quint8 i = 0; i < cmdCount; i++)
+            {
+                cmdString = displayAmmoCmds[i];
+                cmdString.replace (SIGNALDATAVARIBLE,QString::number(ammoValue));
+                tempSL << cmdString;
+            }
+        }
+    }
+    //Return the Commands
+    return tempSL;
+}
+
+
+QStringList LightGun::DisplayLifeCommands(bool *isSet, quint16 lifeValue)
+{
+    QString tempAVS, lifeValueD1, lifeValueD0;
+    QString cmdString;
+    QStringList tempSL;
+    quint8 cmdCount = displayLifeCmds.length ();
+    quint16 newLifeValue;
+
+    //Set Light Guns Ammo Display Value
+    lifeDisplayValue = lifeValue;
+
+    if(lifeValue > lifeBarMaxLife)
+        lifeBarMaxLife = lifeValue;
+
+
+    if((displayAmmoPriority && hasDisplayAmmoInited && !displayAmmoLife) || (displayOtherPriority && hasDisplayOtherInited))
+    {
+        //Send False on CMDs, and Send No CMDs, when other displays have priority & have been Display INIted
+        *isSet = false;
+        return tempSL;
+    }
+
+    //If Command Set Loaded
+    *isSet = displayLifeCmdsSet;
+
+    //Init Ammo Display
+    if(!hasDisplayLifeInited)
+    {
+        if(displayLifeInitCmdsSet && displayLifeCmdsSet && !hasDisplayAmmoAndLifeInited)
+        {
+            for(quint8 i = 0; i < displayLifeInitCmds.length(); i++)
+                tempSL << displayLifeInitCmds[i];
+        }
+
+        if(displayAmmoLife)
+            hasDisplayAmmoAndLifeInited = true;
+
+        hasDisplayLifeInited = true;
+    }
+
+
+    if(displayLifeCmdsSet)
+    {
+        if(isUSBLightGun)
+        {
+            //If Life is bigger than 99, then make it 99
+            if(lifeValue > 99)
+                newLifeValue = 99;
+            else
+                newLifeValue = lifeValue;
+
+            //For Alien USB Light Gun Ammo Counter which is 2 Digits, so 0-99
+            tempAVS = QString::number(newLifeValue, 10).rightJustified(2, '0');
+
+            lifeValueD1 = '0'+tempAVS[0];
+            lifeValueD0 = '0'+tempAVS[1];
+
+            //qDebug() << "lifeValueD1: " << lifeValueD1 << " lifeValueD0: " << lifeValueD0 << " tempAVS: " << tempAVS;
+
+            //Replace the %d1% & %d0% with the ammoValueD[1:0]. Also for USB HID %dX% is 2 Hex Values which is 1 Byte
+            for(quint8 i = 0; i < cmdCount; i++)
+            {
+                cmdString = displayLifeCmds[i];
+                cmdString.replace (DIGIT1,lifeValueD1);
+                cmdString.replace (DIGIT0,lifeValueD0);
+                tempSL << cmdString;
+                //qDebug() << "cmdString: " << cmdString;
+            }
+        }
+        else
+        {
+            if(defaultLightGun && defaultLightGunNum == OPENFIRE)
+            {
+                if(displayAmmoLifeBar && lifeBarMaxLife > 0)
+                    newLifeValue = (lifeValue*100)/lifeBarMaxLife;
+                else if(displayAmmoLifeGlyphs && lifeBarMaxLife > 19)
+                {
+                    quint16 lifeDivider = lifeBarMaxLife/10;
+                    newLifeValue = lifeValue/lifeDivider;
+                }
+                else if(displayAmmoLifeNumber && lifeValue > 99)
+                    newLifeValue = 99;
+                else
+                    newLifeValue = lifeValue;
+            }
+            else
+                newLifeValue = lifeValue;
+
+            //Replace the %s% with the ammo value (ammoValue)
+            for(quint8 i = 0; i < cmdCount; i++)
+            {
+                cmdString = displayLifeCmds[i];
+                cmdString.replace (SIGNALDATAVARIBLE,QString::number(newLifeValue));
+                tempSL << cmdString;
+            }
+        }
+    }
+    //Return the Commands
+    return tempSL;
+}
+
+QStringList LightGun::DisplayOtherCommands(bool *isSet, quint16 otherValue)
+{
+    QString tempAVS, otherValueD1, otherValueD0;
+    QString cmdString;
+    QStringList tempSL;
+    quint8 cmdCount = displayOtherCmds.length ();
+
+    //Set Light Guns Ammo Display Value
+    otherDisplayValue = otherValue;
+
+    if(!displayOtherPriority)
+    {
+        //If Display_Other is not Enabled, then do nothing
+        *isSet = false;
+        return tempSL;
+    }
+
+    //If Command Set Loaded
+    *isSet = displayOtherCmdsSet;
+
+    //Init Ammo Display
+    if(!hasDisplayOtherInited)
+    {
+        if(displayOtherInitCmdsSet && displayOtherCmdsSet)
+        {
+            for(quint8 i = 0; i < displayOtherInitCmds.length(); i++)
+                tempSL << displayOtherInitCmds[i];
+        }
+
+        hasDisplayOtherInited = true;
+    }
+
+
+    if(displayOtherCmdsSet)
+    {
+        if(isUSBLightGun)
+        {
+            //For Alien USB Light Gun Ammo Counter which is 2 Digits, so 0-99
+            tempAVS = QString::number(otherValue, 10).rightJustified(2, '0');
+
+            otherValueD1 = '0'+tempAVS[0];
+            otherValueD0 = '0'+tempAVS[1];
+
+            //qDebug() << "otherValueD1: " << otherValueD1 << " otherValueD0: " << otherValueD0 << " tempAVS: " << tempAVS;
+
+            //Replace the %d1% & %d0% with the ammoValueD[1:0]. Also for USB HID %dX% is 2 Hex Values which is 1 Byte
+            for(quint8 i = 0; i < cmdCount; i++)
+            {
+                cmdString = displayOtherCmds[i];
+                cmdString.replace (DIGIT1,otherValueD1);
+                cmdString.replace (DIGIT0,otherValueD0);
+                tempSL << cmdString;
+                //qDebug() << "cmdString: " << cmdString;
+            }
+        }
+        else
+        {
+            //Replace the %s% with the ammo value (ammoValue)
+            for(quint8 i = 0; i < cmdCount; i++)
+            {
+                cmdString = displayOtherCmds[i];
+                cmdString.replace (SIGNALDATAVARIBLE,QString::number(otherValue));
+                tempSL << cmdString;
+            }
+        }
+    }
+    //Return the Commands
+    return tempSL;
+}
+
 
 void LightGun::ResetLightGun()
 {
     lastAmmoValue = 0;
+    hasDisplayAmmoInited = false;
+    hasDisplayLifeInited = false;
+    hasDisplayOtherInited = false;
+    hasDisplayAmmoAndLifeInited = false;
+    ammoDisplayValue = -1;
+    lifeDisplayValue = -1;
+    otherDisplayValue = -1;
+    lifeBarMaxLife = 0;
 }
 
 
@@ -1480,6 +2029,9 @@ void LightGun::InitRecoilDelayTimer()
 
     //Set Interval to the Setting of refresh Time Display
     p_recoilDelayTimer->setInterval (recoilDelay);
+
+    //Set Timer Type to PreciseTimer
+    p_recoilDelayTimer->setTimerType (Qt::PreciseTimer);
 
     //Set Up the Signal and Slots for the timer
     connect(p_recoilDelayTimer, SIGNAL(timeout()), this, SLOT(ClearRecoilDelayBlock()));

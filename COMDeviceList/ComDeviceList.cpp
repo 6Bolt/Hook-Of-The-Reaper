@@ -19,6 +19,9 @@ ComDeviceList::ComDeviceList()
     ignoreUselessDLGGF = false;
     bypassSerialWriteChecks = false;
     disbleReaperLEDs = false;
+    displayAmmoPriority = true;
+    displayLifePriority = false;
+    displayOtherPriority = false;
 
     //More Set Defaults
     for(quint8 comPortIndx=0;comPortIndx<MAXCOMPORTS;comPortIndx++)
@@ -1239,6 +1242,41 @@ void ComDeviceList::SaveSettings()
     else
         out << "0\n";
 
+    if(displayAmmoPriority)
+        out << "1\n";
+    else
+        out << "0\n";
+
+    if(displayLifePriority)
+        out << "1\n";
+    else
+        out << "0\n";
+
+    if(displayOtherPriority)
+        out << "1\n";
+    else
+        out << "0\n";
+
+    if(displayAmmoLife)
+        out << "1\n";
+    else
+        out << "0\n";
+
+    if(displayAmmoLifeGlyphs)
+        out << "1\n";
+    else
+        out << "0\n";
+
+    if(displayAmmoLifeBar)
+        out << "1\n";
+    else
+        out << "0\n";
+
+    if(displayAmmoLifeNumber)
+        out << "1\n";
+    else
+        out << "0\n";
+
 
     out << ENDOFFILE;
 
@@ -1256,6 +1294,8 @@ void ComDeviceList::LoadSettings()
     bool isNumber;
     quint8 i;
     QFile loadSetData(settingsSaveFile);
+    bool tempLEDDisable;
+    bool tempAmmoDisplay, tempLifeDisplay, tempOtherDisplay;
 
     //Check if the File Exists, as it might not be created yet. If no File, then exit out of member function
     if(loadSetData.exists() == false)
@@ -1383,22 +1423,153 @@ void ComDeviceList::LoadSettings()
         return;
     }
 
+    //Next Line is to Disable 5 LEDs on Reaper
+    line = in.readLine();
 
-    //Next Line is End of File
+    if(line.startsWith ("1"))
+    {
+        disbleReaperLEDs = true;
+    }
+    else if(line.startsWith ("0"))
+    {
+        disbleReaperLEDs = false;
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Bypass Serial Port Write Checks. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
+
+
+    //Next Line is End of File or Display Ammo Priority
     line = in.readLine();
 
     if(line.startsWith (ENDOFFILE))
     {
-        disbleReaperLEDs = false;
+        displayAmmoPriority = true;
+        displayLifePriority = false;
+        displayOtherPriority = false;
+        displayAmmoLife = false;
+        displayAmmoLifeGlyphs = true;
+        displayAmmoLifeBar = false;
+        displayAmmoLifeNumber = false;
         loadSetData.close ();
         this->SaveSettings();
+        this->UpdateLightGunWithSettings ();
         return;
     }
     else if(line.startsWith ("1"))
-        disbleReaperLEDs = true;
+        displayAmmoPriority = true;
     else if(line.startsWith ("0"))
-        disbleReaperLEDs = false;
+        displayAmmoPriority = false;
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Display Ammo Priority. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
 
+    //Next Line is Display Life Priority
+    line = in.readLine();
+
+    if(line.startsWith ("1"))
+    {
+        displayLifePriority = true;
+    }
+    else if(line.startsWith ("0"))
+    {
+        displayLifePriority = false;
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Display Life Priority. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
+
+
+    //Next Line is Display Other Priority
+    line = in.readLine();
+
+    if(line.startsWith ("1"))
+    {
+        displayOtherPriority = true;
+    }
+    else if(line.startsWith ("0"))
+    {
+        displayOtherPriority = false;
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Display Other Priority. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
+
+    //Next Line is Display Ammo & Life for OpenFire LG
+    line = in.readLine();
+
+    if(line.startsWith ("1"))
+    {
+        displayAmmoLife = true;
+    }
+    else if(line.startsWith ("0"))
+    {
+        displayAmmoLife = false;
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Display Ammo & Life for OpenFire. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
+
+    //Next Line is Display Ammo & Life Glyphs for OpenFire LG
+    line = in.readLine();
+
+    if(line.startsWith ("1"))
+    {
+        displayAmmoLifeGlyphs = true;
+    }
+    else if(line.startsWith ("0"))
+    {
+        displayAmmoLifeGlyphs = false;
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Display Ammo & Life Glyphs for OpenFire. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
+
+    //Next Line is Display Ammo & Life Bars for OpenFire LG
+    line = in.readLine();
+
+    if(line.startsWith ("1"))
+    {
+        displayAmmoLifeBar = true;
+    }
+    else if(line.startsWith ("0"))
+    {
+        displayAmmoLifeBar = false;
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Display Ammo & Life Bars for OpenFire. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
+
+    //Next Line is Display Ammo & Life Number for OpenFire LG
+    line = in.readLine();
+
+    if(line.startsWith ("1"))
+    {
+        displayAmmoLifeNumber = true;
+    }
+    else if(line.startsWith ("0"))
+    {
+        displayAmmoLifeNumber = false;
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Display Ammo & Life Number for OpenFire. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
 
     //Next Line is End of File
     line = in.readLine();
@@ -1410,6 +1581,9 @@ void ComDeviceList::LoadSettings()
     }
 
     loadSetData.close ();
+
+    //Update Setting to Light Guns
+    this->UpdateLightGunWithSettings ();
 }
 
 //Get & Set of the Settings
@@ -1482,19 +1656,105 @@ bool ComDeviceList::GetDisableReaperLEDs()
 
 void ComDeviceList::SetDisableReaperLEDs(bool drLED)
 {
-    if(disbleReaperLEDs != drLED)
+    for(quint8 x = 0; x < numberLightGuns; x++)
     {
-        for(quint8 x = 0; x < numberLightGuns; x++)
+        if(p_lightGunList[x]->GetDefaultLightGun() && p_lightGunList[x]->GetDefaultLightGunNumber() == RS3_REAPER)
         {
-            if(p_lightGunList[x]->GetDefaultLightGun() && p_lightGunList[x]->GetDefaultLightGunNumber() == RS3_REAPER)
-            {
-                p_lightGunList[x]->SetDisableReaperLEDs(drLED);
-                p_lightGunList[x]->LoadDefaultLGCommands();
-            }
+            p_lightGunList[x]->SetDisableReaperLEDs(drLED);
+            p_lightGunList[x]->LoadDefaultLGCommands();
         }
     }
 
     disbleReaperLEDs = drLED;
+}
+
+void ComDeviceList::GetDisplayPriority(bool *ammo, bool *life)
+{
+    *ammo = displayAmmoPriority;
+    *life = displayLifePriority;
+}
+
+void ComDeviceList::SetDisplayPriority(bool ammo, bool life)
+{
+    if(ammo != life)
+    {
+        displayAmmoPriority = ammo;
+        displayLifePriority = life;
+
+        for(quint8 x = 0; x < numberLightGuns; x++)
+            p_lightGunList[x]->SetDisplayPriority (ammo, life);
+    }
+}
+
+bool ComDeviceList::GetDisplayOtherPriority()
+{
+    return displayOtherPriority;
+}
+
+void ComDeviceList::SetDisplayOtherPriority(bool other)
+{
+    displayOtherPriority = other;
+
+    for(quint8 x = 0; x < numberLightGuns; x++)
+        p_lightGunList[x]->SetDisplayOtherPriority (other);
+}
+
+bool ComDeviceList::GetDisplayAmmoAndLife(bool *displayLG, bool *displayLB, bool *displayLN)
+{
+    *displayLG = displayAmmoLifeGlyphs;
+    *displayLB = displayAmmoLifeBar;
+    *displayLN = displayAmmoLifeNumber;
+
+    return displayAmmoLife;
+}
+
+void ComDeviceList::SetDisplayAmmoAndLife(bool displayAAL, bool displayLG, bool displayLB, bool displayLN)
+{
+    displayAmmoLife = displayAAL;
+    displayAmmoLifeGlyphs = displayLG;
+    displayAmmoLifeBar = displayLB;
+    displayAmmoLifeNumber = displayLN;
+
+    for(quint8 x = 0; x < numberLightGuns; x++)
+    {
+        if(p_lightGunList[x]->GetDefaultLightGun() && p_lightGunList[x]->GetDefaultLightGunNumber() == OPENFIRE)
+        {
+            p_lightGunList[x]->SetDisplayAmmoAndLife(displayAmmoLife, displayAmmoLifeGlyphs, displayAmmoLifeBar, displayAmmoLifeNumber);
+            p_lightGunList[x]->LoadDefaultLGCommands();
+        }
+    }
+
+}
+
+void ComDeviceList::UpdateLightGunWithSettings()
+{
+    bool isDefaultLG;
+    quint8 defaultLGNumber;
+
+
+    for(quint8 x = 0; x < numberLightGuns; x++)
+    {
+        isDefaultLG = p_lightGunList[x]->GetDefaultLightGun();
+        defaultLGNumber = p_lightGunList[x]->GetDefaultLightGunNumber();
+
+        //Update RS3 Reaper with the 5 LED
+        if(isDefaultLG && defaultLGNumber == RS3_REAPER)
+        {
+            p_lightGunList[x]->SetDisableReaperLEDs(disbleReaperLEDs);
+            p_lightGunList[x]->LoadDefaultLGCommands();
+        }
+
+        //Update on Display Priority & Display Other
+        p_lightGunList[x]->SetDisplayPriority (displayAmmoPriority, displayLifePriority);
+        p_lightGunList[x]->SetDisplayOtherPriority (displayOtherPriority);
+
+        //Update OpenFire on Display Ammo & Life
+        if(isDefaultLG && defaultLGNumber == OPENFIRE)
+        {
+            p_lightGunList[x]->SetDisplayAmmoAndLife(displayAmmoLife, displayAmmoLifeGlyphs, displayAmmoLifeBar, displayAmmoLifeNumber);
+            p_lightGunList[x]->LoadDefaultLGCommands();
+        }
+    }
 }
 
 void ComDeviceList::CopyUsedDipPlayersArray(bool *targetArray, quint8 size, quint8 hubComPort)
