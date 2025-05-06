@@ -3661,17 +3661,15 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                                     delay = delay * recoilR2SSkewPrec[player];
                                                     delay = delay/100;
                                                 }
-
-
                                                 //qDebug() << "Delay for P" << QString::number(player+1) << " is " << delay;
 
                                                 //Set Timer Interval and Type to PreciseTimer
-                                                pRecoilR2STimer[player].setInterval(delay);
                                                 if(delay >= 30)
                                                     pRecoilR2STimer[player].setTimerType (Qt::PreciseTimer);
                                                 else
                                                     pRecoilR2STimer[player].setTimerType (Qt::CoarseTimer);
 
+                                                pRecoilR2STimer[player].setInterval(delay);
                                                 isPRecoilR2SFirstTime[player] = false;
                                             }
 
