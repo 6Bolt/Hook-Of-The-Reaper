@@ -140,11 +140,12 @@ private slots:
     void WriteDisplayDelayCMD(quint8 player, QString command);
 
     //For Open Solenoid Safety Timer
-    void P1CloseSolenoid();
-    void P2CloseSolenoid();
-    void P3CloseSolenoid();
-    void P4CloseSolenoid();
+    void P1CloseSolenoidOrRecoilDelay();
+    void P2CloseSolenoidOrRecoilDelay();
+    void P3CloseSolenoidOrRecoilDelay();
+    void P4CloseSolenoidOrRecoilDelay();
     void PXCloseSolenoid(quint8 player);
+    void PXRecoilDelay(quint8 player);
 
 
 private:
@@ -446,12 +447,22 @@ private:
 
     //For Recoil_Value and Safety Timer
 
-    QTimer                          openSolenoidSafetyTimer[MAXGAMEPLAYERS];
+    QTimer                          openSolenoidOrRecoilDelay[MAXGAMEPLAYERS];
     QStringList                     closeSolenoidCMDs[MAXGAMEPLAYERS];
     bool                            isLGSolenoidOpen[MAXGAMEPLAYERS];
     bool                            blockRecoilValue[MAXGAMEPLAYERS];
     quint8                          timesStuckOpenSolenoid[MAXGAMEPLAYERS];
 
+
+    ///////////////////////////////////////////////////////////////////////////
+
+
+    //For Delay Recoil - Will reuse Timer from Recoil_Value
+
+    quint16                         delayRecoilTime[MAXGAMEPLAYERS];
+    bool                            isRecoilDelaySet[MAXGAMEPLAYERS];
+    bool                            blockRecoil[MAXGAMEPLAYERS];
+    bool                            doRecoilDelayEnds[MAXGAMEPLAYERS];
 
 
 };

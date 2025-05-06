@@ -118,7 +118,7 @@ public:
     QStringList RecoilCommands(bool *isSet);
     QStringList RecoilValueCommands(bool *isSet, quint16 recoilValue);
     QStringList ReloadCommands(bool *isSet);
-    QStringList AmmoCommands(bool *isSet);
+    QStringList AmmoCommands(bool *isSet, quint16 ammoValue);
     QStringList AmmoValueCommands(bool *isSet, quint16 ammoValue);
     QStringList ShakeCommands(bool *isSet);
     QStringList AutoLEDCommands(bool *isSet);
@@ -141,7 +141,7 @@ public:
 
 private slots:
 
-    void ClearRecoilDelayBlock();
+
 
 private:
 
@@ -199,8 +199,6 @@ private:
     HIDInfo             usbHIDInfo;
     bool                isRecoilDelaySet;
     quint16             recoilDelay;
-    QTimer              *p_recoilDelayTimer;
-    bool                blockRecoil;
 
     QString             currentPath;
     QString             dataPath;
@@ -263,7 +261,7 @@ private:
     qint16              lifeDisplayValue;
     qint16              otherDisplayValue;
 
-    quint16              displayRefresh;
+    quint16             displayRefresh;
 
     bool                displayAmmoPriority;
     bool                displayLifePriority;
