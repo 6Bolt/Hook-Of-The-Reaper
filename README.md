@@ -93,23 +93,33 @@ Light guns only have so many commands, as they can recoil, shake, and few other 
 | Command | Notes |
 |---------|-------|
 | Open_COM | Connects to the Serial Port or USB HID. Also Enters External Control for Light Gun  |
-| Close_COM | Disconnects to the Serial Port or USB HID. Also Exit out of External Control for Light Gun |  
+| Close_COM | Disconnects from Serial Port or USB HID. Also Exit out of External Control for Light Gun |  
 | Open_COM_NoInit | Connects to the Serial Port or USB HID only  |
 | Close_COM_NoInit | Disconnects to the Serial Port or USB HID only |
 | Close_COM_InitOnly | Only Exit out of External Control for Light Gun |
 | Damage | Doesn't Happen on 0, no need for '\|' |
 | Recoil | Doesn't Happen on 0, no need for '\|' |
+| Recoil_Value | Output signal, like PX_CtmRecoil, Controls the Solenoid |
 | Recoil_R2S | Converts Rumble Recoil to Solenoid Recoil |
-| Reload |     |
+| Reload | Doesn't Happen on 0, no need for '\|' |
+| Reload_Value | Uses Ammo Value to Know When Reload Happens | 
 | Ammo   | Doesn't Happen on 0, no need for '\|'    |
 | Ammo_Value|  Doesn't Happen on 0, no need for '\|', except for Reapers for Z0    |
-| Display_Ammo | For Light Guns that have Displays, like OpenFire & Alien  |
 | Shake | Doesn't Happen on 0, no need for '\|' |
 | Auto_LED |     |
 | AspectRatio_16:9 | Can be used at mame_start/stop   |
 | AspectRatio_4:3 | Can be used at mame_start/stop     |
 | Joystick_Mode | Can be used at mame_start/stop     |
 | Keyboard_Mouse_Mode | Can be used at mame_start/stop    |
+| Display_Ammo | Displays Ammo Value  |
+| Display_Ammo_Init | Init Command to Display Ammo Value, If Needed |
+| Display_Life | Displays Life Value  |
+| Display_Life_Init | Init Command to Display Life Value, If Needed |
+| Display_Other | Displays Other Value  |
+| Display_Other_Init | Init Command to Display Other Value, If Needed |
+| Display_Refresh | Display Refresh in Milliseconds |
+| Offscreen_Button | Reload for Offscreen Shot (Default Setting for Open_COM)|
+| Offscreen_Normal_Shot | Normal Shot for Offscreen Shot
 | Null |      |
 
 
@@ -239,10 +249,11 @@ If you find any bugs, please report them here.
 
 ## Compile the Code
 
-Everything is in Qt, so you only need Qt and the MSVC 2022 tools. Below is what I used in Qt to compile the program. 
+Almost everything is in Qt, so you need Qt and the MSVC 2022 tools. Then you need the libusb/hidapi library. This is for USB HID communication. Below is what I used in Qt to compile the program. 
 
 - Qt 6.8.1 with a CMake File with MSVC 2022
 * My CMake Version: 3.29.3
+- libusb's hidapi library on GitHub - https://github.com/libusb/hidapi
 
 
 # FAQ
