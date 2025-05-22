@@ -13,6 +13,8 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     getAllHIDs = false;
     isHIDInit = false;
 
+    isInitDone = false;
+
     //Setup the Window Functions, like Combo Box
     ui->setupUi(this);
 
@@ -75,6 +77,8 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     ui->defaultLightGunComboBox->insertItem(OPENFIRE,OPENFIRENAME);
     ui->defaultLightGunComboBox->insertItem(ALIENUSB,ALIENUSBNAME);
     ui->defaultLightGunComboBox->insertItem(XGUNNER,XGUNNERNAME);
+    ui->defaultLightGunComboBox->insertItem(AIMTRAK,AIMTRAKNAME);
+    ui->defaultLightGunComboBox->insertItem(XENAS,XENASNAME);
 
     //Check if the First Light Gun is a Default Light Gun
     defaultLightGun = p_comDeviceList->p_lightGunList[0]->GetDefaultLightGun();
@@ -108,18 +112,11 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
         ui->dipSwitchComboBox->insertItem(comPortIndx,tempQS);
     }
 
-
-    //USB Input Mask
-    ui->recoilDelayLineEdit->setInputMask (USBRECOILDELAYMASK);
-
     //Get USB HID Devices
     FillUSBDevicesComboBox();
 
-
-
     if(defaultLightGun)
     {
-
         ui->defaultLightGunComboBox->setCurrentIndex (defaultLightGunNum);
         SetEnableComboBoxes(false);
         if(defaultLightGunNum == MX24)
@@ -139,16 +136,20 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
             if(analogStrengthSet)
                 ui->analogLineEdit->setText(QString::number (analogStrength));
         }
-        else if(defaultLightGunNum == ALIENUSB)
+        else if(defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK)
         {
             ui->comPortComboBox->setEnabled(false);
             ui->dipSwitchComboBox->setEnabled(false);
             ui->hubComComboBox->setEnabled(false);
             ui->analogLineEdit->setEnabled(false);
 
+            if(defaultLightGunNum == AIMTRAK)
+                ui->allHIDDevicesCheckBox->setEnabled (false);
+
             //First Light Gun is an USB HID Light Gun
             qint16 hidIndex = FindLightGunHID(0);
 
+            //qDebug() << "hidIndex:" << hidIndex;
             //If Found, then load up that HID, if not Load LG Info into Line Edits
             if(hidIndex != -1)
                 on_usbDevicesComboBox_currentIndexChanged(hidIndex);
@@ -156,7 +157,7 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
             {
                 //HID Device Not Found in HID List. Fill in VendorID, ProductID, and Serial Number
                 HIDInfo tempHIDInfo = p_comDeviceList->p_lightGunList[0]->GetUSBHIDInfo ();
-                quint16 rcDelay = p_comDeviceList->p_lightGunList[0]->GetRecoilDelay ();
+
 
                 //Clear Out Line Edits
                 ui->vendorIDUSBLineEdit->clear ();
@@ -173,9 +174,7 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
 
                 ui->displayPathUSBLineEdit->insert(tempHIDInfo.displayPath);
 
-                ui->recoilDelayLineEdit->clear();
-                ui->recoilDelayLineEdit->setEnabled (true);
-                ui->recoilDelayLineEdit->insert (QString::number(rcDelay));
+
             }
         }
         else
@@ -185,7 +184,6 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
             ui->hubComComboBox->setEnabled(false);
             ui->analogLineEdit->setEnabled(false);
             dipSwitchNumber = UNASSIGN;
-            ui->recoilDelayLineEdit->setEnabled (false);
         }
     }
     else
@@ -200,7 +198,7 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     }
 
     //COM Port Combo Box - List Unused COM Port and Select Light Gun COM Port
-    if((defaultLightGun && defaultLightGunNum != MX24 && defaultLightGunNum != ALIENUSB) || !defaultLightGun)
+    if((defaultLightGun && (defaultLightGunNum != MX24 && defaultLightGunNum != ALIENUSB && defaultLightGunNum != AIMTRAK)) || !defaultLightGun)
     {
         comPortName = p_comDeviceList->p_lightGunList[0]->GetComPortString();
         comPortNum = p_comDeviceList->p_lightGunList[0]->GetComPortNumberBypass();
@@ -218,7 +216,7 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
 
     }
 
-    if((defaultLightGun && defaultLightGunNum != MX24 && defaultLightGunNum != ALIENUSB) || !defaultLightGun)
+    if((defaultLightGun && (defaultLightGunNum != MX24 && defaultLightGunNum != ALIENUSB && defaultLightGunNum != AIMTRAK)) || !defaultLightGun)
     {
         ui->comPortComboBox->setCurrentIndex(comPortNum);
         FillSerialPortInfo(comPortNum);
@@ -289,6 +287,59 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     ui->lgLCDNumber->setDigitCount(3);
     ui->lgLCDNumber->display (numberLightGuns);
 
+    //Recoil Priority
+    //Fill Recoil Combo Boxes
+    for(quint8 index=0;index<NUMBEROFRECOILS;index++)
+    {
+        ui->recoilComboBox->insertItem(index, QString::number(index));
+        ui->ammoValueComboBox->insertItem(index, QString::number(index));
+        ui->recoilR2SComboBox->insertItem(index, QString::number(index));
+        ui->recoilValueComboBox->insertItem(index, QString::number(index));
+    }
+
+    p_recoilPriority =  p_comDeviceList->p_lightGunList[0]->GetRecoilPriority ();
+
+    ui->ammoValueComboBox->setCurrentIndex (p_recoilPriority[0]);
+    ui->recoilComboBox->setCurrentIndex (p_recoilPriority[1]);
+    ui->recoilR2SComboBox->setCurrentIndex (p_recoilPriority[2]);
+    ui->recoilValueComboBox->setCurrentIndex (p_recoilPriority[3]);
+
+    reloadNoRumble = p_comDeviceList->p_lightGunList[0]->GetReloadNoRumble ();
+    reloadDisable = p_comDeviceList->p_lightGunList[0]->GetReloadDisabled ();
+
+    if(reloadDisable)
+        ui->disableReloadradioButton->setChecked (true);
+    else if(reloadNoRumble)
+        ui->reloadRumbleRadioButton->setChecked (true);
+    else
+        ui->reloadRadioButton->setChecked (true);
+
+    if(defaultLightGun && (defaultLightGunNum==FUSION || defaultLightGunNum==JBGUN4IR || defaultLightGunNum==OPENFIRE))
+        ui->recoilValueComboBox->setEnabled(true);
+    else
+        ui->recoilValueComboBox->setEnabled(false);
+
+    if(defaultLightGun && (defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK || defaultLightGunNum == MX24))
+    {
+        ui->reloadRadioButton->setEnabled(false);
+        ui->reloadRumbleRadioButton->setEnabled(false);
+        ui->disableReloadradioButton->setEnabled(false);
+    }
+    else if(defaultLightGun && defaultLightGunNum == XGUNNER)
+    {
+        ui->reloadRadioButton->setEnabled(true);
+        ui->disableReloadradioButton->setEnabled(true);
+        ui->reloadRadioButton->setChecked(true);
+        ui->reloadRumbleRadioButton->setEnabled(false);
+    }
+    else
+    {
+        ui->reloadRadioButton->setEnabled(true);
+        ui->reloadRumbleRadioButton->setEnabled(true);
+        ui->disableReloadradioButton->setEnabled(true);
+    }
+
+    isInitDone = true;
 }
 
 //Deconstructor
@@ -311,118 +362,170 @@ void editLightGunWindow::on_savedLightGunsComboBox_currentIndexChanged(int index
 
 void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int index)
 {
-    quint8 lgIndex = ui->savedLightGunsComboBox->currentIndex ();
-
-    bool isUSBLG = p_comDeviceList->p_lightGunList[lgIndex]->IsLightGunUSB ();
-
-    if(isUSBLG && index != ALIENUSB)
+    if(isInitDone)
     {
-        QMessageBox::warning (this, "Cannot Change an USB HID to Serial Port", "An USB HID light gun cannot be changed to a Serial COM Port light gun. Please delete the USB HID light gun and then add a light gun");
-        ui->defaultLightGunComboBox->setCurrentIndex (ALIENUSB);
-        return;
-    }
-    else if(!isUSBLG && index == ALIENUSB)
-    {
-        QMessageBox::warning (this, "Cannot Change a Serial Port to USB HID", "A Serial Port light gun cannot be changed to a USB HID light gun. Please delete the Serial Port light gun and then add a light gun");
-        bool isdefaultLG = p_comDeviceList->p_lightGunList[lgIndex]->GetDefaultLightGun ();
-        quint8 defaultLGIndex;
-        if(isdefaultLG)
-            defaultLGIndex = p_comDeviceList->p_lightGunList[lgIndex]->GetDefaultLightGunNumber ();
-        else
-            defaultLGIndex = 0;
-        ui->defaultLightGunComboBox->setCurrentIndex (defaultLGIndex);
-        return;
-    }
+        quint8 lgIndex = ui->savedLightGunsComboBox->currentIndex ();
 
+        bool isUSBLG = p_comDeviceList->p_lightGunList[lgIndex]->IsLightGunUSB ();
+        quint8 dlgNum = p_comDeviceList->p_lightGunList[lgIndex]->GetDefaultLightGunNumber ();
 
-
-    if(defaultLightGun && defaultLightGunNum == MX24)
-    {
-        QString tempQS;
-
-        p_comDeviceList->CopyAvailableComPortsArray(unusedComPort, MAXCOMPORTS);
-
-        for(quint8 comPortIndx=0;comPortIndx<MAXCOMPORTS;comPortIndx++)
+        if(isUSBLG && (index != ALIENUSB && index != AIMTRAK))
         {
-            if(unusedComPort[comPortIndx])
-                tempQS = BEGINCOMPORTNAME+QString::number(comPortIndx);
+            QMessageBox::warning (this, "Cannot Change an USB HID to Serial Port", "An USB HID light gun cannot be changed to a Serial COM Port light gun. Please delete the USB HID light gun and then add a light gun");
+            ui->defaultLightGunComboBox->setCurrentIndex (dlgNum);
+            return;
+        }
+        else if((dlgNum == AIMTRAK && index == ALIENUSB) || (dlgNum == ALIENUSB && index == AIMTRAK))
+        {
+            QMessageBox::warning (this, "Cannot Change an USB HID", "An AimTrak light gun cannot be changed to an Alien light gun, and vice versa. Please delete the USB HID light gun and then add a light gun");
+            ui->defaultLightGunComboBox->setCurrentIndex (dlgNum);
+            return;
+        }
+        else if(!isUSBLG && (index == ALIENUSB || index == AIMTRAK))
+        {
+            QMessageBox::warning (this, "Cannot Change a Serial Port to USB HID", "A Serial Port light gun cannot be changed to a USB HID light gun. Please delete the Serial Port light gun and then add a light gun");
+            bool isdefaultLG = p_comDeviceList->p_lightGunList[lgIndex]->GetDefaultLightGun ();
+            quint8 defaultLGIndex;
+            if(isdefaultLG)
+                defaultLGIndex = p_comDeviceList->p_lightGunList[lgIndex]->GetDefaultLightGunNumber ();
             else
-                tempQS = "";
-            ui->comPortComboBox->setItemText (comPortIndx,tempQS);
+                defaultLGIndex = 0;
+            ui->defaultLightGunComboBox->setCurrentIndex (defaultLGIndex);
+            return;
         }
-    }
 
 
-    //Set Data for Default Guns. Currently only Retro Shooters: RS3 Reaper Gun
-    if(index > 0)
-    {
-        //Set Combo Boxes to Default Light Gun Settings
-        ui->baudSpeedComboBox->setCurrentIndex (DEFAULTLG_ARRAY[index].BAUD);
-        ui->dataBitsComboBox->setCurrentIndex (DEFAULTLG_ARRAY[index].DATA);
-        ui->parityComboBox->setCurrentIndex (DEFAULTLG_ARRAY[index].PARITY);
-        ui->stopBitsComboBox->setCurrentIndex (DEFAULTLG_ARRAY[index].STOP);
-        ui->flowControlComboBox->setCurrentIndex (DEFAULTLG_ARRAY[index].FLOW);
 
-        //Disable Combo Boxes Affect by Default Light Gun
-        SetEnableComboBoxes(false);
-
-        if(index == MX24)
+        if(defaultLightGun && defaultLightGunNum == MX24)
         {
-            ui->dipSwitchComboBox->setEnabled(true);
-            ui->hubComComboBox->setEnabled(true);
-            ui->comPortComboBox->setEnabled(false);
+            QString tempQS;
 
-            quint8 hubIndex = ui->hubComComboBox->currentIndex ();
+            p_comDeviceList->CopyAvailableComPortsArray(unusedComPort, MAXCOMPORTS);
 
-            FillSerialPortInfo(hubIndex);
+            for(quint8 comPortIndx=0;comPortIndx<MAXCOMPORTS;comPortIndx++)
+            {
+                if(unusedComPort[comPortIndx])
+                    tempQS = BEGINCOMPORTNAME+QString::number(comPortIndx);
+                else
+                    tempQS = "";
+                ui->comPortComboBox->setItemText (comPortIndx,tempQS);
+            }
         }
-        else if(index != ALIENUSB)
+
+
+        //Set Data for Default Guns. Currently only Retro Shooters: RS3 Reaper Gun
+        if(index > 0)
         {
-            ui->dipSwitchComboBox->setEnabled(false);
-            ui->hubComComboBox->setEnabled(false);
+            //Set Combo Boxes to Default Light Gun Settings
+            ui->baudSpeedComboBox->setCurrentIndex (DEFAULTLG_ARRAY[index].BAUD);
+            ui->dataBitsComboBox->setCurrentIndex (DEFAULTLG_ARRAY[index].DATA);
+            ui->parityComboBox->setCurrentIndex (DEFAULTLG_ARRAY[index].PARITY);
+            ui->stopBitsComboBox->setCurrentIndex (DEFAULTLG_ARRAY[index].STOP);
+            ui->flowControlComboBox->setCurrentIndex (DEFAULTLG_ARRAY[index].FLOW);
+
+            //Disable Combo Boxes Affect by Default Light Gun
+            SetEnableComboBoxes(false);
+
+            if(index == MX24)
+            {
+                ui->dipSwitchComboBox->setEnabled(true);
+                ui->hubComComboBox->setEnabled(true);
+                ui->comPortComboBox->setEnabled(false);
+
+                quint8 hubIndex = ui->hubComComboBox->currentIndex ();
+
+                FillSerialPortInfo(hubIndex);
+            }
+            else if(index != ALIENUSB && index != AIMTRAK)
+            {
+                ui->dipSwitchComboBox->setEnabled(false);
+                ui->hubComComboBox->setEnabled(false);
+                ui->comPortComboBox->setEnabled(true);
+
+                quint8 comPortIndex = ui->comPortComboBox->currentIndex ();
+
+                FillSerialPortInfo(comPortIndex);
+            }
+
+            if(index == JBGUN4IR || index == OPENFIRE)
+                ui->analogLineEdit->setEnabled(true);
+            else
+            {
+                ui->analogLineEdit->clear();
+                ui->analogLineEdit->setEnabled(false);
+            }
+
+            //For Recoil Options
+            if(index == FUSION || index == JBGUN4IR || index == OPENFIRE)
+            {
+                ui->recoilValueComboBox->setEnabled(true);
+            }
+            else
+            {
+                ui->recoilValueComboBox->setCurrentIndex(3);
+                ui->recoilValueComboBox->setEnabled(false);
+            }
+
+
+            //For Reload Options
+            if(index == ALIENUSB || index == AIMTRAK || index == MX24)
+            {
+                ui->reloadRadioButton->setEnabled(false);
+                ui->reloadRumbleRadioButton->setEnabled(false);
+                ui->disableReloadradioButton->setEnabled(false);
+            }
+            else if(index == XGUNNER)
+            {
+                ui->reloadRadioButton->setEnabled(true);
+                ui->disableReloadradioButton->setEnabled(true);
+                ui->reloadRadioButton->setChecked(true);
+                ui->reloadRumbleRadioButton->setEnabled(false);
+            }
+            else
+            {
+                ui->reloadRadioButton->setEnabled(true);
+                ui->reloadRumbleRadioButton->setEnabled(true);
+                ui->disableReloadradioButton->setEnabled(true);
+            }
+
+        }
+        else  //For Non-Default Light Guns
+        {
+            //Enable Combo Boxes Affect by Default Light Gun
+            SetEnableComboBoxes(true);
+
             ui->comPortComboBox->setEnabled(true);
 
             quint8 comPortIndex = ui->comPortComboBox->currentIndex ();
 
             FillSerialPortInfo(comPortIndex);
-        }
 
-        if(index == JBGUN4IR || index == OPENFIRE)
-            ui->analogLineEdit->setEnabled(true);
-        else
-        {
+            ui->dipSwitchComboBox->setEnabled(false);
+            ui->hubComComboBox->setEnabled(false);
             ui->analogLineEdit->clear();
             ui->analogLineEdit->setEnabled(false);
+
+            //Recoil Options
+            ui->recoilValueComboBox->setEnabled(true);
+
+            //Reload Options
+            ui->reloadRadioButton->setEnabled(true);
+            ui->reloadRumbleRadioButton->setEnabled(true);
+            ui->disableReloadradioButton->setEnabled(true);
         }
 
-
-
     }
-    else  //For Non-Default Light Guns
-    {
-        //Enable Combo Boxes Affect by Default Light Gun
-        SetEnableComboBoxes(true);
-
-        ui->comPortComboBox->setEnabled(true);
-
-        quint8 comPortIndex = ui->comPortComboBox->currentIndex ();
-
-        FillSerialPortInfo(comPortIndex);
-
-        ui->dipSwitchComboBox->setEnabled(false);
-        ui->hubComComboBox->setEnabled(false);
-        ui->analogLineEdit->clear();
-        ui->analogLineEdit->setEnabled(false);
-    }
-
 }
 
 
 
 void editLightGunWindow::on_comPortComboBox_currentIndexChanged(int index)
 {
-    //Fills out Serial Port Info on right Side, when a different COM Port is Selected
-    FillSerialPortInfo(index);
+    if(isInitDone)
+    {
+        //Fills out Serial Port Info on right Side, when a different COM Port is Selected
+        FillSerialPortInfo(index);
+    }
 }
 
 
@@ -448,6 +551,8 @@ void editLightGunWindow::on_deletePushButton_clicked()
     //If No Light Guns are in the List After Deletion of a Light Gun, Then Close the Edit Window
     if(numberLightGuns == 0)
     {
+        //Delay to hear sound
+        QThread::sleep(1);
         accept ();
     }
     else
@@ -537,7 +642,7 @@ void editLightGunWindow::on_editPushButton_clicked()
             ui->hubComComboBox->setCurrentIndex(hubComPortNumber);
             FillSerialPortInfo(hubComPortNumber);
         }
-        else if((defaultLightGun && defaultLightGunNum != ALIENUSB) || !defaultLightGun)
+        else if((defaultLightGun && (defaultLightGunNum != ALIENUSB && defaultLightGunNum != AIMTRAK)) || !defaultLightGun)
         {
             ui->comPortComboBox->setCurrentIndex(comPortNum);
             FillSerialPortInfo(comPortNum);
@@ -603,9 +708,7 @@ bool editLightGunWindow::IsValidData()
     bool badDipIndex = false;
     bool hubComLG = false;
     bool usbDisPMatch = false;
-    bool emptyUSBdelay = false;
-    bool usbDelayNotNum = false;
-    bool usbDelayRange = false;
+    bool recoilCheck = false;
     quint8 numLightGuns = p_comDeviceList->GetNumberLightGuns();
     quint8 i;
     quint8 currentIndex = ui->savedLightGunsComboBox->currentIndex ();
@@ -646,7 +749,7 @@ bool editLightGunWindow::IsValidData()
                 hubComLG = true;
         }
     }
-    else if(defaultLGIndex != ALIENUSB)
+    else if(defaultLGIndex != ALIENUSB && defaultLGIndex != AIMTRAK)
     {
         //Check If the Com Port Name is Empty for the Combo Box
         ivTemp = ui->comPortComboBox->currentText ();
@@ -668,30 +771,20 @@ bool editLightGunWindow::IsValidData()
         }
     }
 
-    if(defaultLGIndex == ALIENUSB)
+    if(defaultLGIndex == ALIENUSB || defaultLGIndex == AIMTRAK)
     {
         QString tempDP;
-        bool isNumber;
-
-        ivTemp = ui->recoilDelayLineEdit->text();
-        if(ivTemp.isEmpty ())
-            emptyUSBdelay = true;
-
-        quint16 tempDelay = ivTemp.toUShort (&isNumber);
-
-        if(!isNumber)
-            usbDelayNotNum = true;
-        else if(tempDelay < ALIENUSBMINDELAY)
-            usbDelayRange = true;
 
         tempDP = ui->displayPathUSBLineEdit->text();
         usbDisPMatch = p_comDeviceList->CheckUSBPath(tempDP, currentIndex);
     }
 
+    if(CheckRecoilComboBoxes() == false)
+        recoilCheck = true;
 
     //Check All the bools, If They are false, data is good and return true.
     //If false, then make a Warning string, and Pop Up a Warning Message Box on What is Wrong and return false
-    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubComLG == false && usbDisPMatch == false && emptyUSBdelay == false && usbDelayRange == false)
+    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubComLG == false && usbDisPMatch == false && recoilCheck == false)
     {
         return true;
     }
@@ -713,10 +806,8 @@ bool editLightGunWindow::IsValidData()
             message.append ("Analog Strength is out of range. Needs to be 0-255");
         if(usbDisPMatch == true)
             message.append ("An Exsiting USB Light Gun already has that path/location. There cannot be duplicates of the path/location. As it is used to send data to the device.");
-        if(emptyUSBdelay == true)
-            message.append ("The USB Recoil Delay is empty. It needs at least 40ms or higher");
-        if(usbDelayRange == true)
-            message.append ("The USB Recoil Delay is too small. It needs at least 40ms or higher");
+        if(recoilCheck == true)
+            message.append ("Two or more of the numbers match for the Recoil Priority. None of the numbers can match");
 
         QMessageBox::warning (this, "Can Not Edit Light Gun", message);
 
@@ -771,13 +862,16 @@ void editLightGunWindow::EditLightGun()
 {
     quint8 oldComPort;
     quint8 hupComPort;
+    bool reloadNR = false;
+    bool reloadDisable = false;
+    SupportedRecoils recoilOptions;
 
 
     //Collect Light Gun Name, Number, COM Port Number & Name, and Serial Port Info
     lightGunNum = ui->savedLightGunsComboBox->currentIndex ();
     lightGunName = ui->lightGunNameLineEdit->text();
 
-    if(defaultLightGun && (defaultLightGunNum == MX24 || defaultLightGunNum == ALIENUSB))
+    if(defaultLightGun && (defaultLightGunNum == MX24 || defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK))
         comPortNum = UNASSIGN;
     else
         comPortNum = ui->comPortComboBox->currentIndex ();
@@ -797,9 +891,27 @@ void editLightGunWindow::EditLightGun()
         p_comDeviceList->p_lightGunList[lightGunNum]->SetDefaultLightGunNumer (0);
     p_comDeviceList->p_lightGunList[lightGunNum]->SetLightGunName (lightGunName);
 
+    //Get Recoil Options
+    recoilOptions.recoil = ui->recoilComboBox->currentIndex();
+    recoilOptions.ammoValue = ui->ammoValueComboBox->currentIndex();
+    recoilOptions.recoilR2S = ui->recoilR2SComboBox->currentIndex();
+    recoilOptions.recoilValue = ui->recoilValueComboBox->currentIndex();
+
+    //Get Reload Options
+    if(defaultLightGun && (defaultLightGunNum == MX24 || defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK))
+        reloadDisable = true;
+    else if(ui->reloadRumbleRadioButton->isChecked ())
+        reloadNR = true;
+    else if(ui->disableReloadradioButton->isChecked ())
+        reloadDisable = true;
+
+
+    p_comDeviceList->p_lightGunList[lightGunNum]->SetRecoilPriority (recoilOptions);
+
+    p_comDeviceList->p_lightGunList[lightGunNum]->SetReloadOptions (reloadNR, reloadDisable);
 
     //Edit Serial Port Light Gun Stuff
-    if((defaultLightGun && defaultLightGunNum != ALIENUSB) || !defaultLightGun)
+    if((defaultLightGun && (defaultLightGunNum != ALIENUSB && defaultLightGunNum != AIMTRAK)) || !defaultLightGun)
     {
         //Check if COM Port Changed, if so update unusedComPorts list
         oldComPort = p_comDeviceList->p_lightGunList[lightGunNum]->GetComPortNumber ();
@@ -884,11 +996,6 @@ void editLightGunWindow::EditLightGun()
         //Need to Get the HIDInfo -So Much Easier
         qint16 hidIndex = ui->usbDevicesComboBox->currentIndex ();
         p_comDeviceList->p_lightGunList[lightGunNum]->SetHIDInfo (hidInfoList[hidIndex]);
-
-        //Recoil Delay
-        QString rcDelayS = ui->recoilDelayLineEdit->text ();
-        quint16 rcDelay = rcDelayS.toUShort ();
-        p_comDeviceList->p_lightGunList[lightGunNum]->SetRecoilDelay (rcDelay);
     }
 
 }
@@ -1008,6 +1115,23 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
 
     defaultLightGun = p_comDeviceList->p_lightGunList[index]->GetDefaultLightGun();
 
+    p_recoilPriority =  p_comDeviceList->p_lightGunList[index]->GetRecoilPriority ();
+
+    ui->ammoValueComboBox->setCurrentIndex (p_recoilPriority[0]);
+    ui->recoilComboBox->setCurrentIndex (p_recoilPriority[1]);
+    ui->recoilR2SComboBox->setCurrentIndex (p_recoilPriority[2]);
+    ui->recoilValueComboBox->setCurrentIndex (p_recoilPriority[3]);
+
+    reloadNoRumble = p_comDeviceList->p_lightGunList[index]->GetReloadNoRumble ();
+    reloadDisable = p_comDeviceList->p_lightGunList[index]->GetReloadDisabled ();
+
+    if(reloadDisable)
+        ui->disableReloadradioButton->setChecked (true);
+    else if(reloadNoRumble)
+        ui->reloadRumbleRadioButton->setChecked (true);
+    else
+        ui->reloadRadioButton->setChecked (true);
+
 
     //Check if the Light Gun is a Default Light Gun
     if(defaultLightGun)
@@ -1041,7 +1165,6 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
             ui->productIDUSBLineEdit->setEnabled(false);
             ui->displayPathUSBLineEdit->setEnabled(false);
             ui->usbDevicesComboBox->setEnabled(false);
-            ui->recoilDelayLineEdit->setEnabled (false);
         }
         else if(defaultLightGunNum == JBGUN4IR || defaultLightGunNum == OPENFIRE)
         {
@@ -1057,9 +1180,8 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
             ui->productIDUSBLineEdit->setEnabled(false);
             ui->displayPathUSBLineEdit->setEnabled(false);
             ui->usbDevicesComboBox->setEnabled(false);
-            ui->recoilDelayLineEdit->setEnabled (false);
         }
-        else if(defaultLightGunNum == ALIENUSB)
+        else if(defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK)
         {
             ui->comPortComboBox->setEnabled(false);
             ui->dipSwitchComboBox->setEnabled(false);
@@ -1071,10 +1193,13 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
             ui->displayPathUSBLineEdit->setEnabled(true);
             ui->usbDevicesComboBox->setEnabled(true);
 
-            quint16 rcDelay = p_comDeviceList->p_lightGunList[index]->GetRecoilDelay ();
-            ui->recoilDelayLineEdit->clear();
-            ui->recoilDelayLineEdit->setEnabled (true);
-            ui->recoilDelayLineEdit->insert (QString::number(rcDelay));
+            if(defaultLightGunNum == AIMTRAK)
+            {
+                ui->allHIDDevicesCheckBox->setChecked (false);
+                ui->allHIDDevicesCheckBox->setEnabled (false);
+            }
+            else
+                ui->allHIDDevicesCheckBox->setEnabled (true);
 
             FillUSBDevicesComboBox();
 
@@ -1110,8 +1235,6 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
                 ui->productIDUSBLineEdit->insert (tempPID);
 
                 ui->displayPathUSBLineEdit->insert(tempHIDInfo.displayPath);
-
-
             }
 
         }
@@ -1127,8 +1250,34 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
             ui->productIDUSBLineEdit->setEnabled(false);
             ui->displayPathUSBLineEdit->setEnabled(false);
             ui->usbDevicesComboBox->setEnabled(false);
-            ui->recoilDelayLineEdit->setEnabled (false);
         }
+
+        if(defaultLightGun && (defaultLightGunNum==FUSION || defaultLightGunNum==JBGUN4IR || defaultLightGunNum==OPENFIRE))
+            ui->recoilValueComboBox->setEnabled(true);
+        else
+            ui->recoilValueComboBox->setEnabled(false);
+
+        if(defaultLightGun && (defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK || defaultLightGunNum == MX24))
+        {
+            ui->reloadRadioButton->setEnabled(false);
+            ui->reloadRumbleRadioButton->setEnabled(false);
+            ui->disableReloadradioButton->setEnabled(false);
+        }
+        else if(defaultLightGun && defaultLightGunNum == XGUNNER)
+        {
+            ui->reloadRadioButton->setEnabled(true);
+            ui->disableReloadradioButton->setEnabled(true);
+           //ui->reloadRadioButton->setChecked(true);
+            ui->reloadRumbleRadioButton->setEnabled(false);
+        }
+        else
+        {
+            ui->reloadRadioButton->setEnabled(true);
+            ui->reloadRumbleRadioButton->setEnabled(true);
+            ui->disableReloadradioButton->setEnabled(true);
+        }
+
+
     }
     else
     {
@@ -1145,13 +1294,13 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
         ui->productIDUSBLineEdit->setEnabled(false);
         ui->displayPathUSBLineEdit->setEnabled(false);
         ui->usbDevicesComboBox->setEnabled(false);
-        ui->recoilDelayLineEdit->setEnabled (false);
+        ui->reloadRadioButton->setEnabled(true);
+        ui->reloadRumbleRadioButton->setEnabled(true);
+        ui->disableReloadradioButton->setEnabled(true);
     }
 
-    if((defaultLightGun && defaultLightGunNum != ALIENUSB) || !defaultLightGun)
+    if((defaultLightGun && (defaultLightGunNum != ALIENUSB && defaultLightGunNum != AIMTRAK)) || !defaultLightGun)
     {
-
-
         for(quint8 comPortIndx=0;comPortIndx<DIPSWITCH_NUMBER;comPortIndx++)
         {
             if(usedDipPlayers[comPortIndx] && dipSwitchNumber != comPortIndx)
@@ -1267,6 +1416,9 @@ void editLightGunWindow::on_hubComComboBox_currentIndexChanged(int index)
 
 void editLightGunWindow::FillUSBDevicesComboBox()
 {
+    quint8 currentIndex = ui->savedLightGunsComboBox->currentIndex ();
+    HIDInfo tempHIDInfo;
+
     if(!isHIDInit)
     {
         if(hid_init ())
@@ -1290,8 +1442,19 @@ void editLightGunWindow::FillUSBDevicesComboBox()
 
     if(!getAllHIDs)
     {
-        //Get a list of Alien Gun HIDs
-        devs = hid_enumerate(ALIENUSBVENDORID, ALIENUSBPRODUCTID);
+        quint8 defaultLGNum = p_comDeviceList->p_lightGunList[currentIndex]->GetDefaultLightGunNumber ();
+
+        //qDebug() << "defaultLGNum:" << defaultLGNum;
+
+        if(defaultLGNum == AIMTRAK)
+        {
+            devs = hid_enumerate(AIMTRAKVENDORID, 0x0);
+        }
+        else
+        {
+            //Get a list of Alien Gun HIDs
+            devs = hid_enumerate(ALIENUSBVENDORID, ALIENUSBPRODUCTID);
+        }
     }
     else
     {
@@ -1309,11 +1472,6 @@ void editLightGunWindow::FillUSBDevicesComboBox()
     //Release HID enumeration
     hid_free_enumeration(devs);
 
-    //quint8 numberLG = ui->savedLightGunsComboBox->count ();
-    quint8 currentIndex = ui->savedLightGunsComboBox->currentIndex ();
-    HIDInfo tempHIDInfo;
-    //qint16 lgUSBIndex;
-    //bool isUSB;
 
     if(p_comDeviceList->p_lightGunList[currentIndex]->IsLightGunUSB ())
     {
@@ -1324,25 +1482,6 @@ void editLightGunWindow::FillUSBDevicesComboBox()
             numberHIDDevices++;
         }
     }
-
-    /*
-    for(quint8 i = 0; i < numberLG; i++)
-    {
-        isUSB = p_comDeviceList->p_lightGunList[i]->IsLightGunUSB ();
-
-        if(isUSB)
-        {
-            lgUSBIndex = FindLightGunHID(i);
-
-            if(lgUSBIndex == -1)
-            {
-                tempHIDInfo = p_comDeviceList->p_lightGunList[i]->GetUSBHIDInfo ();
-                hidInfoList << tempHIDInfo;
-                numberHIDDevices++;
-            }
-        }
-    }
-    */
 
     if(numberHIDDevices > 0)
     {
@@ -1371,6 +1510,9 @@ void editLightGunWindow::FillUSBDevicesComboBox()
 void editLightGunWindow::ProcessHIDInfo()
 {
     HIDInfo tempHIDInfo;
+    quint8 currentIndex = ui->savedLightGunsComboBox->currentIndex ();
+    quint8 defaultLGNum = p_comDeviceList->p_lightGunList[currentIndex]->GetDefaultLightGunNumber ();
+
 
     tempHIDInfo.vendorID = devs->vendor_id;
     tempHIDInfo.vendorIDString = QString::number(devs->vendor_id, 16).rightJustified(4, '0');
@@ -1399,10 +1541,27 @@ void editLightGunWindow::ProcessHIDInfo()
     tempHIDInfo.usage = devs->usage;
     tempHIDInfo.usageString = p_comDeviceList->ProcessHIDUsage(tempHIDInfo.usagePage, tempHIDInfo.usage);
 
-    if(!lgHIDInfoList.contains (tempHIDInfo))
+    if(defaultLGNum == AIMTRAK && !getAllHIDs)
     {
-        hidInfoList << tempHIDInfo;
-        numberHIDDevices++;
+        if(tempHIDInfo.productIDString.startsWith (AIMTRAKPRODUCTIDS) && tempHIDInfo.displayPath.startsWith (AIMTRAKPATHFRONT))
+        {
+            if(!lgHIDInfoList.contains (tempHIDInfo))
+            {
+                hidInfoList << tempHIDInfo;
+                numberHIDDevices++;
+            }
+        }
+    }
+    else
+    {
+        if(!tempHIDInfo.productIDString.startsWith (AIMTRAKPRODUCTIDS) && !tempHIDInfo.displayPath.startsWith (AIMTRAKPATHFRONT))
+        {
+            if(!lgHIDInfoList.contains (tempHIDInfo))
+            {
+                hidInfoList << tempHIDInfo;
+                numberHIDDevices++;
+            }
+        }
     }
 }
 
@@ -1414,6 +1573,8 @@ void editLightGunWindow::on_usbDevicesComboBox_currentIndexChanged(int index)
 {
     if(index >= 0)
     {
+        //qDebug() << "index:" << index << "numberHIDDevices:" << numberHIDDevices;
+
         //Clear Out Old Data
         ui->locationLlineEdit->clear ();
         ui->descriptionLineEdit->clear ();
@@ -1434,6 +1595,8 @@ void editLightGunWindow::on_usbDevicesComboBox_currentIndexChanged(int index)
         //Fill in New Data
         ui->locationLlineEdit->insert(hidInfoList[index].path);
         ui->locationLlineEdit->setCursorPosition (0);
+
+        //qDebug() << "path:" << hidInfoList[index].path;
 
         ui->descriptionLineEdit->insert(hidInfoList[index].productDiscription);
 
@@ -1533,3 +1696,22 @@ void editLightGunWindow::on_allHIDDevicesCheckBox_checkStateChanged(const Qt::Ch
     }
 }
 
+bool editLightGunWindow::CheckRecoilComboBoxes()
+{
+    quint8 rIndex = ui->recoilComboBox->currentIndex();
+    quint8 avIndex = ui->ammoValueComboBox->currentIndex();
+    quint8 rr2sIndex = ui->recoilR2SComboBox->currentIndex();
+    quint8 rvIndex = ui->recoilValueComboBox->currentIndex();
+    bool check = true;
+
+    if(avIndex == rIndex || avIndex == rr2sIndex || avIndex == rvIndex)
+        check = false;
+
+    if(rIndex == rr2sIndex || rIndex == rvIndex)
+        check = false;
+
+    if(rr2sIndex == rvIndex)
+        check = false;
+
+    return check;
+}

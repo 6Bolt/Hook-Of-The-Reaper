@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.1.4"
+#define VERSION                 "1.1.5"
 #define VERSIONMAIN             1
 #define VERSIONMID              1
 #define VERSIONLAST             3
@@ -54,7 +54,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Default Light Gun Definition - There is No Zero, as that is blan and nonDefaultLG
-#define NUM_DEFAULTLG           9
+#define NUM_DEFAULTLG           11
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -166,8 +166,8 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define ALIENUSBFRONTPATHREM    26
 #define ALIENUSBPATHFIRST       15
 #define ALIENUSBMINDELAY        40
-#define ALIENUSBDELAYDFLT       75
-#define ALIENUSBDELAYDFLTS      "75"
+#define ALIENUSBDELAYDFLT       65
+#define ALIENUSBDELAYDFLTS      "65"
 
 //Eighth Default Light Gun
 //X-Gunner
@@ -183,6 +183,44 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define XGUNNERMAXAMMONUM       0
 #define XGUNNERRELOADNUM        0
 
+//Nineth Default Light Gun
+//Ultimarc AimTrak USB Light Gun
+#define AIMTRAK                9
+#define AIMTRAKNAME            "Ultimarc AimTrak"
+#define AIMTRAKBAUD            0
+#define AIMTRAKDATA            0
+#define AIMTRAKPARITY          0
+#define AIMTRAKSTOP            0
+#define AIMTRAKFLOW            0
+#define AIMTRAKMAXAMMO         "0"
+#define AIMTRAKRELOAD          "0"
+#define AIMTRAKMAXAMMONUM      0
+#define AIMTRAKRELOADNUM       0
+
+#define AIMTRAKVENDORID        0xD209
+#define AIMTRAKPRODUCTID       0x1601
+#define AIMTRAKPRODUCTIDS      "0x160"
+#define AIMTRAKPATHFRONT       "MI_00"
+#define AIMTRAKFRONTPATHREM    26
+#define AIMTRAKPATHFIRST       15
+#define AIMTRAKMINDELAY        250
+#define AIMTRAKDELAYDFLT       250
+#define AIMTRAKDELAYDFLTS      "250"
+
+
+//Tenth Default Light Gun
+//Xenas Light Gun
+#define XENAS                  10
+#define XENASNAME              "Xenas Gun"
+#define XENASBAUD              0
+#define XENASDATA              0
+#define XENASPARITY            0
+#define XENASSTOP              0
+#define XENASFLOW              0
+#define XENASMAXAMMO           "0"
+#define XENASRELOAD            "0"
+#define XENASMAXAMMONUM        0
+#define XENASRELOADNUM         0
 
 
 //TCP Socket
@@ -209,6 +247,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define STARTCOMDEVICESAVEFILE  "COM Device Data File"
 #define LIGHTGUNNUMBERFILE      "Light Gun #"
 #define COMDEVICENUMBERFILE     "COM Device #"
+#define PASAVEFILE              "playersAss.hor"
 
 //INI Game & Default Files
 #define INIFILEDIR              "ini"
@@ -320,14 +359,24 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define SIGNALSTARTCHAR         ':'
 #define PLAYERSTARTCHAR         '*'
 #define COMMANDSTARTCHAR        '>'
+#define RECOMMANDSTARTCHAR      '#'
 #define PLAYER2CHHAR            'P'
+#define ALL2CHAR                'A'
+
+//Number of Supported Recoil Commands 4: Ammo_Value, Recoil, Recoil_R2S, and Recoil_Value
+#define NUMBEROFRECOILS         4
+
+#define RECOILRELOAD            "Recoil & Reload"
+#define OPTIONRELOADCMD         "#Reload"
+#define OPTIONRECOIL_R2SCMD     "#Recoil_R2S"
 
 
 //Process Default LG Commands
 #define CMDSIGNAL               '>'
 #define OPENCOMPORT             ">Open_COM"
 #define OPENCOMPORTLENGTH       9
-#define OPENCOMPORT2CHAR        "O"
+#define OPENCOMPORT2CHAR        'O'
+#define OPENCOMPORT2CHAR2       'p'
 #define CLOSECOMPORT            ">Close_COM"
 #define CLOSECOMPORTLENGTH      10
 #define CLOSECOMPORT2CHAR       "C"
@@ -369,12 +418,16 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define RECOILVALUECMD          ">Recoil_Value"
 #define RECOIL_R2SCMD8CHAR      'R'
 #define RECOILVALUECMD8CHAR     'V'
+#define RELOADVALUECMD          ">Reload_Value"
+#define OFFSCREENBUTTONCMD      ">Offscreen_Button"
+#define OFFSCREENNORMALSHOTCMD  ">Offscreen_Normal_Shot"
 
 #define OPENCOMPORTONLY         "Open_COM"
 #define CLOSECOMPORTONLY        "Close_COM"
 #define DAMAGECMDONLY           "Damage"
 #define RECOILCMDONLY           "Recoil"
 #define RELOADCMDONLY           "Reload"
+#define RELOADNORMBLCMDONLY     "Reload_No_Rumble"
 #define AMMOCMDONLY             "Ammo"
 #define AMMOVALUECMDONLY        "Ammo_Value"
 #define SHAKECMDONLY            "Shake"
@@ -396,6 +449,14 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define DISPLAYOTHERINITONLY    "Display_Other_Init"
 #define DISPLAYREFRESHONLY      "Display_Refresh"
 #define RECOILVALUEONLY         "Recoil_Value"
+#define RELOADVALUECMDONLY      "Reload_Value"
+#define RELOADVALUECMDSIZE      8
+#define OFFSCREENBUTTONCMDONLY  "Offscreen_Button"
+#define OFFSCREENRMLSHOTCMDONLY "Offscreen_Normal_Shot"
+#define OFFSCREENCHARAT         11
+#define OFFSCREENCHARATBUTTON   'B'
+
+
 
 //Open Solenoid Safety Timer Default Time
 #define OPENSOLENOIDDEFAULTTIME 200
@@ -487,7 +548,13 @@ struct SerialPortInfo
     QString     portName;
 };
 
-
+struct SupportedRecoils
+{
+    quint8 ammoValue;
+    quint8 recoil;
+    quint8 recoilR2S;
+    quint8 recoilValue;
+};
 
 
 

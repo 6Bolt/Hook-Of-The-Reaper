@@ -36,7 +36,15 @@ playerAssignWindow::playerAssignWindow(ComDeviceList *cdList, QWidget *parent)
         tempQS.append (": ");
         tempQS.append (p_comDeviceList->p_lightGunList[i]->GetLightGunName());
         tempQS.append (" on ");
-        tempQS.append (p_comDeviceList->p_lightGunList[i]->GetComPortString());
+        if(!p_comDeviceList->p_lightGunList[i]->IsLightGunUSB ())
+        {
+            quint8 cpNum = p_comDeviceList->p_lightGunList[i]->GetComPortNumber();
+            tempQS.append ("COM");
+            tempQS.append (QString::number (cpNum));
+        }
+        else
+            tempQS.append ("USB");
+
         ui->player1ComboBox->insertItem(i+1,tempQS);
         ui->player2ComboBox->insertItem(i+1,tempQS);
         ui->player3ComboBox->insertItem(i+1,tempQS);

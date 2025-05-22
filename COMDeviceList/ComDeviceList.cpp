@@ -60,6 +60,7 @@ ComDeviceList::ComDeviceList()
     lightGunsSaveFile = dataPath + "/" + LIGHTGUNSAVEFILE;
     comDevicesSaveFile = dataPath + "/" + COMDEVICESAVEFILE;
     settingsSaveFile = dataPath + "/" + SETTINGSSAVEFILE;
+    playersAssSaveFile = dataPath + "/" + PASAVEFILE;
 
     //Checks For INI Directory
     iniDirExists = currentPathDir.exists (INIFILEDIR);
@@ -132,11 +133,11 @@ void ComDeviceList::AddLightGun(LightGun const &lgMember)
 }
 
 //For RS3 Reaper Light Gun
-void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint16 maNumber, quint16 rvNumber)
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint16 maNumber, quint16 rvNumber, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
 {
     quint8 usedComPortNum;
 
-    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, maNumber, rvNumber);
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, maNumber, rvNumber, lgRecoils, reloadNR, reloadDis);
 
     usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumberBypass ();
     availableComPorts[usedComPortNum] = false;
@@ -145,11 +146,11 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
 }
 
 //For Normal Light Gun
-void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow)
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
 {
     quint8 usedComPortNum;
 
-    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow);
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, lgRecoils, reloadNR, reloadDis);
 
     usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumberBypass ();
     availableComPorts[usedComPortNum] = false;
@@ -158,11 +159,11 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
 }
 
 //For MX24 Light Gun
-void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hcpNum)
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hcpNum, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
 {
     quint8 usedComPortNum;
 
-    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, dipSwitchSet, dipSwitchNumber, hcpNum);
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, dipSwitchSet, dipSwitchNumber, hcpNum, lgRecoils, reloadNR, reloadDis);
 
     //Remove Hub COM port From List
     availableComPorts[hcpNum] = false;
@@ -190,11 +191,11 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
 }
 
 //For JB Gun4IR Light Gun
-void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint8 analStrength)
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint8 analStrength, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
 {
     quint8 usedComPortNum;
 
-    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, analStrength);
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, cpNumber, cpString, cpInfo, cpBaud, cpDataBits, cpParity, cpStopBits, cpFlow, analStrength, lgRecoils, reloadNR, reloadDis);
 
     usedComPortNum = p_lightGunList[numberLightGuns]->GetComPortNumberBypass ();
     availableComPorts[usedComPortNum] = false;
@@ -204,9 +205,17 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
 
 
 //For Alien USB Light Gun
-void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay)
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
 {
-    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, hidInfoStruct, rcDelay);
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, hidInfoStruct, lgRecoils, reloadNR, reloadDis);
+
+    numberLightGuns++;
+}
+
+//For USB Light Gun
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
+{
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, hidInfoStruct, rcDelay, lgRecoils, reloadNR, reloadDis);
 
     numberLightGuns++;
 }
@@ -508,6 +517,25 @@ void ComDeviceList::SaveLightGunList()
             out << "0\n";
         }
 
+        //Recoil Priorites & Reload Options
+        quint8 *p_recoilPriority = p_lightGunList[i]->GetRecoilPriority();
+
+        bool reloadNR = p_lightGunList[i]->GetReloadNoRumble();
+        bool reloadDis = p_lightGunList[i]->GetReloadDisabled();
+
+        for(quint8 j = 0; j < NUMBEROFRECOILS; j++)
+            out << p_recoilPriority[j] << "\n";
+
+        if(reloadNR)
+            out << "1\n";
+        else
+             out << "0\n";
+
+        if(reloadDis)
+            out << "1\n";
+        else
+            out << "0\n";
+
         //Check if Ligth Gun is a Serial COM Port
         if(!p_lightGunList[i]->IsLightGunUSB ())
         {
@@ -520,6 +548,7 @@ void ComDeviceList::SaveLightGunList()
             out << p_lightGunList[i]->GetComPortParity() << "\n";
             out << p_lightGunList[i]->GetComPortStopBits() << "\n";
             out << p_lightGunList[i]->GetComPortFlow() << "\n";
+
 
             if(p_lightGunList[i]->GetDefaultLightGun() && p_lightGunList[i]->GetDefaultLightGunNumber () == RS3_REAPER)
             {
@@ -602,24 +631,15 @@ void ComDeviceList::SaveLightGunList()
             out << tempHIDInfo.usage << "\n";
             out << tempHIDInfo.usageString << "\n";
             out << tempHIDInfo.interfaceNumber << "\n";
-
-            quint16 rcDelay = p_lightGunList[i]->GetRecoilDelay ();
-            out << rcDelay << "\n";
         }
-    }
-
-    out << PLAYERSASSIGNMENTS << "\n";
-
-    for(i=0; i < MAXPLAYERLIGHTGUNS; i++)
-    {
-        out << playersLightGun[i] << "\n";
     }
 
     out << ENDOFFILE;
 
-
     //Close File
     saveLGData.close ();
+
+    SavePlayersAss();
 
 }
 
@@ -649,8 +669,9 @@ void ComDeviceList::LoadLightGunList()
     QString line, cmpLine;
     bool dipSet, analSet;
     quint8 dipNumber, analNumber, hcpNumber;
-    bool isOpenFireLG = false;
-    bool gotNextLine = false;
+    SupportedRecoils recoilPriority;
+    bool reloadNR;
+    bool reloadDis;
 
     QFile loadLGData(lightGunsSaveFile);
 
@@ -690,10 +711,7 @@ void ComDeviceList::LoadLightGunList()
     {
         QSerialPortInfo *p_tempComPortInfo;
 
-        if(!gotNextLine)
-            line = in.readLine();
-
-        gotNextLine = false;
+        line = in.readLine();
 
         //Line Should be "Light Gun #i"
         cmpLine = LIGHTGUNNUMBERFILE + QString::number (i);
@@ -722,8 +740,40 @@ void ComDeviceList::LoadLightGunList()
         line = in.readLine();
         tempDefaultGunNum = line.toUInt ();
 
+        //Recoil Priority
+
+        //Ammo_Value Priority
+        line = in.readLine();
+        recoilPriority.ammoValue = line.toUInt ();
+
+        //Recoil Priority
+        line = in.readLine();
+        recoilPriority.recoil = line.toUInt ();
+
+        //Recoil_R2S Priority
+        line = in.readLine();
+        recoilPriority.recoilR2S = line.toUInt ();
+
+        //Recoil_Value Priority
+        line = in.readLine();
+        recoilPriority.recoilValue = line.toUInt ();
+
+        //Reload Options
+        line = in.readLine();
+        if(line == "0")
+            reloadNR = false;
+        else
+            reloadNR = true;
+
+        line = in.readLine();
+        if(line == "0")
+            reloadDis = false;
+        else
+            reloadDis = true;
+
+
         //For Serial Port Light Guns
-        if(!tempIsDefaultGun || (tempIsDefaultGun && tempDefaultGunNum != ALIENUSB))
+        if(!tempIsDefaultGun || (tempIsDefaultGun && (tempDefaultGunNum != ALIENUSB && tempDefaultGunNum != AIMTRAK)))
         {
 
             //COM Port Number
@@ -781,9 +831,9 @@ void ComDeviceList::LoadLightGunList()
 
 
                 if(tempMaxAmmoSet && tempReloadValueSet)
-                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, tempMaxAmmo, tempReloadValue);
+                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, tempMaxAmmo, tempReloadValue, recoilPriority, reloadNR, reloadDis);
                 else
-                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
+                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, recoilPriority, reloadNR, reloadDis);
             }
             else if(tempIsDefaultGun && tempDefaultGunNum==MX24)
             {
@@ -799,9 +849,9 @@ void ComDeviceList::LoadLightGunList()
                 line = in.readLine();
                 hcpNumber = line.toUInt ();
 
-                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, dipSet, dipNumber, hcpNumber);
+                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, dipSet, dipNumber, hcpNumber, recoilPriority, reloadNR, reloadDis);
             }
-            else if(tempIsDefaultGun && tempDefaultGunNum==JBGUN4IR)
+            else if(tempIsDefaultGun && (tempDefaultGunNum==JBGUN4IR || tempDefaultGunNum==OPENFIRE))
             {
                 //Is Analog Strength Set
                 line = in.readLine();
@@ -816,51 +866,17 @@ void ComDeviceList::LoadLightGunList()
                 if(analSet)
                 {
                     analNumber = line.toUInt ();
-                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, analNumber);
+                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, analNumber, recoilPriority, reloadNR, reloadDis);
                 }
                 else
                 {
-                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
+                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, recoilPriority, reloadNR, reloadDis);
                 }
 
-            }
-            else if(tempIsDefaultGun && tempDefaultGunNum==OPENFIRE)
-            {
-                line = in.readLine();
-
-                if(line.startsWith (LIGHTGUNNUMBERFILE) || line.startsWith (PLAYERSASSIGNMENTS))
-                {
-                    isOpenFireLG = true;
-                    gotNextLine = true;
-                    analNumber = DEFAULTANALOGSTRENGTH;
-                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, analNumber);
-                }
-                else if(line == "0" || line == "1")
-                {
-                    if(line == "0")
-                        analSet = false;
-                    else
-                        analSet = true;
-
-                    //Analog Strength, If Set Above
-                    line = in.readLine();
-
-                    if(analSet)
-                    {
-                        analNumber = line.toUInt ();
-                        AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, analNumber);
-                    }
-                    else
-                    {
-                        AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
-                    }
-
-                    gotNextLine = false;
-                }
             }
             else
             {
-                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow);
+                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempComPortNum, tempComPortName, *p_tempComPortInfo, tempComPortBaud, tempComPortDataBits, tempComPortParity, tempComPortStopBits, tempComPortFlow, recoilPriority, reloadNR, reloadDis);
             }
 
 
@@ -918,10 +934,10 @@ void ComDeviceList::LoadLightGunList()
             tempHIDInfo.displayPath = tempHIDInfo.path;
             tempHIDInfo.displayPath.remove(0,ALIENUSBFRONTPATHREM);
 
-            line = in.readLine();
-            quint16 rcDelay = line.toUShort ();
-
-           AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempHIDInfo, rcDelay);
+            if(tempDefaultGunNum == ALIENUSB)
+                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempHIDInfo, recoilPriority, reloadNR, reloadDis);
+            else if(tempDefaultGunNum == AIMTRAK)
+                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempHIDInfo, AIMTRAKDELAYDFLT, recoilPriority, reloadNR, reloadDis);
         }
 
 
@@ -929,15 +945,98 @@ void ComDeviceList::LoadLightGunList()
     }
 
     //Next up is the players light gun assignments
-    if(!gotNextLine)
-        line = in.readLine();
+    line = in.readLine();
 
-    gotNextLine = false;
+    if(line != ENDOFFILE)
+    {
+        //qDebug() << line;
+        QMessageBox::critical (nullptr, "File Error", "Light gun save data file is corrupted. The file did not end correctly. Please try to reload file, or re-enter the light guns again.", QMessageBox::Ok);
+    }
+
+    //Close the File
+    loadLGData.close();
+
+    LoadPlayersAss();
+}
+
+void ComDeviceList::SavePlayersAss()
+{
+    bool removedFile = true;
+    bool openFile;
+    quint8 i;
+    QFile savePlayersAss(playersAssSaveFile);
+
+
+    //Erase Old Save File, if it exisits
+    if(savePlayersAss.exists ())
+        removedFile = savePlayersAss.remove ();
+
+    if(!removedFile)
+    {
+        QMessageBox::critical (nullptr, "File Error", "Can not remove old players assignment save data file. Failed to remove. Please close program and solve file problem. Might be open or permissions changed.", QMessageBox::Ok);
+        return;
+    }
+
+    openFile = savePlayersAss.open(QIODeviceBase::WriteOnly | QIODevice::Text);
+
+    if(!openFile)
+    {
+        QMessageBox::critical (nullptr, "File Error", "Can not create player assignment save data file. Please close program and solve file problem. Might be permissions problem.", QMessageBox::Ok);
+        return;
+    }
+
+    //Create a Text Stream, to Stream in the Data Easier
+    QTextStream out(&savePlayersAss);
+
+    out << PLAYERSASSIGNMENTS << "\n";
+
+    for(i=0; i < MAXPLAYERLIGHTGUNS; i++)
+    {
+        out << playersLightGun[i] << "\n";
+    }
+
+    out << ENDOFFILE;
+
+
+    //Close File
+    savePlayersAss.close ();
+
+}
+
+void ComDeviceList::LoadPlayersAss()
+{
+    bool fileExists;
+    bool openFile;
+    QString line;
+    quint8 i;
+
+    QFile loadPlayerAss(playersAssSaveFile);
+
+    //Check if the File Exists, as it might not be created yet. If no File, then exit out of member function
+    if(loadPlayerAss.exists() == false)
+    {
+        QMessageBox::critical (nullptr, "File Error", "Can not open player assignment save data file. It does not exists. Please close program and solve file problem. Might be permissions problem.", QMessageBox::Ok);
+        return;
+    }
+
+    openFile = loadPlayerAss.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+
+    if(!openFile)
+    {
+        QMessageBox::critical (nullptr, "File Error", "Can not open player assignment save data file to read. Please close program and solve file problem. Might be permissions problem.", QMessageBox::Ok);
+        return;
+    }
+
+    //Create a Text Stream, to Stream in the Data Easier
+    QTextStream in(&loadPlayerAss);
+
+    //Next up is the players light gun assignments
+    line = in.readLine();
 
     if(line != PLAYERSASSIGNMENTS)
     {
         //qDebug() << line;
-        QMessageBox::critical (nullptr, "File Error", "Light gun save data file is corrupted. Player's light gun assignment failed to load. Please try to reload file, or re-enter the light guns again.", QMessageBox::Ok);
+        QMessageBox::critical (nullptr, "File Error", "Players Assignment save data file is corrupted. Please try to reload file, or re-enter the light guns again.", QMessageBox::Ok);
     }
 
     for(i=0; i < MAXPLAYERLIGHTGUNS; i++)
@@ -954,15 +1053,11 @@ void ComDeviceList::LoadLightGunList()
     if(line != ENDOFFILE)
     {
         //qDebug() << line;
-        QMessageBox::critical (nullptr, "File Error", "Light gun save data file is corrupted. The file did not end correctly. Please try to reload file, or re-enter the light guns again.", QMessageBox::Ok);
+        QMessageBox::critical (nullptr, "File Error", "Players Assignment save data file is corrupted. The file did not end correctly. Please try to reload file, or re-enter the light guns again.", QMessageBox::Ok);
     }
 
     //Close the File
-    loadLGData.close();
-
-    if(isOpenFireLG)
-        SaveLightGunList();
-
+    loadPlayerAss.close();
 }
 
 
@@ -1892,10 +1987,14 @@ QString ComDeviceList::ProcessHIDUsage(quint16 usagePage, quint16 usage)
 {
     if(usagePage == 1)
     {
-        if(usage == 1)
+        if(usage == 0)
+            return "Undefined";
+        else if(usage == 1)
             return "Pointer";
         else if(usage == 2)
             return "Mouse";
+        else if(usage == 3)
+            return "Reserved";
         else if(usage == 4)
             return "Joystick";
         else if(usage == 5)
@@ -1939,6 +2038,23 @@ QString ComDeviceList::ProcessHIDUsage(quint16 usagePage, quint16 usage)
         else
             return "";
     }
+    else if(usagePage == 0x05)
+    {
+        if(usage == 0)
+            return "Undefined";
+        else if(usage == 1)
+            return "3D Game Controller";
+        else if(usage == 2)
+            return "Pinball Device";
+        else if(usage == 3)
+            return "Gun Device";
+        else if(usage == 20)
+            return "Point of View";
+        else if(usage == 32)
+            return "Gun Selector";
+        else
+            return "";
+    }
     else if(usagePage == 0x0C)
     {
         if(usage == 1)
@@ -1966,7 +2082,15 @@ QString ComDeviceList::ProcessHIDUsage(quint16 usagePage, quint16 usage)
     return "";
 }
 
+quint8* ComDeviceList::GetRecoilPriority()
+{
+    userRecoilPriority[0] = 3;
+    userRecoilPriority[1] = 2;
+    userRecoilPriority[2] = 1;
+    userRecoilPriority[3] = 0;
 
+    return userRecoilPriority;
+}
 
 
 

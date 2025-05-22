@@ -20,7 +20,7 @@ quint8  STOPBITSDATA_ARRAY[STOPBITS_NUMBER] = {1, 2, 3};
 QString FLOWNAME_ARRAY[FLOW_NUMBER] = {"No Flow Control", "RTS/CTS Hardware", "Xon/Xoff Software"};
 quint8  FLOWDATA_ARRAY[FLOW_NUMBER] = {0, 1, 2};
 
-QString DEFAULTLGFILENAMES_ARRAY[NUM_DEFAULTLG] = {"nonDefaultLG.hor","rs3Reaper.hor","mx24.hor","jbgun4ir.hor","fusion.hor","blamcon.hor","openFire.hor","alienUSB.hor", "xGunner.hor"};
+QString DEFAULTLGFILENAMES_ARRAY[NUM_DEFAULTLG] = {"nonDefaultLG.hor","rs3Reaper.hor","mx24.hor","jbgun4ir.hor","fusion.hor","blamcon.hor","openFire.hor","alienUSB.hor", "xGunner.hor", "", "xenas.hor"};
 
 //Constructor
 HookOfTheReaper::HookOfTheReaper(QWidget *parent)
@@ -118,6 +118,27 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
     DEFAULTLG_ARRAY[XGUNNER].MAXAMMON = XGUNNERMAXAMMONUM;
     DEFAULTLG_ARRAY[XGUNNER].RELOADVALUEN = XGUNNERRELOADNUM;
 
+    //Set Up Ultimarc AimTrak Default Light Gun Settings
+    DEFAULTLG_ARRAY[AIMTRAK].BAUD = AIMTRAKBAUD;
+    DEFAULTLG_ARRAY[AIMTRAK].DATA = AIMTRAKDATA;
+    DEFAULTLG_ARRAY[AIMTRAK].PARITY = AIMTRAKPARITY;
+    DEFAULTLG_ARRAY[AIMTRAK].STOP = AIMTRAKSTOP;
+    DEFAULTLG_ARRAY[AIMTRAK].FLOW = AIMTRAKFLOW;
+    DEFAULTLG_ARRAY[AIMTRAK].MAXAMMO = AIMTRAKMAXAMMO;
+    DEFAULTLG_ARRAY[AIMTRAK].RELOADVALUE = AIMTRAKRELOAD;
+    DEFAULTLG_ARRAY[AIMTRAK].MAXAMMON = AIMTRAKMAXAMMONUM;
+    DEFAULTLG_ARRAY[AIMTRAK].RELOADVALUEN = AIMTRAKRELOADNUM;
+
+    //Set Up Xenas Default Light Gun Settings
+    DEFAULTLG_ARRAY[XENAS].BAUD = XENASBAUD;
+    DEFAULTLG_ARRAY[XENAS].DATA = XENASDATA;
+    DEFAULTLG_ARRAY[XENAS].PARITY = XENASPARITY;
+    DEFAULTLG_ARRAY[XENAS].STOP = XENASSTOP;
+    DEFAULTLG_ARRAY[XENAS].FLOW = XENASFLOW;
+    DEFAULTLG_ARRAY[XENAS].MAXAMMO = XENASMAXAMMO;
+    DEFAULTLG_ARRAY[XENAS].RELOADVALUE = XENASRELOAD;
+    DEFAULTLG_ARRAY[XENAS].MAXAMMON = XENASMAXAMMONUM;
+    DEFAULTLG_ARRAY[XENAS].RELOADVALUEN = XENASRELOADNUM;
 
 
     //TCP Socket is Not Connected Yet
@@ -141,7 +162,6 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
 
     //Set Up Tray Icon and show it
     trayIcon = new QSystemTrayIcon(this);
-    //trayIcon->setIcon(QIcon("./data/icons/hOTRIcon256.ico"));
     trayIcon->setIcon(QIcon(":/icons/hOTRIcon256.ico"));
     trayIcon->show ();
 
@@ -153,7 +173,7 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
     editLGAction = new QAction("Edit Light Gun", this);
     connect(editLGAction, &QAction::triggered, this, &HookOfTheReaper::on_actionEdit_Light_Gun_triggered);
     trayMenu->addAction(editLGAction);
-    playAsignAction = new QAction("Player's Assignment", this);
+    playAsignAction = new QAction("Player Assignment", this);
     connect(playAsignAction, &QAction::triggered, this, &HookOfTheReaper::on_actionPlayer_Assignment_triggered);
     trayMenu->addAction(playAsignAction);
     testComAction = new QAction("Test COM Port", this);
@@ -173,7 +193,6 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
         }
     });
 
-    //trayIcon->showMessage ("Hook Of The Reaper", "Now Hooking", QIcon("./data/icons/hOTRIcon256.ico"));
     trayIcon->showMessage ("Hook Of The Reaper", "Now Hooking", QIcon(":/icons/hOTRIcon256.ico"));
 
 #else
@@ -532,8 +551,8 @@ void HookOfTheReaper::on_actionPlayer_Assignment_triggered()
 
 void HookOfTheReaper::Player_Assign_Window_Closed()
 {
-    //Always save light gun data after the player assignment window closes
-    p_comDeviceList->SaveLightGunList();
+    //Always save player assignment data after the player assignment window closes
+    p_comDeviceList->SavePlayersAss();
 
     numberComDevices = p_comDeviceList->GetNumberComPortDevices();
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();

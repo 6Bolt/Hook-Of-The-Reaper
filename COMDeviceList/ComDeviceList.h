@@ -29,15 +29,17 @@ public:
     //Copy Light Gun
     void            AddLightGun(LightGun const &lgMember);
     //For RS3 Reaper
-    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint16 maNumber, quint16 rvNumber);
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint16 maNumber, quint16 rvNumber, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
     //Normal Light Gun & Fusion & Blamcon
-    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow);
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
     //For MX24 Light Gun
-    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hcpNum);
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hcpNum, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
     //For JB Gun4IR & OpenFire Light Gun
-    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint8 analStrength);
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint8 analStrength, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
     //For Alien USB Light Gun
-    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay);
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
+    //For USB Light Gun
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
 
 
     //Adds a COM Device in the List
@@ -69,6 +71,10 @@ public:
     //Save or Load Light Guns to/from a File
     void            SaveLightGunList();
     void            LoadLightGunList();
+
+    //Save or Load Players Assignment to/from File
+    void            SavePlayersAss();
+    void            LoadPlayersAss();
 
     //Save or Load COM Device to/from a File
     void            SaveComDeviceList();
@@ -140,6 +146,9 @@ public:
     //Processes usage & usagePage from USB HID Data
     QString         ProcessHIDUsage(quint16 usagePage, quint16 usage);
 
+    //Get Recoil Priority
+    quint8*         GetRecoilPriority();
+
     ///////////////////////////////////////////////////////////////////////////
 
 
@@ -180,6 +189,7 @@ private:
     QString             settingsSaveFile;
     QString             lightGunsSaveFile;
     QString             comDevicesSaveFile;
+    QString             playersAssSaveFile;
 
 
     //Settings
@@ -193,6 +203,8 @@ private:
     bool                displayAmmoPriority;
     bool                displayLifePriority;
     bool                displayOtherPriority;
+
+    quint8              userRecoilPriority[NUMBEROFRECOILS];
 
     //OpenFire Settings
     bool                displayAmmoLife;

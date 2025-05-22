@@ -105,6 +105,8 @@ private:
     //Find The Light Gun Vendor ID, Product ID and Serial Number (optional) in the HID Devices
     qint16 FindLightGunHID(quint8 lgNum);
 
+    bool CheckRecoilComboBoxes();
+
     ///////////////////////////////////////////////////////////////////////////
 
     //For Window
@@ -139,6 +141,10 @@ private:
     quint8                  oldDefaultLightGunNum;
     bool                    oldDefaultLightGun;
 
+    quint8                  *p_recoilPriority;
+    bool                    reloadNoRumble;
+    bool                    reloadDisable;
+
     //Number of Light Gun in the List
     quint8                  numberLightGuns;
 
@@ -167,6 +173,7 @@ private:
     QSoundEffect            editLightGunSound;
     QSoundEffect            deleteLightGunSound;
 
+    bool                    isInitDone;
 
 };
 

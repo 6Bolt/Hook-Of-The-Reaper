@@ -40,11 +40,12 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     isUSBHIDInit = false;
 
     commandLGList << OPENCOMPORT << CLOSECOMPORT << DAMAGECMD << RECOILCMD << RELOADCMD;
-    commandLGList << AMMOCMD << AMMOVALUECMD << SHAKECMD << AUTOLEDCMD << ARATIO169CMD;
+    commandLGList << AMMOVALUECMD << SHAKECMD << AUTOLEDCMD << ARATIO169CMD;
     commandLGList << ARATIO43CMD << JOYMODECMD << KANDMMODECMD << DLGNULLCMD << RECOIL_R2SCMD;
     commandLGList << OPENCOMPORTNOINIT << CLOSECOMPORTNOINIT << DISPLAYAMMOCMD << DISPLAYAMMOINITCMD;
     commandLGList << DISPLAYLIFECMD << DISPLAYLIFEINITCMD << DISPLAYOTHERCMD << DISPLAYOTHERINITCMD;
-    commandLGList << CLOSECOMPORTINITONLYCMD << RECOILVALUECMD;
+    commandLGList << CLOSECOMPORTINITONLYCMD << RECOILVALUECMD << RELOADVALUECMD << OFFSCREENBUTTONCMD;
+    commandLGList << OFFSCREENNORMALSHOTCMD;
 
     //qDebug() << "Hooker Engine Started";
 
@@ -469,6 +470,36 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
     quint8 loadedLGNumbersTest[MAXPLAYERLIGHTGUNS];
     quint16 signalsAndCommandsCountTest = 0;
 
+    bool gameRecoilsSupported[NUMBEROFRECOILS];
+    bool gameReloadsSupported[NUMBEROFRECOILS];
+    QStringList ammoValueCMDs;
+    QStringList recoilCMDs;
+    QStringList recoilR2SCMDs;
+    QStringList recoilValueCMDs;
+    QMap<quint8,QStringList> recoilCMDsMap;
+    bool hasRecoilOption = false;
+    qint16 playerForCMD;
+
+    quint8 testLoadRecoilForPLayer[MAXGAMEPLAYERS];
+    bool testFoundRecoilForPlayer[MAXGAMEPLAYERS];
+    bool testIsLoadedLGUSB[MAXGAMEPLAYERS];
+    quint8 testLoadedLGComPortNumber[MAXGAMEPLAYERS];
+    bool testIsRecoilDelaySet[MAXGAMEPLAYERS];
+    quint16 testDelayRecoilTime[MAXGAMEPLAYERS];
+    bool testLoadedLGSupportRecoilValue[MAXGAMEPLAYERS];
+    bool testLoadedLGSupportReload[MAXGAMEPLAYERS];
+    quint8 *testp_loadedLGRecoilPriority[MAXGAMEPLAYERS];
+
+    bool isGoodLG;
+
+    for(quint8 x = 0; x < MAXGAMEPLAYERS; x++)
+    {
+        gameRecoilsSupported[x] = false;
+        gameReloadsSupported[x] = false;
+        testLoadRecoilForPLayer[x] = 1;
+        testFoundRecoilForPlayer[x] = false;
+    }
+
 
     QFile lgFile(fileNamePath);
 
@@ -558,13 +589,46 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                     //Check if Light Gun is a Default Light Gun
                     lgNumber = playersLGAssignment[lgPlayerOrderTest[i]];
 
-                    //If Player Assignment is Unassign, then fail load and go to INI file
-                    if(lgNumber == UNASSIGN)
-                        unassignLG++;
-
 
                     //Load Light Gun Order, based on Player Order and Player's Assignment
                     loadedLGNumbersTest[i] = lgNumber;
+
+                    //If Player Assignment is Unassign, increament unassignLG
+                    if(lgNumber == UNASSIGN)
+                        unassignLG++;
+                    else
+                    {
+                        //Check if Serial Port or USB HID. If Serial Port, get Serial Port Number
+                        if(p_comDeviceList->p_lightGunList[lgNumber]->IsLightGunUSB ())
+                        {
+                            testIsLoadedLGUSB[i] = true;
+                            testLoadedLGComPortNumber[i] = UNASSIGN;
+
+                            if(p_comDeviceList->p_lightGunList[lgNumber]->IsRecoilDelay())
+                            {
+                                testIsRecoilDelaySet[i] = true;
+                                testDelayRecoilTime[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetRecoilDelay ();
+                                //openSolenoidOrRecoilDelay[i].setInterval (delayRecoilTime[i]);
+                            }
+                            else
+                                testIsRecoilDelaySet[i] = false;
+                        }
+                        else
+                        {
+                            testIsLoadedLGUSB[i] = false;
+                            testLoadedLGComPortNumber[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetComPortNumber();
+                            testIsRecoilDelaySet[i] = false;
+                            //openSolenoidOrRecoilDelay[i].setInterval (OPENSOLENOIDDEFAULTTIME);
+                        }
+
+                        //Does Light Gun Support Recoil_Value Command
+                        testLoadedLGSupportRecoilValue[i] = p_comDeviceList->p_lightGunList[lgNumber]->IsRecoilValueSupported ();
+                        //Does Light Gun Support Reload
+                        testLoadedLGSupportReload[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetSupportedReload ();
+                        //Light Gun Recoil Priority
+                        testp_loadedLGRecoilPriority[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetRecoilPriorityHE();
+
+                    }
 
                 }
 
@@ -581,6 +645,215 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                 begin = false;
             }
         }
+        else if(line == RECOILRELOAD)
+        {
+            //Loads Up Support Recoil & Reload Options in Game File
+            quint8 index = 0;
+
+            //Get Ammo_Value: Recoil and Reload Info from Game File Header
+            line = in.readLine();
+            lineNumber++;
+            line.replace("  ", " ");
+
+            if(line.startsWith (AMMOVALUECMDONLY))
+            {
+                QStringList ammoValueSL = line.split (' ', Qt::SkipEmptyParts);
+                if(ammoValueSL[1] == "1")
+                {
+                    gameRecoilsSupported[0] = true;
+                    gameReloadsSupported[0] = true;
+                    ammoValueSL[0].prepend('#');
+                    ammoValueCMDs << ammoValueSL[0];
+
+
+                    if(ammoValueSL.length() > 2)
+                    {
+                        ammoValueSL[2].prepend('#');
+                        ammoValueCMDs << ammoValueSL[2];
+                    }
+                    else
+                        ammoValueCMDs << ammoValueSL[0];
+                }
+                else
+                    ammoValueCMDs << "" << "";
+            }
+            else
+            {
+                lgFile.close();
+                QString tempCrit = "The line didn't match 'Ammo_Value' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            recoilCMDsMap.insert (0, ammoValueCMDs);
+
+            //Get Recoil: Recoil and Reload Info from Game File Header
+            line = in.readLine();
+            lineNumber++;
+            line.replace("  ", " ");
+
+            if(line.startsWith (RECOILCMDONLY))
+            {
+                QStringList recoilSL = line.split (' ', Qt::SkipEmptyParts);
+                if(recoilSL[1] == "1")
+                {
+                    gameRecoilsSupported[1] = true;
+                    recoilSL[0].prepend('#');
+                    recoilCMDs << recoilSL[0];
+
+                    if(recoilSL.length() > 2)
+                    {
+                        recoilSL[2].prepend('#');
+                        recoilCMDs << recoilSL[2];
+                        gameReloadsSupported[1] = true;
+                    }
+                    else
+                        recoilCMDs << "";
+                }
+                else
+                    recoilCMDs << "" << "";
+            }
+            else
+            {
+                lgFile.close();
+                QString tempCrit = "The line didn't match 'Recoil' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            recoilCMDsMap.insert (1, recoilCMDs);
+
+            //Get Recoil_R2S: Recoil and Reload Info from Game File Header
+            line = in.readLine();
+            lineNumber++;
+            line.replace("  ", " ");
+
+            if(line.startsWith (RECOIL_R2SONLY))
+            {
+                QStringList recoilR2SSL = line.split (' ', Qt::SkipEmptyParts);
+                if(recoilR2SSL[1] == "1")
+                {
+                    gameRecoilsSupported[2] = true;
+                    recoilR2SSL[0].prepend('#');
+                    recoilR2SCMDs << recoilR2SSL[0];
+
+                    if(recoilR2SSL.length() > 2)
+                    {
+                        recoilR2SSL[2].prepend('#');
+                        recoilR2SCMDs << recoilR2SSL[2];
+                        gameReloadsSupported[2] = true;
+                    }
+                    else
+                        recoilR2SCMDs << "";
+                }
+                else
+                    recoilR2SCMDs << "" << "";
+            }
+            else
+            {
+                lgFile.close();
+                QString tempCrit = "The line didn't match 'Recoil_R2S' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            recoilCMDsMap.insert (2, recoilR2SCMDs);
+
+            //Get Recoil_Value: Recoil and Reload Info from Game File Header
+            line = in.readLine();
+            lineNumber++;
+            line.replace("  ", " ");
+
+            if(line.startsWith (RECOILVALUEONLY))
+            {
+                QStringList recoilValueSL = line.split (' ', Qt::SkipEmptyParts);
+                if(recoilValueSL[1] == "1")
+                {
+                    gameRecoilsSupported[3] = true;
+                    recoilValueSL[0].prepend('#');
+                    recoilValueCMDs << recoilValueSL[0];
+
+                    if(recoilValueSL.length() > 2)
+                    {
+                        recoilValueSL[2].prepend('#');
+                        recoilValueCMDs << recoilValueSL[2];
+                        gameReloadsSupported[3] = true;
+                    }
+                    else
+                        recoilValueCMDs << "";
+                }
+                else
+                    recoilValueCMDs << "" << "";
+            }
+            else
+            {
+                lgFile.close();
+                QString tempCrit = "The line didn't match 'Recoil_Value' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            recoilCMDsMap.insert (3, recoilValueCMDs);
+
+            //Light Gun Recoil & Priority Matching with the Game File Supported
+            for(quint8 i = 0; i < numberLGPlayersTest; i++)
+            {
+                if(loadedLGNumbersTest[i] != UNASSIGN)
+                {
+                    while(!testFoundRecoilForPlayer[i] && index < NUMBEROFRECOILS)
+                    {
+                        if(testp_loadedLGRecoilPriority[i][index] == 0 && gameRecoilsSupported[0])
+                        {
+                            testLoadRecoilForPLayer[i] = 0;
+                            testFoundRecoilForPlayer[i] = true;
+                        }
+                        else if(testp_loadedLGRecoilPriority[i][index] == 1 && gameRecoilsSupported[1])
+                        {
+                            testLoadRecoilForPLayer[i] = 1;
+                            testFoundRecoilForPlayer[i] = true;
+                        }
+                        else if(testp_loadedLGRecoilPriority[i][index] == 2 && gameRecoilsSupported[2])
+                        {
+                            testLoadRecoilForPLayer[i] = 2;
+                            testFoundRecoilForPlayer[i] = true;
+                        }
+                        else if(testp_loadedLGRecoilPriority[i][index] == 3 && testLoadedLGSupportRecoilValue[i] && gameRecoilsSupported[3])
+                        {
+                            testLoadRecoilForPLayer[i] = 3;
+                            testFoundRecoilForPlayer[i] = true;
+                        }
+
+                        index++;
+                    }
+
+                    //qDebug() << "Player" << i+1 << "testFoundRecoilForPlayer" << testFoundRecoilForPlayer[i] << "testLoadRecoilForPLayer" << testLoadRecoilForPLayer[i];
+                }
+                index = 0;
+            }
+
+            //Check to Make Sure Recoil Option Found for All Loaded Light Gun Players
+            for(quint8 i = 0; i < numberLGPlayersTest; i++)
+            {
+                //qDebug() << "Player" << i+1 << "testFoundRecoilForPlayer" << testFoundRecoilForPlayer[i] << "loadedLGNumbersTest" << loadedLGNumbersTest[i];
+
+                if(!testFoundRecoilForPlayer[i] && loadedLGNumbersTest[i] != UNASSIGN)
+                {
+
+                    lgFile.close();
+                    QString tempCrit = "Cannot find a supported recoil option.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return false;
+                }
+            }
+
+            hasRecoilOption = true;
+
+        }  //else if(line == RECOILRELOAD)
         else if(line[0] == '[')
         {
             //Nothing In Here Yet, But Might Be Used Later
@@ -595,19 +868,37 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
             //If Got a Signal & Player(s) and Command(s), then Load into QMap
             if(gotSignal && gotPlayer && gotCommands)
             {
+                isGoodLG = false;
+
+                if(playerForCMD == -1)
+                    isGoodLG = true;
+                else if(playerForCMD < MAXGAMEPLAYERS && loadedLGNumbersTest[playerForCMD] != UNASSIGN)
+                    isGoodLG = true;
+
+                if(isGoodLG)
+                {
+                    //qDebug() << "Signal: " << signal << " Commands: " << commands;
+
+                    if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
+                        signalsAndCommandsCountTest++;
+                }
+
                 //qDebug() << "Signal: " << signal << " Commands: " << commands;
 
                 gotPlayer = false;
-                gotCommands = false;
-
-                if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
-                    signalsAndCommandsCountTest++;
+                gotCommands = false;   
 
                 commands.clear ();
             }
             else if(gotSignal && !gotPlayer && !gotCommands)
             {
                 //Signal that has no players and no commands
+            }
+            else if(gotSignal && gotPlayer && !gotCommands)
+            {
+                //Not Using that Recoil/Reload Option
+                gotPlayer = false;
+                commands.clear ();
             }
 
             //Process Current Line
@@ -633,6 +924,15 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
         {
             //Got a Player
 
+            if(gotPlayer && !gotCommands)
+            {
+                lgFile.close();
+                QString tempCrit = "There are two or more Player lines back to back.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
             //If Got a Signal, Add The Player. If Not then Sometrhing Went Wrong
             if(gotSignal)
             {
@@ -657,6 +957,8 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                         return false;
                     }
 
+                    playerForCMD = tempPlayer - 1;
+
                     //Check if Player Number Matches Loaded Players Above
                     bool playerMatch = false;
 
@@ -676,6 +978,12 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                     }
 
                 } //If not *P[1-4], then must be *All. If not those 2, then something is wrong.
+                else if(line[1] == ALL2CHAR)
+                {
+                    //All Players Been Selected
+                    playerForCMD = -1;
+
+                }
                 else if(line != ALLPLAYERS)
                 {
                     lgFile.close();
@@ -686,7 +994,8 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                 }
 
                 //First thing of the Command is the Player(s)
-                commands << line;
+                if(!gotPlayer)
+                    commands << line;
 
                 gotPlayer = true;
             }
@@ -710,20 +1019,20 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
         else if(line[0] == COMMANDSTARTCHAR)
         {
 
-            if(line.startsWith (RECOIL_R2SCMD))
-            {
-                lgFileLoadFail = true;
-                lgFile.close();
-                QString tempCrit = "Recoil_R2S command doesn't support the '|'.\nLine Number: "+QString::number(lineNumber)+"\nCMD: Recoil_R2S"+"\nFile: "+fileNamePath;
-                if(displayMB)
-                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
-                return false;
-            }
-
             //Got a Command - Check if Good Command
 
             if(line.contains ('|'))
             {
+                if(line.startsWith (RECOIL_R2SCMD))
+                {
+                    lgFileLoadFail = true;
+                    lgFile.close();
+                    QString tempCrit = "Recoil_R2S command doesn't support the '|'.\nLine Number: "+QString::number(lineNumber)+"\nCMD: Recoil_R2S"+"\nFile: "+fileNamePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return false;
+                }
+
                 line.replace(" |","|");
                 line.replace("| ","|");
 
@@ -791,8 +1100,6 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                 }
             }
 
-
-
             //If Got a Signal and Player, then add Command
             if(gotSignal && gotPlayer)
             {
@@ -807,16 +1114,28 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                 }
                 else
                 {
-                    commands << line;
+                    isGoodLG = false;
 
-                    //At Last Line of the File
-                    //qDebug() << "Last1 Signal: " << signal << " Commands: " << commands;
+                    if(playerForCMD == -1)
+                        isGoodLG = true;
+                    else if(playerForCMD < MAXGAMEPLAYERS && loadedLGNumbersTest[playerForCMD] != UNASSIGN)
+                        isGoodLG = true;
+
+                    if(isGoodLG)
+                    {
+
+                        commands << line;
+
+                        if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
+                            signalsAndCommandsCountTest++;
+
+                        //At Last Line of the File
+                        //qDebug() << "Last1 Signal: " << signal << " Commands: " << commands;
+                    }
 
                     gotPlayer = false;
                     gotCommands = false;
                     gotSignal = false;
-                    if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
-                        signalsAndCommandsCountTest++;
 
                     commands.clear ();
                 }
@@ -832,6 +1151,170 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
             }
 
         }
+        else if(line[0] == RECOMMANDSTARTCHAR)
+        {
+            //Got a Optional Recoil/Reload Command - Check if Choosen Option and if Good Command
+
+            //Do 4 Checks before Start Processing
+            //If No Recoil Option Data Loaded - hasRecoilOption
+            if(!hasRecoilOption)
+            {
+                lgFile.close();
+                QString tempCrit = "Recoil\\Reload Option command data is missing in game file.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+line+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            //Check for |
+            if(line.contains ('|'))
+            {
+                lgFile.close();
+                QString tempCrit = "Recoil\\Reload Option Commands command doesn't support the '|'.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+line+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            //Check for All Players
+            if(playerForCMD < 0)
+            {
+                lgFile.close();
+                QString tempCrit = "Recoil\\Reload Option Commands command doesn't support the *All players.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+line+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            //Check for Got Output Signal, but No Player
+            if(gotSignal && !gotPlayer)
+            {
+                lgFile.close();
+                QString tempCrit = "Recoil\\Reload Option Commands command has Output Signal, but no Player.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+line+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            QString tmpCMD;
+            bool skipReloadCMD = false;
+            bool isReloadCMD = false;
+            QString chkLine = line;
+
+            //Get Recoil/Reload Option for Loaded Light Gun Player
+            quint8 reOption = testLoadRecoilForPLayer[playerForCMD];
+
+            //If Loaded Light Gun Doesn't Support Reload & Is a Reload Option Command, then Skip
+            if(line.startsWith(OPTIONRELOADCMD))
+                isReloadCMD = true;
+
+            if(isReloadCMD && !testLoadedLGSupportReload[playerForCMD])
+                skipReloadCMD = true;
+
+            //If Recoil_R2S with Skew Percentage, then Need to Remove Skew Percentage for Check
+            if(line.startsWith (OPTIONRECOIL_R2SCMD) && line.size() > RECOIL_R2SCMDCNT)
+            {
+                subCommands = line.split(' ', Qt::SkipEmptyParts);
+                chkLine = subCommands[0];
+            }
+
+            //Check if Command is in Loaded Light Gun Recoil/Reload String List and Not to Skip Reload Command
+            if(recoilCMDsMap[reOption].contains(chkLine) && !skipReloadCMD)
+            {
+                //If Command Matches Loaded Light Gun, then Replace # with >
+                tmpCMD = line;
+                tmpCMD[0] = COMMANDSTARTCHAR;
+
+                //If Recoil_R2S, then Set-up and Check
+                if(tmpCMD.startsWith (RECOIL_R2SCMD) && tmpCMD.size() > RECOIL_R2SCMDCNT)
+                {
+                    if(subCommands.size() > 2)
+                    {
+                        lgFile.close();
+                        QString tempCrit = "Too many variables after Recoil_R2S command. Can only have 0-1 variable. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+subCommands[2]+"\nFile: "+fileNamePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return false;
+                    }
+
+                    //recoilR2SSkewPrec[playerForCMD] = subCommands[1].toULong (&isNumber);
+
+                    if(!isNumber)
+                    {
+                        lgFile.close();
+                        QString tempCrit = "Recoil_R2S Skew is not a number.\nLine Number: "+QString::number(lineNumber)+"\nSkew Number:"+subCommands[1]+"\nFile: "+fileNamePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return false;
+                    }
+
+                    tmpCMD = subCommands[0];
+                    tmpCMD[0] = COMMANDSTARTCHAR;
+                }
+
+
+                //Check Command to to see if it is good
+                isGoodCmd = CheckLGCommand(tmpCMD);
+
+                if(!isGoodCmd)
+                {
+                    lgFile.close();
+                    QString tempCrit = "Command(>) is not found in the command list. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+line+"\nFile: "+fileNamePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return false;
+                }
+
+
+                //If Got a Signal and Player, then add Command
+                if(gotSignal && gotPlayer)
+                {
+
+                    //Check to See if Not at Last Line
+                    if(!in.atEnd ())
+                    {
+                        //Last Data Must Be Commands
+                        commands << tmpCMD;
+
+                        gotCommands = true;
+                    }
+                    else
+                    {
+                        isGoodLG = false;
+
+                        if(playerForCMD == -1)
+                            isGoodLG = true;
+                        else if(playerForCMD < MAXGAMEPLAYERS && loadedLGNumbersTest[playerForCMD] != UNASSIGN)
+                            isGoodLG = true;
+
+                        if(isGoodLG)
+                        {
+                            //If at End of Game File, then Add Signal & Commands to QMap
+                            commands << tmpCMD;
+                            signalsAndCommands.insert(signal, commands);
+
+                            if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
+                                signalsAndCommandsCountTest++;
+                        }
+
+                        gotPlayer = false;
+                        gotCommands = false;
+                        gotSignal = false;
+
+                        commands.clear ();
+                    }
+                }
+                else if(gotSignal && !gotPlayer && gotCommands)
+                {
+                    //If Got a Signal and Command, with No Player
+                    lgFile.close();
+                    QString tempCrit = "No player(*) between a signal(:) and command(>). Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nSignal: "+signal+"\nFile: "+fileNamePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return false;
+                }
+            }  //if(recoilCMDsMap[reOption].contains(line))
+        }  //else if(line[0] == RECOMMANDSTARTCHAR)
         else
         {
             //Something went wrong. Extra Line
@@ -847,13 +1330,22 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
     //If there is a blank line at the end, then need to enter the last data
     if(gotSignal && gotPlayer && gotCommands)
     {
-        //qDebug() << "Last2 Signal: " << signal << " Commands: " << commands;
+        isGoodLG = false;
 
-        if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
-            signalsAndCommandsCountTest++;
+        if(playerForCMD == -1)
+            isGoodLG = true;
+        else if(playerForCMD < MAXGAMEPLAYERS && loadedLGNumbersTest[playerForCMD] != UNASSIGN)
+            isGoodLG = true;
+
+        //qDebug() << "Last2 Signal: " << signal << " Commands: " << commands;
+        if(isGoodLG)
+        {
+            if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
+                signalsAndCommandsCountTest++;
+        }
     }
 
-    if(signalsAndCommandsCountTest == 0)
+    if(signalsAndCommandsCountTest == 0 && ignoreUselessDLGGF == false)
     {
         //No Signal, Player, & Command was Loaded
         lgFile.close();
@@ -2888,6 +3380,7 @@ void HookerEngine::LoadLGFile()
     quint8 tempDLGNum;
     QString tempLine;
     quint8 tempPlayer;
+    qint16 playerForCMD;
     bool isGoodCmd;
     QStringList subCommands;
     quint8 subCmdsCnt;
@@ -2895,6 +3388,27 @@ void HookerEngine::LoadLGFile()
     bool isOutput = false;
     quint8 unassignLG = 0;
     quint16 signalsAndCommandsCountTest = 0;
+
+    bool gameRecoilsSupported[NUMBEROFRECOILS];
+    bool gameReloadsSupported[NUMBEROFRECOILS];
+    QStringList ammoValueCMDs;
+    QStringList recoilCMDs;
+    QStringList recoilR2SCMDs;
+    QStringList recoilValueCMDs;
+    QMap<quint8,QStringList> recoilCMDsMap;
+    bool hasRecoilOption = false;
+
+    bool isGoodLG;
+
+    for(quint8 x = 0; x < MAXGAMEPLAYERS; x++)
+    {
+        gameRecoilsSupported[x] = false;
+        gameReloadsSupported[x] = false;
+        loadRecoilForPLayer[x] = 1;
+        foundRecoilForPlayer[x] = false;
+    }
+
+
 
     //Close Any Old USB HIDs from INI Side
     CloseINIUSBHID();
@@ -3005,9 +3519,15 @@ void HookerEngine::LoadLGFile()
                         {
                             isLoadedLGUSB[i] = true;
                             loadedLGComPortNumber[i] = UNASSIGN;
-                            isRecoilDelaySet[i] = true;
-                            delayRecoilTime[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetRecoilDelay ();
-                            openSolenoidOrRecoilDelay[i].setInterval (delayRecoilTime[i]);
+
+                            if(p_comDeviceList->p_lightGunList[lgNumber]->IsRecoilDelay())
+                            {
+                                isRecoilDelaySet[i] = true;
+                                delayRecoilTime[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetRecoilDelay ();
+                                openSolenoidOrRecoilDelay[i].setInterval (delayRecoilTime[i]);
+                            }
+                            else
+                                isRecoilDelaySet[i] = false;
                         }
                         else
                         {
@@ -3016,6 +3536,16 @@ void HookerEngine::LoadLGFile()
                             isRecoilDelaySet[i] = false;
                             openSolenoidOrRecoilDelay[i].setInterval (OPENSOLENOIDDEFAULTTIME);
                         }
+
+                        //Does Light Gun Support Recoil_Value Command
+                        loadedLGSupportRecoilValue[i] = p_comDeviceList->p_lightGunList[lgNumber]->IsRecoilValueSupported ();
+                        //Does Light Gun Support Reload
+                        loadedLGSupportReload[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetSupportedReload ();
+                        //Light Gun Recoil Priority
+                        p_loadedLGRecoilPriority[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetRecoilPriorityHE();
+
+                        //for(quint8 y = 0; y < 4; y++)
+                        //    qDebug() << "Player" << i+1 << "recoil priority:" << p_loadedLGRecoilPriority[i][y];
 
                         //Get Display Refresh, If None is set, Use Default Display Refresh
                         bool isRefreshSet;
@@ -3043,6 +3573,217 @@ void HookerEngine::LoadLGFile()
                 begin = false;
             }
         }
+        else if(line == RECOILRELOAD)
+        {
+            //Loads Up Support Recoil & Reload Options in Game File
+            quint8 index = 0;
+
+            //Get Ammo_Value: Recoil and Reload Info from Game File Header
+            line = in.readLine();
+            lineNumber++;
+            line.replace("  ", " ");
+
+            if(line.startsWith (AMMOVALUECMDONLY))
+            {
+                QStringList ammoValueSL = line.split (' ', Qt::SkipEmptyParts);
+                if(ammoValueSL[1] == "1")
+                {
+                    gameRecoilsSupported[0] = true;
+                    gameReloadsSupported[0] = true;
+                    ammoValueSL[0].prepend('#');
+                    ammoValueCMDs << ammoValueSL[0];
+
+
+                    if(ammoValueSL.length() > 2)
+                    {
+                        ammoValueSL[2].prepend('#');
+                        ammoValueCMDs << ammoValueSL[2];
+                    }
+                    else
+                        ammoValueCMDs << ammoValueSL[0];
+                }
+                else
+                    ammoValueCMDs << "" << "";
+            }
+            else
+            {
+                lgFileLoadFail = true;
+                lgFile.close();
+                QString tempCrit = "The line didn't match 'Ammo_Value' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return;
+            }
+
+            recoilCMDsMap.insert (0, ammoValueCMDs);
+
+            //Get Recoil: Recoil and Reload Info from Game File Header
+            line = in.readLine();
+            lineNumber++;
+            line.replace("  ", " ");
+
+            if(line.startsWith (RECOILCMDONLY))
+            {
+                QStringList recoilSL = line.split (' ', Qt::SkipEmptyParts);
+                if(recoilSL[1] == "1")
+                {
+                    gameRecoilsSupported[1] = true;
+                    recoilSL[0].prepend('#');
+                    recoilCMDs << recoilSL[0];
+
+                    if(recoilSL.length() > 2)
+                    {
+                        recoilSL[2].prepend('#');
+                        recoilCMDs << recoilSL[2];
+                        gameReloadsSupported[1] = true;
+                    }
+                    else
+                        recoilCMDs << "";
+                }
+                else
+                    recoilCMDs << "" << "";
+            }
+            else
+            {
+                lgFileLoadFail = true;
+                lgFile.close();
+                QString tempCrit = "The line didn't match 'Recoil' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return;
+            }
+
+            recoilCMDsMap.insert (1, recoilCMDs);
+
+            //Get Recoil_R2S: Recoil and Reload Info from Game File Header
+            line = in.readLine();
+            lineNumber++;
+            line.replace("  ", " ");
+
+            if(line.startsWith (RECOIL_R2SONLY))
+            {
+                QStringList recoilR2SSL = line.split (' ', Qt::SkipEmptyParts);
+                if(recoilR2SSL[1] == "1")
+                {
+                    gameRecoilsSupported[2] = true;
+                    recoilR2SSL[0].prepend('#');
+                    recoilR2SCMDs << recoilR2SSL[0];
+
+                    if(recoilR2SSL.length() > 2)
+                    {
+                        recoilR2SSL[2].prepend('#');
+                        recoilR2SCMDs << recoilR2SSL[2];
+                        gameReloadsSupported[2] = true;
+                    }
+                    else
+                        recoilR2SCMDs << "";
+                }
+                else
+                    recoilR2SCMDs << "" << "";
+            }
+            else
+            {
+                lgFileLoadFail = true;
+                lgFile.close();
+                QString tempCrit = "The line didn't match 'Recoil_R2S' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return;
+            }
+
+            recoilCMDsMap.insert (2, recoilR2SCMDs);
+
+            //Get Recoil_Value: Recoil and Reload Info from Game File Header
+            line = in.readLine();
+            lineNumber++;
+            line.replace("  ", " ");
+
+            if(line.startsWith (RECOILVALUEONLY))
+            {
+                QStringList recoilValueSL = line.split (' ', Qt::SkipEmptyParts);
+                if(recoilValueSL[1] == "1")
+                {
+                    gameRecoilsSupported[3] = true;
+                    recoilValueSL[0].prepend('#');
+                    recoilValueCMDs << recoilValueSL[0];
+
+                    if(recoilValueSL.length() > 2)
+                    {
+                        recoilValueSL[2].prepend('#');
+                        recoilValueCMDs << recoilValueSL[2];
+                        gameReloadsSupported[3] = true;
+                    }
+                    else
+                        recoilValueCMDs << "";
+                }
+                else
+                    recoilValueCMDs << "" << "";
+            }
+            else
+            {
+                lgFileLoadFail = true;
+                lgFile.close();
+                QString tempCrit = "The line didn't match 'Recoil_Value' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return;
+            }
+
+            recoilCMDsMap.insert (3, recoilValueCMDs);
+
+            //Light Gun Recoil & Priority Matching with the Game File Supported
+            for(quint8 i = 0; i < numberLGPlayers; i++)
+            {
+                if(loadedLGNumbers[i] != UNASSIGN)
+                {
+                    while(!foundRecoilForPlayer[i] && index < NUMBEROFRECOILS)
+                    {
+                        if(p_loadedLGRecoilPriority[i][index] == 0 && gameRecoilsSupported[0])
+                        {
+                            loadRecoilForPLayer[i] = 0;
+                            foundRecoilForPlayer[i] = true;
+                        }
+                        else if(p_loadedLGRecoilPriority[i][index] == 1 && gameRecoilsSupported[1])
+                        {
+                            loadRecoilForPLayer[i] = 1;
+                            foundRecoilForPlayer[i] = true;
+                        }
+                        else if(p_loadedLGRecoilPriority[i][index] == 2 && gameRecoilsSupported[2])
+                        {
+                            loadRecoilForPLayer[i] = 2;
+                            foundRecoilForPlayer[i] = true;
+                        }
+                        else if(p_loadedLGRecoilPriority[i][index] == 3 && loadedLGSupportRecoilValue[i] && gameRecoilsSupported[3])
+                        {
+                            loadRecoilForPLayer[i] = 3;
+                            foundRecoilForPlayer[i] = true;
+                        }
+
+                        index++;
+                    }
+
+                    //qDebug() << "Player" << i+1 << "foundRecoilForPlayer" << foundRecoilForPlayer[i] << "loadRecoilForPLayer" << loadRecoilForPLayer[i];
+                }
+                index = 0;
+            }
+
+            //Check to Make Sure Recoil Option Found for All Loaded Light Gun Players
+            for(quint8 i = 0; i < numberLGPlayers; i++)
+            {
+                if(!foundRecoilForPlayer[i] && loadedLGNumbers[i] != UNASSIGN)
+                {
+                    lgFileLoadFail = true;
+                    lgFile.close();
+                    QString tempCrit = "Cannot find a supported recoil option.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return;
+                }
+            }
+
+            hasRecoilOption = true;
+
+        }  //else if(line == RECOILRELOAD)
         else if(line[0] == '[')
         {
             //Nothing In Here Yet, But Might Be Used Later
@@ -3057,15 +3798,29 @@ void HookerEngine::LoadLGFile()
             //If Got a Signal & Player(s) and Command(s), then Load into QMap
             if(gotSignal && gotPlayer && gotCommands)
             {
-                //qDebug() << "Signal: " << signal << " Commands: " << commands;
+                isGoodLG = false;
 
-                signalsAndCommands.insert(signal, commands);
+                if(playerForCMD == -1)
+                    isGoodLG = true;
+                else if(playerForCMD < MAXGAMEPLAYERS && loadedLGNumbers[playerForCMD] != UNASSIGN)
+                    isGoodLG = true;
+
+                //If Players is not All Players or Light Gun for Player is not UNASSIGN, then put Command into QMap. If Not, then ignore
+                //and clear things out
+                if(isGoodLG)
+                {
+                    //qDebug() << "Signal: " << signal << " Commands: " << commands;
+
+                    signalsAndCommands.insert(signal, commands);
+
+                    if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
+                        signalsAndCommandsCountTest++;
+                }
+
                 gotPlayer = false;
                 gotCommands = false;
 
-                if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
-                    signalsAndCommandsCountTest++;
-
+                //Clear out Command String List, Since loaded into QMap
                 commands.clear ();
             }
             else if(gotSignal && !gotPlayer && !gotCommands)
@@ -3073,9 +3828,14 @@ void HookerEngine::LoadLGFile()
                 //Signal that has no players and no commands
                 signalsNoCommands << signal;
             }
+            else if(gotSignal && gotPlayer && !gotCommands)
+            {
+                //Not Using that Recoil/Reload Option
+                gotPlayer = false;
+                commands.clear ();
+            }
 
-            //Process Current Line
-
+            //Check if Signal Line has an Equal Sign. User Probably Thinks this is like a MAMEHooker INI File and hasn't Read the ReadMe
             if(line.contains ('='))
             {
                 lgFileLoadFail = true;
@@ -3097,6 +3857,17 @@ void HookerEngine::LoadLGFile()
         else if(line[0] == PLAYERSTARTCHAR)
         {
             //Got a Player
+
+            if(gotPlayer && !gotCommands)
+            {
+                lgFileLoadFail = true;
+                lgFile.close();
+                QString tempCrit = "There are two or more Player lines back to back.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return;
+            }
+
 
             //If Got a Signal, Add The Player. If Not then Sometrhing Went Wrong
             if(gotSignal)
@@ -3124,12 +3895,14 @@ void HookerEngine::LoadLGFile()
                         return;
                     }
 
+                    playerForCMD = tempPlayer - 1;
+
                     //Check if Player Number Matches Loaded Players Above
                     bool playerMatch = false;
 
                     for(quint8 i = 0; i < numberLGPlayers; i++)
                     {
-                        if(tempPlayer-1 == i)
+                        if(playerForCMD == i)
                             playerMatch = true;
                     }
 
@@ -3143,7 +3916,13 @@ void HookerEngine::LoadLGFile()
                         return;
                     }
 
-                } //If not *P[1-4], then muust be *All, If not something went wrong
+                } //If not *P[1-4], then must be *All, If not something went wrong
+                else if(line[1] == ALL2CHAR)
+                {
+                    //All Players Been Selected
+                    playerForCMD = -1;
+
+                }
                 else if(line != ALLPLAYERS)
                 {
                     lgFileLoadFail = true;
@@ -3155,7 +3934,8 @@ void HookerEngine::LoadLGFile()
                 }
 
                 //First thing of the Command is the Player(s)
-                commands << line;
+                if(!gotPlayer)
+                    commands << line;
 
                 gotPlayer = true;
             }
@@ -3232,11 +4012,11 @@ void HookerEngine::LoadLGFile()
                         return;
                     }
 
-                    recoilR2SSkewPrec[tempPlayer - 1] = subCommands[1].toULong (&isNumber);
+                    recoilR2SSkewPrec[playerForCMD] = subCommands[1].toULong (&isNumber);
 
                     if(!isNumber)
                     {
-                        recoilR2SSkewPrec[tempPlayer - 1] = 100;
+                        recoilR2SSkewPrec[playerForCMD] = 100;
                         lgFileLoadFail = true;
                         lgFile.close();
                         QString tempCrit = "Recoil_R2S Skew is not a number.\nLine Number: "+QString::number(lineNumber)+"\nSkew Number:"+subCommands[1]+"\nFile: "+gameLGFilePath;
@@ -3247,7 +4027,6 @@ void HookerEngine::LoadLGFile()
 
                     line = subCommands[0];
                 }
-
 
                 //Check Command to to see if it is good
                 isGoodCmd = CheckLGCommand(line);
@@ -3263,15 +4042,12 @@ void HookerEngine::LoadLGFile()
                 }
             }
 
-
-
             //If Got a Signal and Player, then add Command
             if(gotSignal && gotPlayer)
-            {
-
+            {   
                 //Check to See iff at Last Line
                 if(!in.atEnd ())
-                {    
+                {
                     //Last Data Must Be Commands
                     commands << line;
 
@@ -3279,18 +4055,28 @@ void HookerEngine::LoadLGFile()
                 }
                 else
                 {
-                    commands << line;
+                    isGoodLG = false;
 
-                    //At Last Line of the File
-                    //qDebug() << "Last1 Signal: " << signal << " Commands: " << commands;
+                    if(playerForCMD == -1)
+                        isGoodLG = true;
+                    else if(playerForCMD < MAXGAMEPLAYERS && loadedLGNumbers[playerForCMD] != UNASSIGN)
+                        isGoodLG = true;
 
-                    signalsAndCommands.insert(signal, commands);
+                    if(isGoodLG)
+                    {
+                        commands << line;
+                        signalsAndCommands.insert(signal, commands);
+
+                        if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
+                            signalsAndCommandsCountTest++;
+
+                        //At Last Line of the File
+                        //qDebug() << "Last1 Signal: " << signal << " Commands: " << commands;
+                    }
+
                     gotPlayer = false;
                     gotCommands = false;
                     gotSignal = false;
-
-                    if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
-                        signalsAndCommandsCountTest++;
 
                     commands.clear ();
                 }
@@ -3305,8 +4091,180 @@ void HookerEngine::LoadLGFile()
                     QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return;
             }
+        }  //else if(line[0] == COMMANDSTARTCHAR)
+        else if(line[0] == RECOMMANDSTARTCHAR)
+        {
+            //Got a Optional Recoil/Reload Command - Check if Choosen Option and if Good Command
 
-        }
+            //Do 4 Checks before Start Processing
+            //If No Recoil Option Data Loaded - hasRecoilOption
+            if(!hasRecoilOption)
+            {
+                lgFileLoadFail = true;
+                lgFile.close();
+                QString tempCrit = "Recoil\\Reload Option command data is missing in game file.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+line+"\nFile: "+gameLGFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return;
+            }
+
+            //Check for |
+            if(line.contains ('|'))
+            {
+                lgFileLoadFail = true;
+                lgFile.close();
+                QString tempCrit = "Recoil\\Reload Option Commands command doesn't support the '|'.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+line+"\nFile: "+gameLGFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return;
+            }
+
+            //Check for All Players
+            if(playerForCMD < 0)
+            {
+                lgFileLoadFail = true;
+                lgFile.close();
+                QString tempCrit = "Recoil\\Reload Option Commands command doesn't support the *All players.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+line+"\nFile: "+gameLGFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return;
+            }
+
+            //Check for Got Output Signal, but No Player
+            if(gotSignal && !gotPlayer)
+            {
+                lgFileLoadFail = true;
+                lgFile.close();
+                QString tempCrit = "Recoil\\Reload Option Commands command has Output Signal, but no Player.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+line+"\nFile: "+gameLGFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return;
+            }
+
+            QString tmpCMD;
+            bool skipReloadCMD = false;
+            bool isReloadCMD = false;
+            QString chkLine = line;
+
+            //Get Recoil/Reload Option for Loaded Light Gun Player
+            quint8 reOption = loadRecoilForPLayer[playerForCMD];
+
+            //If Loaded Light Gun Doesn't Support Reload & Is a Reload Option Command, then Skip
+            if(line.startsWith(OPTIONRELOADCMD))
+                isReloadCMD = true;
+
+            if(isReloadCMD && !loadedLGSupportReload[playerForCMD])
+                skipReloadCMD = true;
+
+            //If Recoil_R2S with Skew Percentage, then Need to Remove Skew Percentage for Check
+            if(line.startsWith (OPTIONRECOIL_R2SCMD) && line.size() > RECOIL_R2SCMDCNT)
+            {
+                subCommands = line.split(' ', Qt::SkipEmptyParts);
+                chkLine = subCommands[0];
+            }
+
+            //Check if Command is in Loaded Light Gun Recoil/Reload String List and Not to Skip Reload Command
+            if(recoilCMDsMap[reOption].contains(chkLine) && !skipReloadCMD)
+            {
+                //If Command Matches Loaded Light Gun, then Replace # with >
+                tmpCMD = line;
+                tmpCMD[0] = COMMANDSTARTCHAR;
+
+                //If Recoil_R2S, then Set-up and Check
+                if(tmpCMD.startsWith (RECOIL_R2SCMD) && tmpCMD.size() > RECOIL_R2SCMDCNT)
+                {
+                    if(subCommands.size() > 2)
+                    {
+                        lgFileLoadFail = true;
+                        lgFile.close();
+                        QString tempCrit = "Too many variables after Recoil_R2S command. Can only have 0-1 variable. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+subCommands[2]+"\nFile: "+gameLGFilePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return;
+                    }
+
+                    recoilR2SSkewPrec[playerForCMD] = subCommands[1].toULong (&isNumber);
+
+                    if(!isNumber)
+                    {
+                        recoilR2SSkewPrec[playerForCMD] = 100;
+                        lgFileLoadFail = true;
+                        lgFile.close();
+                        QString tempCrit = "Recoil_R2S Skew is not a number.\nLine Number: "+QString::number(lineNumber)+"\nSkew Number:"+subCommands[1]+"\nFile: "+gameLGFilePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return;
+                    }
+
+                    tmpCMD = subCommands[0];
+                    tmpCMD[0] = COMMANDSTARTCHAR;
+                }
+
+
+                //Check Command to to see if it is good
+                isGoodCmd = CheckLGCommand(tmpCMD);
+
+                if(!isGoodCmd)
+                {
+                    lgFileLoadFail = true;
+                    lgFile.close();
+                    QString tempCrit = "Command(>) is not found in the command list. Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nCMD: "+line+"\nFile: "+gameLGFilePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return;
+                }
+
+
+                //If Got a Signal and Player, then add Command
+                if(gotSignal && gotPlayer)
+                {
+
+                    //Check to See if Not at Last Line
+                    if(!in.atEnd ())
+                    {
+                        //Last Data Must Be Commands
+                        commands << tmpCMD;
+
+                        gotCommands = true;
+                    }
+                    else
+                    {
+                        isGoodLG = false;
+
+                        if(playerForCMD == -1)
+                            isGoodLG = true;
+                        else if(playerForCMD < MAXGAMEPLAYERS && loadedLGNumbers[playerForCMD] != UNASSIGN)
+                            isGoodLG = true;
+
+                        if(isGoodLG)
+                        {
+                            //If at End of Game File, then Add Signal & Commands to QMap
+                            commands << tmpCMD;
+                            signalsAndCommands.insert(signal, commands);
+
+                            if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
+                                signalsAndCommandsCountTest++;
+                        }
+
+                        gotPlayer = false;
+                        gotCommands = false;
+                        gotSignal = false;
+
+                        commands.clear ();
+                    }
+                }
+                else if(gotSignal && !gotPlayer && gotCommands)
+                {
+                    //If Got a Signal and Command, with No Player
+                    lgFileLoadFail = true;
+                    lgFile.close();
+                    QString tempCrit = "No player(*) between a signal(:) and command(>). Please close program and solve file problem.\nLine Number: "+QString::number(lineNumber)+"\nSignal: "+signal+"\nFile: "+gameLGFilePath;
+                    if(displayMB)
+                        QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                    return;
+                }
+            }  //if(recoilCMDsMap[reOption].contains(line))
+        }  //else if(line[0] == RECOMMANDSTARTCHAR)
         else
         {
             //Something went wrong. Extra Line
@@ -3323,12 +4281,22 @@ void HookerEngine::LoadLGFile()
     //If there is a blank line at the end, then need to enter the last data
     if(gotSignal && gotPlayer && gotCommands)
     {
-        //qDebug() << "Last2 Signal: " << signal << " Commands: " << commands;
+        isGoodLG = false;
 
-        signalsAndCommands.insert(signal, commands);
+        if(playerForCMD == -1)
+            isGoodLG = true;
+        else if(playerForCMD < MAXGAMEPLAYERS && loadedLGNumbers[playerForCMD] != UNASSIGN)
+            isGoodLG = true;
 
-        if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
-            signalsAndCommandsCountTest++;
+        if(isGoodLG)
+        {
+            //qDebug() << "Last2 Signal: " << signal << " Commands: " << commands;
+
+            signalsAndCommands.insert(signal, commands);
+
+            if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
+                signalsAndCommandsCountTest++;
+        }
     }
     else if(gotSignal && !gotPlayer && !gotCommands)
     {
@@ -3379,8 +4347,6 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
     bool dlgCMDFound;
     bool findDLGCMDs;
     quint8 charToNumber;
-
-
 
     //qDebug() << "Signal: " << signalName << " Value: " << value;
 
@@ -3441,14 +4407,12 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
 
 
         //Check Chars for Faster Processing
-        if(commands[i][1] == OPENCOMPORT2CHAR)
+        if(commands[i][1] == OPENCOMPORT2CHAR && commands[i][2] == OPENCOMPORT2CHAR2)
         {
-
             if(commands[i].length () > OPENCOMPORTLENGTH)
                 OpenLGComPort(allPlayers, playerNum, true);
             else
                 OpenLGComPort(allPlayers, playerNum, false);
-
         }
         else if(commands[i][1] == CLOSECOMPORT2CHAR)
         {
@@ -3505,7 +4469,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                         {
                             if(commands[i][2] == 'm')
                             {
-                                //Has to Be Ammo or Ammo_Value - Reload is checked in AmmoCommands & AmmoValueCommands
+                                //Has to Be Ammo_Value - Reload is checked in AmmoValueCommands
                                 if(isRecoilDelaySet[player])
                                 {
                                     if(blockRecoil[player])
@@ -3515,10 +4479,8 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                     }
                                     else
                                     {
-                                        if(commands[i].size() > AMMOCMDCOUNT)
-                                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(&dlgCMDFound, value.toUShort());
-                                        else
-                                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoCommands(&dlgCMDFound, value.toUShort());
+                                        dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(&dlgCMDFound, value.toUShort());
+
                                         openSolenoidOrRecoilDelay[player].start();
                                         blockRecoil[player] = true;
                                         doRecoilDelayEnds[player] = false;
@@ -3527,11 +4489,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                 else
                                 {
                                     //qDebug() << "CMD: " << commands[i] << " value: " << value;
-
-                                    if(commands[i].size() > AMMOCMDCOUNT)
-                                        dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(&dlgCMDFound, value.toUShort());
-                                    else
-                                        dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoCommands(&dlgCMDFound, value.toUShort());
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(&dlgCMDFound, value.toUShort());
                                 }
                             }
                             else if(commands[i][2] == 's')
@@ -3629,10 +4587,13 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                         if(commands[i][1] == 'R')
                         {
                             //Two Commands Start with ">R", If ">Rel" then Reload, If Not then Recoil, and Then only when value != 0
-                            if(commands[i][3] == 'l' && value != "0")
+                            if(commands[i][3] == 'l')
                             {
-                                //Must Be Reload Command
-                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ReloadCommands(&dlgCMDFound);
+                                //Reload_Value And Reload
+                                if(commands[i].size() > RELOADVALUECMDSIZE)
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ReloadValueCommands(&dlgCMDFound, value.toUShort());
+                                else if(value != "0")
+                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ReloadCommands(&dlgCMDFound);
                             }
                             else if(commands[i][3] == 'c')
                             {
@@ -3717,53 +4678,45 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                                 pRecoilR2STimer[player].stop ();
                                                 dlgCMDFound = false;
 
-                                                if(isRecoilDelaySet[player] && doRecoilDelayEnds[player])
-                                                    doRecoilDelayEnds[player] = false;
+                                                doRecoilDelayEnds[player] = false;
                                             }
                                         }
                                     }
                                     else
                                     {
                                         //Recoil_Value Command - No Support for Delay Recoil
+                                        dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilValueCommands(&dlgCMDFound, value.toUShort());
+                                        //qDebug() << "Recoil_Value: " << value << " CMDs: " << dlgCommands[0];
 
-                                        //If Recoil_Value is blocked, do nothing
-                                        if(blockRecoilValue[player])
-                                            dlgCMDFound = false;
-                                        else
+                                        if(dlgCMDFound)
                                         {
-                                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilValueCommands(&dlgCMDFound, value.toUShort());
-                                            //qDebug() << "Recoil_Value: " << value << " CMDs: " << dlgCommands[0];
-
-                                            if(dlgCMDFound)
+                                            if(value.toUShort() == 0)
                                             {
-                                                if(value.toUShort() == 0)
-                                                {
-                                                    if(closeSolenoidCMDs[player].isEmpty ())
-                                                        closeSolenoidCMDs[player] = dlgCommands;
+                                                if(closeSolenoidCMDs[player].isEmpty ())
+                                                    closeSolenoidCMDs[player] = dlgCommands;
 
-                                                    if(isLGSolenoidOpen[player])
-                                                    {
-                                                        openSolenoidOrRecoilDelay[player].stop ();
-                                                        isLGSolenoidOpen[player] = false;
-                                                    }
+                                                if(isLGSolenoidOpen[player])
+                                                {
+                                                    openSolenoidOrRecoilDelay[player].stop ();
+                                                    isLGSolenoidOpen[player] = false;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                //If Solenoid is Close, then mark it is Open and Start Timer
+                                                if(!isLGSolenoidOpen[player])
+                                                {
+                                                    isLGSolenoidOpen[player] = true;
+                                                    openSolenoidOrRecoilDelay[player].start ();
                                                 }
                                                 else
                                                 {
-                                                    //If Solenoid is Close, then mark it is Open and Start Timer
-                                                    if(!isLGSolenoidOpen[player])
-                                                    {
-                                                        isLGSolenoidOpen[player] = true;
-                                                        openSolenoidOrRecoilDelay[player].start ();
-                                                    }
-                                                    else
-                                                    {
-                                                        //If Solenoid is Already Open, then Do Nothing
-                                                        dlgCMDFound = false;
+                                                    //If Solenoid is Already Open, then Do Nothing
+                                                    dlgCMDFound = false;
 
-                                                        //Make Sure if Timer is Running, if not Start it Then
-                                                        if(!openSolenoidOrRecoilDelay[player].isActive())
-                                                            openSolenoidOrRecoilDelay[player].start ();
-                                                    }
+                                                    //Make Sure if Timer is Running, if not Start it Then
+                                                    if(!openSolenoidOrRecoilDelay[player].isActive())
+                                                        openSolenoidOrRecoilDelay[player].start ();
                                                 }
                                             }
                                         }
@@ -3792,9 +4745,10 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                     }
                                     else
                                         dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
+
                                 }
                             }
-                        }
+                        }  //if(commands[i][1] == 'R')
                         else if(commands[i][1] == 'S' && value != "0")
                         {
                             //Must be Shake Command, Only Do Shake if Value != 0
@@ -3815,7 +4769,14 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                             //Must Be Null Command - Do Nothing
                             dlgCMDFound = false;
                         }
-
+                        else if(commands[i][1] == 'O')
+                        {
+                            //Offscreen Commands
+                            if(commands[i][OFFSCREENCHARAT] == OFFSCREENCHARATBUTTON)
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->OffscreenButtonCommands(&dlgCMDFound);
+                            else
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->OffscreenNormalShotCommands(&dlgCMDFound);
+                        }
                     }
 
 
@@ -3915,6 +4876,7 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum, bool noInit)
             else
             {
                 //For USB HID Connection
+                tempCPNum = UNASSIGN;
                 HIDInfo lgHIDInfo = p_comDeviceList->p_lightGunList[lightGun]->GetUSBHIDInfo ();
                 emit StartUSBHID(player, lgHIDInfo);
             }

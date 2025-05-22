@@ -91,6 +91,8 @@ private:
 
     void ProcessHIDInfo();
 
+    bool CheckRecoilComboBoxes();
+
     //void PrintHIDInfo();
 
     ///////////////////////////////////////////////////////////////////////////

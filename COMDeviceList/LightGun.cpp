@@ -1,10 +1,12 @@
 #include "LightGun.h"
 #include "../Global.h"
 
+#include "../../saeicmrterta.h"
+
 //Constructors
 
 //For RS3 Reaper Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -64,6 +66,14 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     displayAmmoLifeNumber = false;
     lifeBarMaxLife = 0;
 
+    lgRecoilPriority[0] = lgRecoils.ammoValue;
+    lgRecoilPriority[1] = lgRecoils.recoil;
+    lgRecoilPriority[2] = lgRecoils.recoilR2S;
+    lgRecoilPriority[3] = lgRecoils.recoilValue;
+
+    reloadNoRumble = reloadNR;
+    reloadDisable = reloadDis;
+
 
     FillSerialPortInfo();
 
@@ -72,7 +82,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 }
 
 //For Normal Serial Port Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -145,6 +155,14 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     displayAmmoLifeBar = false;
     displayAmmoLifeNumber = false;
     lifeBarMaxLife = 0;
+
+    lgRecoilPriority[0] = lgRecoils.ammoValue;
+    lgRecoilPriority[1] = lgRecoils.recoil;
+    lgRecoilPriority[2] = lgRecoils.recoilR2S;
+    lgRecoilPriority[3] = lgRecoils.recoilValue;
+
+    reloadNoRumble = reloadNR;
+    reloadDisable = reloadDis;
 
     FillSerialPortInfo();
 
@@ -269,12 +287,20 @@ LightGun::LightGun(LightGun const &lgMember)
     displayAmmoLifeNumber = lgMember.displayAmmoLifeNumber;
     lifeBarMaxLife = lgMember.lifeBarMaxLife;
 
+    lgRecoilPriority[0] = lgMember.lgRecoilPriority[0];
+    lgRecoilPriority[1] = lgMember.lgRecoilPriority[1];
+    lgRecoilPriority[2] = lgMember.lgRecoilPriority[2];
+    lgRecoilPriority[3] = lgMember.lgRecoilPriority[3];
+
+    reloadNoRumble = lgMember.reloadNoRumble;
+    reloadDisable = lgMember.reloadDisable;
+
     LoadDefaultLGCommands();
 
 }
 
 //For MX24 Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -349,13 +375,21 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     displayAmmoLifeNumber = false;
     lifeBarMaxLife = 0;
 
+    lgRecoilPriority[0] = lgRecoils.ammoValue;
+    lgRecoilPriority[1] = lgRecoils.recoil;
+    lgRecoilPriority[2] = lgRecoils.recoilR2S;
+    lgRecoilPriority[3] = lgRecoils.recoilValue;
+
+    reloadNoRumble = reloadNR;
+    reloadDisable = reloadDis;
+
     FillSerialPortInfo();
 
     LoadDefaultLGCommands();
 }
 
 //For JB Gun4IR
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -431,13 +465,81 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     displayAmmoLifeNumber = false;
     lifeBarMaxLife = 0;
 
+    lgRecoilPriority[0] = lgRecoils.ammoValue;
+    lgRecoilPriority[1] = lgRecoils.recoil;
+    lgRecoilPriority[2] = lgRecoils.recoilR2S;
+    lgRecoilPriority[3] = lgRecoils.recoilValue;
+
+    reloadNoRumble = reloadNR;
+    reloadDisable = reloadDis;
+
     FillSerialPortInfo();
 
     LoadDefaultLGCommands();
 }
 
 //Alien USB Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
+{
+    defaultLightGun = lgDefault;
+    defaultLightGunNum = dlgNum;
+    lightGunName = lgName;
+    lightGunNum = lgNumber;
+
+    usbHIDInfo = hidInfoStruct;
+
+    comPortNum = UNASSIGN;
+    comPortBaud = UNASSIGN;
+    comPortDataBits = UNASSIGN;
+    comPortParity = UNASSIGN;
+    comPortStopBits = UNASSIGN;
+    comPortFlow = UNASSIGN;
+
+    isDipSwitchPlayerNumberSet = false;
+    hubComPortNumber = UNASSIGN;
+    maxAmmoSet = false;
+    reloadValueSet = false;
+    disableReaperLEDs = false;
+    isAnalogStrengthSet = false;
+
+    lastAmmoValue = 0;
+
+    isUSBLightGun = true;
+    isRecoilDelaySet = false;
+    recoilDelay = 0;
+
+    //Display Init
+    hasDisplayAmmoInited = false;
+    hasDisplayLifeInited = false;
+    hasDisplayOtherInited = false;
+    hasDisplayAmmoAndLifeInited = false;
+    ammoDisplayValue = -1;
+    lifeDisplayValue = -1;
+    otherDisplayValue = -1;
+    displayAmmoPriority = true;
+    displayLifePriority = false;
+    displayOtherPriority = false;
+    displayRefresh = DISPLAYREFRESHDEFAULT;
+
+    displayAmmoLife = false;
+    displayAmmoLifeGlyphs = true;
+    displayAmmoLifeBar = false;
+    displayAmmoLifeNumber = false;
+    lifeBarMaxLife = 0;
+
+    lgRecoilPriority[0] = lgRecoils.ammoValue;
+    lgRecoilPriority[1] = lgRecoils.recoil;
+    lgRecoilPriority[2] = lgRecoils.recoilR2S;
+    lgRecoilPriority[3] = lgRecoils.recoilValue;
+
+    reloadNoRumble = reloadNR;
+    reloadDisable = reloadDis;
+
+    LoadDefaultLGCommands();
+}
+
+
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
 {
     defaultLightGun = lgDefault;
     defaultLightGunNum = dlgNum;
@@ -465,7 +567,10 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isUSBLightGun = true;
     isRecoilDelaySet = true;
 
-    recoilDelay = rcDelay;
+    if(rcDelay == AIMTRAKDELAYDFLT)
+        recoilDelay = rcDelay;
+    else
+        recoilDelay = AIMTRAKDELAYDFLT;
 
     //Display Init
     hasDisplayAmmoInited = false;
@@ -486,10 +591,16 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     displayAmmoLifeNumber = false;
     lifeBarMaxLife = 0;
 
+    lgRecoilPriority[0] = lgRecoils.ammoValue;
+    lgRecoilPriority[1] = lgRecoils.recoil;
+    lgRecoilPriority[2] = lgRecoils.recoilR2S;
+    lgRecoilPriority[3] = lgRecoils.recoilValue;
+
+    reloadNoRumble = reloadNR;
+    reloadDisable = reloadDis;
+
     LoadDefaultLGCommands();
 }
-
-
 
 
 //public member functions
@@ -629,6 +740,23 @@ void LightGun::SetDisplayAmmoAndLife(bool displayAAL, bool displayLG, bool displ
     displayAmmoLifeNumber = displayLN;
 
 }
+
+void LightGun::SetRecoilPriority(SupportedRecoils lgRecoils)
+{
+    lgRecoilPriority[0] = lgRecoils.ammoValue;
+    lgRecoilPriority[1] = lgRecoils.recoil;
+    lgRecoilPriority[2] = lgRecoils.recoilR2S;
+    lgRecoilPriority[3] = lgRecoils.recoilValue;
+}
+
+void LightGun::SetReloadOptions(bool reloadNR, bool reloadDis)
+{
+    reloadNoRumble = reloadNR;
+    reloadDisable = reloadDis;
+
+    LoadDefaultLGCommands();
+}
+
 
 //Get Member Functions
 
@@ -802,6 +930,11 @@ quint16 LightGun::GetRecoilDelay()
         return 0;
 }
 
+bool LightGun::IsRecoilDelay()
+{
+    return isRecoilDelaySet;
+}
+
 QString LightGun::GetComPortPath()
 {
     if(!isUSBLightGun)
@@ -850,6 +983,18 @@ quint16 LightGun::GetDisplayRefresh(bool *isRDS)
 
     return displayRefresh;
 }
+
+bool LightGun::GetReloadNoRumble()
+{
+    return reloadNoRumble;
+}
+
+bool LightGun::GetReloadDisabled()
+{
+    return reloadDisable;
+}
+
+
 
 void LightGun::CopyLightGun(LightGun const &lgMember)
 {
@@ -968,6 +1113,14 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
     displayAmmoLifeNumber = lgMember.displayAmmoLifeNumber;
     lifeBarMaxLife = lgMember.lifeBarMaxLife;
 
+    lgRecoilPriority[0] = lgMember.lgRecoilPriority[0];
+    lgRecoilPriority[1] = lgMember.lgRecoilPriority[1];
+    lgRecoilPriority[2] = lgMember.lgRecoilPriority[2];
+    lgRecoilPriority[3] = lgMember.lgRecoilPriority[3];
+
+    reloadNoRumble = lgMember.reloadNoRumble;
+    reloadDisable = lgMember.reloadDisable;
+
     LoadDefaultLGCommands();
 
 }
@@ -987,7 +1140,6 @@ void LightGun::LoadDefaultLGCommands()
     recoilCmdsSet = false;
     recoilR2SCmdsSet = false;
     reloadCmdsSet = false;
-    ammoCmdsSet = false;
     ammoValueCmdsSet = false;
     shakeCmdsSet = false;
     autoLedCmdsSet = false;
@@ -1003,6 +1155,8 @@ void LightGun::LoadDefaultLGCommands()
     displayOtherInitCmdsSet = false;
     displayRefreshSet = false;
     recoilValueCmdsSet = false;
+    offscreenButtonCmdsSet = false;
+    offscreenNormalShotCmdsSet = false;
 
 
     openComPortCmds.clear();
@@ -1012,7 +1166,6 @@ void LightGun::LoadDefaultLGCommands()
     recoilR2SCmds.clear();
     recoilValueCmds.clear();
     reloadCmds.clear();
-    ammoCmds.clear();
     ammoValueCmds.clear();
     shakeCmds.clear();
     autoLedCmds.clear();
@@ -1026,338 +1179,387 @@ void LightGun::LoadDefaultLGCommands()
     displayLifeInitCmds.clear();
     displayOtherCmds.clear();
     displayOtherInitCmds.clear();
+    offscreenButtonCmds.clear();
+    offscreenNormalShotCmds.clear();
 
     //If Not a Default Light Gun, then make sure defaultLightGunNum is 0
     //To load in nonDefaultLG.hor file
     if(!defaultLightGun)
         defaultLightGunNum = 0;
 
-    //Get Current Path
-    //currentPath = QDir::currentPath();
-    currentPath = QApplication::applicationDirPath();
 
-    dataPath = currentPath + "/" + DATAFILEDIR;
-
-    defaultLGFilePath = dataPath + "/" + DEFAULTLGFILENAMES_ARRAY[defaultLightGunNum];
-
-    QFile defaultLGCmdFile(defaultLGFilePath);
-
-    bool openFile = defaultLGCmdFile.open (QIODeviceBase::ReadOnly | QIODevice::Text);
-
-    if(!openFile)
+    if(defaultLightGunNum != AIMTRAK)
     {
-        QString tempCrit = "Can not open Default Light Gun command file to read. Please close program and solve file problem. Might be permissions problem.\nFile: "+defaultLGFilePath;
-        QMessageBox::critical (nullptr, "File Error", tempCrit, QMessageBox::Ok);
-        return;
-    }
 
-    //Create a Text Stream, to Stream in the Data Easier
-    QTextStream in(&defaultLGCmdFile);
+        //Get Current Path
+        //currentPath = QDir::currentPath();
+        currentPath = QApplication::applicationDirPath();
 
-    while(!in.atEnd ())
-    {
-        line = in.readLine();
+        dataPath = currentPath + "/" + DATAFILEDIR;
 
-        if(line.contains ('='))
+        defaultLGFilePath = dataPath + "/" + DEFAULTLGFILENAMES_ARRAY[defaultLightGunNum];
+
+        QFile defaultLGCmdFile(defaultLGFilePath);
+
+        bool openFile = defaultLGCmdFile.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+
+        if(!openFile)
         {
-            equalIndex = line.indexOf ('=',0);
-            lineLength = line.length ();
-
-            if(lineLength == equalIndex+1)
-                noCommands = true;
-            else
-                noCommands = false;
+            QString tempCrit = "Can not open Default Light Gun command file to read. Please close program and solve file problem. Might be permissions problem.\nFile: "+defaultLGFilePath;
+            QMessageBox::critical (nullptr, "File Error", tempCrit, QMessageBox::Ok);
+            return;
         }
-        else
-           noCommands = true;
 
+        //Create a Text Stream, to Stream in the Data Easier
+        QTextStream in(&defaultLGCmdFile);
 
-        if(line != ENDOFFILE && !noCommands)
+        while(!in.atEnd ())
         {
+            line = in.readLine();
 
-
-            splitLines = line.split ('=', Qt::SkipEmptyParts);
-
-            if(splitLines[1].contains ('|'))
-                commands = SplitLoadedCommands(splitLines[1]);
-            else
-                commands = splitLines[1].split (' ', Qt::SkipEmptyParts);
-
-
-            numberCommands = commands.length();
-
-            //See if Commands
-            if(numberCommands > 0)
+            if(line.contains ('='))
             {
-                //Get rid of before and after open spaces
-                splitLines[0] = splitLines[0].trimmed ();
+                equalIndex = line.indexOf ('=',0);
+                lineLength = line.length ();
 
-                //Now Find the
-                if(splitLines[0] == OPENCOMPORTONLY)
+                if(lineLength == equalIndex+1)
+                    noCommands = true;
+                else
+                    noCommands = false;
+            }
+            else
+                noCommands = true;
+
+
+            if(line != ENDOFFILE && !noCommands)
+            {
+                splitLines = line.split ('=', Qt::SkipEmptyParts);
+
+                if(splitLines[1].contains ('|'))
+                    commands = SplitLoadedCommands(splitLines[1]);
+                else
+                    commands = splitLines[1].split (' ', Qt::SkipEmptyParts);
+
+
+                numberCommands = commands.length();
+
+                //See if Commands
+                if(numberCommands > 0)
                 {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
+                    //Get rid of before and after open spaces
+                    splitLines[0] = splitLines[0].trimmed ();
 
-                        if(disableReaperLEDs)
+                    //Now Find the
+                    if(splitLines[0] == OPENCOMPORTONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
                         {
-                            if(commands[i] != DISABLEREAPERLEDSOPEN)
+                            commands[i] = commands[i].trimmed ();
+
+                            if(disableReaperLEDs)
+                            {
+                                if(commands[i] != DISABLEREAPERLEDSOPEN)
+                                    openComPortCmds << commands[i];
+                            }
+                            else
                                 openComPortCmds << commands[i];
                         }
-                        else
-                            openComPortCmds << commands[i];
+                        openComPortCmdsSet = true;
                     }
-                    openComPortCmdsSet = true;
-                }
-                else if(splitLines[0] == CLOSECOMPORTONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
+                    else if(splitLines[0] == CLOSECOMPORTONLY)
                     {
-                        commands[i] = commands[i].trimmed ();
-
-                        if(disableReaperLEDs)
+                        for(i = 0; i < numberCommands; i++)
                         {
-                            if(commands[i] != DISABLEREAPERLEDSCLOSE)
+                            commands[i] = commands[i].trimmed ();
+
+                            if(disableReaperLEDs)
+                            {
+                                if(commands[i] != DISABLEREAPERLEDSCLOSE)
+                                    closeComPortCmds << commands[i];
+                            }
+                            else
                                 closeComPortCmds << commands[i];
                         }
+                        closeComPortCmdsSet = true;
+                    }
+                    else if(splitLines[0] == DAMAGECMDONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            damageCmds << commands[i];
+                        }
+                        damageCmdsSet = true;
+                    }
+                    else if(splitLines[0] == RECOILCMDONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            recoilCmds << commands[i];
+                        }
+                        recoilCmdsSet = true;
+                    }
+                    else if(splitLines[0] == RECOIL_R2SONLY)
+                    {
+                        //qDebug() << "Recoiol_R2S Commands: " << commands;
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            recoilR2SCmds << commands[i];
+                        }
+                        recoilR2SCmdsSet = true;
+                    }
+                    else if(splitLines[0] == RECOILVALUEONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            recoilValueCmds << commands[i];
+                        }
+                        recoilValueCmdsSet = true;
+                    }
+                    else if(splitLines[0] == RELOADCMDONLY && !reloadNoRumble && !reloadDisable)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            reloadCmds << commands[i];
+                        }
+                        reloadCmdsSet = true;
+                    }
+                    else if(splitLines[0] == RELOADNORMBLCMDONLY && reloadNoRumble && !reloadDisable)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            reloadCmds << commands[i];
+                        }
+                        reloadCmdsSet = true;
+                    }
+                    else if(splitLines[0] == AMMOVALUECMDONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            ammoValueCmds << commands[i];
+                        }
+                        ammoValueCmdsSet = true;
+                    }
+                    else if(splitLines[0] == SHAKECMDONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            shakeCmds << commands[i];
+                        }
+                        shakeCmdsSet = true;
+                    }
+                    else if(splitLines[0] == AUTOLEDCMDONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            autoLedCmds << commands[i];
+                        }
+                        autoLedCmdsSet = true;
+                    }
+                    else if(splitLines[0] == ARATIO169CMDONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            aspect16x9Cmds << commands[i];
+                        }
+                        aspect16x9CmdsSet = true;
+                    }
+                    else if(splitLines[0] == ARATIO43CMDONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            aspect4x3Cmds << commands[i];
+                        }
+                        aspect4x3CmdsSet = true;
+                    }
+                    else if(splitLines[0] == JOYMODECMDONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            joystickCmds << commands[i];
+                        }
+                        joystickCmdsSet = true;
+                    }
+                    else if(splitLines[0] == KANDMMODECMDONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            keyMouseCmds << commands[i];
+                        }
+                        keyMouseCmdsSet = true;
+                    }
+                    else if(splitLines[0] == DISPLAYAMMOONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            displayAmmoCmds << commands[i];
+                        }
+                        displayAmmoCmdsSet = true;
+                    }
+                    else if(splitLines[0] == DISPLAYAMMOINITONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+
+                            if(displayAmmoLife && !displayOtherPriority)
+                            {
+                                if(commands[i].startsWith (OPENFIREAMMOINIT))
+                                {
+                                    if(displayAmmoLifeGlyphs)
+                                        commands[i] = OPENFIREALGLYPHS;
+                                    else if(displayAmmoLifeBar)
+                                        commands[i] = OPENFIREALBAR;
+                                }
+                            }
+
+                            displayAmmoInitCmds << commands[i];
+                        }
+                        displayAmmoInitCmdsSet = true;
+                    }
+                    else if(splitLines[0] == DISPLAYLIFEONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+
+                            if(defaultLightGun && defaultLightGunNum == OPENFIRE && displayAmmoLifeNumber)
+                                commands[i] = OPENFIRELIFENUMCMD;
+
+                            displayLifeCmds << commands[i];
+                        }
+                        displayLifeCmdsSet = true;
+                    }
+                    else if(splitLines[0] == DISPLAYLIFEINITONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+
+                            if(displayAmmoLife && !displayOtherPriority)
+                            {
+                                if(commands[i].startsWith (OPENFIRELIFEINIT))
+                                {
+                                    if(displayAmmoLifeGlyphs)
+                                        commands[i] = OPENFIREALGLYPHS;
+                                    else if(displayAmmoLifeBar)
+                                        commands[i] = OPENFIREALBAR;
+                                }
+                            }
+                            else if(defaultLightGun && defaultLightGunNum == OPENFIRE)
+                            {
+                                if(displayAmmoLifeBar)
+                                    commands[i].append(OPENFIRELIFEBAR);
+                                else if(displayAmmoLifeNumber)
+                                    commands[i] = OPENFIREAMMOINIT;
+                            }
+                            //qDebug() << "Display Life Init CMD: " << commands[i] << " displayAmmoLifeNumber: " << displayAmmoLifeNumber;
+
+                            displayLifeInitCmds << commands[i];
+                        }
+                        displayLifeInitCmdsSet = true;
+                    }
+                    else if(splitLines[0] == DISPLAYOTHERONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            displayOtherCmds << commands[i];
+                        }
+                        displayOtherCmdsSet = true;
+                    }
+                    else if(splitLines[0] == DISPLAYOTHERINITONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            displayOtherInitCmds << commands[i];
+                        }
+                        displayOtherInitCmdsSet = true;
+                    }
+                    else if(splitLines[0] == DISPLAYREFRESHONLY)
+                    {
+                        commands[0] = commands[0].trimmed ();
+                        bool isNumber;
+                        displayRefresh = commands[0].toShort (&isNumber);
+
+                        if(!isNumber)
+                        {
+                            displayRefresh = DISPLAYREFRESHDEFAULT;
+                        }
                         else
-                            closeComPortCmds << commands[i];
+                            displayRefreshSet = true;
                     }
-                    closeComPortCmdsSet = true;
-                }
-                else if(splitLines[0] == DAMAGECMDONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
+                    else if(splitLines[0] == OFFSCREENBUTTONCMDONLY)
                     {
-                        commands[i] = commands[i].trimmed ();
-                        damageCmds << commands[i];
-                    }
-                    damageCmdsSet = true;
-                }
-                else if(splitLines[0] == RECOILCMDONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        recoilCmds << commands[i];
-                    }
-                    recoilCmdsSet = true;
-                }
-                else if(splitLines[0] == RECOIL_R2SONLY)
-                {
-                    //qDebug() << "Recoiol_R2S Commands: " << commands;
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        recoilR2SCmds << commands[i];
-                    }
-                    recoilR2SCmdsSet = true;
-                }
-                else if(splitLines[0] == RECOILVALUEONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        recoilValueCmds << commands[i];
-                    }
-                    recoilValueCmdsSet = true;
-                }
-                else if(splitLines[0] == RELOADCMDONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        reloadCmds << commands[i];
-                    }
-                    reloadCmdsSet = true;
-                }
-                else if(splitLines[0] == AMMOCMDONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        ammoCmds << commands[i];
-                    }
-                    ammoCmdsSet = true;
-                }
-                else if(splitLines[0] == AMMOVALUECMDONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        ammoValueCmds << commands[i];
-                    }
-                    ammoValueCmdsSet = true;
-                }
-                else if(splitLines[0] == SHAKECMDONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        shakeCmds << commands[i];
-                    }
-                    shakeCmdsSet = true;
-                }
-                else if(splitLines[0] == AUTOLEDCMDONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        autoLedCmds << commands[i];
-                    }
-                    autoLedCmdsSet = true;
-                }
-                else if(splitLines[0] == ARATIO169CMDONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        aspect16x9Cmds << commands[i];
-                    }
-                    aspect16x9CmdsSet = true;
-                }
-                else if(splitLines[0] == ARATIO43CMDONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        aspect4x3Cmds << commands[i];
-                    }
-                    aspect4x3CmdsSet = true;
-                }
-                else if(splitLines[0] == JOYMODECMDONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        joystickCmds << commands[i];
-                    }
-                    joystickCmdsSet = true;
-                }
-                else if(splitLines[0] == KANDMMODECMDONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        keyMouseCmds << commands[i];
-                    }
-                    keyMouseCmdsSet = true;
-                }
-                else if(splitLines[0] == DISPLAYAMMOONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        displayAmmoCmds << commands[i];
-                    }
-                    displayAmmoCmdsSet = true;
-                }
-                else if(splitLines[0] == DISPLAYAMMOINITONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-
-                        if(displayAmmoLife && !displayOtherPriority)
+                        for(i = 0; i < numberCommands; i++)
                         {
-                            if(commands[i].startsWith (OPENFIREAMMOINIT))
-                            {
-                                if(displayAmmoLifeGlyphs)
-                                    commands[i] = OPENFIREALGLYPHS;
-                                else if(displayAmmoLifeBar)
-                                    commands[i] = OPENFIREALBAR;
-                            }
+                            commands[i] = commands[i].trimmed ();
+                            offscreenButtonCmds << commands[i];
                         }
-
-                        displayAmmoInitCmds << commands[i];
+                        offscreenButtonCmdsSet = true;
                     }
-                    displayAmmoInitCmdsSet = true;
-                }
-                else if(splitLines[0] == DISPLAYLIFEONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
+                    else if(splitLines[0] == OFFSCREENRMLSHOTCMDONLY)
                     {
-                        commands[i] = commands[i].trimmed ();
-
-                        if(defaultLightGun && defaultLightGunNum == OPENFIRE && displayAmmoLifeNumber)
-                            commands[i] = OPENFIRELIFENUMCMD;
-
-                        displayLifeCmds << commands[i];
-                    }
-                    displayLifeCmdsSet = true;
-                }
-                else if(splitLines[0] == DISPLAYLIFEINITONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-
-                        if(displayAmmoLife && !displayOtherPriority)
+                        for(i = 0; i < numberCommands; i++)
                         {
-                            if(commands[i].startsWith (OPENFIRELIFEINIT))
-                            {
-                                if(displayAmmoLifeGlyphs)
-                                    commands[i] = OPENFIREALGLYPHS;
-                                else if(displayAmmoLifeBar)
-                                    commands[i] = OPENFIREALBAR;
-                            }
+                            commands[i] = commands[i].trimmed ();
+                            offscreenNormalShotCmds << commands[i];
                         }
-                        else if(defaultLightGun && defaultLightGunNum == OPENFIRE)
-                        {
-                            if(displayAmmoLifeBar)
-                                commands[i].append(OPENFIRELIFEBAR);
-                            else if(displayAmmoLifeNumber)
-                                commands[i] = OPENFIREAMMOINIT;
-                        }
-                        //qDebug() << "Display Life Init CMD: " << commands[i] << " displayAmmoLifeNumber: " << displayAmmoLifeNumber;
-
-                        displayLifeInitCmds << commands[i];
+                        offscreenNormalShotCmdsSet = true;
                     }
-                    displayLifeInitCmdsSet = true;
-                }
-                else if(splitLines[0] == DISPLAYOTHERONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        displayOtherCmds << commands[i];
-                    }
-                    displayOtherCmdsSet = true;
-                }
-                else if(splitLines[0] == DISPLAYOTHERINITONLY)
-                {
-                    for(i = 0; i < numberCommands; i++)
-                    {
-                        commands[i] = commands[i].trimmed ();
-                        displayOtherInitCmds << commands[i];
-                    }
-                    displayOtherInitCmdsSet = true;
-                }
-                else if(splitLines[0] == DISPLAYREFRESHONLY)
-                {
-                    commands[0] = commands[0].trimmed ();
-                    bool isNumber;
-                    displayRefresh = commands[0].toShort (&isNumber);
-
-                    if(!isNumber)
-                    {
-                        displayRefresh = DISPLAYREFRESHDEFAULT;
-                    }
-                    else
-                        displayRefreshSet = true;
-                }
 
 
+                }//if(numberCommands > 1)
 
-            }//if(numberCommands > 1)
+            }//if(line != ENDOFFILE)
 
-        }//if(line != ENDOFFILE)
+        }//while(!in.atEnd ())
 
-    }//while(!in.atEnd ())
+        //Close the File
+        defaultLGCmdFile.close ();
 
-    //Close the File
-    defaultLGCmdFile.close ();
+    } //if(defaultLightGunNum != AIMTRAK)
+    else
+    {
 
+        QString prodID = usbHIDInfo.productIDString;
+        prodID.replace ("0x160", "");
+        prodID.prepend ('0');
+        quint8 prodIDNum = prodID.toUInt ();
+        prodIDNum--;
+        QString front = QString::number (prodIDNum);
+        front.prepend ('0');
+
+        //Ultimarc AimTrak
+        recoilCmdsSet = true;
+        recoilR2SCmdsSet = true;
+        ammoValueCmdsSet = true;
+
+        QString recoilCMD = ARIEMCTORIRLK;
+        recoilCMD.prepend (prodID);
+
+        //qDebug() << "AimTrak Recoil CMD: " << recoilCMD;
+
+        recoilCmds << recoilCMD;
+        recoilR2SCmds << "100";
+        ammoValueCmds << recoilCMD;
+
+        //ReadConfigData();
+    }
 /*
     qDebug() << openComPortCmdsSet;
     qDebug() << closeComPortCmdsSet;
@@ -1532,21 +1734,23 @@ QStringList LightGun::ReloadCommands(bool *isSet)
     return reloadCmds;
 }
 
-QStringList LightGun::AmmoCommands(bool *isSet, quint16 ammoValue)
+QStringList LightGun::ReloadValueCommands(bool *isSet, quint16 ammoValue)
 {
-    //Check if Reload Happened
-    if(ammoValue > lastAmmoValue)
+    if(ammoValue <= lastAmmoValue)
     {
         lastAmmoValue = ammoValue;
-
-        *isSet = reloadCmdsSet;
-        return reloadCmds;
+        *isSet = false;
+        QStringList tempSL;
+        return tempSL;
     }
 
-    *isSet = ammoCmdsSet;
+    *isSet = reloadCmdsSet;
+
     lastAmmoValue = ammoValue;
-    return ammoCmds;
+
+    return reloadCmds;
 }
+
 
 QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
 {
@@ -1914,6 +2118,22 @@ QStringList LightGun::DisplayOtherCommands(bool *isSet, quint16 otherValue)
 }
 
 
+QStringList LightGun::OffscreenButtonCommands(bool *isSet)
+{
+    *isSet = offscreenButtonCmdsSet;
+    return offscreenButtonCmds;
+}
+
+QStringList LightGun::OffscreenNormalShotCommands(bool *isSet)
+{
+    *isSet = offscreenNormalShotCmdsSet;
+    return offscreenNormalShotCmds;
+}
+
+
+
+
+
 void LightGun::ResetLightGun()
 {
     lastAmmoValue = 0;
@@ -1941,6 +2161,30 @@ bool LightGun::CheckUSBPath(QString lgPath)
     }
 }
 
+bool LightGun::IsRecoilValueSupported()
+{
+    return recoilValueCmdsSet;
+}
+
+bool LightGun::GetSupportedReload()
+{
+    return reloadCmdsSet;
+}
+
+quint8* LightGun::GetRecoilPriority()
+{
+    return lgRecoilPriority;
+}
+
+quint8* LightGun::GetRecoilPriorityHE()
+{
+    recoilPriorityHE[lgRecoilPriority[0]] = 0;
+    recoilPriorityHE[lgRecoilPriority[1]] = 1;
+    recoilPriorityHE[lgRecoilPriority[2]] = 2;
+    recoilPriorityHE[lgRecoilPriority[3]] = 3;
+
+    return recoilPriorityHE;
+}
 
 /////////////////////////////////////////////
 /// private slots
@@ -1979,6 +2223,5 @@ void LightGun::FillSerialPortInfo()
     serialPortInfo.portName = comPortInfo.portName ();
     //qDebug() << "Port Name: " << serialPortInfo.portName << " Path: " << serialPortInfo.path << " Port Num: " << comPortNum;
 }
-
 
 

@@ -18,7 +18,7 @@
     <rect>
      <x>230</x>
      <y>590</y>
-     <width>254</width>
+     <width>257</width>
      <height>26</height>
     </rect>
    </property>
@@ -35,8 +35,13 @@
     </item>
     <item>
      <widget class="QPushButton" name="okPushButton">
+      <property name="font">
+       <font>
+        <pointsize>8</pointsize>
+       </font>
+      </property>
       <property name="text">
-       <string>OK</string>
+       <string>Update+Close</string>
       </property>
       <property name="autoDefault">
        <bool>false</bool>
@@ -46,7 +51,7 @@
     <item>
      <widget class="QPushButton" name="cancelPushButton">
       <property name="text">
-       <string>Cancel</string>
+       <string>Close</string>
       </property>
       <property name="default">
        <bool>true</bool>

@@ -365,20 +365,28 @@ private:
     quint8                          numberLGPlayers;
     //Player Numbers Loaded from Default LG Game File
     //IE P1 & P2 = 0,1 and P3 & P4 & P1 = 2,3,0
-    quint8                          lgPlayerOrder[MAXPLAYERLIGHTGUNS];
+    quint8                          lgPlayerOrder[MAXGAMEPLAYERS];
     //Player's Light Gun Assignment from the COM Device List.
     //Used for the 2 Things Above
-    quint8                          playersLGAssignment[MAXPLAYERLIGHTGUNS];
+    quint8                          playersLGAssignment[MAXGAMEPLAYERS];
     //Corresponding Light Gun List Number to the Player
     //list above. So you Know What Player has What Light
     //Gun, based on the Player's Light Gun Assignment Data
-    quint8                          loadedLGNumbers[MAXPLAYERLIGHTGUNS];
+    quint8                          loadedLGNumbers[MAXGAMEPLAYERS];
     //Array of the Loaded Light guns COM Port Number
-    quint8                          loadedLGComPortNumber[MAXPLAYERLIGHTGUNS];
+    quint8                          loadedLGComPortNumber[MAXGAMEPLAYERS];
     //Array of Loaded Light Guns are USB HID or Serial
-    bool                            isLoadedLGUSB[MAXPLAYERLIGHTGUNS];
-
-
+    bool                            isLoadedLGUSB[MAXGAMEPLAYERS];
+    //Loaded Light Guns Support Reload
+    bool                            loadedLGSupportReload[MAXGAMEPLAYERS];
+    //Loaded Light Guns Support Recoil_Value
+    bool                            loadedLGSupportRecoilValue[MAXGAMEPLAYERS];
+    //Loaded Light Gun Recoil Priority
+    quint8                          *p_loadedLGRecoilPriority[MAXGAMEPLAYERS];
+    //Loaded Light Gun Recoil Option
+    quint8                          loadRecoilForPLayer[MAXGAMEPLAYERS];
+    //Loaded Light Gun Found Recoil Option or Not
+    bool                            foundRecoilForPlayer[MAXGAMEPLAYERS];
 
     ///////////////////////////////////////////////////////////////////////////
 

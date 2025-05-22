@@ -10,9 +10,13 @@
 #include <QMessageBox>
 #include <QTextStream>
 #include <QTimer>
+#include <QThread>
 //#include <QDebug>
 
 #include "../Global.h"
+
+
+
 
 class LightGun : public QObject
 {
@@ -23,17 +27,19 @@ public:
     //Constructors
 
     //RS3 Reaper
-    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
     //Normal Light Gun & Fusion & Blamcon
-    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
     //Copy Light Gun
     explicit LightGun(LightGun const &lgMember);
     //MX24
-    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
     //JB Gun4IR & OpenFire
-    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
     //For Alien USB Light Gun
-    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
+    //For Ultimarc AimTrak USB Light Gun
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
 
     //Set Functions that Sets the Stated Variable
     void SetDefaultLightGun(bool lgDefault);
@@ -59,6 +65,8 @@ public:
     void SetDisplayPriority(bool ammo, bool life);
     void SetDisplayOtherPriority(bool other);
     void SetDisplayAmmoAndLife(bool displayAAL, bool displayLG, bool displayLB, bool displayLN);
+    void SetRecoilPriority(SupportedRecoils lgRecoils);
+    void SetReloadOptions(bool reloadNR, bool reloadDis);
 
     //Get Functions that Gets the Stated Variable
     bool GetDefaultLightGun();
@@ -87,12 +95,15 @@ public:
     HIDInfo GetUSBHIDInfo();
     bool IsLightGunUSB();
     quint16 GetRecoilDelay();
+    bool IsRecoilDelay();
     QString GetComPortPath();
     bool GetDisableReaperLEDs();
     void GetDisplayPriority(bool *ammo, bool *life);
     bool GetDisplayOtherPriority();
     bool GetDisplayAmmoAndLife(bool *displayLG, bool *displayLB, bool *displayLN);
     quint16 GetDisplayRefresh(bool *isRDS);
+    bool GetReloadNoRumble();
+    bool GetReloadDisabled();
 
 
     //If a Default Light Gun, is Needed Varibles Set
@@ -118,7 +129,7 @@ public:
     QStringList RecoilCommands(bool *isSet);
     QStringList RecoilValueCommands(bool *isSet, quint16 recoilValue);
     QStringList ReloadCommands(bool *isSet);
-    QStringList AmmoCommands(bool *isSet, quint16 ammoValue);
+    QStringList ReloadValueCommands(bool *isSet, quint16 ammoValue);
     QStringList AmmoValueCommands(bool *isSet, quint16 ammoValue);
     QStringList ShakeCommands(bool *isSet);
     QStringList AutoLEDCommands(bool *isSet);
@@ -131,6 +142,8 @@ public:
     QStringList DisplayAmmoCommands(bool *isSet, quint16 ammoValue);
     QStringList DisplayLifeCommands(bool *isSet, quint16 lifeValue);
     QStringList DisplayOtherCommands(bool *isSet, quint16 otherValue);
+    QStringList OffscreenButtonCommands(bool *isSet);
+    QStringList OffscreenNormalShotCommands(bool *isSet);
 
     //Resets Light Gun Back to Starting Start when Game Ends
     void ResetLightGun();
@@ -138,6 +151,18 @@ public:
     //Check USB Light Guns against Display Path
     //To make sure the Same USB is not used twice
     bool CheckUSBPath(QString lgPath);
+
+    //Does Light Gun Support Recoil_Value Command
+    bool IsRecoilValueSupported();
+
+    //Does Light Gun Support Reload
+    bool GetSupportedReload();
+
+    //Get Recoil Priority
+    quint8* GetRecoilPriority();
+
+    //Get Recoil Priority for Hooker EngineFormat
+    quint8* GetRecoilPriorityHE();
 
 private slots:
 
@@ -148,14 +173,14 @@ private:
     //Fills in Serial Port Info Struct with Qt Values
     void FillSerialPortInfo();
 
-    //Init The Recoil Delay Timer
-    void InitRecoilDelayTimer();
+
 
     ///////////////////////////////////////////////////////////////////////////
 
     //Default Light Gun
     bool                defaultLightGun;
     quint8              defaultLightGunNum;
+
 
     //RS3 Reaper
     quint16             maxAmmo;
@@ -178,10 +203,19 @@ private:
     bool                displayAmmoLifeNumber;
     quint16             lifeBarMaxLife;
 
-
     //Light Gun Name & Number
     quint8              lightGunNum;
     QString             lightGunName;
+
+    //Recoil Priority
+    quint8              lgRecoilPriority[NUMBEROFRECOILS];
+    quint8              recoilPriorityHE[NUMBEROFRECOILS];
+
+    //Reload Options
+    bool                reloadNoRumble;
+    bool                reloadDisable;
+
+
 
     //COM Port Info
     quint8              comPortNum;
@@ -212,7 +246,6 @@ private:
     QStringList         recoilR2SCmds;
     QStringList         recoilValueCmds;
     QStringList         reloadCmds;
-    QStringList         ammoCmds;
     QStringList         ammoValueCmds;
     QStringList         shakeCmds;
     QStringList         autoLedCmds;
@@ -226,6 +259,8 @@ private:
     QStringList         displayLifeInitCmds;
     QStringList         displayOtherCmds;
     QStringList         displayOtherInitCmds;
+    QStringList         offscreenButtonCmds;
+    QStringList         offscreenNormalShotCmds;
 
     bool                openComPortCmdsSet;
     bool                closeComPortCmdsSet;
@@ -234,7 +269,6 @@ private:
     bool                recoilR2SCmdsSet;
     bool                recoilValueCmdsSet;
     bool                reloadCmdsSet;
-    bool                ammoCmdsSet;
     bool                ammoValueCmdsSet;
     bool                shakeCmdsSet;
     bool                autoLedCmdsSet;
@@ -249,6 +283,8 @@ private:
     bool                displayOtherCmdsSet;
     bool                displayOtherInitCmdsSet;
     bool                displayRefreshSet;
+    bool                offscreenButtonCmdsSet;
+    bool                offscreenNormalShotCmdsSet;
 
     quint16             lastAmmoValue;
 
@@ -266,6 +302,7 @@ private:
     bool                displayAmmoPriority;
     bool                displayLifePriority;
     bool                displayOtherPriority;
+
 
 };
 

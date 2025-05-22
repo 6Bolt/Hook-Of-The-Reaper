@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>720</width>
-    <height>811</height>
+    <height>1001</height>
    </rect>
   </property>
   <property name="font">
@@ -77,13 +77,15 @@
     <rect>
      <x>10</x>
      <y>130</y>
-     <width>131</width>
+     <width>151</width>
      <height>41</height>
     </rect>
    </property>
    <property name="font">
     <font>
      <pointsize>12</pointsize>
+     <bold>true</bold>
+     <underline>true</underline>
     </font>
    </property>
    <property name="text">
@@ -212,6 +214,9 @@
      <height>22</height>
     </rect>
    </property>
+   <property name="maxVisibleItems">
+    <number>11</number>
+   </property>
   </widget>
   <widget class="QComboBox" name="baudSpeedComboBox">
    <property name="geometry">
@@ -295,7 +300,7 @@
    <property name="geometry">
     <rect>
      <x>640</x>
-     <y>780</y>
+     <y>970</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -306,7 +311,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Cancel</string>
+    <string>Close</string>
    </property>
    <property name="default">
     <bool>true</bool>
@@ -316,7 +321,7 @@
    <property name="geometry">
     <rect>
      <x>560</x>
-     <y>780</y>
+     <y>970</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -327,7 +332,7 @@
     </font>
    </property>
    <property name="text">
-    <string>OK</string>
+    <string>Edit+Close</string>
    </property>
    <property name="autoDefault">
     <bool>false</bool>
@@ -337,7 +342,7 @@
    <property name="geometry">
     <rect>
      <x>480</x>
-     <y>780</y>
+     <y>970</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -359,13 +364,15 @@
     <rect>
      <x>330</x>
      <y>170</y>
-     <width>161</width>
+     <width>181</width>
      <height>41</height>
     </rect>
    </property>
    <property name="font">
     <font>
      <pointsize>12</pointsize>
+     <bold>true</bold>
+     <underline>true</underline>
     </font>
    </property>
    <property name="text">
@@ -587,7 +594,7 @@
    <property name="geometry">
     <rect>
      <x>400</x>
-     <y>780</y>
+     <y>970</y>
      <width>75</width>
      <height>24</height>
     </rect>
@@ -801,7 +808,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>570</y>
+     <y>580</y>
      <width>91</width>
      <height>41</height>
     </rect>
@@ -819,7 +826,7 @@
    <property name="geometry">
     <rect>
      <x>140</x>
-     <y>700</y>
+     <y>710</y>
      <width>51</width>
      <height>24</height>
     </rect>
@@ -840,7 +847,7 @@
    <property name="geometry">
     <rect>
      <x>140</x>
-     <y>620</y>
+     <y>630</y>
      <width>571</width>
      <height>24</height>
     </rect>
@@ -861,7 +868,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>650</y>
+     <y>660</y>
      <width>81</width>
      <height>41</height>
     </rect>
@@ -879,14 +886,16 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>530</y>
-     <width>131</width>
+     <y>540</y>
+     <width>111</width>
      <height>41</height>
     </rect>
    </property>
    <property name="font">
     <font>
      <pointsize>12</pointsize>
+     <bold>true</bold>
+     <underline>true</underline>
     </font>
    </property>
    <property name="text">
@@ -900,7 +909,7 @@
    <property name="geometry">
     <rect>
      <x>140</x>
-     <y>580</y>
+     <y>590</y>
      <width>301</width>
      <height>24</height>
     </rect>
@@ -915,7 +924,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>690</y>
+     <y>700</y>
      <width>81</width>
      <height>41</height>
     </rect>
@@ -933,7 +942,7 @@
    <property name="geometry">
     <rect>
      <x>140</x>
-     <y>660</y>
+     <y>670</y>
      <width>51</width>
      <height>24</height>
     </rect>
@@ -954,7 +963,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>610</y>
+     <y>620</y>
      <width>111</width>
      <height>41</height>
     </rect>
@@ -972,7 +981,7 @@
    <property name="geometry">
     <rect>
      <x>450</x>
-     <y>580</y>
+     <y>590</y>
      <width>191</width>
      <height>22</height>
     </rect>
@@ -984,63 +993,6 @@
    </property>
    <property name="text">
     <string>Get All USB HID Devices</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="recoilDelayLineEdit">
-   <property name="geometry">
-    <rect>
-     <x>140</x>
-     <y>740</y>
-     <width>51</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-   </property>
-   <property name="readOnly">
-    <bool>false</bool>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_31">
-   <property name="geometry">
-    <rect>
-     <x>200</x>
-     <y>730</y>
-     <width>31</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>ms</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_26">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>730</y>
-     <width>91</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Recoil Delay:</string>
    </property>
   </widget>
   <widget class="QLCDNumber" name="lgLCDNumber">
@@ -1072,6 +1024,234 @@
    </property>
    <property name="alignment">
     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="recoilR2SComboBox">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>840</y>
+     <width>41</width>
+     <height>24</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="disableReloadradioButton">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>910</y>
+     <width>131</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Disable Reload</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_35">
+   <property name="geometry">
+    <rect>
+     <x>340</x>
+     <y>830</y>
+     <width>91</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string> Recoil_R2S:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="recoilValueComboBox">
+   <property name="geometry">
+    <rect>
+     <x>620</x>
+     <y>840</y>
+     <width>41</width>
+     <height>24</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_37">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>870</y>
+     <width>121</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Reload Options:</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="reloadRadioButton">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>910</y>
+     <width>81</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Reload</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_36">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>830</y>
+     <width>101</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string> Recoil_Value:</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_34">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>830</y>
+     <width>51</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Recoil:</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_32">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>790</y>
+     <width>391</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Recoil Priority (0 - Highest Priority, 3 - Lowest Priority):</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="recoilComboBox">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>840</y>
+     <width>41</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::LayoutDirection::LeftToRight</enum>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_33">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>830</y>
+     <width>101</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Ammo_Value:</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_38">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>750</y>
+     <width>211</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <bold>true</bold>
+     <underline>true</underline>
+    </font>
+   </property>
+   <property name="text">
+    <string>Recoil and Reload Options</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="ammoValueComboBox">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>840</y>
+     <width>41</width>
+     <height>24</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="reloadRumbleRadioButton">
+   <property name="geometry">
+    <rect>
+     <x>100</x>
+     <y>910</y>
+     <width>191</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Reload Without Rumble</string>
    </property>
   </widget>
  </widget>

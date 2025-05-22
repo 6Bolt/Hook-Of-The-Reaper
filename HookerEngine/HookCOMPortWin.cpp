@@ -100,8 +100,8 @@ HookCOMPortWin::~HookCOMPortWin()
             DWORD errors;
             quint16 lastError = GetLastError();
 
-            qDebug() << "lastError: " << lastError;
-             qDebug() << "comPortArray[comPortNum]: " << comPortArray[comPortNum] << "GetLastError(): " << lastError;
+            //qDebug() << "lastError: " << lastError;
+            //qDebug() << "comPortArray[comPortNum]: " << comPortArray[comPortNum] << "GetLastError(): " << lastError;
 
             FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
                           GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -449,6 +449,9 @@ void HookCOMPortWin::ConnectHID(const quint8 &playerNum, const HIDInfo &lgHIDInf
     //Check if Connection is Already Made for USB HID
     if(!hidOpen[playerNum])
     {
+        //qDebug() << "PlayerNumber: " << playerNum;
+        //qDebug() << "Path: " << lgHIDInfo.path;
+
         hidInfoArray[playerNum] = lgHIDInfo;
 
         QByteArray pathBA = lgHIDInfo.path.toUtf8();
