@@ -3,7 +3,9 @@
 # Hook-Of-The-Reaper
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
-Best way to contact me, is to open a new issue, here on GitHub. It can be found at the top left of the webpage, just to the right of 'Code'. Click on the 'Issues' tab, which will bring up a new webpage, with all the current issues. Just above the issues, and to the right, is a green button called 'New Issuse'. Please click that, and create a new issue, which can be a quetion, bug, enhancment, and so on. 
+Email: gamefiles@hotr.6bolt.com
+
+Best way to contact me, is emailing me at gamefiles@hotr.6bolt.com. Another way is to open a new issue, here on GitHub. It can be found at the top left of the webpage, just to the right of 'Code'. Click on the 'Issues' tab, which will bring up a new webpage, with all the current issues. Just above the issues, and to the right, is a green button called 'New Issuse'. Please click that, and create a new issue, which can be a quetion, bug, enhancment, and so on. 
 
 Also, I can be found on Discord from time to time. I totally suck at Discord, and have not used it much. Actually, I only have it, to play Fortnight with my daughter. Yeah, I am old. I was first of my friends to get DSL intenet at a blazing fast 256KBaud, and was always hosting games like GTA II.  
 >Discord Username: 6bolt_77860
@@ -32,12 +34,14 @@ https://youtu.be/LRuflVbOHfQ
 
 # The Goals for Hook of the Reaper
 
-#### 1) To do everything that MAMEHooker can do with Serial Port Devices. Starting with light guns, then IO Controllers, and finally force feedback. Able to load INI Files
-#### 2) To implement the new Default Light Gun format. This will make any default light gun work with the associated game file, like the INI files.
-#### 3) To be open source with the GPLv3 license, so it will remain always open source.
-#### 4) To be platform independent. Reason why I chose Qt, as it can compile on many platforms. (Now Low Priority)
-#### 5) Have the best performance, and be multi-threaded.
 
+#### 1) To implement the new Default Light Gun format. This will make any default light gun work with the associated game file, like the INI files.
+#### 2) To be open source with the GPLv3 license, so it will remain always open source.
+#### 3) Have the best performance, and be multi-threaded.
+#### 4) To be platform independent. Reason why I chose Qt, as it can compile on many platforms. (Now Low Priority)
+
+
+#### X) To do everything that MAMEHooker can do with Serial Port Devices. Starting with light guns, then IO Controllers, and finally force feedback. Able to load INI Files. Now that people have switched over to the new DefaultLG game file, the is the lowest priority now. I still plan on doing everything that MAMEHooker does, but with the DefaultLG files, and whatever I call the LED/Lights/Display Controller stuff. Right now, Hook Of The Reaper can do everything MAMEHooker can do, with respects to light guns, and more. It now uses one game file for everything, and no more custom game files. Also, displays work more with Hook Of The Reaper. As both digits work on the Alien Light Gun, and Life gylphs and bars work on OpenFire. 
 
 
 I started this project after getting two Retro Shooter RS3 Reaper light guns as a Christmas present from my daughter in 2024. Never had light guns before, so was a learning experience with the light guns, Tekno-Parrot, MAME, Demulshooter, and MAMEHooker. The only problem I had was with MAMEHooker. It would work for one game, and then freeze up. I tried multiple Windows comparability modes, but it never worked right. I tried some things from the internet, but I never got it to work consistently. I am not blaming MAMEHooker and/or its coder. It is a great program, and many people through out the years have use this program. It was written a while ago and a lot of older programs have problems working with newer Windows OSes. Hence why they have  comparability modes. Seeing a project, I started coding and decided to name the new program, Hook Of The Reaper. Which takes Hook from MAMEHooker, and Reaper from the RS3 Reaper light guns, which are awesome. The picture of the cross hair being ‘hooked’ by a reaper scythe, came into my head for the program icon, and truly represents the program.
@@ -64,7 +68,9 @@ This is a lot easier then MAME. Open up the DemulShooter GUI (DemulShooter_GUI.e
 
 ## INI Game Files
 
-Now you just need to have game files to tell Hook Of The Reaper what signals to watch out for. You can use the MAMEHooker INI gamefiles. Hook Of The Reaper can load these files and process the data for light guns only. I have not set up any I/O controllers, LED controllers, or force feedback. The INI game files can be put in the directory below. Also the characters ‘%s%’ and ‘|’ are supported in Hook Of the Reaper INI game files.
+Now you just need to have game files to tell Hook Of The Reaper what signals to watch out for. You can use the MAMEHooker INI gamefiles. Hook Of The Reaper can load these files and process the data for light guns only. Currently, only serial port and USB HID commands are supported. I have not set up any I/O controllers, LED controllers, or force feedback. The INI game files can be put in the directory below. Also the characters ‘%s%’ and ‘|’ are supported in Hook Of the Reaper INI game files.
+
+Now that majority of people are using the new DefaultLG patterns, the MAMEHooker INI support is becoming lower and lower priority for me. As I only put the INI game file support in, to get people to switch over to HOTR. Now that many have, and mainly using the DefaultLG game files, I see little gain from continuing support for INI game file.
 
 ### Location of INI Game Files
 
@@ -99,11 +105,10 @@ Light guns only have so many commands, as they can recoil, shake, and few other 
 | Close_COM_InitOnly | Only Exit out of External Control for Light Gun |
 | Damage | Doesn't Happen on 0, no need for '\|' |
 | Recoil | Doesn't Happen on 0, no need for '\|' |
-| Recoil_Value | Output signal, like PX_CtmRecoil, Controls the Solenoid |
 | Recoil_R2S | Converts Rumble Recoil to Solenoid Recoil |
+| Recoil_Value | Output signal, like PX_CtmRecoil, Controls the Solenoid |
 | Reload | Doesn't Happen on 0, no need for '\|' |
 | Reload_Value | Uses Ammo Value to Know When Reload Happens | 
-| Ammo   | Doesn't Happen on 0, no need for '\|'    |
 | Ammo_Value|  Doesn't Happen on 0, no need for '\|', except for Reapers for Z0    |
 | Shake | Doesn't Happen on 0, no need for '\|' |
 | Auto_LED |     |
@@ -158,7 +163,13 @@ Majority of games are in the defaultLG directory, so a person can see how it is 
 | \>Damage | A Command, with a beginning \>
 
 
-A signal can have no Player/All and no Command, or a signal can have Player/All and Command. Also Multiple Players and Commands can be after a Signal.
+A signal can have no Player/All and no Command.
+
+- :UnusedSignal1
+- :UnusedSignal2
+- :UnuesdSignal3
+
+A signal can have Player/All and Command. It cannot have multiple players and after a Signal and Command. For example, below is an error in the DefaultLG format. 
 
 - :P1_Damage
 - *P1
@@ -173,6 +184,11 @@ Also, multiple commands can be used, and be selected based on the Signal’s cur
 - \>Null|Shake|Recoil|Damage	&emsp;	So When P1_Damage=0 → Null, 1 -> Shake, 2 → Recoil, 3 → Damage
 
 The 0 is the left most Command, then increase by one, going to the right. The same way MAMEHooker has it. Also, the INI files can use the %s% variable. The %s% is replaced by the Signal’s value. It is not used in the Default Light gun files, but want to mention that it is supported.  
+
+The '|' cannot be used with the Recoil_R2S command. As it is only used on binary signals, and it uses both the '0' and '1' values. So there is no need for it. And Hook Of The Reaper will error out if you try to use it.
+
+The '|' is not supported for the Recoil and Reload commands with the '#' infront of them. As these commands now how to use the signals already. So there is no need for them. And Hook Of The Reaper will error out if you try to use it. 
+
 
 # Player Ordering in the Default Light Gun Game Format
 
@@ -203,6 +219,57 @@ I created a small program to modify the top section of the Default Light Gun gam
 https://github.com/6Bolt/ChangePlayerNum
 
 Can run the program with no inputs to get the help menu. 
+
+
+# Recoil & Reload Header
+
+All new DefaultLG game files will need this header. It will start with 'Recoil & Reload' then follow by four recoil methods. After each recoil method, will be a '0' or '1'. The '0' means that recoil method is not supported in the game file. Where a '1' means that recoil method is supported in the game file. Then, if reload is suported, the reload method is after the '1', as it is not needed after the '0'. The Ammo_Value, can be Ammo_Value or blank, as Ammo_Value does both recoil and reload. The four recoil methods must be in the order below, in the example header.
+
+| Header |
+|--------|
+|Recoil & Reload |
+|Ammo_value 1 Ammo_Value |
+|Recoil 1 Reload_Value |
+|Recoil_R2S 1 Reload |
+|Recoil_Value 1 Reload_Value |
+
+## Ammo_Value
+
+The Ammo_Value readds the ammo count for the player. It saves the last ammo count. If the new ammo count is less than the older ammo count, then a recoil happens. If the new ammo count is greater than the old ammo count, then it is a reload. 
+
+## Recoil
+
+The recoil output signal is watched. When a 0 to 1 transitition happens, the recoil command is sent to the light gun. The light gun takes care of the recoil. Also, when the recoil is happening, the light gun will ignore any new recoil commands. 
+
+## Recoil_R2S
+
+Since a section details how this works already. Please read the Recoil_R2S section above.
+
+## Recoil_Value
+
+This is were the output signal directly control the light gun's solenoid. When the signal is high, the solnoid is active, and current going through it. When it is low, then it is at rest. Hook Of The Reaper, has a safety feature, as if the solnoid is active for over 200ms, it will close it, and block any new Recoil_Value commands until the game ends. Currently, only 3 light gun support this. Which are OpenFire, Fusion, and Gun4IR.
+
+
+# Reload
+
+There are only three reload commands that can be used in the DefaultLG game files. If the recoil method supports reload, it will be after the '1` in the header. 
+
+## Ammo_Value
+
+The Ammo_Value readds the ammo count for the player. It saves the last ammo count. If the new ammo count is less than the older ammo count, then a recoil happens. If the new ammo count is greater than the old ammo count, then it is a reload. 
+
+## Reload
+
+The recoil output signal is watched. When a 0 to 1 transitition happens, the reload command is sent to the light gun. 
+
+## Reload_Value
+
+The Ammo_Value readds the ammo count for the player. It saves the last ammo count. If the new ammo count is greater than the old ammo count, then it is a reload. 
+
+# Recoil and Reload Commands
+
+Now the recoil and reload commands need a '#' in front of them, instead of the '\>'. This is a safety feature. Also, for Hook Of The Reaper to know what to use, based on the light gun's recoil priority. For the selected recoil, it will replace the '#' with the '\>'. Please see the included game files for examples. 
+
 
 
 # Current Default Light Gun Files Included
