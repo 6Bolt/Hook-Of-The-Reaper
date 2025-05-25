@@ -245,6 +245,8 @@ The recoil output signal is watched. When a 0 to 1 transitition happens, the rec
 
 Since a section details how this works already. Please read the Recoil_R2S section above.
 
+https://github.com/6Bolt/Hook-Of-The-Reaper#recoil_r2s-command
+
 ## Recoil_Value
 
 This is were the output signal directly control the light gun's solenoid. When the signal is high, the solnoid is active, and current going through it. When it is low, then it is at rest. Hook Of The Reaper, has a safety feature, as if the solnoid is active for over 200ms, it will close it, and block any new Recoil_Value commands until the game ends. Currently, only 3 light gun support this. Which are OpenFire, Fusion, and Gun4IR.
