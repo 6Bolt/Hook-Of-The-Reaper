@@ -178,6 +178,7 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     connect(this, &HookerEngine::StopComPort, p_hookComPortWin, &HookCOMPortWin::Disconnect);
     connect(this, &HookerEngine::WriteComPortSig, p_hookComPortWin, &HookCOMPortWin::WriteData);
     connect(this, &HookerEngine::SetComPortBypassWriteChecks, p_hookComPortWin, &HookCOMPortWin::SetBypassSerialWriteChecks);
+    connect(this, &HookerEngine::SetBypassComPortConnectFailWarning, p_hookComPortWin, &HookCOMPortWin::SetBypassCOMPortConnectFailWarning);
 
     //Connect the Signals & Slots for USB HID
     connect(this, &HookerEngine::StartUSBHID, p_hookComPortWin, &HookCOMPortWin::ConnectHID);
@@ -1378,6 +1379,7 @@ void HookerEngine::LoadSettingsFromList()
     closeComPortGameExit = p_comDeviceList->GetCloseComPortGameExit ();
     ignoreUselessDLGGF = p_comDeviceList->GetIgnoreUselessDFLGGF ();
     bypassSerialWriteChecks = p_comDeviceList->GetSerialPortWriteCheckBypass ();
+    enableNewGameFileCreation = p_comDeviceList->GetEnableNewGameFileCreation ();
 
     if(p_refreshDisplayTimer->isActive ())
     {
@@ -2156,7 +2158,7 @@ void HookerEngine::GameFound()
 
         if(lgFileFound)
         {
-            emit MameConnectedGame(gameName, false);
+            emit MameConnectedGame(gameName, false, false);
             LoadLGFile();
         }
         else
@@ -2166,7 +2168,7 @@ void HookerEngine::GameFound()
 
             if(iniFileFound)
             {
-                emit MameConnectedGame(gameName, true);
+                emit MameConnectedGame(gameName, true, false);
                 //Load and Process the INI File
                 LoadINIFile();
             }
@@ -2178,13 +2180,20 @@ void HookerEngine::GameFound()
                 //If there is a Default File, then Load it
                 if(defaultFileFound)
                 {
-                    emit MameConnectedGame("default", false);
+                    emit MameConnectedGame("default", false, false);
                     LoadLGFile();
                 }
                 else
                 {
-                    //Creates a New Deafualt LG Game File
-                    NewLGFile();
+                    //Create New Game File, if Settings is Set
+                    if(enableNewGameFileCreation)
+                    {
+                        //Creates a New Deafualt LG Game File
+                        NewLGFile();
+                    }
+                    else
+                        emit MameConnectedGame(gameName, false, true);
+                    //If enableNewGameFileCreation false, then do nothing for this game
                 }
             }
         }
@@ -2196,7 +2205,7 @@ void HookerEngine::GameFound()
 
         if(iniFileFound)
         {
-            emit MameConnectedGame(gameName, true);
+            emit MameConnectedGame(gameName, true, false);
             //Load and Process the INI File
             LoadINIFile();
         }
@@ -2207,7 +2216,7 @@ void HookerEngine::GameFound()
 
             if(lgFileFound)
             {
-                emit MameConnectedGame(gameName, false);
+                emit MameConnectedGame(gameName, false, false);
                 LoadLGFile();
             }
             else
@@ -2218,13 +2227,20 @@ void HookerEngine::GameFound()
                 //If there is a Default File, then Load it
                 if(defaultFileFound)
                 {
-                    emit MameConnectedGame("default", true);
+                    emit MameConnectedGame("default", true, false);
                     LoadINIFile();
                 }
                 else
                 {
-                    //Creates a New INI Game File
-                    NewINIFile();
+                    //Create New Game File, if Settings is Set
+                    if(enableNewGameFileCreation)
+                    {
+                        //Creates a New INI Game File
+                        NewINIFile();
+                    }
+                    else
+                        emit MameConnectedGame(gameName, true, true);
+                    //If enableNewGameFileCreation false, then do nothing for this game
                 }
             }
         }
@@ -2399,6 +2415,9 @@ void HookerEngine::LoadINIFile()
     //Close File
     iniFile.close();
     iniFileLoaded = true;
+
+    //Bypass the COM Port Connection Fail Warning Pop-up, as MH does
+    emit SetBypassComPortConnectFailWarning(true);
 
     //Process the "mame_start" Signal
     ProcessINICommands(MAMESTARTAFTER, "", true);
@@ -4322,6 +4341,9 @@ void HookerEngine::LoadLGFile()
 
     lgFile.close();
     lgFileLoaded = true;
+
+    //Don't Bypass the COM Port Connection Fail Warning Pop-up, for the DefaultLG Side
+    emit SetBypassComPortConnectFailWarning(false);
 
     //Process the mame_start Command
     ProcessLGCommands(MAMESTARTAFTER, gameName);

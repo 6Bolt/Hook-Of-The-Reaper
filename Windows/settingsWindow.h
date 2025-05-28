@@ -72,6 +72,7 @@ private:
     bool                displayAmmoLifeGlyphs;
     bool                displayAmmoLifeBar;
     bool                displayAmmoLifeNumber;
+    bool                enableNewGameFileCreation;
 
     //For Check Boxes
     Qt::CheckState      defaultLG;
@@ -82,6 +83,7 @@ private:
     Qt::CheckState      disableRLED;
     Qt::CheckState      otherDisplay;
     Qt::CheckState      displayAL;
+    Qt::CheckState      enableNGFC;
 
     //Refresh Time in Number and String
     quint32             refreshDisplayTime;

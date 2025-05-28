@@ -53,6 +53,9 @@ public slots:
     //Slot to get setting for to Bypass Serial Port Write Checks or Not
     void SetBypassSerialWriteChecks(const bool &bypassSPWC);
 
+    //Slot to for setting the Bypass COM Port Connection Fail Warning Pop-Up
+    void SetBypassCOMPortConnectFailWarning(const bool &bypassCPCFW);
+
 signals:
 
     //Signal Used to Display Error Message from COM Port
@@ -88,6 +91,10 @@ private:
 
     //Debug Setting to Bypass Serial Port Write Checks
     bool                            bypassSerialWriteChecks;
+
+    //Bypass Pop-up Error, when Serial Port Cannot Connect on INI Side
+    bool                            bypassCOMPortConnectFailWarning;
+
 
     bool                            noLightGunWarning[MAXCOMPORTS];
 

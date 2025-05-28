@@ -90,6 +90,9 @@ signals:
     //Set the Bypass of the Serial Port Write Checks
     void SetComPortBypassWriteChecks(const bool &cpBWC);
 
+    //Set the Bypass of COM Port Connection Fail Warning Pop-Up
+    void SetBypassComPortConnectFailWarning(const bool &cpBCPCFW);
+
     //Connects & Disconnects USB HID Device (different thread)
     void StartUSBHID(const quint8 &playerNum, const HIDInfo &lgHIDInfo);
     void StopUSBHID(const quint8 &playerNum);
@@ -103,7 +106,7 @@ signals:
 
     //Update the Display Data
     void MameConnectedNoGame();
-    void MameConnectedGame(QString gName, bool iniGame);
+    void MameConnectedGame(QString gName, bool iniGame, bool noGameFound);
     void AddSignalFromGame(const QString &sig, const QString &dat);
     void UpdateSignalFromGame(const QString &sig, const QString &dat);
     void UpdatePauseFromGame(QString dat);
@@ -412,6 +415,7 @@ private:
     bool                            newGameFileOrDefaultFile;
     bool                            ignoreUselessDLGGF;
     bool                            bypassSerialWriteChecks;
+    bool                            enableNewGameFileCreation;
 
     ///////////////////////////////////////////////////////////////////////////
 

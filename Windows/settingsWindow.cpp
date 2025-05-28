@@ -142,6 +142,13 @@ settingsWindow::settingsWindow(ComDeviceList *cdList, QWidget *parent)
         ui->lifeNumRadioButton->setChecked (displayAmmoLifeNumber);
     }
 
+    enableNewGameFileCreation = p_comDeviceList->GetEnableNewGameFileCreation ();
+
+    //If Set. then Check the Box
+    if(displayOtherPriority)
+        ui->enableNewGFCheckBox->setCheckState (Qt::Checked);
+    else
+        ui->enableNewGFCheckBox->setCheckState (Qt::Unchecked);
 
 
     finishedInit = true;
@@ -192,6 +199,7 @@ void settingsWindow::CheckAndSaveSetting()
     disableRLED = ui->reaperLEDCheckBox->checkState ();
     otherDisplay = ui->displayOtherCheckBox->checkState ();
     displayAL = ui->ammoLifeCheckBox->checkState ();
+    enableNGFC = ui->enableNewGFCheckBox->checkState ();
 
     if(defaultLG == Qt::Checked)
         useDefaultLGFirst = true;
@@ -237,6 +245,11 @@ void settingsWindow::CheckAndSaveSetting()
     else
         displayAmmoLife = false;
 
+    if(enableNGFC == Qt::Checked)
+        enableNewGameFileCreation = true;
+    else
+        enableNewGameFileCreation = false;
+
 
     p_comDeviceList->SetUseDefaultLGFirst(useDefaultLGFirst);
     p_comDeviceList->SetUseMultiThreading (useMultiThreading);
@@ -248,6 +261,8 @@ void settingsWindow::CheckAndSaveSetting()
     p_comDeviceList->SetDisplayOtherPriority (displayOtherPriority);
 
     p_comDeviceList->SetDisplayAmmoAndLife(displayAmmoLife, displayAmmoLifeGlyphs, displayAmmoLifeBar, displayAmmoLifeNumber);
+
+    p_comDeviceList->SetEnableNewGameFileCreation (enableNewGameFileCreation);
 
     if(isNumber)
     {

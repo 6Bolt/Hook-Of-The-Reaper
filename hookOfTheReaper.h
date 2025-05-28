@@ -55,7 +55,7 @@ public slots:
     void DisplayMameNoGame();
 
     //Display Data in the Text Browser when Game is Connected to TCP Socket
-    void DisplayMameGame(QString gName, bool iniGame);
+    void DisplayMameGame(QString gName, bool iniGame, bool noGameFound);
 
     //Add Output Signal to the Display Data in Text Browser
     void AddSignalDisplay(const QString &sig, const QString &dat);
@@ -220,6 +220,9 @@ private:
 
     //Is Game File DefaultLG or INI
     bool                            isGameINI;
+
+    //No Game Found
+    bool                            noGameFileFound;
 
 #ifdef Q_OS_WIN
 

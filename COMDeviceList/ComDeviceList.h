@@ -125,6 +125,10 @@ public:
     bool            GetDisplayAmmoAndLife(bool *displayLG, bool *displayLB, bool *displayLN);
     void            SetDisplayAmmoAndLife(bool displayAAL, bool displayLG, bool displayLB, bool displayLN);
 
+    //Enable New Game File Creation
+    bool            GetEnableNewGameFileCreation();
+    void            SetEnableNewGameFileCreation(bool enableNGFC);
+
     //Update Light Gun Settings
     void            UpdateLightGunWithSettings();
 
@@ -203,6 +207,7 @@ private:
     bool                displayAmmoPriority;
     bool                displayLifePriority;
     bool                displayOtherPriority;
+    bool                enableNewGameFileCreation;
 
     quint8              userRecoilPriority[NUMBEROFRECOILS];
 

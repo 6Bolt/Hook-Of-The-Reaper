@@ -22,6 +22,7 @@ ComDeviceList::ComDeviceList()
     displayAmmoPriority = true;
     displayLifePriority = false;
     displayOtherPriority = false;
+    enableNewGameFileCreation = false;
 
     //More Set Defaults
     for(quint8 comPortIndx=0;comPortIndx<MAXCOMPORTS;comPortIndx++)
@@ -457,6 +458,8 @@ void ComDeviceList::SaveLightGunList()
     //If Light Gun Number is Zero, then Erase Old Save File & Done
     if(numberLightGuns == 0)
     {
+        SavePlayersAss();
+
         if(saveLGData.exists ())
             removedFile = saveLGData.remove ();
 
@@ -1372,6 +1375,11 @@ void ComDeviceList::SaveSettings()
     else
         out << "0\n";
 
+    if(enableNewGameFileCreation)
+        out << "1\n";
+    else
+        out << "0\n";
+
 
     out << ENDOFFILE;
 
@@ -1539,24 +1547,14 @@ void ComDeviceList::LoadSettings()
     //Next Line is End of File or Display Ammo Priority
     line = in.readLine();
 
-    if(line.startsWith (ENDOFFILE))
+    if(line.startsWith ("1"))
     {
         displayAmmoPriority = true;
-        displayLifePriority = false;
-        displayOtherPriority = false;
-        displayAmmoLife = false;
-        displayAmmoLifeGlyphs = true;
-        displayAmmoLifeBar = false;
-        displayAmmoLifeNumber = false;
-        loadSetData.close ();
-        this->SaveSettings();
-        this->UpdateLightGunWithSettings ();
-        return;
     }
-    else if(line.startsWith ("1"))
-        displayAmmoPriority = true;
     else if(line.startsWith ("0"))
+    {
         displayAmmoPriority = false;
+    }
     else
     {
         QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Display Ammo Priority. Please close program and solve file problem.", QMessageBox::Ok);
@@ -1663,6 +1661,27 @@ void ComDeviceList::LoadSettings()
     else
     {
         QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Display Ammo & Life Number for OpenFire. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
+
+    //Setting for New Game File Creation
+    line = in.readLine();
+
+    if(line.startsWith (ENDOFFILE))
+    {
+        enableNewGameFileCreation = false;
+        loadSetData.close ();
+        this->SaveSettings();
+        this->UpdateLightGunWithSettings ();
+        return;
+    }
+    else if(line.startsWith ("1"))
+        enableNewGameFileCreation = true;
+    else if(line.startsWith ("0"))
+        enableNewGameFileCreation = false;
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Enable New Game File Creation. Please close program and solve file problem.", QMessageBox::Ok);
         return;
     }
 
@@ -1819,6 +1838,16 @@ void ComDeviceList::SetDisplayAmmoAndLife(bool displayAAL, bool displayLG, bool 
         }
     }
 
+}
+
+bool ComDeviceList::GetEnableNewGameFileCreation()
+{
+    return enableNewGameFileCreation;
+}
+
+void ComDeviceList::SetEnableNewGameFileCreation(bool enableNGFC)
+{
+    enableNewGameFileCreation = enableNGFC;
 }
 
 void ComDeviceList::UpdateLightGunWithSettings()

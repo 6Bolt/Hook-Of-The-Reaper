@@ -1271,7 +1271,9 @@ void LightGun::LoadDefaultLGCommands()
                         for(i = 0; i < numberCommands; i++)
                         {
                             commands[i] = commands[i].trimmed ();
+                            closeComPortCmds << commands[i];
 
+                            /* The ZX command should not be taken out, as it gives recoil control back to light gun
                             if(disableReaperLEDs)
                             {
                                 if(commands[i] != DISABLEREAPERLEDSCLOSE)
@@ -1279,6 +1281,7 @@ void LightGun::LoadDefaultLGCommands()
                             }
                             else
                                 closeComPortCmds << commands[i];
+                            */
                         }
                         closeComPortCmdsSet = true;
                     }

@@ -258,12 +258,14 @@ void HookOfTheReaper::DisplayMameNoGame()
 }
 
 //Displays Top of Game Data on Main Window
-void HookOfTheReaper::DisplayMameGame(QString gName, bool iniGame)
+void HookOfTheReaper::DisplayMameGame(QString gName, bool iniGame, bool noGameFound)
 {
     //Display Text QMap needs to be cleared
     signalNumberMap.clear ();
 
     isGameINI = iniGame;
+
+    noGameFileFound = noGameFound;
 
     gameName = gName;
 
@@ -756,12 +758,18 @@ void HookOfTheReaper::MakeTopDisplayText()
     if(gameName != MAMENOGAMEEMPTY)
     {
         temp = GAMEFILE;
-        temp.append (gameName);
 
-        if(isGameINI)
-            temp.append (ENDOFINIFILE);
+        if(noGameFileFound)
+            temp.append("No Game File Found");
         else
-            temp.append (ENDOFLGFILE);
+        {
+            temp.append (gameName);
+
+            if(isGameINI)
+                temp.append (ENDOFINIFILE);
+            else
+                temp.append (ENDOFLGFILE);
+        }
 
     }
     else

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>489</width>
-    <height>623</height>
+    <width>485</width>
+    <height>672</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>230</x>
-     <y>590</y>
+     <x>220</x>
+     <y>640</y>
      <width>257</width>
      <height>26</height>
     </rect>
@@ -186,7 +186,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>510</y>
+     <y>540</y>
      <width>56</width>
      <height>21</height>
     </rect>
@@ -205,7 +205,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>540</y>
+     <y>570</y>
      <width>251</width>
      <height>22</height>
     </rect>
@@ -223,7 +223,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>320</y>
+     <y>350</y>
      <width>91</width>
      <height>21</height>
     </rect>
@@ -242,7 +242,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>350</y>
+     <y>380</y>
      <width>351</width>
      <height>22</height>
     </rect>
@@ -260,7 +260,7 @@
    <property name="geometry">
     <rect>
      <x>130</x>
-     <y>240</y>
+     <y>270</y>
      <width>71</width>
      <height>22</height>
     </rect>
@@ -278,7 +278,7 @@
    <property name="geometry">
     <rect>
      <x>220</x>
-     <y>240</y>
+     <y>270</y>
      <width>51</width>
      <height>22</height>
     </rect>
@@ -296,7 +296,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>240</y>
+     <y>270</y>
      <width>121</width>
      <height>21</height>
     </rect>
@@ -314,7 +314,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>210</y>
+     <y>240</y>
      <width>211</width>
      <height>21</height>
     </rect>
@@ -333,7 +333,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>270</y>
+     <y>300</y>
      <width>131</width>
      <height>22</height>
     </rect>
@@ -351,7 +351,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>400</y>
+     <y>430</y>
      <width>81</width>
      <height>21</height>
     </rect>
@@ -370,7 +370,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>460</y>
+     <y>490</y>
      <width>181</width>
      <height>22</height>
     </rect>
@@ -388,7 +388,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>430</y>
+     <y>460</y>
      <width>111</width>
      <height>22</height>
     </rect>
@@ -409,7 +409,7 @@
    <property name="geometry">
     <rect>
      <x>120</x>
-     <y>430</y>
+     <y>460</y>
      <width>151</width>
      <height>22</height>
     </rect>
@@ -427,7 +427,7 @@
    <property name="geometry">
     <rect>
      <x>280</x>
-     <y>430</y>
+     <y>460</y>
      <width>111</width>
      <height>22</height>
     </rect>
@@ -439,6 +439,24 @@
    </property>
    <property name="text">
     <string>Life Number</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="enableNewGFCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>190</y>
+     <width>461</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Enable New Game File Creation, if Name or Default Not Found</string>
    </property>
   </widget>
  </widget>
