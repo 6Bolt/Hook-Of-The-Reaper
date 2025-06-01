@@ -145,7 +145,7 @@ settingsWindow::settingsWindow(ComDeviceList *cdList, QWidget *parent)
     enableNewGameFileCreation = p_comDeviceList->GetEnableNewGameFileCreation ();
 
     //If Set. then Check the Box
-    if(displayOtherPriority)
+    if(enableNewGameFileCreation)
         ui->enableNewGFCheckBox->setCheckState (Qt::Checked);
     else
         ui->enableNewGFCheckBox->setCheckState (Qt::Unchecked);

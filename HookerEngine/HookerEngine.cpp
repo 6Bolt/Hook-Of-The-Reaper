@@ -2190,6 +2190,9 @@ void HookerEngine::GameFound()
                     {
                         //Creates a New Deafualt LG Game File
                         NewLGFile();
+                        QString tempGF = "Making New Game File ";
+                        tempGF.append (gameName);
+                        emit MameConnectedGame(tempGF, false, false);
                     }
                     else
                         emit MameConnectedGame(gameName, false, true);
@@ -2237,6 +2240,9 @@ void HookerEngine::GameFound()
                     {
                         //Creates a New INI Game File
                         NewINIFile();
+                        QString tempGF = "Making New Game File ";
+                        tempGF.append (gameName);
+                        emit MameConnectedGame(tempGF, true, false);
                     }
                     else
                         emit MameConnectedGame(gameName, true, true);
