@@ -752,7 +752,16 @@ void HookOfTheReaper::MakeTopDisplayText()
     displayText << tcpSock;
     displayText << GAMEINFO << GAMEINFODASHES;
     QString temp = ROMCOLON;
-    temp.append (gameName);
+
+    if(gameName.startsWith ("Making New Game File "))
+    {
+        QString tempGN = gameName;
+        tempGN.replace ("Making New Game File ","");
+        temp.append (tempGN);
+    }
+    else
+        temp.append (gameName);
+
     displayText << temp;
 
     if(gameName != MAMENOGAMEEMPTY)
