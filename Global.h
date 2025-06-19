@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.1.5b"
+#define VERSION                 "1.1.6"
 #define VERSIONMAIN             1
 #define VERSIONMID              1
 #define VERSIONLAST             3
@@ -228,9 +228,9 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define TCPHOSTNAME             "localhost"
 #define TCPHOSTPORT             8000
 //Time to Wait for TCP Socket Connection (msec)
-#define TIMETOWAIT              10000
+#define TIMETOWAIT              12000
 //Time for the TCP Socket Timer (msec)
-#define TCPTIMERTIME            10200
+#define TCPTIMERTIME            12200
 
 
 //File & Dir Data

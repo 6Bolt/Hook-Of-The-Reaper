@@ -63,6 +63,10 @@ Open the mame.ini file, in the main MAME directory. Should be right under or abo
 This is a lot easier then MAME. Open up the DemulShooter GUI (DemulShooter_GUI.exe). Pull down the “Page selection:” combo box at the top, and then select “Output” at the bottom. Then check the top box, which is labeled “Enable Outputs”. Then check the third box, which is labeled, “Network Outputs”. Then click the button at the bottom, labeled “Save Config”. That is it, Hook Of The Reaper will now be able to connect to MAME and DemulShooter. 
 
 
+### Enable Network on SuperModel (Model 3) Emulator
+
+For the SupoerModel (Model 3) emulator, a file needs to be updated, to enable the network output. From the base of the emulator, go into the "config" directory. In this directory, there is a file called "supermodel.ini". Open this file in a text edititor. The add this "OUTPUTS = NET" to a new line in the file. Then save and close the file. That is it.   
+
 
 # Game Files
 
