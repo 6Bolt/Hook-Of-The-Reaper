@@ -74,6 +74,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reloadNoRumble = reloadNR;
     reloadDisable = reloadDis;
 
+    reaperLargeAmmo = false;
 
     FillSerialPortInfo();
 
@@ -163,6 +164,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     reloadNoRumble = reloadNR;
     reloadDisable = reloadDis;
+
+    reaperLargeAmmo = false;
 
     FillSerialPortInfo();
 
@@ -295,6 +298,8 @@ LightGun::LightGun(LightGun const &lgMember)
     reloadNoRumble = lgMember.reloadNoRumble;
     reloadDisable = lgMember.reloadDisable;
 
+    reaperLargeAmmo = lgMember.reaperLargeAmmo;
+
     LoadDefaultLGCommands();
 
 }
@@ -382,6 +387,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     reloadNoRumble = reloadNR;
     reloadDisable = reloadDis;
+
+    reaperLargeAmmo = false;
 
     FillSerialPortInfo();
 
@@ -473,6 +480,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reloadNoRumble = reloadNR;
     reloadDisable = reloadDis;
 
+    reaperLargeAmmo = false;
+
     FillSerialPortInfo();
 
     LoadDefaultLGCommands();
@@ -534,6 +543,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     reloadNoRumble = reloadNR;
     reloadDisable = reloadDis;
+
+    reaperLargeAmmo = false;
 
     LoadDefaultLGCommands();
 }
@@ -598,6 +609,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     reloadNoRumble = reloadNR;
     reloadDisable = reloadDis;
+
+    reaperLargeAmmo = false;
 
     LoadDefaultLGCommands();
 }
@@ -1120,6 +1133,8 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
 
     reloadNoRumble = lgMember.reloadNoRumble;
     reloadDisable = lgMember.reloadDisable;
+
+    reaperLargeAmmo = lgMember.reaperLargeAmmo;
 
     LoadDefaultLGCommands();
 
@@ -2227,6 +2242,7 @@ void LightGun::ResetLightGun()
     lifeDisplayValue = -1;
     otherDisplayValue = -1;
     lifeBarMaxLife = 0;
+    reaperLargeAmmo = false;
 }
 
 
