@@ -11,6 +11,7 @@
 #include <QTextStream>
 #include <QTimer>
 #include <QThread>
+#include <QtMath>
 //#include <QDebug>
 
 #include "../Global.h"
@@ -262,6 +263,7 @@ private:
     QStringList         offscreenButtonCmds;
     QStringList         offscreenNormalShotCmds;
 
+    //Commands Bools
     bool                openComPortCmdsSet;
     bool                closeComPortCmdsSet;
     bool                damageCmdsSet;
@@ -286,7 +288,14 @@ private:
     bool                offscreenButtonCmdsSet;
     bool                offscreenNormalShotCmdsSet;
 
+    //Ammo
     quint16             lastAmmoValue;
+    quint16             reloadAmmoValue;
+    quint8              reaper5LEDNumber;
+    quint8              reaperBullets1LED;
+    quint8              reaperBulletCount;
+    bool                reaperLargeAmmo;
+    quint8              reaperNumLEDOn;
 
     //Display
     bool                hasDisplayAmmoInited;

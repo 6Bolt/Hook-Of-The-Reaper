@@ -255,6 +255,7 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
         isRecoilDelaySet[i] = false;
         blockRecoil[i] = false;
         delayRecoilTime[i] = ALIENUSBDELAYDFLT;
+        skipRecoilSlowMode[i] = false;
     }
 
 }
@@ -1850,9 +1851,8 @@ void HookerEngine::ClearOnDisconnect()
         isLGSolenoidOpen[i] = false;
         closeSolenoidCMDs[i].clear ();
         blockRecoilValue[i] = false;
-        //isRecoilDelaySet[i] = false;
         blockRecoil[i] = false;
-        //doRecoilDelayEnds[i] = false;
+        skipRecoilSlowMode[i] = false;
     }
 
 
@@ -2068,9 +2068,9 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
                     isLGSolenoidOpen[i] = false;
                     closeSolenoidCMDs[i].clear ();
                     blockRecoilValue[i] = false;
-                    //isRecoilDelaySet[i] = false;
                     blockRecoil[i] = false;
                     doRecoilDelayEnds[i] = false;
+                    skipRecoilSlowMode[i] = false;
                 }
 
             }
@@ -3463,7 +3463,7 @@ void HookerEngine::LoadLGFile()
         lineNumber++;
 
         //For Faster Processing, search first char
-        if(line[0] == 'P'  && begin)
+        if(line[0] == 'P' && begin)
         {
             //File should Start with "Players"
             if(line.startsWith(PLAYERSSTART))
@@ -3500,6 +3500,23 @@ void HookerEngine::LoadLGFile()
                             QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                         return;
                     }
+
+                    //Check for Slow Mode on PLayers IE 'P1 Slow'
+                    if(line.contains(SLOWMODE))
+                    {
+                        QStringList playerSlowMode = line.split (' ', Qt::SkipEmptyParts);
+                        playerSlowMode[0] = playerSlowMode[0].trimmed();
+                        //Make line just the player number IE P1, P2, or P3
+                        line = playerSlowMode[0];
+                        playerSlowMode[1] = playerSlowMode[1].trimmed();
+                        if(playerSlowMode[1] == SLOWMODE)
+                            loadedLGSlowMode[i] = true;
+                        else
+                            loadedLGSlowMode[i] = false;
+                    }
+                    else
+                        loadedLGSlowMode[i] = false;
+
 
                     //Remove 'P'
                     line.remove (0,1);
@@ -4514,6 +4531,19 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                         doRecoilDelayEnds[player] = false;
                                     }
                                 }
+                                if(loadedLGSlowMode[player])
+                                {
+                                    if(skipRecoilSlowMode[player])
+                                    {
+                                        dlgCMDFound = false;
+                                        skipRecoilSlowMode[player] = false;
+                                    }
+                                    else
+                                    {
+                                        skipRecoilSlowMode[player] = true;
+                                        dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(&dlgCMDFound, value.toUShort());
+                                    }
+                                }
                                 else
                                 {
                                     //qDebug() << "CMD: " << commands[i] << " value: " << value;
@@ -4653,10 +4683,10 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                                 //qDebug() << "Delay for P" << QString::number(player+1) << " is " << delay;
 
                                                 //Set Timer Interval and Type to PreciseTimer
-                                                if(delay >= 30)
-                                                    pRecoilR2STimer[player].setTimerType (Qt::PreciseTimer);
-                                                else
-                                                    pRecoilR2STimer[player].setTimerType (Qt::CoarseTimer);
+                                                //if(delay >= 30)
+                                                //    pRecoilR2STimer[player].setTimerType (Qt::PreciseTimer);
+                                                //else
+                                                pRecoilR2STimer[player].setTimerType (Qt::CoarseTimer);
 
                                                 pRecoilR2STimer[player].setInterval(delay);
                                                 isPRecoilR2SFirstTime[player] = false;
@@ -4771,9 +4801,21 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                             doRecoilDelayEnds[player] = false;
                                         }
                                     }
+                                    if(loadedLGSlowMode[player])
+                                    {
+                                        if(skipRecoilSlowMode[player])
+                                        {
+                                            dlgCMDFound = false;
+                                            skipRecoilSlowMode[player] = false;
+                                        }
+                                        else
+                                        {
+                                            skipRecoilSlowMode[player] = true;
+                                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
+                                        }
+                                    }
                                     else
                                         dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
-
                                 }
                             }
                         }  //if(commands[i][1] == 'R')

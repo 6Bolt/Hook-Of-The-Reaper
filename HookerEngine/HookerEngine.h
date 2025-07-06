@@ -390,6 +390,10 @@ private:
     quint8                          loadRecoilForPLayer[MAXGAMEPLAYERS];
     //Loaded Light Gun Found Recoil Option or Not
     bool                            foundRecoilForPlayer[MAXGAMEPLAYERS];
+    //If Light Gun is in Slow Mode
+    bool                            loadedLGSlowMode[MAXGAMEPLAYERS];
+    //If Recoil is even, for slow mode
+    bool                            skipRecoilSlowMode[MAXGAMEPLAYERS];
 
     ///////////////////////////////////////////////////////////////////////////
 

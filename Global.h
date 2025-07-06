@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.1.6"
+#define VERSION                 "1.1.7"
 #define VERSIONMAIN             1
 #define VERSIONMID              1
 #define VERSIONLAST             3
@@ -54,7 +54,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Default Light Gun Definition - There is No Zero, as that is blan and nonDefaultLG
-#define NUM_DEFAULTLG           11
+#define NUM_DEFAULTLG           12
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -72,6 +72,10 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 #define DISABLEREAPERLEDSOPEN   "ZS"
 #define DISABLEREAPERLEDSCLOSE  "ZX"
+
+#define MAXRELOADVALUE          14
+#define REAPERMAXAMMOF          5.0f
+#define REAPERRECOIL            "Z5"
 
 //Second Default Light Gun
 //Retro Shooter: MX24
@@ -209,18 +213,33 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Tenth Default Light Gun
-//Xenas Light Gun
-#define XENAS                  10
-#define XENASNAME              "Xenas Gun"
-#define XENASBAUD              0
-#define XENASDATA              0
-#define XENASPARITY            0
-#define XENASSTOP              0
-#define XENASFLOW              0
-#define XENASMAXAMMO           "0"
-#define XENASRELOAD            "0"
-#define XENASMAXAMMONUM        0
-#define XENASRELOADNUM         0
+//Xenas Light Gun - Serial Port
+#define XENAS                   10
+#define XENASNAME               "Xenas Gun - Serial Port"
+#define XENASBAUD               0
+#define XENASDATA               0
+#define XENASPARITY             0
+#define XENASSTOP               0
+#define XENASFLOW               0
+#define XENASMAXAMMO            "0"
+#define XENASRELOAD             "0"
+#define XENASMAXAMMONUM         0
+#define XENASRELOADNUM          0
+
+
+//Tenth Default Light Gun
+//Xenas Light Gun - BlueTooth
+#define XENASBT                 11
+#define XENASBTNAME             "Xenas Gun - BlueTooth"
+#define XENASBTBAUD             0
+#define XENASBTDATA             0
+#define XENASBTPARITY           0
+#define XENASBTSTOP             0
+#define XENASBTFLOW             0
+#define XENASBTMAXAMMO          "0"
+#define XENASBTRELOAD           "0"
+#define XENASBTMAXAMMONUM       0
+#define XENASBTRELOADNUM        0
 
 
 //TCP Socket
@@ -362,6 +381,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define RECOMMANDSTARTCHAR      '#'
 #define PLAYER2CHHAR            'P'
 #define ALL2CHAR                'A'
+#define SLOWMODE                "Slow"
 
 //Number of Supported Recoil Commands 4: Ammo_Value, Recoil, Recoil_R2S, and Recoil_Value
 #define NUMBEROFRECOILS         4

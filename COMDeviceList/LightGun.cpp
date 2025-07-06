@@ -1340,6 +1340,15 @@ void LightGun::LoadDefaultLGCommands()
                         }
                         reloadCmdsSet = true;
                     }
+                    else if(splitLines[0] == RELOADNORMBLCMDONLY && !reloadNoRumble && reloadDisable && defaultLightGunNum == RS3_REAPER)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            reloadCmds << commands[i];
+                        }
+                        reloadCmdsSet = true;
+                    }
                     else if(splitLines[0] == AMMOVALUECMDONLY)
                     {
                         for(i = 0; i < numberCommands; i++)
@@ -1700,6 +1709,10 @@ QStringList LightGun::DamageCommands(bool *isSet)
 QStringList LightGun::RecoilCommands(bool *isSet)
 {
     *isSet = recoilCmdsSet;
+
+    if(reaperLargeAmmo)
+        recoilCmds[0] = "Z" + QString::number(reaperNumLEDOn);
+
     return recoilCmds;
 }
 
@@ -1744,12 +1757,44 @@ QStringList LightGun::ReloadValueCommands(bool *isSet, quint16 ammoValue)
         lastAmmoValue = ammoValue;
         *isSet = false;
         QStringList tempSL;
+
+        if(reaperLargeAmmo)
+        {
+            if(ammoValue == 0)
+                reaperNumLEDOn = 0;
+            else
+            {
+                reaperBulletCount++;
+
+                if(reaperBulletCount == reaperBullets1LED && reaper5LEDNumber > 1)
+                {
+                    reaperBulletCount = 0;
+                    reaper5LEDNumber--;
+                    //qDebug() << "reaper5LEDNumber:" << reaper5LEDNumber << "ammoValue:" << ammoValue;
+                }
+
+                reaperNumLEDOn = reaper5LEDNumber;
+            }
+        }
+
         return tempSL;
     }
 
     *isSet = reloadCmdsSet;
 
     lastAmmoValue = ammoValue;
+    reloadAmmoValue = ammoValue;
+
+    if(reloadAmmoValue > MAXRELOADVALUE && defaultLightGunNum == RS3_REAPER && !disableReaperLEDs)
+    {
+        reaperLargeAmmo = true;
+        reaper5LEDNumber = REAPERMAXAMMONUM;
+        reaperBulletCount = 0;
+        reaperBullets1LED = static_cast<quint8>(qRound(static_cast<float>(reloadAmmoValue)/REAPERMAXAMMOF));
+        //qDebug() << "reaperBullets1LED:" <<  reaperBullets1LED;
+    }
+    else
+        reaperLargeAmmo = false;
 
     return reloadCmds;
 }
@@ -1768,6 +1813,19 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
     {
         lastAmmoValue = ammoValue;
         *isSet = reloadCmdsSet;
+        reloadAmmoValue = ammoValue;
+
+        if(reloadAmmoValue > MAXRELOADVALUE && defaultLightGunNum == RS3_REAPER && !disableReaperLEDs)
+        {
+            reaperLargeAmmo = true;
+            reaper5LEDNumber = REAPERMAXAMMONUM;
+            reaperBulletCount = 0;
+            reaperBullets1LED = static_cast<quint8>(qRound(static_cast<float>(reloadAmmoValue)/REAPERMAXAMMOF));
+            //qDebug() << "reaperBullets1LED:" <<  reaperBullets1LED;
+        }
+        else
+            reaperLargeAmmo = false;
+
         return reloadCmds;
     }
     else if((lastAmmoValue == 0 && ammoValue == 0) || (lastAmmoValue > 1 && ammoValue == 0)) //Boot Up or Closing Game, Do Nothing
@@ -1786,10 +1844,31 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
         {
             quint16 tempAV;
 
-            if(ammoValue > maxAmmo) //If ammoValue is higher than maxAmmo, then = to maxValue
-                tempAV = maxAmmo;
+            if(reaperLargeAmmo)
+            {
+                if(ammoValue == 0)
+                    tempAV = 0;
+                else
+                {
+                    reaperBulletCount++;
+
+                    if(reaperBulletCount == reaperBullets1LED && reaper5LEDNumber > 1)
+                    {
+                        reaperBulletCount = 0;
+                        reaper5LEDNumber--;
+                        //qDebug() << "reaper5LEDNumber:" << reaper5LEDNumber << "ammoValue:" << ammoValue;
+                    }
+
+                    tempAV = reaper5LEDNumber;
+                }
+            }
             else
-                tempAV = ammoValue;
+            {
+                if(ammoValue > maxAmmo) //If ammoValue is higher than maxAmmo, then = to maxValue
+                    tempAV = maxAmmo;
+                else
+                    tempAV = ammoValue;
+            }
 
             tempAVS = QString::number (tempAV);
 
