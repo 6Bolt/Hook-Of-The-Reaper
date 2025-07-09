@@ -67,6 +67,10 @@ This is a lot easier then MAME. Open up the DemulShooter GUI (DemulShooter_GUI.e
 
 For the SupoerModel (Model 3) emulator, a file needs to be updated, to enable the network output. From the base of the emulator, go into the "config" directory. In this directory, there is a file called "supermodel.ini". Open this file in a text edititor. The add this "OUTPUTS = NET" to a new line in the file. Then save and close the file. That is it.   
 
+I dont' know if the current SuperModel emulator supports network outputs or not. And if it does, I don't know how to enable it. Below, is a link to the SuperModel release that I used, and I know that has network output support. You have to do whats above, to enable network outputs.  
+
+https://github.com/njz3/model3emu/releases/tag/fix_sound_vol
+
 
 # Game Files
 
