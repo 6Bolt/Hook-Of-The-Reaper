@@ -75,6 +75,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reloadDisable = reloadDis;
 
     reaperLargeAmmo = false;
+    isReaper5LEDsInited = false;
 
     FillSerialPortInfo();
 
@@ -166,6 +167,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reloadDisable = reloadDis;
 
     reaperLargeAmmo = false;
+    isReaper5LEDsInited = false;
 
     FillSerialPortInfo();
 
@@ -299,6 +301,7 @@ LightGun::LightGun(LightGun const &lgMember)
     reloadDisable = lgMember.reloadDisable;
 
     reaperLargeAmmo = lgMember.reaperLargeAmmo;
+    isReaper5LEDsInited = lgMember.isReaper5LEDsInited;
 
     LoadDefaultLGCommands();
 
@@ -389,6 +392,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reloadDisable = reloadDis;
 
     reaperLargeAmmo = false;
+    isReaper5LEDsInited = false;
 
     FillSerialPortInfo();
 
@@ -481,6 +485,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reloadDisable = reloadDis;
 
     reaperLargeAmmo = false;
+    isReaper5LEDsInited = false;
 
     FillSerialPortInfo();
 
@@ -545,6 +550,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reloadDisable = reloadDis;
 
     reaperLargeAmmo = false;
+    isReaper5LEDsInited = false;
 
     LoadDefaultLGCommands();
 }
@@ -611,6 +617,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reloadDisable = reloadDis;
 
     reaperLargeAmmo = false;
+    isReaper5LEDsInited = false;
 
     LoadDefaultLGCommands();
 }
@@ -1135,6 +1142,7 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
     reloadDisable = lgMember.reloadDisable;
 
     reaperLargeAmmo = lgMember.reaperLargeAmmo;
+    isReaper5LEDsInited = lgMember.isReaper5LEDsInited;
 
     LoadDefaultLGCommands();
 
@@ -1270,15 +1278,12 @@ void LightGun::LoadDefaultLGCommands()
                         for(i = 0; i < numberCommands; i++)
                         {
                             commands[i] = commands[i].trimmed ();
-
-                            if(disableReaperLEDs)
-                            {
-                                if(commands[i] != DISABLEREAPERLEDSOPEN)
-                                    openComPortCmds << commands[i];
-                            }
-                            else
-                                openComPortCmds << commands[i];
+                            openComPortCmds << commands[i];
                         }
+
+                        //if(disableReaperLEDs)
+                        //    openComPortCmds << REAPERINITLEDS;
+
                         openComPortCmdsSet = true;
                     }
                     else if(splitLines[0] == CLOSECOMPORTONLY)
@@ -1287,16 +1292,6 @@ void LightGun::LoadDefaultLGCommands()
                         {
                             commands[i] = commands[i].trimmed ();
                             closeComPortCmds << commands[i];
-
-                            /* The ZX command should not be taken out, as it gives recoil control back to light gun
-                            if(disableReaperLEDs)
-                            {
-                                if(commands[i] != DISABLEREAPERLEDSCLOSE)
-                                    closeComPortCmds << commands[i];
-                            }
-                            else
-                                closeComPortCmds << commands[i];
-                            */
                         }
                         closeComPortCmdsSet = true;
                     }
@@ -1724,10 +1719,6 @@ QStringList LightGun::DamageCommands(bool *isSet)
 QStringList LightGun::RecoilCommands(bool *isSet)
 {
     *isSet = recoilCmdsSet;
-
-    if(reaperLargeAmmo)
-        recoilCmds[0] = "Z" + QString::number(reaperNumLEDOn);
-
     return recoilCmds;
 }
 
@@ -1771,46 +1762,12 @@ QStringList LightGun::ReloadValueCommands(bool *isSet, quint16 ammoValue)
     {
         lastAmmoValue = ammoValue;
         *isSet = false;
-        QStringList tempSL;
-
-        if(reaperLargeAmmo)
-        {
-            if(ammoValue == 0)
-                reaperNumLEDOn = 0;
-            else
-            {
-                reaperBulletCount++;
-
-                if(reaperBulletCount == reaperBullets1LED && reaper5LEDNumber > 1)
-                {
-                    reaperBulletCount = 0;
-                    reaper5LEDNumber--;
-                    //qDebug() << "reaper5LEDNumber:" << reaper5LEDNumber << "ammoValue:" << ammoValue;
-                }
-
-                reaperNumLEDOn = reaper5LEDNumber;
-            }
-        }
-
+        QStringList tempSL; 
         return tempSL;
     }
 
     *isSet = reloadCmdsSet;
-
-    lastAmmoValue = ammoValue;
-    reloadAmmoValue = ammoValue;
-
-    if(reloadAmmoValue > MAXRELOADVALUE && defaultLightGunNum == RS3_REAPER && !disableReaperLEDs)
-    {
-        reaperLargeAmmo = true;
-        reaper5LEDNumber = REAPERMAXAMMONUM;
-        reaperBulletCount = 0;
-        reaperBullets1LED = static_cast<quint8>(qRound(static_cast<float>(reloadAmmoValue)/REAPERMAXAMMOF));
-        //qDebug() << "reaperBullets1LED:" <<  reaperBullets1LED;
-    }
-    else
-        reaperLargeAmmo = false;
-
+    lastAmmoValue = ammoValue;   
     return reloadCmds;
 }
 
@@ -1830,22 +1787,40 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
         *isSet = reloadCmdsSet;
         reloadAmmoValue = ammoValue;
 
-        if(reloadAmmoValue > MAXRELOADVALUE && defaultLightGunNum == RS3_REAPER && !disableReaperLEDs)
+        if(defaultLightGunNum == RS3_REAPER && !disableReaperLEDs)
         {
-            reaperLargeAmmo = true;
-            reaper5LEDNumber = REAPERMAXAMMONUM;
-            reaperBulletCount = 0;
-            reaperBullets1LED = static_cast<quint8>(qRound(static_cast<float>(reloadAmmoValue)/REAPERMAXAMMOF));
-            //qDebug() << "reaperBullets1LED:" <<  reaperBullets1LED;
+            if(reloadAmmoValue > MAXRELOADVALUE)
+            {
+                reaperLargeAmmo = true;
+                reaper5LEDNumber = REAPERMAXAMMONUM;
+                reaperBulletCount = 0;
+                reaperBullets1LED = static_cast<quint8>(qRound(static_cast<float>(reloadAmmoValue)/REAPERMAXAMMOF));
+                //qDebug() << "reaperBullets1LED:" <<  reaperBullets1LED;
+            }
+            else
+                reaperLargeAmmo = false;
+
+            if(!isReaper5LEDsInited)
+            {
+                isReaper5LEDsInited = true;
+                reloadCmds.prepend(REAPERINITLEDS);
+            }
         }
-        else
-            reaperLargeAmmo = false;
 
         return reloadCmds;
     }
     else if((lastAmmoValue == 0 && ammoValue == 0) || (lastAmmoValue > 1 && ammoValue == 0)) //Boot Up or Closing Game, Do Nothing
     {
         lastAmmoValue = ammoValue;
+
+        if(defaultLightGunNum == RS3_REAPER && !disableReaperLEDs && !isReaper5LEDsInited)
+        {
+            isReaper5LEDsInited = true;
+            *isSet = true;
+            tempSL << REAPERINITLEDS;
+            return tempSL;
+        }
+
         *isSet = false;
         return tempSL;
     }
@@ -2243,6 +2218,7 @@ void LightGun::ResetLightGun()
     otherDisplayValue = -1;
     lifeBarMaxLife = 0;
     reaperLargeAmmo = false;
+    isReaper5LEDsInited = false;
 }
 
 

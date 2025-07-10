@@ -179,6 +179,9 @@ void testComPortWindow::on_sendDataPushButton_clicked()
     {
         QByteArray portDataBA = portData.toUtf8 ();
 
+        //qDebug() << portDataBA;
+        //qDebug() << portDataBA.toHex(' ');
+
         bytesWritten = serialComPort.write (portDataBA);
 
         if(bytesWritten != portDataBA.size())

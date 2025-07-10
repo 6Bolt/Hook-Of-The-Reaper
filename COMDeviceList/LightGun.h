@@ -189,6 +189,7 @@ private:
     bool                maxAmmoSet;
     bool                reloadValueSet;
     bool                disableReaperLEDs;
+    bool                isReaper5LEDsInited;
     //MX24
     quint8              dipSwitchPlayerNumber;
     bool                isDipSwitchPlayerNumberSet;

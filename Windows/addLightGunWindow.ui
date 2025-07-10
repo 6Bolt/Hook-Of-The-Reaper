@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>701</width>
-    <height>981</height>
+    <height>979</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -58,10 +58,10 @@
     </font>
    </property>
    <property name="maxVisibleItems">
-    <number>11</number>
+    <number>12</number>
    </property>
   </widget>
-  <widget class="QLabel" name="label_2">
+  <widget class="QLabel" name="nameLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -74,6 +74,9 @@
     <font>
      <pointsize>12</pointsize>
     </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color: red;</string>
    </property>
    <property name="text">
     <string>Light Gun Name:</string>
@@ -123,7 +126,7 @@
     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
    </property>
   </widget>
-  <widget class="QLabel" name="label_4">
+  <widget class="QLabel" name="baudLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -159,7 +162,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QLabel" name="label_5">
+  <widget class="QLabel" name="parityLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -180,7 +183,7 @@
     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
    </property>
   </widget>
-  <widget class="QLabel" name="label_6">
+  <widget class="QLabel" name="comLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -193,6 +196,9 @@
     <font>
      <pointsize>12</pointsize>
     </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color: black;</string>
    </property>
    <property name="text">
     <string>COM Port:</string>
@@ -213,7 +219,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QLabel" name="label_7">
+  <widget class="QLabel" name="dataLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -261,7 +267,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QLabel" name="label_8">
+  <widget class="QLabel" name="stopLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -279,7 +285,7 @@
     <string>Stop Bits:</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_9">
+  <widget class="QLabel" name="flowLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -611,7 +617,7 @@
     <string>Serial Port &amp; USB Info</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_10">
+  <widget class="QLabel" name="dipLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -644,7 +650,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QLabel" name="label_11">
+  <widget class="QLabel" name="analogLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -701,7 +707,7 @@
     <string>0-255</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_20">
+  <widget class="QLabel" name="hubLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -757,7 +763,7 @@
     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
    </property>
   </widget>
-  <widget class="QLabel" name="label_23">
+  <widget class="QLabel" name="vendorLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -796,7 +802,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="label_25">
+  <widget class="QLabel" name="productLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -835,7 +841,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="label_27">
+  <widget class="QLabel" name="usbLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -940,7 +946,7 @@
     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
    </property>
   </widget>
-  <widget class="QLabel" name="label_29">
+  <widget class="QLabel" name="pathLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -1028,7 +1034,7 @@
     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
    </property>
   </widget>
-  <widget class="QLabel" name="label_31">
+  <widget class="QLabel" name="recoilHeadLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -1051,7 +1057,7 @@
     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
    </property>
   </widget>
-  <widget class="QLabel" name="label_32">
+  <widget class="QLabel" name="recoilInfoLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -1065,11 +1071,14 @@
      <pointsize>12</pointsize>
     </font>
    </property>
+   <property name="styleSheet">
+    <string notr="true">color : black;</string>
+   </property>
    <property name="text">
     <string>Recoil Priority (0 - Highest Priority, 3 - Lowest Priority):</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_33">
+  <widget class="QLabel" name="ammoLabel">
    <property name="geometry">
     <rect>
      <x>150</x>
@@ -1097,7 +1106,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLabel" name="label_34">
+  <widget class="QLabel" name="recoilLabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -1125,7 +1134,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLabel" name="label_35">
+  <widget class="QLabel" name="r2sLabel">
    <property name="geometry">
     <rect>
      <x>340</x>
@@ -1153,7 +1162,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLabel" name="label_36">
+  <widget class="QLabel" name="valueLabel">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -1181,7 +1190,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLabel" name="label_37">
+  <widget class="QLabel" name="reloadLabel">
    <property name="geometry">
     <rect>
      <x>10</x>

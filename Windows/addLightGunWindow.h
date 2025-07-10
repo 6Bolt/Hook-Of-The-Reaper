@@ -14,6 +14,7 @@
 #include <QLCDNumber>
 #include <QThread>
 
+
 #include "../COMDeviceList/ComDeviceList.h"
 
 #include <Windows.h>
@@ -93,6 +94,8 @@ private:
 
     bool CheckRecoilComboBoxes();
 
+    void ChangeLabels(int index);
+
     //void PrintHIDInfo();
 
     ///////////////////////////////////////////////////////////////////////////
@@ -136,7 +139,6 @@ private:
 
     //Sound Effects of Add Light Gun
     QSoundEffect            addLightGunSound;
-
 
 };
 

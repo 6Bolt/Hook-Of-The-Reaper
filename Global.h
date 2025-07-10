@@ -54,7 +54,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Default Light Gun Definition - There is No Zero, as that is blan and nonDefaultLG
-#define NUM_DEFAULTLG           12
+#define NUM_DEFAULTLG           11
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -76,6 +76,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define MAXRELOADVALUE          14
 #define REAPERMAXAMMOF          5.0f
 #define REAPERRECOIL            "Z5"
+#define REAPERINITLEDS          "ZS"
 
 //Second Default Light Gun
 //Retro Shooter: MX24
@@ -215,7 +216,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 //Tenth Default Light Gun
 //Xenas Light Gun - Serial Port
 #define XENAS                   10
-#define XENASNAME               "Xenas Gun - Serial Port"
+#define XENASNAME               "Xenas Gun"
 #define XENASBAUD               0
 #define XENASDATA               0
 #define XENASPARITY             0
@@ -225,21 +226,6 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define XENASRELOAD             "0"
 #define XENASMAXAMMONUM         0
 #define XENASRELOADNUM          0
-
-
-//Tenth Default Light Gun
-//Xenas Light Gun - BlueTooth
-#define XENASBT                 11
-#define XENASBTNAME             "Xenas Gun - BlueTooth"
-#define XENASBTBAUD             0
-#define XENASBTDATA             0
-#define XENASBTPARITY           0
-#define XENASBTSTOP             0
-#define XENASBTFLOW             0
-#define XENASBTMAXAMMO          "0"
-#define XENASBTRELOAD           "0"
-#define XENASBTMAXAMMONUM       0
-#define XENASBTRELOADNUM        0
 
 
 //TCP Socket

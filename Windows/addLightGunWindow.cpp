@@ -85,7 +85,6 @@ addLightGunWindow::addLightGunWindow(ComDeviceList *cdList, QWidget *parent)
         ui->baudSpeedComboBox->insertItem(comPortIndx,BAUDNAME_ARRAY[comPortIndx]);
     }
 
-
     //Data Bits Combo Box - Adding in Data Bit Options
     for(quint8 comPortIndx=0;comPortIndx<DATABITS_NUMBER;comPortIndx++)
     {
@@ -163,6 +162,8 @@ addLightGunWindow::addLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     //Fill out Serial Port 0 Info
     FillSerialPortInfo(0);
 
+    //Change Needed Labels to Red
+    ChangeLabels(0);
 
     ui->lgLCDNumber->setSegmentStyle(QLCDNumber::Flat);
     numberLightGuns = p_comDeviceList->GetNumberLightGuns ();
@@ -293,12 +294,19 @@ void addLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int index
             ui->reloadRumbleRadioButton->setEnabled(false);
             ui->disableReloadradioButton->setEnabled(false);
         }
-        else if(index == XGUNNER)
+        else if(index == XGUNNER || index == RS3_REAPER)
         {
             ui->reloadRadioButton->setEnabled(true);
             ui->disableReloadradioButton->setEnabled(true);
             ui->reloadRadioButton->setChecked(true);
             ui->reloadRumbleRadioButton->setEnabled(false);
+
+            if(index == RS3_REAPER)
+            {
+                ui->recoilComboBox->setCurrentIndex(1);
+                ui->ammoValueComboBox->setCurrentIndex(0);
+                ui->recoilR2SComboBox->setCurrentIndex(2);
+            }
         }
         else
         {
@@ -344,6 +352,8 @@ void addLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int index
         ui->reloadRumbleRadioButton->setEnabled(true);
         ui->disableReloadradioButton->setEnabled(true);
     }
+
+    ChangeLabels(index);
 }
 
 void addLightGunWindow::on_comPortComboBox_currentIndexChanged(int index)
@@ -1038,24 +1048,163 @@ bool addLightGunWindow::CheckRecoilComboBoxes()
 }
 
 
-
-
-
-/*
-void addLightGunWindow::PrintHIDInfo()
+void addLightGunWindow::ChangeLabels(int index)
 {
-    qDebug() << " ";
-    qDebug() << "Vendor ID: " << Qt::hex << Qt::showbase << Qt::uppercasedigits << devs->vendor_id;
-    //qDebug() << "Vendor ID: 0x" << QString::number(devs->vendor_id, 16).rightJustified(4, '0');
-    qDebug() << "Product ID: " << Qt::hex << Qt::showbase << Qt::uppercasedigits << devs->product_id;
-    qDebug() << "Path: " << devs->path;
-    qDebug() << "Serial Number: " << QString::fromWCharArray(devs->serial_number);
-    qDebug() << "Release Number: " << Qt::hex << Qt::showbase << devs->release_number;
-    qDebug() << "Manufacturer: " << QString::fromWCharArray(devs->manufacturer_string);
-    qDebug() << "Product: " << QString::fromWCharArray(devs->product_string);
-    qDebug() << "Usage Page: " << Qt::hex << Qt::showbase << devs->usage_page;
-    qDebug() << "Usage: " << Qt::hex << Qt::showbase << devs->usage;
-    qDebug() << "Interface Number: " << devs->interface_number;
-    qDebug() << " ";
+    //Always Red, Name and Recoil Method
+    ui->nameLabel->setStyleSheet("QLabel { color: red; }");
+    ui->recoilLabel->setStyleSheet("QLabel { color: red; }");
+    ui->ammoLabel->setStyleSheet("QLabel { color: red; }");
+    ui->r2sLabel->setStyleSheet("QLabel { color: red; }");
+
+    if(index == 0 || index == -1)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: red; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: red; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: red; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: red; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: red; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
+    }
+    else if(index == RS3_REAPER || index == XGUNNER)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: red; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: black; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
+    }
+    else if(index == MX24)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: black; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: red; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: red; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: black; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: black; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: black; }");
+    }
+    else if(index == JBGUN4IR || index == OPENFIRE)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: red; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
+    }
+    else if(index == FUSION)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: red; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
+    }
+    else if(index == BLAMCON || index == XENAS)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: red; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
+    }
+    else if(index == ALIENUSB || index == AIMTRAK)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: black; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: black; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: black; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: black; }");
+    }
+
 }
-*/
+
+
+
