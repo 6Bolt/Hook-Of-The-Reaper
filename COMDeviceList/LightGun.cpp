@@ -76,6 +76,12 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
+    enableReaperAmmo0Delay = false;
+    repearAmmo0Delay = 1;
+    isReaperAmmo0TimerInited = false;
+    reaperHoldSlideTime = REAPERHOLDSLIDETIME;
+    isReaperTimerRunning = false;
+    isReaperSlideHeldBack = false;
 
     FillSerialPortInfo();
 
@@ -168,6 +174,12 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
+    enableReaperAmmo0Delay = false;
+    repearAmmo0Delay = 1;
+    isReaperAmmo0TimerInited = false;
+    reaperHoldSlideTime = REAPERHOLDSLIDETIME;
+    isReaperTimerRunning = false;
+    isReaperSlideHeldBack = false;
 
     FillSerialPortInfo();
 
@@ -302,6 +314,17 @@ LightGun::LightGun(LightGun const &lgMember)
 
     reaperLargeAmmo = lgMember.reaperLargeAmmo;
     isReaper5LEDsInited = lgMember.isReaper5LEDsInited;
+    enableReaperAmmo0Delay = lgMember.enableReaperAmmo0Delay;
+    repearAmmo0Delay = lgMember.repearAmmo0Delay;
+    isReaperAmmo0TimerInited = false;
+
+    if(lgMember.isReaperAmmo0TimerInited)
+        InitReaperAmmo0Timer();
+
+
+    reaperHoldSlideTime = lgMember.reaperHoldSlideTime;
+    isReaperTimerRunning = lgMember.isReaperTimerRunning;
+    isReaperSlideHeldBack = lgMember.isReaperSlideHeldBack;
 
     LoadDefaultLGCommands();
 
@@ -393,6 +416,12 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
+    enableReaperAmmo0Delay = false;
+    repearAmmo0Delay = 1;
+    isReaperAmmo0TimerInited = false;
+    reaperHoldSlideTime = REAPERHOLDSLIDETIME;
+    isReaperTimerRunning = false;
+    isReaperSlideHeldBack = false;
 
     FillSerialPortInfo();
 
@@ -486,6 +515,12 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
+    enableReaperAmmo0Delay = false;
+    repearAmmo0Delay = 1;
+    isReaperAmmo0TimerInited = false;
+    reaperHoldSlideTime = REAPERHOLDSLIDETIME;
+    isReaperTimerRunning = false;
+    isReaperSlideHeldBack = false;
 
     FillSerialPortInfo();
 
@@ -551,6 +586,12 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
+    enableReaperAmmo0Delay = false;
+    repearAmmo0Delay = 1;
+    isReaperAmmo0TimerInited = false;
+    reaperHoldSlideTime = REAPERHOLDSLIDETIME;
+    isReaperTimerRunning = false;
+    isReaperSlideHeldBack = false;
 
     LoadDefaultLGCommands();
 }
@@ -618,10 +659,39 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
+    enableReaperAmmo0Delay = false;
+    repearAmmo0Delay = 1;
+    isReaperAmmo0TimerInited = false;
+    reaperHoldSlideTime = REAPERHOLDSLIDETIME;
+    isReaperTimerRunning = false;
+    isReaperSlideHeldBack = false;
 
     LoadDefaultLGCommands();
 }
 
+//Deconstructor
+
+LightGun::~LightGun()
+{
+
+    if(isReaperTimerRunning && isReaperAmmo0TimerInited)
+    {
+        //Stop Timer
+        p_reaperAmmo0Timer->stop ();
+        isReaperTimerRunning = false;
+
+        //Check if the Slide is Held Back
+        if(isReaperSlideHeldBack)
+        {
+            //Send Reload command (Z6) to the Reaper Light Gun tp bring slide back
+            emit WriteCOMPort(comPortNum, REAPERRELOADCOMMAND);
+            isReaperSlideHeldBack = false;
+        }
+    }
+
+    if(isReaperAmmo0TimerInited)
+        delete p_reaperAmmo0Timer;
+}
 
 //public member functions
 
@@ -777,6 +847,18 @@ void LightGun::SetReloadOptions(bool reloadNR, bool reloadDis)
     LoadDefaultLGCommands();
 }
 
+void LightGun::SetReaperAmmo0Delay(bool isAmmo0DelayEnabled, quint8 delayTime, quint16 reaperHST)
+{
+    enableReaperAmmo0Delay = isAmmo0DelayEnabled;
+    repearAmmo0Delay = delayTime;
+    reaperHoldSlideTime = reaperHST;
+
+    if(!isReaperAmmo0TimerInited)
+        InitReaperAmmo0Timer();
+    else
+        p_reaperAmmo0Timer->setInterval(repearAmmo0Delay);
+
+}
 
 //Get Member Functions
 
@@ -1014,13 +1096,18 @@ bool LightGun::GetReloadDisabled()
     return reloadDisable;
 }
 
+quint8 LightGun::GetReaperAmmo0Delay(bool *isAmmo0DelayEnabled, quint16 *reaperHST)
+{
+    *isAmmo0DelayEnabled = enableReaperAmmo0Delay;
+    *reaperHST = reaperHoldSlideTime;
+    return repearAmmo0Delay;
+}
 
 
 void LightGun::CopyLightGun(LightGun const &lgMember)
 {
 
     //*this = lgMember;
-
 
     defaultLightGun = lgMember.defaultLightGun;
     if(defaultLightGun)
@@ -1143,6 +1230,16 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
 
     reaperLargeAmmo = lgMember.reaperLargeAmmo;
     isReaper5LEDsInited = lgMember.isReaper5LEDsInited;
+    enableReaperAmmo0Delay = lgMember.enableReaperAmmo0Delay;
+    repearAmmo0Delay = lgMember.repearAmmo0Delay;
+    isReaperAmmo0TimerInited = false;
+
+    if(lgMember.isReaperAmmo0TimerInited)
+        InitReaperAmmo0Timer();
+
+    reaperHoldSlideTime = lgMember.reaperHoldSlideTime;
+    isReaperTimerRunning = lgMember.isReaperTimerRunning;
+    isReaperSlideHeldBack = lgMember.isReaperSlideHeldBack;
 
     LoadDefaultLGCommands();
 
@@ -1787,23 +1884,37 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
         *isSet = reloadCmdsSet;
         reloadAmmoValue = ammoValue;
 
-        if(defaultLightGunNum == RS3_REAPER && !disableReaperLEDs)
+        if(defaultLightGunNum == RS3_REAPER)
         {
-            if(reloadAmmoValue > MAXRELOADVALUE)
+            //If Reaper Ammo 0 Timer Running, cancel it, as reload happen (Z6 command)
+            if(isReaperTimerRunning)
             {
-                reaperLargeAmmo = true;
-                reaper5LEDNumber = REAPERMAXAMMONUM;
-                reaperBulletCount = 0;
-                reaperBullets1LED = static_cast<quint8>(qRound(static_cast<float>(reloadAmmoValue)/REAPERMAXAMMOF));
-                //qDebug() << "reaperBullets1LED:" <<  reaperBullets1LED;
+                p_reaperAmmo0Timer->stop();
+                isReaperTimerRunning = false;
+                isReaperSlideHeldBack = false;
+                p_reaperAmmo0Timer->setInterval(repearAmmo0Delay);
             }
-            else
-                reaperLargeAmmo = false;
 
-            if(!isReaper5LEDsInited)
+            if(!disableReaperLEDs)
             {
-                isReaper5LEDsInited = true;
-                reloadCmds.prepend(REAPERINITLEDS);
+                if(reloadAmmoValue > MAXRELOADVALUE)
+                {
+                    reaperLargeAmmo = true;
+                    reaper5LEDNumber = REAPERMAXAMMONUM;
+                    reaperBulletCount = 0;
+                    reaperBullets1LED = static_cast<quint8>(qRound(static_cast<float>(reloadAmmoValue)/REAPERMAXAMMOF));
+                    //qDebug() << "reaperBullets1LED:" <<  reaperBullets1LED;
+                }
+                else
+                    reaperLargeAmmo = false;
+
+                if(!isReaper5LEDsInited)
+                {
+                    isReaper5LEDsInited = true;
+                    tempSL = reloadCmds;
+                    tempSL.prepend(REAPERINITLEDS);
+                    return tempSL;
+                }
             }
         }
 
@@ -1812,15 +1923,6 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
     else if((lastAmmoValue == 0 && ammoValue == 0) || (lastAmmoValue > 1 && ammoValue == 0)) //Boot Up or Closing Game, Do Nothing
     {
         lastAmmoValue = ammoValue;
-
-        if(defaultLightGunNum == RS3_REAPER && !disableReaperLEDs && !isReaper5LEDsInited)
-        {
-            isReaper5LEDsInited = true;
-            *isSet = true;
-            tempSL << REAPERINITLEDS;
-            return tempSL;
-        }
-
         *isSet = false;
         return tempSL;
     }
@@ -1833,6 +1935,17 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
         if(defaultLightGunNum == RS3_REAPER) //RS3 Reaper
         {
             quint16 tempAV;
+
+            if(ammoValue == 0 && enableReaperAmmo0Delay)
+            {
+                //Start Timer
+                p_reaperAmmo0Timer->start();
+                isReaperTimerRunning = true;
+                //Do Nothing, as after timeout, it will then send Z0 Command, unless reload happens
+                *isSet = false;
+                return tempSL;
+            }
+
 
             if(reaperLargeAmmo)
             {
@@ -2219,6 +2332,15 @@ void LightGun::ResetLightGun()
     lifeBarMaxLife = 0;
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
+    if(isReaperTimerRunning)
+    {
+        p_reaperAmmo0Timer->stop();
+        if(isReaperSlideHeldBack)
+            emit WriteCOMPort(comPortNum, REAPERRELOADCOMMAND);
+        p_reaperAmmo0Timer->setInterval(repearAmmo0Delay);
+        isReaperSlideHeldBack = false;
+        isReaperTimerRunning = false;
+    }
 }
 
 
@@ -2298,4 +2420,45 @@ void LightGun::FillSerialPortInfo()
     //qDebug() << "Port Name: " << serialPortInfo.portName << " Path: " << serialPortInfo.path << " Port Num: " << comPortNum;
 }
 
+
+void LightGun::InitReaperAmmo0Timer()
+{
+    if(!isReaperAmmo0TimerInited && enableReaperAmmo0Delay)
+    {
+        p_reaperAmmo0Timer = new QTimer();
+        p_reaperAmmo0Timer->setInterval(repearAmmo0Delay);
+        p_reaperAmmo0Timer->setSingleShot(true);
+        isReaperAmmo0TimerInited = true;
+
+        //Connect Time Out Signal to Class Memeber Function Slot
+        connect(p_reaperAmmo0Timer, SIGNAL(timeout()), this, SLOT(ReaperAmmo0TimeOut()));
+    }
+}
+
+
+
+void LightGun::ReaperAmmo0TimeOut()
+{
+    //qDebug() << "Reaper Ammo 0 Time Out";
+
+    if(isReaperSlideHeldBack)
+    {
+        isReaperTimerRunning = false;
+        //Send Reload command (Z6) to the Reaper Light Gun
+        emit WriteCOMPort(comPortNum, REAPERRELOADCOMMAND);
+        isReaperSlideHeldBack = false;
+        //Set timer to delay Z0 write
+        p_reaperAmmo0Timer->setInterval(repearAmmo0Delay);
+    }
+    else
+    {
+        //Send Z0 to the Reaper Light Gun
+        emit WriteCOMPort(comPortNum, REAPERHOLDBACKSLIDE);
+        isReaperSlideHeldBack = true;
+        //Set Timer to Safety Hold Slide Time
+        p_reaperAmmo0Timer->setInterval(reaperHoldSlideTime);
+        //Start Timer
+        p_reaperAmmo0Timer->start();
+    }
+}
 

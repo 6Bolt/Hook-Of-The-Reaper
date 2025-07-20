@@ -156,6 +156,8 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
     //Creates the Hooker Engine and Gives Pointer Address of COM Device List
     p_hookEngine = new HookerEngine(p_comDeviceList, true, this);
 
+
+
 #ifdef Q_OS_WIN
 
     this->hide();
@@ -238,6 +240,7 @@ HookOfTheReaper::~HookOfTheReaper()
 {
     delete ui;
     delete p_comDeviceList;
+    delete p_hookEngine;
 }
 
 
@@ -376,6 +379,9 @@ void HookOfTheReaper::Add_Light_Gun_Window_Closed()
 
         //To be safe, reload settings to Light guns
         p_comDeviceList->UpdateLightGunWithSettings ();
+
+        //Run SetUpLightGun, to make new connections for new light guns
+        p_hookEngine->SetUpLightGuns();
     }
 
     numberComDevices = p_comDeviceList->GetNumberComPortDevices();
@@ -474,6 +480,9 @@ void HookOfTheReaper::Edit_Light_Gun_Window_Closed()
 
     //To be safe, reload settings to Light guns
     p_comDeviceList->UpdateLightGunWithSettings ();
+
+    //If Light Gun change, try connections.
+    p_hookEngine->SetUpLightGuns();
 
     p_hookEngine->Start ();
     engineRunning = true;
@@ -592,6 +601,9 @@ void HookOfTheReaper::SettingsWindowClosed()
 
     //Re-Load Settings in Hooker Engine
     p_hookEngine->LoadSettingsFromList();
+
+    //Since settings can affect the connections, re-run it
+    p_hookEngine->SetUpLightGuns();
 
     p_hookEngine->Start ();
     engineRunning = true;

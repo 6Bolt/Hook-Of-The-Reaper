@@ -18,7 +18,6 @@
 
 
 
-
 class LightGun : public QObject
 {
     Q_OBJECT
@@ -41,6 +40,8 @@ public:
     explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
     //For Ultimarc AimTrak USB Light Gun
     explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
+
+    ~LightGun();
 
     //Set Functions that Sets the Stated Variable
     void SetDefaultLightGun(bool lgDefault);
@@ -68,6 +69,8 @@ public:
     void SetDisplayAmmoAndLife(bool displayAAL, bool displayLG, bool displayLB, bool displayLN);
     void SetRecoilPriority(SupportedRecoils lgRecoils);
     void SetReloadOptions(bool reloadNR, bool reloadDis);
+    void SetReaperAmmo0Delay(bool isAmmo0DelayEnabled, quint8 delayTime, quint16 reaperHST);
+
 
     //Get Functions that Gets the Stated Variable
     bool GetDefaultLightGun();
@@ -105,6 +108,7 @@ public:
     quint16 GetDisplayRefresh(bool *isRDS);
     bool GetReloadNoRumble();
     bool GetReloadDisabled();
+    quint8 GetReaperAmmo0Delay(bool *isAmmo0DelayEnabled, quint16 *reaperHST);
 
 
     //If a Default Light Gun, is Needed Varibles Set
@@ -165,15 +169,30 @@ public:
     //Get Recoil Priority for Hooker EngineFormat
     quint8* GetRecoilPriorityHE();
 
-private slots:
-
-
-
 private:
+
+    //Private Member Functions
 
     //Fills in Serial Port Info Struct with Qt Values
     void FillSerialPortInfo();
 
+    //Init Reaper Ammo 0 (Z0) Timer
+    void InitReaperAmmo0Timer();
+
+private slots:
+
+    //Time Out Function for the Reaper Ammo 0 (Z0) Timer
+    void ReaperAmmo0TimeOut();
+
+
+signals:
+
+    void WriteCOMPort(const quint8 &cpNum, const QString &cpData);
+
+
+private:
+
+    //Private Varibles
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -188,8 +207,17 @@ private:
     quint16             reloadValue;
     bool                maxAmmoSet;
     bool                reloadValueSet;
+    //Reaper 5LEDs
     bool                disableReaperLEDs;
     bool                isReaper5LEDsInited;
+    //Repaer Ammo 0 Z0 Delay Buffer
+    bool                enableReaperAmmo0Delay;
+    quint8              repearAmmo0Delay;
+    QTimer              *p_reaperAmmo0Timer;
+    bool                isReaperAmmo0TimerInited;
+    bool                isReaperTimerRunning;
+    bool                isReaperSlideHeldBack;
+    quint16             reaperHoldSlideTime;
     //MX24
     quint8              dipSwitchPlayerNumber;
     bool                isDipSwitchPlayerNumberSet;

@@ -153,7 +153,18 @@ protected:
     }
 #endif
 
+// HookerEngine and ComDeviceList need to be public
+public:
+
+    ///////////////////////////////////////////////////////////////////////////
+
+
+
+    ///////////////////////////////////////////////////////////////////////////
+
 private:
+
+    ///////////////////////////////////////////////////////////////////////////
 
     //Makes the Default Display Data that is Shown in the Text Browser
     void MakeTopDisplayText();
@@ -164,6 +175,11 @@ private:
 
     ///////////////////////////////////////////////////////////////////////////
 
+    //Serial Port Devices List of Light Guns & Other COM Port Devices (Not Implamented yet)
+    ComDeviceList                   *p_comDeviceList;
+
+    //Hooker Engine Pointer
+    HookerEngine                    *p_hookEngine;
 
     //Main Window & Window Stuff
     Ui::HookOfTheReaper             *ui;
@@ -192,19 +208,12 @@ private:
     //Test COM Port Window QPointer
     QPointer<testComPortWindow>     p_tcpW;
 
-    //Serial Port Devices List of Light Guns & Other COM Port Devices (Not Implamented yet)
-    ComDeviceList                   *p_comDeviceList;
-
     //When a Child Window is Open, stop the Engine. Then when Closed, Update and Restart Hooker Engine
     bool                            engineRunning;
-
 
     //Number of Saved Light Guns & Other COM Devices Max is 255 (2^8)
     quint8                          numberLightGuns;
     quint8                          numberComDevices;
-
-    //Hooker Engine Pointer
-    HookerEngine                    *p_hookEngine;
 
     //Used to Display Text on the Text Browser
     QStringList                     displayText;

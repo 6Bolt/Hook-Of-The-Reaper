@@ -258,6 +258,8 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
         skipRecoilSlowMode[i] = false;
     }
 
+    //Set-up Light Guns with HookerEngine. Currently only for Reaper Ammo 0 (Z0) delay buffer
+    SetUpLightGuns();
 }
 
 //Deconstructor
@@ -278,14 +280,16 @@ HookerEngine::~HookerEngine()
         threadForTCPSocket.wait();
         threadForCOMPort.wait();
     }
-
-    delete p_hookSocket;
+    else
+    {
+        delete p_hookSocket;
 
 #ifdef Q_OS_WIN
-    delete p_hookComPortWin;
+        delete p_hookComPortWin;
 #else
-    delete p_hookComPort;
+        delete p_hookComPort;
 #endif
+    }
 
 }
 
@@ -1381,6 +1385,7 @@ void HookerEngine::LoadSettingsFromList()
     ignoreUselessDLGGF = p_comDeviceList->GetIgnoreUselessDFLGGF ();
     bypassSerialWriteChecks = p_comDeviceList->GetSerialPortWriteCheckBypass ();
     enableNewGameFileCreation = p_comDeviceList->GetEnableNewGameFileCreation ();
+    ammo0DelayTime = p_comDeviceList->GetReaperAmmo0Delay(&isAmmo0DelayEnabled, &holdSlideBackTime);
 
     if(p_refreshDisplayTimer->isActive ())
     {
@@ -1395,6 +1400,38 @@ void HookerEngine::LoadSettingsFromList()
 
     if(timerRunning)
         p_refreshDisplayTimer->start ();
+}
+
+void HookerEngine::SetUpLightGuns()
+{
+    if(isAmmo0DelayEnabled)
+    {
+        quint8 numberLG = p_comDeviceList->GetNumberLightGuns();
+        bool isLGDefaultLG;
+        quint8 defaultLGNumber, i;
+
+        //Disconnect old connections, if any
+        if(!connectedReaperLG.isEmpty())
+        {
+            for(i = 0; i < connectedReaperLG.size (); i++)
+                disconnect(p_comDeviceList->p_lightGunList[connectedReaperLG[i]], &LightGun::WriteCOMPort, this, &HookerEngine::WriteLGComPortSlot);
+
+            connectedReaperLG.clear ();
+        }
+
+        //Connect new connections
+        for(i = 0; i < numberLG; i++)
+        {
+            isLGDefaultLG = p_comDeviceList->p_lightGunList[i]->GetDefaultLightGun();
+            defaultLGNumber = p_comDeviceList->p_lightGunList[i]->GetDefaultLightGunNumber();
+
+            if(isLGDefaultLG && defaultLGNumber == RS3_REAPER)
+            {
+                connect(p_comDeviceList->p_lightGunList[i], &LightGun::WriteCOMPort, this, &HookerEngine::WriteLGComPortSlot);
+                connectedReaperLG << i;
+            }
+        }
+    }
 }
 
 //Public Slots
@@ -1437,6 +1474,18 @@ void HookerEngine::ErrorMessageCom(const QString &title, const QString &errorMsg
     if(displayMB)
         QMessageBox::warning (p_guiConnect, title, errorMsg);
 }
+
+void HookerEngine::WriteLGComPortSlot(quint8 cpNum, QString cpData)
+{
+    QByteArray cpBA = cpData.toUtf8 ();
+
+    //qDebug() << "COM Port: " << cpNum << " Data: " << cpData;
+
+    //Send Data to COM Port
+    emit WriteComPortSig(cpNum, cpBA);
+}
+
+
 
 //Private Slots
 
@@ -4415,7 +4464,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
     for(i = 1; i < cmdCount; i++)
     {
 
-        //qDebug() << "CMDSIGNAL: " << commands[i];
+        //qDebug() << "CMDSIGNAL: " << commands[i] << "Value:" << value;
 
         //First Check if there are multiple commands with '|', is so split.
         if(commands[i].contains ("|"))

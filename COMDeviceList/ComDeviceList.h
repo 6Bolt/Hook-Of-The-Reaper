@@ -16,11 +16,14 @@
 #include <QMap>
 
 
+
+
 #include "LightGun.h"
 #include "ComPortDevice.h"
 
 class ComDeviceList
 {
+
 public:
     ComDeviceList();
     ~ComDeviceList();
@@ -129,6 +132,10 @@ public:
     bool            GetEnableNewGameFileCreation();
     void            SetEnableNewGameFileCreation(bool enableNGFC);
 
+    //Enable and Delay for Reamper Ammo 0 Delay
+    quint8          GetReaperAmmo0Delay(bool *isAmmo0DelayEnabled, quint16 *reaperHST);
+    void            SetReaperAmmo0Delay(bool isAmmo0DelayEnabled, quint8 delayTime, quint16 reaperHST);
+
     //Update Light Gun Settings
     void            UpdateLightGunWithSettings();
 
@@ -208,6 +215,9 @@ private:
     bool                displayLifePriority;
     bool                displayOtherPriority;
     bool                enableNewGameFileCreation;
+    bool                enableReaperAmmo0Delay;
+    quint8              repearAmmo0Delay;
+    quint16             reaperHoldSlideTime;
 
     quint8              userRecoilPriority[NUMBEROFRECOILS];
 

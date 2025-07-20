@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.1.7"
+#define VERSION                 "1.1.8"
 #define VERSIONMAIN             1
 #define VERSIONMID              1
 #define VERSIONLAST             3
@@ -77,6 +77,13 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define REAPERMAXAMMOF          5.0f
 #define REAPERRECOIL            "Z5"
 #define REAPERINITLEDS          "ZS"
+#define REAPERHOLDBACKSLIDE     "Z0"
+#define REAPERRELOADCOMMAND     "Z6"
+#define DEFAULTAMMO0DELAY       145
+#define REAPERHOLDSLIDETIME     5000
+#define REAPERHOLDSLIDETIMEF    5.0f
+#define REAPERHOLDSLIDEMIN      1000
+#define REAPERHOLDSLIDEMAX      9000
 
 //Second Default Light Gun
 //Retro Shooter: MX24
@@ -274,6 +281,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define STARTSETTINGSFILE       "Settings"
 #define DEFAULTREFRESHDISPLAY   400
 
+
 /////////
 /// MASKS
 
@@ -281,6 +289,10 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define REFRESHDISPLAYMASK      "000000"
 //Input Mask for Analog Strength 8bit 0-255
 #define ANALOGSTRENGTHMASK      "000"
+//Input Mask for Reaper Ammo 0 Delay 1-255
+#define REAPERAMMO0DELAYMASK    "000"
+//Input Mask for Reaper Hold Slide Back Timing 1-9 seconds
+#define REAPERHOLDSLIDEMASK     "9.9"
 
 #define USBDEVICEMASK           "000"
 #define USBINPUTMASKHEX         "HHHH"

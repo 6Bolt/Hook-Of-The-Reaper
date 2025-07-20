@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>413</height>
+    <height>508</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -64,14 +64,14 @@
       </font>
      </property>
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://github.com/6Bolt/Hook-Of-The-Reaper&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#1ec974;&quot;&gt;https://github.com/6Bolt/Hook-Of-The-Reaper&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://github.com/6Bolt/Hook-Of-The-Reaper&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#1ec974;&quot;&gt;https://github.com/6Bolt/Hook-Of-The-Reaper&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;DefaultLG Game Files&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;https://hotr.6bolt.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#27bf73;&quot;&gt;https://hotr.6bolt.com&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Hook of the Reaper has two goals. The first is to be an updated version of MameHooker, that is compatible on all OSes. It has to read in MameHooker INI files, and work the same. The second goal, is to implament default light guns with default light gun game files. For example, most light guns have a damage signal, which makes the gun vibrate. In the game file, it will just state &quot;&gt;Damage.&quot; The program will handle what data is written to the Serial COM port. This will make the default light gun game files work with any imlpamented light guns. The name comes from MAMEHooker and the RS3 Reaper light gun.</string>
+      <string>The main goal for Hook Of The Reaper is to support every light gun that has force feedback commands. Once supported, the light gun will work with all DefaultLG game files. So there is no more modifying or creating game files when a person gets a new light gun. As this was the norm for MameHooker INI game files. This is done by using generic light gun commands, like ‘Recoil’, in the game files. Then Hook Of The Reaper will replace the ‘Recoil’, with the actual light gun command. All the DefaultLG game files are stored on the site listed above. Now a person can quickly assign light guns, and not have to change any game files. Also, Hook Of The Reaper has limited support for MameHooker INI game files. The serial port commands are supported, except for serial port read. Also, the general USB HID commands are supported. No other commands are supported. The Hook Of The Reaper names comes from MameHooker and Retro Shooters RS3 Reapers.</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>

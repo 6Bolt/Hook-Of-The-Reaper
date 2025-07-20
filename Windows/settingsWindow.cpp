@@ -151,6 +151,33 @@ settingsWindow::settingsWindow(ComDeviceList *cdList, QWidget *parent)
         ui->enableNewGFCheckBox->setCheckState (Qt::Unchecked);
 
 
+    reaperAmmo0Delay = p_comDeviceList->GetReaperAmmo0Delay(&enableReaperAmmo0Delay, &reaperHoldSlideTime);
+
+    if(enableReaperAmmo0Delay)
+        ui->ammo0CheckBox->setCheckState (Qt::Checked);
+    else
+        ui->ammo0CheckBox->setCheckState (Qt::Unchecked);
+
+    //Make the Reaper Ammo 0 Delay only accepted 3 Numbers
+    ui->ammo0DelayLineEdit->setInputMask (REAPERAMMO0DELAYMASK);
+
+    //Make the Reaper Hold Slide Time only accepted 1 Numbers
+    ui->holdSlideLineEdit->setInputMask (REAPERHOLDSLIDEMASK);
+
+    //Turn into String
+    reaperAmmo0DelayString = QString::number (reaperAmmo0Delay);
+
+    //Display Reaper Ammo 0 Delay
+    ui->ammo0DelayLineEdit->setText (reaperAmmo0DelayString);
+
+    //Convert ms to s, and then convert to QString
+    reaperHoldSlideTimeSec = static_cast<float>(static_cast<float>(reaperHoldSlideTime) / 1000.0f);
+    reaperHoldSlideTimeSecString = QString::number (reaperHoldSlideTimeSec).leftJustified (2, '0');
+
+    //Display to Hold Slide Time
+    ui->holdSlideLineEdit->setText (reaperHoldSlideTimeSecString);
+
+
     finishedInit = true;
 
 }
@@ -188,8 +215,8 @@ void settingsWindow::on_cancelPushButton_clicked()
 
 void settingsWindow::CheckAndSaveSetting()
 {
-    QString tempRTD;
-    bool isNumber;
+    QString tempRTD, tempRA0D, tempRHSBT;
+    bool isNumber, isNumberAmmo, isNumberSlide;
 
     defaultLG = ui->useDefaultLGCheckBox->checkState ();
     multiThreading = ui->useMultiThreadCheckBox->checkState ();
@@ -200,6 +227,7 @@ void settingsWindow::CheckAndSaveSetting()
     otherDisplay = ui->displayOtherCheckBox->checkState ();
     displayAL = ui->ammoLifeCheckBox->checkState ();
     enableNGFC = ui->enableNewGFCheckBox->checkState ();
+    enableRA0D = ui->ammo0CheckBox->checkState ();
 
     if(defaultLG == Qt::Checked)
         useDefaultLGFirst = true;
@@ -250,6 +278,33 @@ void settingsWindow::CheckAndSaveSetting()
     else
         enableNewGameFileCreation = false;
 
+    if(enableRA0D == Qt::Checked)
+        enableReaperAmmo0Delay = true;
+    else
+        enableReaperAmmo0Delay = false;
+
+    tempRA0D = ui->ammo0DelayLineEdit->text ();
+    reaperAmmo0Delay = tempRA0D.toUInt (&isNumberAmmo);
+
+    if(!isNumberAmmo || reaperAmmo0Delay == 0)
+    {
+        reaperAmmo0Delay = DEFAULTAMMO0DELAY;
+        reaperAmmo0DelayString = QString::number (reaperAmmo0Delay);
+        ui->ammo0DelayLineEdit->setText (reaperAmmo0DelayString);
+    }
+
+    tempRHSBT = ui->holdSlideLineEdit->text ();
+    reaperHoldSlideTimeSec = tempRHSBT.toFloat (&isNumberSlide);
+
+    if(!isNumberSlide || reaperHoldSlideTimeSec < 1.0f || reaperHoldSlideTimeSec > 9.0f)
+    {
+        reaperHoldSlideTimeSec = REAPERHOLDSLIDETIMEF;
+        reaperHoldSlideTime = REAPERHOLDSLIDETIME;
+        reaperHoldSlideTimeSecString = QString::number (reaperHoldSlideTimeSec).leftJustified (2, '0');
+        ui->holdSlideLineEdit->setText (reaperHoldSlideTimeSecString);
+    }
+    else
+        reaperHoldSlideTime = static_cast<quint16>(reaperHoldSlideTimeSec*1000.0f);
 
     p_comDeviceList->SetUseDefaultLGFirst(useDefaultLGFirst);
     p_comDeviceList->SetUseMultiThreading (useMultiThreading);
@@ -269,6 +324,10 @@ void settingsWindow::CheckAndSaveSetting()
         p_comDeviceList->SetRefreshTimeDisplay(refreshDisplayTime);
         refreshDisplayTimeString = QString::number (refreshDisplayTime);
     }
+
+    p_comDeviceList->SetReaperAmmo0Delay(enableReaperAmmo0Delay, reaperAmmo0Delay, reaperHoldSlideTime);
+
+
 
     p_comDeviceList->SaveSettings();
 }

@@ -23,6 +23,9 @@ ComDeviceList::ComDeviceList()
     displayLifePriority = false;
     displayOtherPriority = false;
     enableNewGameFileCreation = false;
+    enableReaperAmmo0Delay = true;
+    repearAmmo0Delay = DEFAULTAMMO0DELAY;
+    reaperHoldSlideTime = REAPERHOLDSLIDETIME;
 
     //More Set Defaults
     for(quint8 comPortIndx=0;comPortIndx<MAXCOMPORTS;comPortIndx++)
@@ -90,7 +93,6 @@ ComDeviceList::ComDeviceList()
     //If Not, then Make Directory
     if(!iniMAMEDirExists)
         currentPathDir.mkdir (INIMAMEFILEDIR);
-
 
     //Set Dir back to Current Path
     currentPathDir.setPath (currentPath);
@@ -1380,6 +1382,19 @@ void ComDeviceList::SaveSettings()
     else
         out << "0\n";
 
+    if(enableReaperAmmo0Delay)
+        out << "1\n";
+    else
+        out << "0\n";
+
+    //Output the Reaper Ammo 0 Delay Value
+    rtDisplay = QString::number(repearAmmo0Delay)+"\n";
+    out << rtDisplay;
+
+    //Output the Reaper Hold Slide Time
+    rtDisplay = QString::number(reaperHoldSlideTime)+"\n";
+    out << rtDisplay;
+
 
     out << ENDOFFILE;
 
@@ -1667,23 +1682,67 @@ void ComDeviceList::LoadSettings()
     //Setting for New Game File Creation
     line = in.readLine();
 
-    if(line.startsWith (ENDOFFILE))
+    if(line.startsWith ("1"))
+    {
+        enableNewGameFileCreation = true;
+    }
+    else if(line.startsWith ("0"))
     {
         enableNewGameFileCreation = false;
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Enable New Game File Creation. Please close program and solve file problem.", QMessageBox::Ok);
+        return;
+    }
+
+
+    //Setting for New Game File Creation
+    line = in.readLine();
+
+    if(line.startsWith (ENDOFFILE))
+    {
+        enableReaperAmmo0Delay = true;
+        repearAmmo0Delay = DEFAULTAMMO0DELAY;
+        reaperHoldSlideTime = REAPERHOLDSLIDETIME;
         loadSetData.close ();
         this->SaveSettings();
         this->UpdateLightGunWithSettings ();
         return;
     }
     else if(line.startsWith ("1"))
-        enableNewGameFileCreation = true;
+        enableReaperAmmo0Delay = true;
     else if(line.startsWith ("0"))
-        enableNewGameFileCreation = false;
+        enableReaperAmmo0Delay = false;
     else
     {
-        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Enable New Game File Creation. Please close program and solve file problem.", QMessageBox::Ok);
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted at Enable Reaper Ammo 0 Delay. Please close program and solve file problem.", QMessageBox::Ok);
         return;
     }
+
+    //Next Line is the Reaper Ammo 0 Delay
+    line = in.readLine();
+
+    repearAmmo0Delay = line.toUInt (&isNumber);
+
+    if(!isNumber || repearAmmo0Delay == 0)
+    {
+        repearAmmo0Delay = DEFAULTAMMO0DELAY;
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted. Reaper Ammo 0 Delay is not a number, setting to default.", QMessageBox::Ok);
+    }
+
+    //Next Line is the Reaper Hold Slide Back Time
+    line = in.readLine();
+
+    reaperHoldSlideTime = line.toUInt (&isNumber);
+
+    if(!isNumber || reaperHoldSlideTime < REAPERHOLDSLIDEMIN || reaperHoldSlideTime > REAPERHOLDSLIDEMAX)
+    {
+        reaperHoldSlideTime = REAPERHOLDSLIDETIME;
+        QMessageBox::critical (nullptr, "Settings File Error", "Settings save data file is corrupted. Reaper's Hold Slide Back Timing is not a number or out of range, setting to default.", QMessageBox::Ok);
+    }
+
+
 
     //Next Line is End of File
     line = in.readLine();
@@ -1850,6 +1909,31 @@ void ComDeviceList::SetEnableNewGameFileCreation(bool enableNGFC)
     enableNewGameFileCreation = enableNGFC;
 }
 
+quint8 ComDeviceList::GetReaperAmmo0Delay(bool *isAmmo0DelayEnabled, quint16 *reaperHST)
+{
+    *isAmmo0DelayEnabled = enableReaperAmmo0Delay;
+    *reaperHST = reaperHoldSlideTime;
+    return repearAmmo0Delay;
+}
+
+void ComDeviceList::SetReaperAmmo0Delay(bool isAmmo0DelayEnabled, quint8 delayTime, quint16 reaperHST)
+{
+    enableReaperAmmo0Delay = isAmmo0DelayEnabled;
+    repearAmmo0Delay = delayTime;
+    reaperHoldSlideTime = reaperHST;
+
+    for(quint8 x = 0; x < numberLightGuns; x++)
+    {
+        if(p_lightGunList[x]->GetDefaultLightGun() && p_lightGunList[x]->GetDefaultLightGunNumber() == RS3_REAPER)
+        {
+            p_lightGunList[x]->SetReaperAmmo0Delay(enableReaperAmmo0Delay, repearAmmo0Delay, reaperHoldSlideTime);
+        }
+    }
+}
+
+
+
+
 void ComDeviceList::UpdateLightGunWithSettings()
 {
     bool isDefaultLG;
@@ -1865,6 +1949,7 @@ void ComDeviceList::UpdateLightGunWithSettings()
         if(isDefaultLG && defaultLGNumber == RS3_REAPER)
         {
             p_lightGunList[x]->SetDisableReaperLEDs(disbleReaperLEDs);
+            p_lightGunList[x]->SetReaperAmmo0Delay(enableReaperAmmo0Delay, repearAmmo0Delay, reaperHoldSlideTime);
             p_lightGunList[x]->LoadDefaultLGCommands();
         }
 

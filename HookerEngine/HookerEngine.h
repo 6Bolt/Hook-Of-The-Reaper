@@ -60,6 +60,10 @@ public:
     //Load Settings From COMDeviceList
     void LoadSettingsFromList();
 
+    //Set-up Light Guns
+    void SetUpLightGuns();
+
+
 public slots:
 
     //Read Data from the TCP Socket (different thread)
@@ -70,6 +74,9 @@ public slots:
 
     //Error Messages from the Serial COM Ports (different thread)
     void ErrorMessageCom(const QString &title, const QString &errorMsg);
+
+    //Write to COM Port Based on DefaultLG
+    void WriteLGComPortSlot(quint8 cpNum, QString cpData);
 
 
 signals:
@@ -420,6 +427,9 @@ private:
     bool                            ignoreUselessDLGGF;
     bool                            bypassSerialWriteChecks;
     bool                            enableNewGameFileCreation;
+    bool                            isAmmo0DelayEnabled;
+    quint8                          ammo0DelayTime;
+    quint16                         holdSlideBackTime;
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -479,6 +489,11 @@ private:
     bool                            isRecoilDelaySet[MAXGAMEPLAYERS];
     bool                            blockRecoil[MAXGAMEPLAYERS];
     bool                            doRecoilDelayEnds[MAXGAMEPLAYERS];
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    // For Reaper Ammo 0 (Z0) Delay Buffer
+    QList<quint8>                   connectedReaperLG;
 
 
 };

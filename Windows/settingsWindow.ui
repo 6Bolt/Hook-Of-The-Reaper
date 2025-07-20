@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>485</width>
-    <height>672</height>
+    <height>761</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,8 +17,8 @@
    <property name="geometry">
     <rect>
      <x>220</x>
-     <y>640</y>
-     <width>257</width>
+     <y>730</y>
+     <width>262</width>
      <height>26</height>
     </rect>
    </property>
@@ -142,6 +142,9 @@
      <height>24</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>Default is 400ms</string>
+   </property>
    <property name="alignment">
     <set>Qt::AlignmentFlag::AlignCenter</set>
    </property>
@@ -186,7 +189,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>540</y>
+     <y>630</y>
      <width>56</width>
      <height>21</height>
     </rect>
@@ -205,7 +208,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>570</y>
+     <y>660</y>
      <width>251</width>
      <height>22</height>
     </rect>
@@ -253,7 +256,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Remove the 5 LED Open/Close Init Commands</string>
+    <string>Disable Reaper Ammo_Value Control of 5 LEDs</string>
    </property>
   </widget>
   <widget class="QRadioButton" name="ammoRadioButton">
@@ -351,7 +354,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>430</y>
+     <y>520</y>
      <width>81</width>
      <height>21</height>
     </rect>
@@ -370,7 +373,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>490</y>
+     <y>580</y>
      <width>181</width>
      <height>22</height>
     </rect>
@@ -388,7 +391,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>460</y>
+     <y>550</y>
      <width>111</width>
      <height>22</height>
     </rect>
@@ -409,7 +412,7 @@
    <property name="geometry">
     <rect>
      <x>120</x>
-     <y>460</y>
+     <y>550</y>
      <width>151</width>
      <height>22</height>
     </rect>
@@ -427,7 +430,7 @@
    <property name="geometry">
     <rect>
      <x>280</x>
-     <y>460</y>
+     <y>550</y>
      <width>111</width>
      <height>22</height>
     </rect>
@@ -457,6 +460,92 @@
    </property>
    <property name="text">
     <string>Enable New Game File Creation, if Name or Default Not Found</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="ammo0CheckBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>410</y>
+     <width>441</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Enable Reaper Ammo 0 Delay</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="ammo0DelayLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>440</y>
+     <width>41</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Default is 145ms</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_8">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>440</y>
+     <width>251</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Reaper Ammo 0 Delay (1-255ms)</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="holdSlideLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>470</y>
+     <width>31</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Default is 5.0s</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>470</y>
+     <width>221</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Hold Slide Back Time (1.0-9.0s)</string>
    </property>
   </widget>
  </widget>

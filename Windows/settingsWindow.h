@@ -73,6 +73,7 @@ private:
     bool                displayAmmoLifeBar;
     bool                displayAmmoLifeNumber;
     bool                enableNewGameFileCreation;
+    bool                enableReaperAmmo0Delay;
 
     //For Check Boxes
     Qt::CheckState      defaultLG;
@@ -84,12 +85,20 @@ private:
     Qt::CheckState      otherDisplay;
     Qt::CheckState      displayAL;
     Qt::CheckState      enableNGFC;
+    Qt::CheckState      enableRA0D;
 
     //Refresh Time in Number and String
     quint32             refreshDisplayTime;
     QString             refreshDisplayTimeString;
 
+    //Reaper Ammo 0 Delay Time and String
+    quint8              reaperAmmo0Delay;
+    QString             reaperAmmo0DelayString;
 
+    //Reaper Hold Slide Back Time
+    quint16             reaperHoldSlideTime;
+    float               reaperHoldSlideTimeSec;
+    QString             reaperHoldSlideTimeSecString;
 
 };
 
