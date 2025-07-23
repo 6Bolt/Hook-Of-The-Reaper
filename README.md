@@ -95,9 +95,9 @@ Click on the 'File' and then click on 'Add New Light Gun'. A child window will p
 
 ### Second Step: Assign Light Guns
 
-Click on the File' and then click on 'Player Assignment'. This will bring up a new child window. Then assign 'Player 1' with a light gun. If you have multiple light guns, then it would be good to assign 'Player 2'. Then you can play 2 player games. If you want to play 4 player games, then players 1-4, need to be assigned. You can still play 4 player game, with only 2 light gun or 1 light gun. When done assigning, the click 'Assign' or 'Assign+Close' button at the bottom.
+Click on the 'File' and then click on 'Player Assignment'. This will bring up a new child window. Then assign 'Player 1' with a light gun. If you have multiple light guns, then it would be good to assign 'Player 2'. Then you can play 2 player games. If you want to play 4 player games, then players 1-4, need to be assigned. You can still play 4 player game, with only 2 light guns or 1 light gun. When done assigning, then click 'Assign+Close' button at the bottom.
 
-That is it. Hook of the Reaper is set up now. 
+That is it. Hook of the Reaper is now set up. 
 
 
 # Game Files
