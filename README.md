@@ -3,6 +3,8 @@
 # Hook-Of-The-Reaper
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
+### DO NOT EMAIL ME FOR TECH SUPPORT. First, read the FAQ at the bottom of the ReadMe. If you have a real bug, go to 'Issues' and read the rules first (IE the README there). Then you can file a Bug or Enhancment. I cannot email back from this email address. All unwanted email, will be ignored and deleted. The email is for people to submit DefaultLG game files. Also, for companies to reach me. If you don't meet those two requirments, then don't email. 
+
 Email: gamefiles@hotr.6bolt.com
 
 Best way to contact me, is emailing me at gamefiles@hotr.6bolt.com. Another way is to open a new issue, here on GitHub. It can be found at the top left of the webpage, just to the right of 'Code'. Click on the 'Issues' tab, which will bring up a new webpage, with all the current issues. Just above the issues, and to the right, is a green button called 'New Issuse'. Please click that, and create a new issue, which can be a quetion, bug, enhancment, and so on. 
@@ -49,6 +51,8 @@ I started this project after getting two Retro Shooter RS3 Reaper light guns as 
 
 # Getting the Program to Work
 
+## Set Up the Emulators for Network Outputs
+
 Since the project is still in early release, only Windows is supported right now. I plan on getting Linux and Mac OSes later on. I do have a Linux box, which doubles as my NFS/Clould server. I plan to use that for getting Linux up in running next. A person could take the code, and compile in the needed OS. I detail compiling below.
 
 There is one major change that needs to be done to get Hook Of The Reaper working with MAME and DemulShooter. The ‘network’ has to be enabled on MAME and DemulShooter. MAMEHooker used the window messaging to receive data. This is a Windows type thing, as Linux and MacOS (think it is based on Debian) don’t have this window message type. They might have something that is close to it. But to meet goal #4, I needed a solution that would easily work on all platforms. The ‘network’ was the best options. Instead of using window messaging, it uses TCP Socket data on the localhost (IP 127.0.0.1) on port 8000. TCP Socket has major support on all platforms.
@@ -71,6 +75,29 @@ https://github.com/njz3/model3emu/releases/tag/fix_sound_vol
 
 For the SupoerModel (Model 3) emulator, a file needs to be updated, to enable the network output. From the base of the emulator, go into the "config" directory. In this directory, there is a file called "supermodel.ini". Open this file in a text edititor. The add this "OUTPUTS = NET" to a new line in the file. Then save and close the file. That is it.   
 
+### Enable Network for Nixxou's 3 Emulators
+
+Please go to my other program, to see how to enable the network outputs for the 3 Nixxou's emulators. 
+
+https://github.com/6Bolt/MameOutputSender
+
+Currently I am working on getting all the game files completed for the 3 Nixxou's emulators. Only the Dolphin (Wii/GameCube) emulator is complete. When I finish the other 2 emulators, it will be updated. 
+
+## Set Up Hook of the Reaper
+
+Go to the latest release, and download the full Hook of the Reaper program. It is HookOfTheReaper_vXpXpX.zip file. Then extract it to a folder, to where you want to install it. After that, there is only 2 steps. Link below for the latest release of Hook of the Reaper. 
+
+https://github.com/6Bolt/Hook-Of-The-Reaper/releases/latest
+
+### First Step: Input your Light Guns
+
+Click on the 'File' and then click on 'Add New Light Gun'. A child window will pop-up. Then select your light gun brand in the first combo box, labelled 'Default Light Gun'. Once you have selected you brand, then you have to fill out the items in red text. Once the item have been filled out, then you can clcik the 'Add' button at the bottom, which then you will hear a sound, and top right number will go from 0 -> 1. Repeat this, until you have all your light guns entered. Then you can click the 'Close' button at the bottom. If you need to change the light gun, you can click the 'Edit' and then click the 'Edit Light Gun'. This will bring up a child window, like the 'Add Light Gun'. Then choose the light gun you want to change. The data will be filled out. Then make your edits. Then click the 'Edit' button at the bottom. When done, close the window.
+
+### Second Step: Assign Light Guns
+
+Click on the File' and then click on 'Player Assignment'. This will bring up a new child window. Then assign 'Player 1' with a light gun. If you have multiple light guns, then it would be good to assign 'Player 2'. Then you can play 2 player games. If you want to play 4 player games, then players 1-4, need to be assigned. You can still play 4 player game, with only 2 light gun or 1 light gun. When done assigning, the click 'Assign' or 'Assign+Close' button at the bottom.
+
+That is it. Hook of the Reaper is set up now. 
 
 
 # Game Files
@@ -338,25 +365,25 @@ Almost everything is in Qt, so you need Qt and the MSVC 2022 tools. Then you nee
 
 ### Is Hook Of The Reaper complete?
 
-No, currently Hook Of The Reaper is a work in progress. I am almost done with the light gun work. When the light gun work is done, I will then work on the game data base. After that, I will work on getting the LED & I/O controller into Hook Of The Reaper. After that, I plan on getting the wiki done. Then it will be complete.
+No, currently Hook Of The Reaper is a work in progress. I am almost done with the light gun work. When the light gun work is done, I will then work on the game data base. Then I will do some short videos on how to set-up Hook of the Reaper. After that, I will work on getting the LED & I/O controller into Hook Of The Reaper. After that, I plan on getting the wiki done. Then it will be complete.
 
 
 ### Other Peoples Light Guns work, but Mine Doesn't, Can you Help Me Out?
 
-Sorry, I cannot help you. But you can use the debug setting that was put in v1.1.1. The debug setting is safe for sort term use. If your light gun starts working in the debug mode, then something is most likely wrong with your USB or USB cabling. 
+Sorry, I cannot help you. I suggest going to a forum or Facebook group to get help. Also, there are free and paid game drives that come with and with out support. Also, you can use the debug setting that was put in v1.1.1. The debug setting is safe for sort term use. If your light gun starts working in the debug mode, then something is most likely wrong with your USB or USB cabling. 
 
 
 ### Can you Help Me Set-Up my Light Gun and Light Gun Games? Or Help Make a Game File?
 
 No.
 
-### Can you Help Me Set-UP my Hook Of The Reaper?
+### Can you Help Me Set-Up my Hook Of The Reaper?
 
-No. Sorry, there will be no tech support now or ever for this program. It is a free open source project, that comes with no warrenty or guarantees. 
+No. Sorry, there will be no tech support now or ever for this program. It is a free open source project, that comes with no warrenty, no guarantees, and no support. 
 
 ### No Tech Support, but What if I Need Help?
 
-Sorry your are on your own. I do my best to test eveerything out before a release. The number of bugs have been really low. Most Issues are not Hook Of The Reaper bugs. I think I have only gotten 2-3 bugs so far from Issues. Most bugs have been caught by myself. Also, many others have gotten Hook Of The Reaper working with no problems. I know people have gotten all the supported light gun working.  
+Sorry your are on your own. Again, I suggest you join a forum or Facebook group. I do my best to test everything out before a release. The number of bugs have been really low. Most Issues are not Hook Of The Reaper bugs. I think I have only gotten 2-3 bugs so far from Issues. Most bugs have been caught by myself. Also, hundreds have gotten Hook Of The Reaper working with no problems. I know people have gotten all the supported light gun working. I have tested all the game files on the game file site. I have tested almost all the supported like guns, except for the Fusion light gun, Gun4IR, and XGunner. However, I have had multiple people test out Fusion, Gun4IR, and XGunner light guns.  
 
 ### Do you Have the Game File XXXXX? It is Not Included with Hook Of The Reaper?
 
