@@ -91,13 +91,13 @@ https://github.com/6Bolt/Hook-Of-The-Reaper/releases/latest
 
 ### First Step: Input your Light Guns
 
-Click on the 'File' and then click on 'Add New Light Gun'. A child window will pop-up. Then select your light gun brand in the first combo box, labelled 'Default Light Gun'. Once you have selected you brand, then you have to fill out the items in red text. Once the item have been filled out, then you can clcik the 'Add' button at the bottom, which then you will hear a sound, and top right number will go from 0 -> 1. Repeat this, until you have all your light guns entered. Then you can click the 'Close' button at the bottom. If you need to change the light gun, you can click the 'Edit' and then click the 'Edit Light Gun'. This will bring up a child window, like the 'Add Light Gun'. Then choose the light gun you want to change. The data will be filled out. Then make your edits. Then click the 'Edit' button at the bottom. When done, close the window.
+Click on the 'File' and then click on 'Add New Light Gun'. A child window will pop-up. Then select your light gun brand in the first combo box, labelled 'Default Light Gun'. Once you have selected your brand, then you have to fill out the items in red text. Once the items have been filled out, then you can clcik the 'Add' button at the bottom, which then you will hear a sound, and top right number will go from 0 -> 1. Repeat this, until you have all your light guns entered. Then you can click the 'Close' button at the bottom. If you need to change the light gun, you can click the 'Edit' and then click the 'Edit Light Gun'. This will bring up a child window, like the 'Add Light Gun'. Then choose the light gun you want to change in the first combo box. The data of that light gun will be filled out. Then you can make your edits. Then click the 'Edit' button at the bottom, which will make a sound. You can also delete a light gun from the list. When done, close the window.
 
 ### Second Step: Assign Light Guns
 
-Click on the 'File' and then click on 'Player Assignment'. This will bring up a new child window. Then assign 'Player 1' with a light gun. If you have multiple light guns, then it would be good to assign 'Player 2'. Then you can play 2 player games. If you want to play 4 player games, then players 1-4, need to be assigned. You can still play 4 player game, with only 2 light guns or 1 light gun. When done assigning, then click 'Assign+Close' button at the bottom.
+Click on the 'File' and then click on 'Player Assignment'. This will bring up a new child window. Then assign 'Player 1' with a light gun. If you have multiple light guns, then it would be good to assign 'Player 2'. Then you can play 2 player games. If you want to play 4 player games, then players 1-4, need to be assigned. You can still play 4 player game, with only 2 light guns or 1 light gun assigned. Also, can play 2 player game, with only 'Player 1' assigned. When done assigning, then click 'Assign+Close' button at the bottom.
 
-That is it. Hook of the Reaper is now set up. 
+That is it. Hook of the Reaper is now set up. You now know how to enter and edit light guns. Also, how to change the player assignments.  
 
 
 # Game Files
