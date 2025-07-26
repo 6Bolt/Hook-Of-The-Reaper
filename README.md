@@ -3,6 +3,13 @@
 # Hook-Of-The-Reaper
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
+# Quick Links
+
+[Get Hook of the Reaper Setup and Working](https://github.com/6Bolt/Hook-Of-The-Reaper#getting-the-program-to-work)
+
+[FAQ](https://github.com/6Bolt/Hook-Of-The-Reaper#faq)
+
+
 ### DO NOT EMAIL ME FOR TECH SUPPORT. First, read the FAQ at the bottom of the ReadMe. If you have a real bug, go to 'Issues' and read the rules first (IE the README there). Then you can file a Bug or Enhancment. I cannot email back from this email address. All unwanted email, will be ignored and deleted. The email is for people to submit DefaultLG game files. Also, for companies to reach me. If you don't meet those two requirments, then don't email. 
 
 Email: gamefiles@hotr.6bolt.com
@@ -369,9 +376,15 @@ Almost everything is in Qt, so you need Qt and the MSVC 2022 tools. Then you nee
 
 # FAQ
 
+
+### I Started Hook of the Reaper, but don't See it Anywhere
+
+Hook of the Reaper starts in the tray icon. As it normally not needed to be seen. Also, when playing video games, it shouldn't be seen. To bring up Hook of the Reaper, open the tray icon, and left click onto the Hook of the Reaper icon. This will open up Hook of the Reaper onto the desktop. When minimized, it will go back to the tray icon. Also, when it is in the tray icon, a right click on the icon, will bring up a small menu, to easily access most used features. 
+
+
 ### Is Hook Of The Reaper complete?
 
-No, currently Hook Of The Reaper is a work in progress. I am almost done with the light gun work. When the light gun work is done, I will then work on the game data base. Then I will do some short videos on how to set-up Hook of the Reaper. After that, I will work on getting the LED & I/O controller into Hook Of The Reaper. After that, I plan on getting the wiki done. Then it will be complete.
+No, currently Hook Of The Reaper is a work in progress. I am working on the game data base and game files. Then I will do some short videos on how to set-up Hook of the Reaper. After that, I will work on getting the LED & I/O controller into Hook Of The Reaper. After that, I plan on getting the wiki done. Then it will be complete.
 
 
 ### Other Peoples Light Guns work, but Mine Doesn't, Can you Help Me Out?
@@ -383,17 +396,26 @@ Sorry, I cannot help you. I suggest going to a forum or Facebook group to get he
 
 No.
 
-### Can you Help Me Set-Up my Hook Of The Reaper?
+### Can you Help Me Set-Up Hook Of The Reaper?
 
 No. Sorry, there will be no tech support now or ever for this program. It is a free open source project, that comes with no warrenty, no guarantees, and no support. 
 
 ### No Tech Support, but What if I Need Help?
 
-Sorry your are on your own. Again, I suggest you join a forum or Facebook group. I do my best to test everything out before a release. The number of bugs have been really low. Most Issues are not Hook Of The Reaper bugs. I think I have only gotten 2-3 bugs so far from Issues. Most bugs have been caught by myself. Also, hundreds have gotten Hook Of The Reaper working with no problems. I know people have gotten all the supported light gun working. I have tested all the game files on the game file site. I have tested almost all the supported like guns, except for the Fusion light gun, Gun4IR, and XGunner. However, I have had multiple people test out Fusion, Gun4IR, and XGunner light guns.  
+Sorry your are on your own. Again, I suggest you join a forum or Facebook group. I have made Hook of the Reaper easy as I can. Now need fields in 'Add Light Gun' window are highlighted red. I do my best to test everything out before a release. The number of bugs have been really low. Most Issues are not Hook Of The Reaper bugs. I think I have only gotten 2-3 bugs so far from Issues. Most bugs have been caught by myself. Also, hundreds have gotten Hook Of The Reaper working with no problems. I know people have gotten all the supported light gun working. I have tested all the game files on the game file site. I have tested almost all the supported like guns, except for the Fusion light gun, Gun4IR, and XGunner. However, I have had multiple people test out Fusion, Gun4IR, and XGunner light guns.  
 
 ### Do you Have the Game File XXXXX? It is Not Included with Hook Of The Reaper?
 
-No. All the game files that I have, are include with Hook Of The Reaper. 
+No. All the game files that I have, are include with Hook Of The Reaper. Also, stored at the Hook of the Reaper game file site. It is located at: https://hotr.6bolt.com
 
+
+### Hook of the Reaper has No Network Connection when Emulator is Running
+
+Most likly, only 2 things could cause this. The first, is that the emulator or DemulShooter wasn't set up correctly, to output to the network. Or the emulator or DemulShooter is not being open properly. For example, the DemulShooter GUI is being open, and not the command line with the needed target and rom. The second thing, is that Hook of the Reaper and/or the emulator/DemulShooter is being blocked by the firewall. Make sure that all programs are approved in the computer's firewall. This could be the Window's firewall, which is standard. Or a thidp party software, like Norton.
+
+
+### What is the Best Way to Debug
+
+First, do not use any scripts or LaunchBox. Get it working with command line commands first. Once working, then can compared against the scipt or what is in LaunchBox. A small error could be in the script, and people will run it over and over again, never seeing the error. Then blame something else. Reason why I don't like when people including a script for a bug or problem. As I will always tell them, don't use scripts for debug. Also, my other program could be useful, which is LGTCPTester. It will display output signal, and can log them too. The timestamp gets reset when a game starts. Located at: https://github.com/6Bolt/LGTCPTester
 
 
