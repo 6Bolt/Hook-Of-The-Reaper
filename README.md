@@ -26,7 +26,9 @@
 [Recoil and Reload Commands](https://github.com/6Bolt/Hook-Of-The-Reaper#recoil-and-reload-commands)
 
 
-### DO NOT EMAIL ME FOR TECH SUPPORT. First, read the FAQ at the bottom of the ReadMe. If you have a real bug, go to 'Issues' and read the rules first (IE the README there). Then you can file a Bug or Enhancment. I cannot email back from this email address. All unwanted email, will be ignored and deleted. The email is for people to submit DefaultLG game files. Also, for companies to reach me. If you don't meet those two requirments, then don't email. 
+# Contact 
+
+### DO NOT EMAIL ME FOR TECH SUPPORT. First, read the FAQ (link above). If you have a real bug, go to 'Issues' and read the rules first (IE the README there). Then you can file a Bug, Enhancment or Issue. I cannot email back from this email address. All unwanted email, will be ignored and deleted. The email is for people to submit DefaultLG game files. Also, for companies to reach me. If you don't meet those two requirments, then don't email. 
 
 Email: gamefiles@hotr.6bolt.com
 
@@ -37,7 +39,11 @@ Also, I can be found on Discord from time to time. I totally suck at Discord, an
 
 >Display Name: 6Bolt
 
-Also, when I get the Default Light Gun game file site up and running, I will have a way to contact me there too. Still working on it, and will be some time. 
+## Hook of the Reaper DefaultLG Game File Site
+
+https://hotr.6bolt.com
+
+This is were the latest DefaultLG game files are stored. Also, lists what games are supported by Hook of the Reaper. If a game is not working, check the site first, to see if it is supported. As you don't want to look like a dumbass, when complaining about an unsupported game.   
 
 ## Out from Time to Time
 
@@ -47,7 +53,7 @@ My health is not great, as I am disabled. Sometimes I will be out for multiple d
 
 ## Hook Of The Reaper - Project Introduction
 
-Talk about the main feature of the program and how to use it.
+Talk about the main feature of the program and how to use it. This is old now, but still good info.
 
 https://youtu.be/9Fx3xqHKH-o
 
