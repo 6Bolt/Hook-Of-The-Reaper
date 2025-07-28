@@ -5,9 +5,25 @@
 
 # Quick Links
 
-[Get Hook of the Reaper Setup and Working](https://github.com/6Bolt/Hook-Of-The-Reaper#getting-the-program-to-work)
+[Get Hook of the Reaper Setup and Working](https://github.com/6Bolt/Hook-Of-The-Reaper#getting-the-program-to-work) - Basically a Quick Start
 
 [FAQ](https://github.com/6Bolt/Hook-Of-The-Reaper#faq)
+
+[Game Files](https://github.com/6Bolt/Hook-Of-The-Reaper#game-files)
+
+[Commands](https://github.com/6Bolt/Hook-Of-The-Reaper#commands)
+
+[Recoil_R2S Command](https://github.com/6Bolt/Hook-Of-The-Reaper#recoil_r2s-command)
+
+[Location of Default Light Gun Game Files](https://github.com/6Bolt/Hook-Of-The-Reaper#location-of-default-light-gun-game-files)
+
+[Player Ordering in the Default Light Gun Game Format](https://github.com/6Bolt/Hook-Of-The-Reaper#player-ordering-in-the-default-light-gun-game-format)
+
+[Recoil & Reload Header](https://github.com/6Bolt/Hook-Of-The-Reaper#recoil--reload-header)
+
+[Reload](https://github.com/6Bolt/Hook-Of-The-Reaper#reload)
+
+[Recoil and Reload Commands](https://github.com/6Bolt/Hook-Of-The-Reaper#recoil-and-reload-commands)
 
 
 ### DO NOT EMAIL ME FOR TECH SUPPORT. First, read the FAQ at the bottom of the ReadMe. If you have a real bug, go to 'Issues' and read the rules first (IE the README there). Then you can file a Bug or Enhancment. I cannot email back from this email address. All unwanted email, will be ignored and deleted. The email is for people to submit DefaultLG game files. Also, for companies to reach me. If you don't meet those two requirments, then don't email. 
@@ -105,6 +121,11 @@ Click on the 'File' and then click on 'Add New Light Gun'. A child window will p
 ### Second Step: Assign Light Guns
 
 Click on the 'File' and then click on 'Player Assignment'. This will bring up a new child window. Then assign 'Player 1' with a light gun. If you have multiple light guns, then it would be good to assign 'Player 2'. Then you can play 2 player games. If you want to play 4 player games, then players 1-4, need to be assigned. You can still play 4 player game, with only 2 light guns or 1 light gun assigned. Also, can play 2 player game, with only 'Player 1' assigned. When done assigning, then click 'Assign+Close' button at the bottom.
+
+#### For people using OpenFire light guns, I strongly suggest using Vidal's OpenFire settings. I have tried it out, and known others have too, and we all agree that it makes recoil a lot better on the OpenFire light gun with Hook of the Reaper. Link to settings is below.
+
+https://github.com/6Bolt/Hook-Of-The-Reaper/issues/32
+
 
 That is it. Hook of the Reaper is now set up. You now know how to enter and edit light guns. Also, how to change the player assignments. 
 
@@ -381,12 +402,18 @@ Almost everything is in Qt, so you need Qt and the MSVC 2022 tools. Then you nee
 
 ### I Started Hook of the Reaper, but don't See it Anywhere
 
-Hook of the Reaper starts in the tray icon. As it normally not needed to be seen. Also, when playing video games, it shouldn't be seen. To bring up Hook of the Reaper, open the tray icon, and left click onto the Hook of the Reaper icon. This will open up Hook of the Reaper onto the desktop. When minimized, it will go back to the tray icon. Also, when it is in the tray icon, a right click on the icon, will bring up a small menu, to easily access most used features. 
+Hook of the Reaper starts in the tray icon. As it normally not needed to be seen. Also, when playing video games, it shouldn't be seen. To bring up Hook of the Reaper, open the tray icon, and left click onto the Hook of the Reaper icon. This will open up Hook of the Reaper onto the desktop. When minimized, it will go back to the tray icon. Also, when it is in the tray icon, a right click on the icon, will bring up a small menu, to easily access the most used features. 
+
+### The Recoil on the OpenFire Light Gun is Not Good
+
+I strongly advise using Vidal's OpenFire setting, when using it with Hook of the Reaper. I and other agree that recoil is a lot better with the new settings. Link to settings is below. 
+
+https://github.com/6Bolt/Hook-Of-The-Reaper/issues/32
 
 
 ### Is Hook Of The Reaper complete?
 
-No, currently Hook Of The Reaper is a work in progress. I am working on the game data base and game files. Then I will do some short videos on how to set-up Hook of the Reaper. After that, I will work on getting the LED & I/O controller into Hook Of The Reaper. After that, I plan on getting the wiki done. Then it will be complete.
+No, currently Hook Of The Reaper is a work in progress. The main code for the light guns is done, but still adding to it when new light guns come out. I am working on the game data base and game files. Then I will do some short videos on how to set-up Hook of the Reaper. After that, I will work on getting the LED & I/O controller into Hook Of The Reaper. After that, I plan on getting the wiki done. Then it will be complete.
 
 
 ### Other Peoples Light Guns work, but Mine Doesn't, Can you Help Me Out?
@@ -400,24 +427,39 @@ No.
 
 ### Can you Help Me Set-Up Hook Of The Reaper?
 
-No. Sorry, there will be no tech support now or ever for this program. It is a free open source project, that comes with no warrenty, no guarantees, and no support. 
+No. Sorry, there will be no tech support now or ever for this program. It is a free open source project, that comes with no warrenty, no guarantees, and no support. I am disabled and don't have that much time in a day. I used to help people, but then all I did for 2 weeks was helping people set-up their light gun(s), and teach them about their light gun(s). As they say Hook of the Reaper is not working. But Hook of the Reaper was working in 100% of those situations. The problem was the people didn't set things up correctly, because, I am guessing, couldn't be bothered by reading a wiki or learning. I had to stop this, as no work was being done on Hook of the Reaper, and I did not enjoy this at all. It came down to scrapping the project, or not doing tech support. I choose to not do tech support. Also, hundreds of people have gotten Hook of the Reaper working, with no problems and no tech support. I did not want to punish the vast majority, because a small minority couldn't set up their light gun(s) correctly. So if you read nothing, and blast all my ways of communications, I will ignore you, and maybe block you too.  
 
 ### No Tech Support, but What if I Need Help?
 
-Sorry your are on your own. Again, I suggest you join a forum or Facebook group. I have made Hook of the Reaper easy as I can. Now need fields in 'Add Light Gun' window are highlighted red. I do my best to test everything out before a release. The number of bugs have been really low. Most Issues are not Hook Of The Reaper bugs. I think I have only gotten 2-3 bugs so far from Issues. Most bugs have been caught by myself. Also, hundreds have gotten Hook Of The Reaper working with no problems. I know people have gotten all the supported light gun working. I have tested all the game files on the game file site. I have tested almost all the supported like guns, except for the Fusion light gun, Gun4IR, and XGunner. However, I have had multiple people test out Fusion, Gun4IR, and XGunner light guns.  
+Sorry your are on your own. Again, I suggest you join a forum or Facebook group. I have made Hook of the Reaper easy as I can. Now needed fields in 'Add Light Gun' window are highlighted red. I do my best to test everything out before a release. The number of bugs have been really low. Most Issues are not Hook Of The Reaper bugs. I think I have only gotten 2-3 bugs so far from Issues. Most bugs have been caught by myself. Also, hundreds have gotten Hook Of The Reaper working with no problems. I know people have gotten all the supported light gun working. I have tested all the game files on the game file site. I have tested almost all the supported like guns, except for the Fusion light gun, Gun4IR, and XGunner. However, I have had multiple people test out Fusion, Gun4IR, and XGunner light guns.  
 
 ### Do you Have the Game File XXXXX? It is Not Included with Hook Of The Reaper?
 
-No. All the game files that I have, are include with Hook Of The Reaper. Also, stored at the Hook of the Reaper game file site. It is located at: https://hotr.6bolt.com
+All the game files that I have, are include with Hook Of The Reaper. Also, all game files are stored at the Hook of the Reaper game file site. Please check there, for the latest game files, as new game files will be posted there. It is located at: https://hotr.6bolt.com
 
 
-### Hook of the Reaper has No Network Connection when Emulator is Running
+### Hook of the Reaper has No TCP Network Connection when the Emulator is Running?
 
-Most likly, only 2 things could cause this. The first, is that the emulator or DemulShooter wasn't set up correctly, to output to the network. Or the emulator or DemulShooter is not being open properly. For example, the DemulShooter GUI is being open, and not the command line with the needed target and rom. The second thing, is that Hook of the Reaper and/or the emulator/DemulShooter is being blocked by the firewall. Make sure that all programs are approved in the computer's firewall. This could be the Window's firewall, which is standard. Or a thidp party software, like Norton.
+Most likly, only 2 things could cause this. The first, is that the emulator or DemulShooter wasn't set up correctly, to output to the network. Or the emulator or DemulShooter is not being open properly. For example, the DemulShooter GUI is being open, and not the command line with the needed target and rom. The second thing, is that Hook of the Reaper and/or the emulator/DemulShooter is being blocked by the firewall and/or anti-virus. Make sure that all programs are approved in the computer's firewall and anti-virus. This could be the Window's firewall and Window's Defender, which is standard. Or a thidp party software, like Norton.
 
 
-### What is the Best Way to Debug
+### What is the Best Way to Debug?
 
-First, do not use any scripts or LaunchBox. Get it working with command line commands first. Once working, then can compared against the scipt or what is in LaunchBox. A small error could be in the script, and people will run it over and over again, never seeing the error. Then blame something else. Reason why I don't like when people including a script for a bug or problem. As I will always tell them, don't use scripts for debug. Also, my other program could be useful, which is LGTCPTester. It will display output signal, and can log them too. The timestamp gets reset when a game starts. Located at: https://github.com/6Bolt/LGTCPTester
+First, do not use any scripts or LaunchBox. Get it working with command line commands first. Once working, then can compared against the scipt or what is in LaunchBox. A small error could be in the script, and people will run it over and over again, never seeing the error. Then blame something else. Reason why I don't like when people including a script for a bug or problem. As I will always tell them, don't use scripts for debug. Also, my other program could be useful, which is LGTCPTester. It will display output signal, and can log them too. The timestamp gets reset when a game starts. Located at: https://github.com/6Bolt/LGTCPTester . Also, always check the basics, like the DIP switches on the light gun, and confirm their serial port. Also, make sure the 'Player Assignments' are set correctly. I have seen some very smart engineer's ignore the basic, and lost many hours of debugging. 
+
+
+### I am using DemulShooter and Hook of the Reaper with the New Game that Just Came Out, But it is Not Working?
+
+It takes time for me and Argon (coder for DemulShooter) to get everything set up. If the game has recoil and more outputs, and can be outputted without DemulShooter, then Hook of the Reaper can be used. A game file needs to be created for the game. This tells Hook of the Reaper, to know what output signals control what light gun actions, like recoil. When I create the game file, I will then post it at the Hook of the Reaper game file site, which is linked below. If the game has no output signals, then Argon will have to code it into DemulShooter, and then release it. After he release it, is when I would then make the game file. I usually can get the game file done, if I am not working on anything else. I am disabled and can take a few days. But nothing stops you from creating the new game file before I do. If you do, please email it to gamefiles@hotr.6bolt.com. 
+
+[Hook of the Reaper's Game File Site](https://hotr.6bolt.com/pmwiki.php/Main/HomePage)
+
+
+
+
+
+
+
+
 
 
