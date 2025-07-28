@@ -461,9 +461,9 @@ It takes time for me and Argon (coder for DemulShooter) to get everything set up
 [Hook of the Reaper's Game File Site](https://hotr.6bolt.com/pmwiki.php/Main/HomePage)
 
 
+### The Games Input Controls are not Working Correctly? Or Game Fails After a Certain Level or Point?
 
-
-
+Hook of the Reaper has nothing to do with input controls. So, if the crosshair is not moving with the light gun, it is not Hook of the Reapers doing. You will need to contact DemulShooter or the people that coded the emulator. Also, if a game fails after a certain level or point, it too has nothing to do with Hook of the Reaper. You will need to contact the people that coded the emulator. Yes, people have sent me these bugs. 
 
 
 
