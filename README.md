@@ -5,6 +5,8 @@
 
 # Quick Links
 
+You might have to click the link a couple of times for it to work correctly. Sorry, but a problem with GitHub. 
+
 [Get Hook of the Reaper Setup and Working](https://github.com/6Bolt/Hook-Of-The-Reaper#getting-the-program-to-work) - Basically a Quick Start
 
 [FAQ](https://github.com/6Bolt/Hook-Of-The-Reaper#faq)
@@ -82,27 +84,27 @@ I started this project after getting two Retro Shooter RS3 Reaper light guns as 
 
 ## Set Up the Emulators for Network Outputs
 
-Since the project is still in early release, only Windows is supported right now. I plan on getting Linux and Mac OSes later on. I do have a Linux box, which doubles as my NFS/Clould server. I plan to use that for getting Linux up in running next. A person could take the code, and compile in the needed OS. I detail compiling below.
+Currently, only Windows (10 & Higher) is supported now. I plan on doing Linux and older Windows after the program is complete. I don't plan on doing MacOS support.  
 
-There is one major change that needs to be done to get Hook Of The Reaper working with MAME and DemulShooter. The ‘network’ has to be enabled on MAME and DemulShooter. MAMEHooker used the window messaging to receive data. This is a Windows type thing, as Linux and MacOS (think it is based on Debian) don’t have this window message type. They might have something that is close to it. But to meet goal #4, I needed a solution that would easily work on all platforms. The ‘network’ was the best options. Instead of using window messaging, it uses TCP Socket data on the localhost (IP 127.0.0.1) on port 8000. TCP Socket has major support on all platforms.
+There is one major change that needs to be done to get Hook Of The Reaper working with MAME, DemulShooter, SuperModel, and Nixxou's 3 Emulators. The ‘network’ has to be enabled on MAME, DemulShooter, SuperModel, and Nixxou's 3 emulators. MAMEHooker used the window messaging to receive data. This is a Windows type thing, as Linux and MacOS (think it is based on Debian) don’t have this window message type. They might have something that is close to it. But to meet goal #4, I needed a solution that would easily work on all platforms. The ‘network’ was the best options. Instead of using window messaging, it uses TCP Socket data on the localhost (IP 127.0.0.1) on port 8000. TCP Socket has major support on all platforms.
 
 ### Enable Network on MAME
 
-Open the mame.ini file, in the main MAME directory. Should be right under or above the mame(64).exe. If it is not there, you might have to start MAME for the first time and run a game. Once you have mame.ini open, go down or search for “OSD OUTPUT OPTIONS.” Below that, you will see “ouput” on the left, and a setting on the right, which might be “windows” if you used MAMEHooker. The “output” needs to be set to “network”. So erase any existing option, like “windows” and put in “network”. Then save the file and you are done.
+Open the mame.ini file, in the main MAME directory. Should be right under or above the mame(64).exe. If it is not there, you might have to start MAME for the first time and run a game. Once you have mame.ini open, go down or search for “OSD OUTPUT OPTIONS.” Below that, you will see “ouput” on the left, and its setting on the right, which might be “windows” if you used MAMEHooker. The “output” needs to be set to “network”. So erase any existing option, like “windows” and put in “network”. Then save the file and you are done. Another option, is when starting MAME, use the output switch with network. For example, 'mame.exe -output network'. This has to be done anytime using Hook of the Reaper. 
 
 
 ### Enable Network on DemulShooter
 
-This is a lot easier then MAME. Open up the DemulShooter GUI (DemulShooter_GUI.exe). Pull down the “Page selection:” combo box at the top, and then select “Output” at the bottom. Then check the top box, which is labeled “Enable Outputs”. Then check the third box, which is labeled, “Network Outputs”. Then click the button at the bottom, labeled “Save Config”. That is it, Hook Of The Reaper will now be able to connect to MAME and DemulShooter. 
+This is a lot easier then MAME. Open up the DemulShooter GUI (DemulShooter_GUI.exe). Pull down the “Page selection:” combo box at the top, and then select “Output” at the bottom. Then check the top box, which is labeled “Enable Outputs”. Then check the third box, which is labeled, “Network Outputs”. Then click the button at the bottom, labeled “Save Config”. That is it, Hook Of The Reaper will now be able to connect to DemulShooter. 
 
 
 ### Enable Network on SuperModel (Model 3) Emulator
 
-SuperModel works with network outputs, on a forked version of Supermodel. I have linked below the release of that forked SuperModel. You have to use this emulator with Hook Of The Reaper. I talked to the SuperModel team, and they are not interested in putting network outputs into the emulator. They welcomed me to do it, but will be a long time before I would have time to do it. Also, it would only get 1 game more, which is available and working on the Dolphin emulator. So, priority is very low on this improvement.
+SuperModel works with network outputs, on a forked version of Supermodel, linked below. The normal SuperModel emulator might get the network output feature in the future. If it does, then I will update this info. 
 
 https://github.com/njz3/model3emu/releases/tag/fix_sound_vol
 
-For the SupoerModel (Model 3) emulator, a file needs to be updated, to enable the network output. From the base of the emulator, go into the "config" directory. In this directory, there is a file called "supermodel.ini". Open this file in a text edititor. The add this "OUTPUTS = NET" to a new line in the file. Then save and close the file. That is it.   
+For the SupoerModel (Model 3) emulator, a file needs to be updated, to enable the network output. From the base of the emulator, go into the "config" directory. In this directory, there is a file called "supermodel.ini". Open this file in a text edititor. The add "OUTPUTS = NET" to a new line in the file. Then save and close the file. That is it.   
 
 ### Enable Network for Nixxou's 3 Emulators
 
@@ -110,23 +112,25 @@ Please go to my other program, to see how to enable the network outputs for the 
 
 https://github.com/6Bolt/MameOutputSender
 
-Currently I am working on getting all the game files completed for the 3 Nixxou's emulators. Only the Dolphin (Wii/GameCube) emulator is complete. When I finish the other 2 emulators, it will be updated. 
+Currently I am working on getting all the game files completed for the 3 Nixxou's emulators. Only the Dolphin (Wii/GameCube) emulator and Duck Station is complete. When I finish the other emulator, it will be updated. 
 
 ## Set Up Hook of the Reaper
 
-Go to the latest release, and download the full Hook of the Reaper program. It is HookOfTheReaper_vXpXpX.zip file. Then extract it to a folder, to where you want to install it. After that, there is only 2 steps. Link below for the latest release of Hook of the Reaper. 
+Go to the latest release, and download the full Hook of the Reaper program. It is HookOfTheReaper_vXpXpX.zip file. Then extract it to a folder, where you want to install it. Link below for the latest release of Hook of the Reaper. 
 
 https://github.com/6Bolt/Hook-Of-The-Reaper/releases/latest
 
-#### Hook of the Reaper will start in the tray icon. Open the tray icon, and left click the Hook of the Reaper icon. The will bring up Hook of the Reaper onto the desktop. 
+#### Hook of the Reaper will start in the tray icon. Open the tray icon, and left click the Hook of the Reaper icon. The will bring up the Hook of the Reaper program onto the desktop. 
 
 ### First Step: Input your Light Guns
 
-Click on the 'File' and then click on 'Add New Light Gun'. A child window will pop-up. Then select your light gun brand in the first combo box, labelled 'Default Light Gun'. Once you have selected your brand, then you have to fill out the items in red text. Once the items have been filled out, then you can clcik the 'Add' button at the bottom, which then you will hear a sound, and top right number will go from 0 -> 1. Repeat this, until you have all your light guns entered. Then you can click the 'Close' button at the bottom. If you need to change the light gun, you can click the 'Edit' and then click the 'Edit Light Gun'. This will bring up a child window, like the 'Add Light Gun'. Then choose the light gun you want to change in the first combo box. The data of that light gun will be filled out. Then you can make your edits. Then click the 'Edit' button at the bottom, which will make a sound. You can also delete a light gun from the list. When done, close the window.
+Click on the 'File' and then click on 'Add New Light Gun'. A child window will pop-up. Then select your light gun brand/model in the first combo box, labelled 'Default Light Gun'. Once you have selected your brand/model, then you have to fill out the items field, next to the red text. Once the items have been filled out, then you can clcik the 'Add' button at the bottom, which then you will hear a sound, and the top right number will go from 0 to 1. Repeat this, until you have all your light guns entered. Then you can click the 'Close' button at the bottom. If you need to change the light gun, you can click the 'Edit' and then click the 'Edit Light Gun'. This will bring up a child window, like the 'Add Light Gun'. Then choose the light gun you want to change in the first combo box. The data of that light gun will be filled out. Then you can make your edits. Then click the 'Edit' button at the bottom, which will make a sound. You can also delete a light gun from the list, which will make a different sound. When done, close the 'Edit Light Gun' window.
 
 ### Second Step: Assign Light Guns
 
 Click on the 'File' and then click on 'Player Assignment'. This will bring up a new child window. Then assign 'Player 1' with a light gun. If you have multiple light guns, then it would be good to assign 'Player 2'. Then you can play 2 player games. If you want to play 4 player games, then players 1-4, need to be assigned. You can still play 4 player game, with only 2 light guns or 1 light gun assigned. Also, can play 2 player game, with only 'Player 1' assigned. When done assigning, then click 'Assign+Close' button at the bottom.
+
+If you have assigned a light gun to 'Player 2' and not have it plugged in, and start a 2 player game, a warning pop-up will happen. Tellling the user that it cannot connect to the light gun. This pop-up warning only happens once. 
 
 #### For people using OpenFire light guns, I strongly suggest using Vidal's OpenFire settings. I have tried it out, and known others have too, and we all agree that it makes recoil a lot better on the OpenFire light gun with Hook of the Reaper. Link to settings is below.
 
@@ -139,7 +143,6 @@ More Info can be found here, but it is older and needs updating. But the info is
 
 https://github.com/6Bolt/Hook-Of-The-Reaper#how-to-use-hook-of-the-reaper
 
-I had to put most of the info about Hook of the Reaper here, as most people couldn't scroll down. 
 
 
 # Game Files
@@ -446,7 +449,7 @@ All the game files that I have, are include with Hook Of The Reaper. Also, all g
 
 ### Hook of the Reaper has No TCP Network Connection when the Emulator is Running?
 
-Most likly, only 2 things could cause this. The first, is that the emulator or DemulShooter wasn't set up correctly, to output to the network. Or the emulator or DemulShooter is not being open properly. For example, the DemulShooter GUI is being open, and not the command line with the needed target and rom. The second thing, is that Hook of the Reaper and/or the emulator/DemulShooter is being blocked by the firewall and/or anti-virus. Make sure that all programs are approved in the computer's firewall and anti-virus. This could be the Window's firewall and Window's Defender, which is standard. Or a thidp party software, like Norton.
+Most likly, only 2 things could cause this. The first, is that the emulator or DemulShooter wasn't set up correctly, to output to the network. Or the emulator or DemulShooter is not being open properly. For example, the DemulShooter GUI is being open, and not the command line with the needed target and rom. The second thing, is that Hook of the Reaper and/or the emulator/DemulShooter is being blocked by the firewall and/or anti-virus. Make sure that all programs are approved in the computer's firewall and anti-virus. This could be the Window's firewall and Window's Defender, which is standard. Or a thirp party software, like Norton.
 
 
 ### What is the Best Way to Debug?
