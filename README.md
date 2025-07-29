@@ -120,7 +120,7 @@ Go to the latest release, and download the full Hook of the Reaper program. It i
 
 https://github.com/6Bolt/Hook-Of-The-Reaper/releases/latest
 
-#### Hook of the Reaper will start in the tray icon. Open the tray icon, and left click the Hook of the Reaper icon. The will bring up the Hook of the Reaper program onto the desktop. 
+#### Start Hook of the Reaper, by double clicking the EXE file. Hook of the Reaper will start in the tray icon. Open the tray icon, and left click the Hook of the Reaper icon. The will bring up the Hook of the Reaper program onto the desktop. 
 
 ### First Step: Input your Light Guns
 
