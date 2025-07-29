@@ -90,7 +90,7 @@ There is one major change that needs to be done to get Hook Of The Reaper workin
 
 ### Enable Network on MAME
 
-Open the mame.ini file, in the main MAME directory. Should be right under or above the mame(64).exe. If it is not there, you might have to start MAME for the first time and run a game. Once you have mame.ini open, go down or search for “OSD OUTPUT OPTIONS.” Below that, you will see “ouput” on the left, and its setting on the right, which might be “windows” if you used MAMEHooker. The “output” needs to be set to “network”. So erase any existing option, like “windows” and put in “network”. Then save the file and you are done. Another option, is when starting MAME, use the output switch with network. For example, 'mame.exe -output network'. This has to be done anytime using Hook of the Reaper. 
+Open the mame.ini file, in the main MAME directory. Should be right under or above the mame(64).exe. If it is not there, you might have to start MAME for the first time and run a game. Once you have mame.ini open, go down or search for “OSD OUTPUT OPTIONS.” Below that, you will see “ouput” on the left, and its setting on the right, which might be “windows” if you used MAMEHooker. The “output” needs to be set to “network”. So erase any existing option, like “windows” and put in “network”. It should look like; "ouput    network" in the file. Then save the file and you are done. Another option, is when starting MAME, use the output switch with network. For example, 'mame.exe -output network'. This has to be done anytime using Hook of the Reaper. 
 
 
 ### Enable Network on DemulShooter
