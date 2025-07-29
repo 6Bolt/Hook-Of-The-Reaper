@@ -130,7 +130,7 @@ Click on the 'File' and then click on 'Add New Light Gun'. A child window will p
 
 Click on the 'File' and then click on 'Player Assignment'. This will bring up a new child window. Then assign 'Player 1' with a light gun. If you have multiple light guns, then it would be good to assign 'Player 2'. Then you can play 2 player games. If you want to play 4 player games, then players 1-4, need to be assigned. You can still play 4 player game, with only 2 light guns or 1 light gun assigned. Also, can play 2 player game, with only 'Player 1' assigned. When done assigning, then click 'Assign+Close' button at the bottom.
 
-If you have assigned a light gun to 'Player 2' and not have it plugged in, and start a 2 player game, a warning pop-up will happen. Tellling the user that it cannot connect to the light gun. This pop-up warning only happens once. 
+If you have assigned a light gun to 'Player 2' and not have it plugged in, and start a 2 player game, a warning pop-up will happen. Tellling the user that it cannot connect to the light gun. This pop-up warning only happens once, for each light gun assigned and not plugged in. 
 
 #### For people using OpenFire light guns, I strongly suggest using Vidal's OpenFire settings. I have tried it out, and known others have too, and we all agree that it makes recoil a lot better on the OpenFire light gun with Hook of the Reaper. Link to settings is below.
 
