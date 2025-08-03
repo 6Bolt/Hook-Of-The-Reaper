@@ -82,9 +82,8 @@ I started this project after getting two Retro Shooter RS3 Reaper light guns as 
 
 # Getting the Program to Work
 
-Currently, only Windows (10 & Higher) is supported now. I plan on doing Linux and older Windows after the program is complete. I don't plan on doing MacOS support.
+This has moved to the main site to the Tutorial. Link is below. 
 
-This has moved to the main site, to the Tutorial. Link is below.
 https://hotr.6bolt.com/pmwiki.php/Tutorial/Tutorial
 
 
