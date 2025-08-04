@@ -351,7 +351,7 @@ Almost everything is in Qt, so you need Qt and the MSVC 2022 tools. Then you nee
 - libusb's hidapi library on GitHub - https://github.com/libusb/hidapi
 
 
-#FAQ
+# FAQ
 
 Moved to: https://hotr.6bolt.com/pmwiki.php/Tutorial/FAQ
 
