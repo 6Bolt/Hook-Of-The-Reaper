@@ -3,6 +3,9 @@
 # Hook-Of-The-Reaper
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
+
+Team Encoder, that guy on Facebook is 6Bolt. 
+
 # Quick Links
 
 [Tutorial: How to Setup Hook of the Reaper](https://hotr.6bolt.com/pmwiki.php/Tutorial/Tutorial) 
