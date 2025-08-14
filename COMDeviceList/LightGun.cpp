@@ -1877,8 +1877,14 @@ QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
     quint8 cmdCount = ammoValueCmds.length ();
     bool doReloadCMD = false;
 
+    //If Ammo is the same, do nothing
+    if(ammoValue == lastAmmoValue)
+    {
+        *isSet = false;
+        return tempSL;
+    }
     //Check if Reload Happened
-    if(ammoValue > lastAmmoValue)
+    else if(ammoValue > lastAmmoValue)
     {
         lastAmmoValue = ammoValue;
         *isSet = reloadCmdsSet;

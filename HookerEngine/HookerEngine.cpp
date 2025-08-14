@@ -18,6 +18,8 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     //If No Game is Loaded ___empty
     isEmptyGame = false;
 
+    //HOTR start Minimized in the Tray Icon
+    isHOTRMinimized = true;
 
     //INI or Default LG Game File Loaded or failed loading
     iniFileLoaded = false;
@@ -45,7 +47,7 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     commandLGList << OPENCOMPORTNOINIT << CLOSECOMPORTNOINIT << DISPLAYAMMOCMD << DISPLAYAMMOINITCMD;
     commandLGList << DISPLAYLIFECMD << DISPLAYLIFEINITCMD << DISPLAYOTHERCMD << DISPLAYOTHERINITCMD;
     commandLGList << CLOSECOMPORTINITONLYCMD << RECOILVALUECMD << RELOADVALUECMD << OFFSCREENBUTTONCMD;
-    commandLGList << OFFSCREENNORMALSHOTCMD;
+    commandLGList << OFFSCREENNORMALSHOTCMD << BLOCKSIGNALCOMMAND;
 
     //qDebug() << "Hooker Engine Started";
 
@@ -256,6 +258,10 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
         blockRecoil[i] = false;
         delayRecoilTime[i] = ALIENUSBDELAYDFLT;
         skipRecoilSlowMode[i] = false;
+        blockShake[i] = false;
+        blockRecoil_R2S[i] = false;
+        blockShakeActive[i] = false;
+        blockRecoil_R2SActive[i] = false;
     }
 
     //Set-up Light Guns with HookerEngine. Currently only for Reaper Ammo 0 (Z0) delay buffer
@@ -566,6 +572,25 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                         return false;
                     }
 
+                    //Check for Slow Mode on PLayers IE 'P1 Slow'
+                    if(line.contains(SLOWMODE))
+                    {
+                        QStringList playerSlowMode = line.split (' ', Qt::SkipEmptyParts);
+                        playerSlowMode[0] = playerSlowMode[0].trimmed();
+                        //Make line just the player number IE P1, P2, or P3
+                        line = playerSlowMode[0];
+                        playerSlowMode[1] = playerSlowMode[1].trimmed();
+                        if(playerSlowMode[1] != SLOWMODE)
+                        {
+                            lgFile.close();
+                            QString tempCrit = "Something is after the player, and is not Slow mode.\nLine Number: "+QString::number(lineNumber)+"\nAfter player: "+playerSlowMode[1]+"\nFile: "+fileNamePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return false;
+                        }
+                    }
+                    else
+                        loadedLGSlowMode[i] = false;
 
                     //Remove 'P'
                     line.remove (0,1);
@@ -1434,6 +1459,44 @@ void HookerEngine::SetUpLightGuns()
     }
 }
 
+void HookerEngine::HOTRWindowState(bool isMin)
+{
+    //When HOTR is Minimized, or on the Desktop. When Minimized, Stop the Display Timer
+
+    isHOTRMinimized = isMin;
+
+    if(isHOTRMinimized)
+    {
+        //Stop Display Timer
+        if(p_refreshDisplayTimer->isActive ())
+            p_refreshDisplayTimer->stop ();
+    }
+    else
+    {
+        //If HOTR is now on the Desktop and Game Running, Update Display Signals & Restart Timer
+        if(isGameFound)
+        {
+            UpdateDisplayTimeOut();
+            p_refreshDisplayTimer->start ();
+        }
+    }
+}
+
+
+void HookerEngine::LoadUpdatePlayerAssignment()
+{
+    //ReLoad the PlayerAss.hor file
+    p_comDeviceList->LoadPlayersAss();
+
+
+    //Update Local Player Assignment Array
+    for(quint8 i = 0; i < MAXPLAYERLIGHTGUNS; i++)
+    {
+        playersLGAssignment[i] = p_comDeviceList->GetPlayerLightGunAssignment(i);
+    }
+}
+
+
 //Public Slots
 
 void HookerEngine::TCPReadyRead(const QByteArray &readBA)
@@ -1869,7 +1932,8 @@ void HookerEngine::ClearOnDisconnect()
     p_comDeviceList->ResetLightgun ();
 
     //Stop Refresh Time for Display Timer
-    p_refreshDisplayTimer->stop ();
+    if(p_refreshDisplayTimer->isActive ())
+        p_refreshDisplayTimer->stop ();
 
 
     isGameFound = false;
@@ -1902,6 +1966,10 @@ void HookerEngine::ClearOnDisconnect()
         blockRecoilValue[i] = false;
         blockRecoil[i] = false;
         skipRecoilSlowMode[i] = false;
+        blockShake[i] = false;
+        blockRecoil_R2S[i] = false;
+        blockShakeActive[i] = false;
+        blockRecoil_R2SActive[i] = false;
     }
 
 
@@ -1942,13 +2010,19 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
                 gameHasRun = true;
                 isEmptyGame = false;
 
+                //qDebug() << "Game found, game name is:" << gameName;
+
+                //Re-Load and Update Player Assignment
+                LoadUpdatePlayerAssignment();
+
                 //qDebug() << "Game Found: " << gameName;
 
                 //Update Display with Game Name
                 //emit MameConnectedGame(gameName);
 
                 //Start Refresh Time for Display Timer
-                p_refreshDisplayTimer->start ();
+                if(!isHOTRMinimized)
+                    p_refreshDisplayTimer->start ();
 
                 if(!firstTimeGame)
                 {
@@ -2002,7 +2076,8 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
                 //qDebug() << "Game Has Stopped!!!!!!!!!!!";
 
                 //Stop Refresh Time for Display Timer
-                p_refreshDisplayTimer->stop ();
+                if(p_refreshDisplayTimer->isActive ())
+                    p_refreshDisplayTimer->stop ();
 
                 //Clear Refresh Display QMaps
                 addSignalDataDisplay.clear();
@@ -2120,6 +2195,10 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
                     blockRecoil[i] = false;
                     doRecoilDelayEnds[i] = false;
                     skipRecoilSlowMode[i] = false;
+                    blockShake[i] = false;
+                    blockRecoil_R2S[i] = false;
+                    blockShakeActive[i] = false;
+                    blockRecoil_R2SActive[i] = false;
                 }
 
             }
@@ -3459,7 +3538,8 @@ void HookerEngine::LoadLGFile()
     QStringList subCommands;
     quint8 subCmdsCnt;
     quint16 lineNumber = 0;
-    bool isOutput = false;
+    //bool isOutput = false;
+    bool isStates = false;
     quint8 unassignLG = 0;
     quint16 signalsAndCommandsCountTest = 0;
 
@@ -3561,7 +3641,15 @@ void HookerEngine::LoadLGFile()
                         if(playerSlowMode[1] == SLOWMODE)
                             loadedLGSlowMode[i] = true;
                         else
+                        {
                             loadedLGSlowMode[i] = false;
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "Something is after the player, and is not Slow mode.\nLine Number: "+QString::number(lineNumber)+"\nAfter player: "+playerSlowMode[1]+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
                     }
                     else
                         loadedLGSlowMode[i] = false;
@@ -3814,7 +3902,7 @@ void HookerEngine::LoadLGFile()
             {
                 lgFileLoadFail = true;
                 lgFile.close();
-                QString tempCrit = "The line didn't match 'Recoil_Value' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                QString tempCrit = "The line didn't match 'Recoil_Value' Recoil Options\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return;
@@ -3878,8 +3966,123 @@ void HookerEngine::LoadLGFile()
         else if(line[0] == '[')
         {
             //Nothing In Here Yet, But Might Be Used Later
-            if(line.startsWith("[Sig"))
-                isOutput = true;
+            //if(line.startsWith("[Sig"))
+            //    isOutput = true;
+
+            if(line.startsWith(STATESSECTION))
+                isStates = true;
+            else if(line.startsWith(OPTIONSSECTION) && isStates)
+            {
+                lgFileLoadFail = true;
+                lgFile.close();
+                QString tempCrit = "Options need to come before the States.\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return;
+            }
+            else if(line.startsWith(OPTIONSSECTION))
+            {
+                //Only Options Supported is Block for Shake & Recoil_R2S command, using the player's life value.
+                //Go through the Lines, until "End Options" happens
+
+                //Get a line of data from file
+                line = in.readLine();
+                lineNumber++;
+
+                while(line.startsWith(ENDOPTIONS) == false)
+                {
+                    if(line.startsWith(BLOCKSHAKEOPTION))
+                    {
+                        for(quint8 k = 0; k < numberLGPlayers; k++)
+                            blockShake[k] = true;
+
+                        QStringList blockShakeSL = line.split (' ', Qt::SkipEmptyParts);
+
+                        if(blockShakeSL.length() != BLOCKSHAKELENGTH)
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "Block Shake needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
+
+                        if(blockShakeSL[2] == "NE")
+                            isBlockShakeEqual = false;
+                        else if(blockShakeSL[2] == "E")
+                            isBlockShakeEqual = true;
+                        else
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "Block Shake needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
+
+                        blockShakeValue = blockShakeSL[3].toUShort(&isNumber);
+
+                        if(!isNumber)
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "Block Shake needs a number at the end.\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
+                    }
+                    else if(line.startsWith(BLOCKRECOIL_R2SOPTION))
+                    {
+                        for(quint8 k = 0; k < numberLGPlayers; k++)
+                            blockRecoil_R2S[k] = true;
+
+                        QStringList blockRecoil_R2SSL = line.split (' ', Qt::SkipEmptyParts);
+
+                        if(blockRecoil_R2SSL.length() != BLOCKRECOIL_R2SLENGTH)
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "Block Recoil_R2S needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
+
+                        if(blockRecoil_R2SSL[2] == "NE")
+                            isBlockRecoil_R2SEqual = false;
+                        else if(blockRecoil_R2SSL[2] == "E")
+                            isBlockRecoil_R2SEqual = true;
+                        else
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "Block Recoil_R2S needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
+
+                        blockRecoil_R2SValue = blockRecoil_R2SSL[3].toUShort(&isNumber);
+
+                        if(!isNumber)
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "Block Recoil_R2S needs a number at the end.\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
+                    }
+
+                    //Get Next Line and Increment the Line Count
+                    line = in.readLine();
+                    lineNumber++;
+                }
+            }
         }
         else if(line[0] == SIGNALSTARTCHAR)
         {
@@ -4025,7 +4228,11 @@ void HookerEngine::LoadLGFile()
                 }
 
                 //First thing of the Command is the Player(s)
-                if(!gotPlayer)
+                //if(!gotPlayer)
+                //    commands << line;
+
+                //Only allow to change players in mame_start or mame_stop
+                if(!gotPlayer || signal.startsWith (MAMESTAFTER))
                     commands << line;
 
                 gotPlayer = true;
@@ -4688,6 +4895,47 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                 }
                             }
                         }
+                        else if(commands[i][1] == 'B')
+                        {
+                            quint16 blockSignalValue = value.toUShort();
+
+                            if(blockShake[player])
+                            {
+                                if(isBlockShakeEqual)
+                                {
+                                    if(blockShakeValue == blockSignalValue)
+                                        blockShakeActive[player] = true;
+                                    else
+                                        blockShakeActive[player] = false;
+                                }
+                                else
+                                {
+                                    if(blockShakeValue != blockSignalValue)
+                                        blockShakeActive[player] = true;
+                                    else
+                                        blockShakeActive[player] = false;
+                                }
+                            }
+
+                            if(blockRecoil_R2S[player])
+                            {
+                                if(isBlockRecoil_R2SEqual)
+                                {
+                                    if(blockRecoil_R2SValue == blockSignalValue)
+                                        blockRecoil_R2SActive[player] = true;
+                                    else
+                                        blockRecoil_R2SActive[player] = false;
+                                }
+                                else
+                                {
+                                    if(blockRecoil_R2SValue != blockSignalValue)
+                                        blockRecoil_R2SActive[player] = true;
+                                    else
+                                        blockRecoil_R2SActive[player] = false;
+                                }
+                            }
+
+                        }
                     }
                     else  //E-Z
                     {
@@ -4743,14 +4991,20 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
 
                                             if(value != "0")
                                             {
-                                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
-                                                pRecoilR2STimer[player].start ();
-
-                                                if(isRecoilDelaySet[player])
+                                                if(blockRecoil_R2SActive[player])
+                                                    dlgCMDFound = false;
+                                                else
                                                 {
-                                                    openSolenoidOrRecoilDelay[player].start();
-                                                    blockRecoil[player] = true;
-                                                    doRecoilDelayEnds[player] = false;
+
+                                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
+                                                    pRecoilR2STimer[player].start ();
+
+                                                    if(isRecoilDelaySet[player])
+                                                    {
+                                                        openSolenoidOrRecoilDelay[player].start();
+                                                        blockRecoil[player] = true;
+                                                        doRecoilDelayEnds[player] = false;
+                                                    }
                                                 }
                                             }
                                         }
@@ -4759,25 +5013,30 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                             //This is When Command Goes High to Start Recoil
                                             if(value != "0")
                                             {
-                                                pRecoilR2STimer[player].start ();
-
-                                                if(isRecoilDelaySet[player])
+                                                if(blockRecoil_R2SActive[player])
+                                                    dlgCMDFound = false;
+                                                else
                                                 {
-                                                    if(blockRecoil[player])
+                                                    pRecoilR2STimer[player].start ();
+
+                                                    if(isRecoilDelaySet[player])
                                                     {
-                                                        doRecoilDelayEnds[player] = true;
-                                                        dlgCMDFound = false;
+                                                        if(blockRecoil[player])
+                                                        {
+                                                            doRecoilDelayEnds[player] = true;
+                                                            dlgCMDFound = false;
+                                                        }
+                                                        else
+                                                        {
+                                                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
+                                                            openSolenoidOrRecoilDelay[player].start();
+                                                            blockRecoil[player] = true;
+                                                            doRecoilDelayEnds[player] = false;
+                                                        }
                                                     }
                                                     else
-                                                    {
                                                         dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
-                                                        openSolenoidOrRecoilDelay[player].start();
-                                                        blockRecoil[player] = true;
-                                                        doRecoilDelayEnds[player] = false;
-                                                    }
                                                 }
-                                                else
-                                                    dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
                                             }
                                             else
                                             {
@@ -4870,8 +5129,13 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                         }  //if(commands[i][1] == 'R')
                         else if(commands[i][1] == 'S' && value != "0")
                         {
-                            //Must be Shake Command, Only Do Shake if Value != 0
-                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ShakeCommands(&dlgCMDFound);
+                            if(blockShakeActive[player])
+                                dlgCMDFound = false;
+                            else
+                            {
+                                //Must be Shake Command, Only Do Shake if Value != 0
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->ShakeCommands(&dlgCMDFound);
+                            }
                         }
                         else if(commands[i][1] == 'J')
                         {
@@ -4930,6 +5194,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                 commands[i].remove(0,2);
                 playerNum = commands[i].toUInt ()-1;
                 allPlayers = false;
+                //qDebug() << "Changing to Single Player:" << playerNum << "allPlayers:" << allPlayers;
             }
 
         }//Command Searching If and Else If

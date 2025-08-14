@@ -63,6 +63,11 @@ public:
     //Set-up Light Guns
     void SetUpLightGuns();
 
+    //When Hook of the Reaper in Minimized in the tray, or on the Desktop
+    void HOTRWindowState(bool isMin);
+
+    //Load and Update Player Assignments Array
+    void LoadUpdatePlayerAssignment();
 
 public slots:
 
@@ -402,6 +407,29 @@ private:
     //If Recoil is even, for slow mode
     bool                            skipRecoilSlowMode[MAXGAMEPLAYERS];
 
+    //Options
+
+    //Block Shake with Player's Life Value
+    bool                            blockShake[MAXGAMEPLAYERS];
+    //Is Block Shake Equal or Not Equal
+    bool                            isBlockShakeEqual;
+    // Block Shake Signal Value
+    quint16                         blockShakeValue;
+    //Is Block Shake Active for Player
+    bool                            blockShakeActive[MAXGAMEPLAYERS];
+    //Block Recoil_R2S with Player's Life Value
+    bool                            blockRecoil_R2S[MAXGAMEPLAYERS];
+    //Is Block Recoil_R2S Equal or Not Equal
+    bool                            isBlockRecoil_R2SEqual;
+    // Block Recoil_R2S Signal Value
+    quint16                         blockRecoil_R2SValue;
+    //Is Block Shake Active for Player
+    bool                            blockRecoil_R2SActive[MAXGAMEPLAYERS];
+
+
+
+
+
     ///////////////////////////////////////////////////////////////////////////
 
     //TCP Socket Related
@@ -442,6 +470,8 @@ private:
 
     bool                            displayMB;
 
+    //If HOTR is Minimized and in the Tray Icon
+    bool                            isHOTRMinimized;
 
     ///////////////////////////////////////////////////////////////////////////
 

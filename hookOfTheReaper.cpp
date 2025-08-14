@@ -192,6 +192,7 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
             this->show(); // Show the window when the tray icon is clicked
             this->setWindowState (Qt::WindowActive);
             trayIcon->hide();
+            p_hookEngine->HOTRWindowState (false);
         }
     });
 
@@ -813,10 +814,25 @@ void HookOfTheReaper::DisplayText()
         ui->textBrowser->append (displayText[i]);
 }
 
+// Protective Member Functions
+
+#ifdef Q_OS_WIN
+
+void HookOfTheReaper::changeEvent(QEvent *event)
+{
+    if (event->type() == QEvent::WindowStateChange) {
+        if (windowState() & Qt::WindowMinimized) {
+            hide();
+            trayIcon->show ();
+            p_hookEngine->HOTRWindowState (true);
+        }
+
+    }
+    QMainWindow::changeEvent(event);
+}
 
 
-
-
+#endif
 
 
 

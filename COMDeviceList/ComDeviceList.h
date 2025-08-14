@@ -71,6 +71,7 @@ public:
     void            DeassignPlayerLightGun(quint8 playerNum);
     quint8          GetPlayerLightGunAssignment(quint8 playerNum);
 
+
     //Save or Load Light Guns to/from a File
     void            SaveLightGunList();
     void            LoadLightGunList();

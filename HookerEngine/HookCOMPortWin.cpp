@@ -104,9 +104,9 @@ HookCOMPortWin::~HookCOMPortWin()
             //qDebug() << "lastError: " << lastError;
             //qDebug() << "comPortArray[comPortNum]: " << comPortArray[comPortNum] << "GetLastError(): " << lastError;
 
-            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                          GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                          (LPWSTR)&messageBuffer, 1020, NULL);
+            //FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+            //              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            //              (LPWSTR)&messageBuffer, 1020, NULL);
 
             if(!bypassCOMPortConnectFailWarning)
             {
@@ -146,15 +146,15 @@ HookCOMPortWin::~HookCOMPortWin()
                 COMSTAT status;
                 DWORD errors;
 
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                DWORD charsCopied = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
                               GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                              (LPWSTR)&messageBuffer, 1020, NULL);
+                              (LPWSTR)&messageBuffer, 0, NULL);
 
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                if(messageBuffer == nullptr)
+                if(messageBuffer == nullptr || charsCopied == 0)
                     critMessage = "Can not get the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the default settings for the serial port.";
                 else
                     critMessage = "Can not get the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the default settings for the serial port. "+QString::fromWCharArray(messageBuffer);
@@ -245,18 +245,19 @@ HookCOMPortWin::~HookCOMPortWin()
                 COMSTAT status;
                 DWORD errors;
 
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                DWORD charsCopied = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
                               GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                              (LPWSTR)&messageBuffer, 1020, NULL);
+                              (LPWSTR)&messageBuffer, 0, NULL);
 
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                if(messageBuffer == nullptr)
+                if(messageBuffer == nullptr || charsCopied == 0)
                     critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. ";
                 else
                     critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. "+QString::fromWCharArray(messageBuffer);
+                critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. ";
                 emit ErrorMessage("Serial COM Port Error",critMessage);
                 return;
             }
@@ -292,15 +293,15 @@ HookCOMPortWin::~HookCOMPortWin()
                 COMSTAT status;
                 DWORD errors;
 
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                DWORD charsCopied = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
                               GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                              (LPWSTR)&messageBuffer, 1020, NULL);
+                              (LPWSTR)&messageBuffer, 0, NULL);
 
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                if(messageBuffer == nullptr)
+                if(messageBuffer == nullptr || charsCopied == 0)
                     critMessage = "Serial COM Port failed to set TimeOuts, on COM Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
                 else
                     critMessage = "Serial COM Port failed to set TimeOuts, on COM Port: : "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);

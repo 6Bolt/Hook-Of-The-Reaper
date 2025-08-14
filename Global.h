@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.1.8"
+#define VERSION                 "1.1.9 QR"
 #define VERSIONMAIN             1
 #define VERSIONMID              1
 #define VERSIONLAST             3
@@ -380,6 +380,13 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define PLAYER2CHHAR            'P'
 #define ALL2CHAR                'A'
 #define SLOWMODE                "Slow"
+#define STATESSECTION           "[States]"
+#define OPTIONSSECTION          "[Options]"
+#define ENDOPTIONS              "End Options"
+#define BLOCKSHAKEOPTION        "Block Shake"
+#define BLOCKRECOIL_R2SOPTION   "Block Recoil_R2S"
+#define BLOCKSHAKELENGTH        4
+#define BLOCKRECOIL_R2SLENGTH   4
 
 //Number of Supported Recoil Commands 4: Ammo_Value, Recoil, Recoil_R2S, and Recoil_Value
 #define NUMBEROFRECOILS         4
@@ -439,6 +446,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define RELOADVALUECMD          ">Reload_Value"
 #define OFFSCREENBUTTONCMD      ">Offscreen_Button"
 #define OFFSCREENNORMALSHOTCMD  ">Offscreen_Normal_Shot"
+#define BLOCKSIGNALCOMMAND      ">Block_Signal"
 
 #define OPENCOMPORTONLY         "Open_COM"
 #define CLOSECOMPORTONLY        "Close_COM"

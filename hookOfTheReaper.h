@@ -31,7 +31,7 @@
 #include "HookerEngine/HookerEngine.h"
 
 
-
+#include <Windows.h>
 
 
 
@@ -141,16 +141,7 @@ signals:
 #ifdef Q_OS_WIN
     //Hide From Taskbar when Minimized
 protected:
-    void changeEvent(QEvent *event) override {
-        if (event->type() == QEvent::WindowStateChange) {
-            if (windowState() & Qt::WindowMinimized) {
-                hide();
-                trayIcon->show ();
-            }
-
-        }
-        //QMainWindow::changeEvent(event);
-    }
+    void changeEvent(QEvent *event) override;
 #endif
 
 // HookerEngine and ComDeviceList need to be public
@@ -232,6 +223,7 @@ private:
 
     //No Game Found
     bool                            noGameFileFound;
+
 
 #ifdef Q_OS_WIN
 

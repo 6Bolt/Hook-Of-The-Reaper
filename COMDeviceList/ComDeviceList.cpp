@@ -449,6 +449,7 @@ quint8 ComDeviceList::GetPlayerLightGunAssignment(quint8 playerNum)
     return UNASSIGN;
 }
 
+
 //Save & Load Light guns from/to File
 void ComDeviceList::SaveLightGunList()
 {

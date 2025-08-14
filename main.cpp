@@ -2,16 +2,18 @@
 #include "hookOfTheReaper.h"
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QSystemSemaphore>
 #include <QSharedMemory>
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QAction>
+#include <QDebug>
+
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-
 
     //Code to Check if Program Already Running or Not
     //First Get Application Name
