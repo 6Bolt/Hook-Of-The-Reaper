@@ -120,7 +120,7 @@
   </action>
   <action name="actionTest_COM_Port">
    <property name="text">
-    <string>Test Serial Port/USB HID</string>
+    <string>Test Light Gun</string>
    </property>
   </action>
   <action name="actionTest_defaultLG_Game_File">

@@ -47,19 +47,29 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();
     for(i = 0; i<numberLightGuns; i++)
     {
+        outputConnection = p_comDeviceList->p_lightGunList[i]->GetOutputConnection();
+        //qDebug() << "Light Gun Number" << i << "Output Connection:" << outputConnect;
         tempQS = QString::number(i+1);
         tempQS.append (": ");
         tempQS.append (p_comDeviceList->p_lightGunList[i]->GetLightGunName());
         tempQS.append (" on ");
-        if(!p_comDeviceList->p_lightGunList[i]->IsLightGunUSB ())
+        if(outputConnection == SERIALPORT)
         {
             quint8 cpNum = p_comDeviceList->p_lightGunList[i]->GetComPortNumber();
             tempQS.append ("COM");
             tempQS.append (QString::number (cpNum));
         }
-        else
+        else if(outputConnection == USBHID)
             tempQS.append ("USB");
-
+        else if(outputConnection == BTLE)
+            tempQS.append ("BTLE");
+        else if(outputConnection == TCP)
+        {
+            tempQS.append ("TCP(");
+            quint16 tempTCP = p_comDeviceList->p_lightGunList[i]->GetTCPPort ();
+            tempQS.append(QString::number (tempTCP));
+            tempQS.append (")");
+        }
         ui->savedLightGunsComboBox->insertItem(i,tempQS);
     }
 
@@ -79,13 +89,18 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     ui->defaultLightGunComboBox->insertItem(XGUNNER,XGUNNERNAME);
     ui->defaultLightGunComboBox->insertItem(AIMTRAK,AIMTRAKNAME);
     ui->defaultLightGunComboBox->insertItem(XENAS,XENASNAME);
+    ui->defaultLightGunComboBox->insertItem(XENASBTLE,XENASBTLENAME);
+    ui->defaultLightGunComboBox->insertItem(SINDEN,SINDENNAME);
 
     //Check if the First Light Gun is a Default Light Gun
     defaultLightGun = p_comDeviceList->p_lightGunList[0]->GetDefaultLightGun();
+    outputConnection = p_comDeviceList->p_lightGunList[0]->GetOutputConnection ();
 
     if(defaultLightGun)
     {
         defaultLightGunNum = p_comDeviceList->p_lightGunList[0]->GetDefaultLightGunNumber();
+
+        ChangeLabels(defaultLightGunNum);
 
         if(defaultLightGunNum == MX24)
         {
@@ -100,6 +115,8 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
             p_comDeviceList->CopyUsedDipPlayersArray(usedDipPlayers, DIPSWITCH_NUMBER, hubComPortNumber);
         }
     }
+    else
+        ChangeLabels(0);
 
     ui->dipSwitchComboBox->setEnabled(true);
 
@@ -114,6 +131,28 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
 
     //Get USB HID Devices
     FillUSBDevicesComboBox();
+
+    //Fill TCP Players
+    if(defaultLightGun && defaultLightGunNum == SINDEN)
+    {
+        ui->tcpPlayerComboBox->insertItem(0, TCPPLAYER1NAME);
+        ui->tcpPlayerComboBox->insertItem(1, TCPPLAYER2NAME);
+    }
+    else
+    {
+        ui->tcpPlayerComboBox->insertItem(0,"");
+        ui->tcpPlayerComboBox->insertItem(1,"");
+    }
+
+    ui->tcpPlayerComboBox->setCurrentIndex (0);
+
+    //Fill in TCP Recoil Voltage
+    for(quint8 i=0;i<RECOILVOLTAGESETNUM;i++)
+        ui->tcpRecoilVoltComboBox->insertItem(i,QString::number(i));
+
+    ui->tcpRecoilVoltComboBox->setCurrentIndex (RECOILVOLTDEFAULT);
+    ui->tcpRecoilVoltComboBox->setEnabled (false);
+
 
     if(defaultLightGun)
     {
@@ -160,22 +199,40 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
 
 
                 //Clear Out Line Edits
-                ui->vendorIDUSBLineEdit->clear ();
-                ui->productIDUSBLineEdit->clear ();
-                ui->displayPathUSBLineEdit->clear ();
+                //ui->vendorIDUSBLineEdit->clear ();
+                //ui->productIDUSBLineEdit->clear ();
+                //ui->displayPathUSBLineEdit->clear ();
 
-                QString tempVID = tempHIDInfo.vendorIDString;
-                tempVID.remove (0,2);
-                ui->vendorIDUSBLineEdit->insert (tempVID);
+                //QString tempVID = tempHIDInfo.vendorIDString;
+                //tempVID.remove (0,2);
+                //ui->vendorIDUSBLineEdit->insert (tempVID);
 
-                QString tempPID = tempHIDInfo.productIDString;
-                tempPID.remove (0,2);
-                ui->productIDUSBLineEdit->insert (tempPID);
+                //QString tempPID = tempHIDInfo.productIDString;
+                //tempPID.remove (0,2);
+                //ui->productIDUSBLineEdit->insert (tempPID);
 
-                ui->displayPathUSBLineEdit->insert(tempHIDInfo.displayPath);
+                //ui->displayPathUSBLineEdit->insert(tempHIDInfo.displayPath);
 
 
             }
+        }
+        else if(defaultLightGunNum == SINDEN)
+        {
+            ui->tcpPortLineEdit->setEnabled (true);
+            ui->tcpPlayerComboBox->setEnabled (true);
+            ui->tcpRecoilVoltComboBox->setEnabled (true);
+
+            quint16 tempTCP = p_comDeviceList->p_lightGunList[0]->GetTCPPort ();
+            ui->tcpPortLineEdit->setText (QString::number (tempTCP));
+
+            quint8 tempRecVolt = p_comDeviceList->p_lightGunList[0]->GetRecoilVoltage ();
+            ui->tcpRecoilVoltComboBox->setCurrentIndex (tempRecVolt);
+
+
+            ui->comPortComboBox->setEnabled(false);
+            ui->hubComComboBox->setEnabled(false);
+            ui->analogLineEdit->setEnabled(false);
+            ui->comPortComboBox->setEnabled(false);
         }
         else
         {
@@ -198,7 +255,8 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     }
 
     //COM Port Combo Box - List Unused COM Port and Select Light Gun COM Port
-    if((defaultLightGun && (defaultLightGunNum != MX24 && defaultLightGunNum != ALIENUSB && defaultLightGunNum != AIMTRAK)) || !defaultLightGun)
+    //if((defaultLightGun && (defaultLightGunNum != MX24 && defaultLightGunNum != ALIENUSB && defaultLightGunNum != AIMTRAK && defaultLightGunNum != XENASBTLE && defaultLightGunNum != SINDEN)) || !defaultLightGun)
+    if(outputConnection == SERIALPORT && defaultLightGunNum != MX24)
     {
         comPortName = p_comDeviceList->p_lightGunList[0]->GetComPortString();
         comPortNum = p_comDeviceList->p_lightGunList[0]->GetComPortNumberBypass();
@@ -216,7 +274,8 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
 
     }
 
-    if((defaultLightGun && (defaultLightGunNum != MX24 && defaultLightGunNum != ALIENUSB && defaultLightGunNum != AIMTRAK)) || !defaultLightGun)
+    //if((defaultLightGun && (defaultLightGunNum != MX24 && defaultLightGunNum != ALIENUSB && defaultLightGunNum != AIMTRAK && defaultLightGunNum != XENASBTLE && defaultLightGunNum != SINDEN)) || !defaultLightGun)
+    if(outputConnection == SERIALPORT && defaultLightGunNum != MX24)
     {
         ui->comPortComboBox->setCurrentIndex(comPortNum);
         FillSerialPortInfo(comPortNum);
@@ -304,6 +363,20 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     ui->recoilR2SComboBox->setCurrentIndex (p_recoilPriority[2]);
     ui->recoilValueComboBox->setCurrentIndex (p_recoilPriority[3]);
 
+    if(defaultLightGunNum == FUSION || defaultLightGunNum == JBGUN4IR || defaultLightGunNum == OPENFIRE)
+    {
+        ui->recoilValueComboBox->setEnabled(true);
+    }
+    else
+    {
+        ui->recoilValueComboBox->setCurrentIndex(3);
+        ui->recoilValueComboBox->setEnabled(false);
+        ui->recoilComboBox->setItemText (3, "");
+        ui->ammoValueComboBox->setItemText (3, "");
+        ui->recoilR2SComboBox->setItemText (3, "");
+    }
+
+
     reloadNoRumble = p_comDeviceList->p_lightGunList[0]->GetReloadNoRumble ();
     reloadDisable = p_comDeviceList->p_lightGunList[0]->GetReloadDisabled ();
 
@@ -325,7 +398,7 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
         ui->reloadRumbleRadioButton->setEnabled(false);
         ui->disableReloadradioButton->setEnabled(false);
     }
-    else if(defaultLightGun && defaultLightGunNum == XGUNNER)
+    else if(defaultLightGun && (defaultLightGunNum == XGUNNER || defaultLightGunNum == RS3_REAPER || defaultLightGunNum == SINDEN))
     {
         ui->reloadRadioButton->setEnabled(true);
         ui->disableReloadradioButton->setEnabled(true);
@@ -364,7 +437,11 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
 {
     if(isInitDone)
     {
+        //Change Labeles to Red or Black
+        ChangeLabels(index);
+
         quint8 lgIndex = ui->savedLightGunsComboBox->currentIndex ();
+        outputConnection = p_comDeviceList->p_lightGunList[lgIndex]->GetOutputConnection ();
 
         bool isUSBLG = p_comDeviceList->p_lightGunList[lgIndex]->IsLightGunUSB ();
         quint8 dlgNum = p_comDeviceList->p_lightGunList[lgIndex]->GetDefaultLightGunNumber ();
@@ -393,8 +470,18 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
             ui->defaultLightGunComboBox->setCurrentIndex (defaultLGIndex);
             return;
         }
-
-
+        else if(outputConnection == TCP && index != SINDEN)
+        {
+            QMessageBox::warning (this, "Cannot Change a TCP to a Non-TCP", "A TCP light gun cannot be changed to a Non-TCP light gun. Please delete the TCP light gun and then add a light gun");
+            ui->defaultLightGunComboBox->setCurrentIndex (dlgNum);
+            return;
+        }
+        else if(outputConnection != TCP && index == SINDEN)
+        {
+            QMessageBox::warning (this, "Cannot Change a Non-TCP to a TCP", "A Non-TCP light gun cannot be changed to a TCP light gun. Please delete the light gun and then add a light gun");
+            ui->defaultLightGunComboBox->setCurrentIndex (dlgNum);
+            return;
+        }
 
         if(defaultLightGun && defaultLightGunNum == MX24)
         {
@@ -436,7 +523,7 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
 
                 FillSerialPortInfo(hubIndex);
             }
-            else if(index != ALIENUSB && index != AIMTRAK)
+            else if(outputConnection == SERIALPORT)
             {
                 ui->dipSwitchComboBox->setEnabled(false);
                 ui->hubComComboBox->setEnabled(false);
@@ -459,11 +546,17 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
             if(index == FUSION || index == JBGUN4IR || index == OPENFIRE)
             {
                 ui->recoilValueComboBox->setEnabled(true);
+                ui->recoilComboBox->setItemText (3, "3");
+                ui->ammoValueComboBox->setItemText (3, "3");
+                ui->recoilR2SComboBox->setItemText (3, "3");
             }
             else
             {
                 ui->recoilValueComboBox->setCurrentIndex(3);
                 ui->recoilValueComboBox->setEnabled(false);
+                ui->recoilComboBox->setItemText (3, "");
+                ui->ammoValueComboBox->setItemText (3, "");
+                ui->recoilR2SComboBox->setItemText (3, "");
             }
 
 
@@ -474,7 +567,7 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
                 ui->reloadRumbleRadioButton->setEnabled(false);
                 ui->disableReloadradioButton->setEnabled(false);
             }
-            else if(index == XGUNNER)
+            else if(index == XGUNNER || index == RS3_REAPER || index == SINDEN)
             {
                 ui->reloadRadioButton->setEnabled(true);
                 ui->disableReloadradioButton->setEnabled(true);
@@ -487,6 +580,26 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
                 ui->reloadRumbleRadioButton->setEnabled(true);
                 ui->disableReloadradioButton->setEnabled(true);
             }
+
+            if(index == SINDEN)
+            {
+                ui->tcpPortLineEdit->setEnabled (true);
+                ui->tcpPlayerComboBox->setEnabled (true);
+                ui->tcpRecoilVoltComboBox->setEnabled (true);
+
+                quint16 tempTCP = p_comDeviceList->p_lightGunList[lgIndex]->GetTCPPort ();
+                ui->tcpPortLineEdit->setText (QString::number (tempTCP));
+
+                quint8 tempRecVolt = p_comDeviceList->p_lightGunList[0]->GetRecoilVoltage ();
+                ui->tcpRecoilVoltComboBox->setCurrentIndex (tempRecVolt);
+            }
+            else
+            {
+                ui->tcpPortLineEdit->setEnabled (false);
+                ui->tcpPlayerComboBox->setEnabled (false);
+                ui->tcpRecoilVoltComboBox->setEnabled (false);
+            }
+
 
         }
         else  //For Non-Default Light Guns
@@ -505,8 +618,16 @@ void editLightGunWindow::on_defaultLightGunComboBox_currentIndexChanged(int inde
             ui->analogLineEdit->clear();
             ui->analogLineEdit->setEnabled(false);
 
+            //TCP
+            ui->tcpPortLineEdit->setEnabled (false);
+            ui->tcpPlayerComboBox->setEnabled (false);
+            ui->tcpRecoilVoltComboBox->setEnabled (false);
+
             //Recoil Options
             ui->recoilValueComboBox->setEnabled(true);
+            ui->recoilComboBox->setItemText (3, "3");
+            ui->ammoValueComboBox->setItemText (3, "3");
+            ui->recoilR2SComboBox->setItemText (3, "3");
 
             //Reload Options
             ui->reloadRadioButton->setEnabled(true);
@@ -560,18 +681,28 @@ void editLightGunWindow::on_deletePushButton_clicked()
         //Remove Saved Light Gun from Combo Box
         for(i = 0; i<numberLightGuns; i++)
         {
+            outputConnection = p_comDeviceList->p_lightGunList[i]->GetOutputConnection();
             tempQS = QString::number(i+1);
             tempQS.append (": ");
             tempQS.append (p_comDeviceList->p_lightGunList[i]->GetLightGunName());
             tempQS.append (" on ");
-            if(!p_comDeviceList->p_lightGunList[i]->IsLightGunUSB ())
+            if(outputConnection == SERIALPORT)
             {
                 quint8 cpNum = p_comDeviceList->p_lightGunList[i]->GetComPortNumber();
                 tempQS.append ("COM");
                 tempQS.append (QString::number (cpNum));
             }
-            else
+            else if(outputConnection == USBHID)
                 tempQS.append ("USB");
+            else if(outputConnection == BTLE)
+                tempQS.append ("BTLE");
+            else if(outputConnection == TCP)
+            {
+                tempQS.append ("TCP(");
+                quint16 tempTCP = p_comDeviceList->p_lightGunList[i]->GetTCPPort ();
+                tempQS.append(QString::number (tempTCP));
+                tempQS.append (")");
+            }
 
             ui->savedLightGunsComboBox->setItemText(i,tempQS);
             //Reset Light Gun Numbers, to match Array
@@ -637,12 +768,14 @@ void editLightGunWindow::on_editPushButton_clicked()
             ui->comPortComboBox->setItemText (comPortIndx,tempQS);
         }
 
+        outputConnection = p_comDeviceList->p_lightGunList[lightGunNum]->GetOutputConnection();
+
         if(defaultLightGun && defaultLightGunNum == MX24)
         {
             ui->hubComComboBox->setCurrentIndex(hubComPortNumber);
             FillSerialPortInfo(hubComPortNumber);
         }
-        else if((defaultLightGun && (defaultLightGunNum != ALIENUSB && defaultLightGunNum != AIMTRAK)) || !defaultLightGun)
+        else if(outputConnection == SERIALPORT)
         {
             ui->comPortComboBox->setCurrentIndex(comPortNum);
             FillSerialPortInfo(comPortNum);
@@ -652,10 +785,19 @@ void editLightGunWindow::on_editPushButton_clicked()
         tempQS.append (": ");
         tempQS.append (lightGunName);
         tempQS.append (" on ");
-        if(!p_comDeviceList->p_lightGunList[lightGunNum]->IsLightGunUSB ())
+        if(outputConnection == SERIALPORT)
             tempQS.append (comPortName);
-        else
+        else if(outputConnection == USBHID)
             tempQS.append ("USB");
+        else if(outputConnection == BTLE)
+            tempQS.append ("BTLE");
+        else if(outputConnection == TCP)
+        {
+            tempQS.append ("TCP(");
+            quint16 tempTCP = p_comDeviceList->p_lightGunList[lightGunNum]->GetTCPPort ();
+            tempQS.append(QString::number (tempTCP));
+            tempQS.append (")");
+        }
 
         ui->savedLightGunsComboBox->setItemText (lightGunNum,tempQS);
     }
@@ -709,6 +851,8 @@ bool editLightGunWindow::IsValidData()
     bool hubComLG = false;
     bool usbDisPMatch = false;
     bool recoilCheck = false;
+    bool badTCPPort = false;
+    bool badTCPPlayer = false;
     quint8 numLightGuns = p_comDeviceList->GetNumberLightGuns();
     quint8 i;
     quint8 currentIndex = ui->savedLightGunsComboBox->currentIndex ();
@@ -716,6 +860,7 @@ bool editLightGunWindow::IsValidData()
     //quint8 comPortIndex =  ui->comPortComboBox->currentIndex ();
     quint8 hubComIndex = ui->hubComComboBox->currentIndex ();
 
+    outputConnection = p_comDeviceList->p_lightGunList[currentIndex]->GetOutputConnection();
 
     //Check If Light Gun Name Line Edit Box is Empty
     ivTemp = ui->lightGunNameLineEdit->text();
@@ -749,7 +894,7 @@ bool editLightGunWindow::IsValidData()
                 hubComLG = true;
         }
     }
-    else if(defaultLGIndex != ALIENUSB && defaultLGIndex != AIMTRAK)
+    else if(outputConnection == SERIALPORT)
     {
         //Check If the Com Port Name is Empty for the Combo Box
         ivTemp = ui->comPortComboBox->currentText ();
@@ -774,9 +919,29 @@ bool editLightGunWindow::IsValidData()
     if(defaultLGIndex == ALIENUSB || defaultLGIndex == AIMTRAK)
     {
         QString tempDP;
+        //HIDInfo tempHIDInfo = p_comDeviceList->p_lightGunList[currentIndex]->GetUSBHIDInfo ();
+        quint8 hidIndex = ui->usbDevicesComboBox->currentIndex ();
 
-        tempDP = ui->displayPathUSBLineEdit->text();
+        //tempDP = tempHIDInfo.displayPath;
+        tempDP = hidInfoList[hidIndex].displayPath;
         usbDisPMatch = p_comDeviceList->CheckUSBPath(tempDP, currentIndex);
+    }
+
+    if(defaultLGIndex == SINDEN)
+    {
+        //Check Port Number
+        bool isNumber;
+        QString tcpPortS = ui->tcpPortLineEdit->text();
+        quint32 tcpPort = tcpPortS.toUInt (&isNumber);
+
+        if(!isNumber || tcpPort > MAXTCPPORT || tcpPort == 0)
+            badTCPPort = true;
+
+        QString tcpPlayer = ui->tcpPlayerComboBox->currentText ();
+
+        if(tcpPlayer.isEmpty ())
+            badTCPPlayer = true;
+
     }
 
     if(CheckRecoilComboBoxes() == false)
@@ -784,7 +949,7 @@ bool editLightGunWindow::IsValidData()
 
     //Check All the bools, If They are false, data is good and return true.
     //If false, then make a Warning string, and Pop Up a Warning Message Box on What is Wrong and return false
-    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubComLG == false && usbDisPMatch == false && recoilCheck == false)
+    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubComLG == false && usbDisPMatch == false && recoilCheck == false && badTCPPort == false && badTCPPlayer == false)
     {
         return true;
     }
@@ -808,6 +973,10 @@ bool editLightGunWindow::IsValidData()
             message.append ("An Exsiting USB Light Gun already has that path/location. There cannot be duplicates of the path/location. As it is used to send data to the device.");
         if(recoilCheck == true)
             message.append ("Two or more of the numbers match for the Recoil Priority. None of the numbers can match");
+        if(badTCPPort == true)
+            message.append ("TCP Port number is not a number or not in range of 1-65,535. Port cannot be 0 or larger than 65,535.");
+        if(badTCPPlayer == true)
+            message.append ("TCP Port number has that player assigned already. Try different player number, or you have to delete light gun");
 
         QMessageBox::warning (this, "Can Not Edit Light Gun", message);
 
@@ -870,8 +1039,9 @@ void editLightGunWindow::EditLightGun()
     //Collect Light Gun Name, Number, COM Port Number & Name, and Serial Port Info
     lightGunNum = ui->savedLightGunsComboBox->currentIndex ();
     lightGunName = ui->lightGunNameLineEdit->text();
+    outputConnection = p_comDeviceList->p_lightGunList[lightGunNum]->GetOutputConnection();
 
-    if(defaultLightGun && (defaultLightGunNum == MX24 || defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK))
+    if(outputConnection != SERIALPORT || defaultLightGunNum == MX24)
         comPortNum = UNASSIGN;
     else
         comPortNum = ui->comPortComboBox->currentIndex ();
@@ -911,7 +1081,7 @@ void editLightGunWindow::EditLightGun()
     p_comDeviceList->p_lightGunList[lightGunNum]->SetReloadOptions (reloadNR, reloadDisable);
 
     //Edit Serial Port Light Gun Stuff
-    if((defaultLightGun && (defaultLightGunNum != ALIENUSB && defaultLightGunNum != AIMTRAK)) || !defaultLightGun)
+    if(outputConnection == SERIALPORT)
     {
         //Check if COM Port Changed, if so update unusedComPorts list
         oldComPort = p_comDeviceList->p_lightGunList[lightGunNum]->GetComPortNumber ();
@@ -991,11 +1161,38 @@ void editLightGunWindow::EditLightGun()
         p_comPortInfo = nullptr;
 
     }
-    else
+    else if(outputConnection == USBHID)
     {
         //Need to Get the HIDInfo -So Much Easier
         qint16 hidIndex = ui->usbDevicesComboBox->currentIndex ();
         p_comDeviceList->p_lightGunList[lightGunNum]->SetHIDInfo (hidInfoList[hidIndex]);
+    }
+    else if(outputConnection == TCP)
+    {
+        QString tempTCPPortS = ui->tcpPortLineEdit->text();
+        quint16 tempTCPPort = tempTCPPortS.toUInt ();
+        quint8 tempTCPPlayer = ui->tcpPlayerComboBox->currentIndex ();
+        quint16 currentPort = p_comDeviceList->p_lightGunList[lightGunNum]->GetTCPPort();
+        quint8 currentPlayer = p_comDeviceList->p_lightGunList[lightGunNum]->GetTCPPlayer();
+        p_comDeviceList->RemoveTCPPortPlayer(currentPort, currentPlayer);
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetTCPPort (tempTCPPort);
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetTCPPlayer (tempTCPPlayer);
+        qint8 comPlayer = p_comDeviceList->GetTCPPortPlayerInfo(tempTCPPort);
+
+        if(comPlayer == -1)
+        {
+            if(tempTCPPlayer == 0)
+                p_comDeviceList->SetTCPPortPlayerInfo(tempTCPPort, TCPPLAYER1);
+            else if(tempTCPPlayer == 1)
+                p_comDeviceList->SetTCPPortPlayerInfo(tempTCPPort, TCPPLAYER2);
+        }
+        else if(comPlayer == TCPPLAYER1 && tempTCPPlayer == 1)
+            p_comDeviceList->SetTCPPortPlayerInfo(tempTCPPort, 0);
+        else if(comPlayer == TCPPLAYER2 && tempTCPPlayer == 0)
+            p_comDeviceList->SetTCPPortPlayerInfo(tempTCPPort, 0);
+
+        quint8 recVolt = ui->tcpRecoilVoltComboBox->currentIndex ();
+        p_comDeviceList->p_lightGunList[lightGunNum]->SetRecoilVoltage (recVolt);
     }
 
 }
@@ -1132,6 +1329,11 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
     else
         ui->reloadRadioButton->setChecked (true);
 
+    ui->tcpPortLineEdit->setEnabled (false);
+    ui->tcpPlayerComboBox->setEnabled (false);
+    ui->tcpRecoilVoltComboBox->setEnabled (false);
+
+    outputConnection = p_comDeviceList->p_lightGunList[index]->GetOutputConnection();
 
     //Check if the Light Gun is a Default Light Gun
     if(defaultLightGun)
@@ -1161,9 +1363,9 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
 
             FillSerialPortInfo(hubComPortNumber);
 
-            ui->vendorIDUSBLineEdit->setEnabled(false);
-            ui->productIDUSBLineEdit->setEnabled(false);
-            ui->displayPathUSBLineEdit->setEnabled(false);
+            //ui->vendorIDUSBLineEdit->setEnabled(false);
+            //ui->productIDUSBLineEdit->setEnabled(false);
+            //ui->displayPathUSBLineEdit->setEnabled(false);
             ui->usbDevicesComboBox->setEnabled(false);
         }
         else if(defaultLightGunNum == JBGUN4IR || defaultLightGunNum == OPENFIRE)
@@ -1176,21 +1378,21 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
                 ui->analogLineEdit->setText(QString::number (analogStrength));
 
             ui->comPortComboBox->setEnabled(true);
-            ui->vendorIDUSBLineEdit->setEnabled(false);
-            ui->productIDUSBLineEdit->setEnabled(false);
-            ui->displayPathUSBLineEdit->setEnabled(false);
+            //ui->vendorIDUSBLineEdit->setEnabled(false);
+            //ui->productIDUSBLineEdit->setEnabled(false);
+            //ui->displayPathUSBLineEdit->setEnabled(false);
             ui->usbDevicesComboBox->setEnabled(false);
         }
-        else if(defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK)
+        else if(outputConnection == USBHID)
         {
             ui->comPortComboBox->setEnabled(false);
             ui->dipSwitchComboBox->setEnabled(false);
             ui->hubComComboBox->setEnabled(false);
             ui->analogLineEdit->setEnabled(false);
 
-            ui->vendorIDUSBLineEdit->setEnabled(true);
-            ui->productIDUSBLineEdit->setEnabled(true);
-            ui->displayPathUSBLineEdit->setEnabled(true);
+            //ui->vendorIDUSBLineEdit->setEnabled(true);
+            //ui->productIDUSBLineEdit->setEnabled(true);
+            //ui->displayPathUSBLineEdit->setEnabled(true);
             ui->usbDevicesComboBox->setEnabled(true);
 
             if(defaultLightGunNum == AIMTRAK)
@@ -1222,21 +1424,47 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
                 HIDInfo tempHIDInfo = p_comDeviceList->p_lightGunList[index]->GetUSBHIDInfo ();
 
                 //Clear Out Line Edits
-                ui->vendorIDUSBLineEdit->clear ();
-                ui->productIDUSBLineEdit->clear ();
-                ui->displayPathUSBLineEdit->clear ();
+                //ui->vendorIDUSBLineEdit->clear ();
+                //ui->productIDUSBLineEdit->clear ();
+                //ui->displayPathUSBLineEdit->clear ();
 
-                QString tempVID = tempHIDInfo.vendorIDString;
-                tempVID.remove (0,2);
-                ui->vendorIDUSBLineEdit->insert (tempVID);
+                //QString tempVID = tempHIDInfo.vendorIDString;
+                //tempVID.remove (0,2);
+                //ui->vendorIDUSBLineEdit->insert (tempVID);
 
-                QString tempPID = tempHIDInfo.productIDString;
-                tempPID.remove (0,2);
-                ui->productIDUSBLineEdit->insert (tempPID);
+                //QString tempPID = tempHIDInfo.productIDString;
+                //tempPID.remove (0,2);
+                //ui->productIDUSBLineEdit->insert (tempPID);
 
-                ui->displayPathUSBLineEdit->insert(tempHIDInfo.displayPath);
+                //ui->displayPathUSBLineEdit->insert(tempHIDInfo.displayPath);
             }
 
+        }
+        else if(defaultLightGunNum == SINDEN)
+        {
+            quint16 tcpPort = p_comDeviceList->p_lightGunList[index]->GetTCPPort ();
+
+            ui->tcpPortLineEdit->setEnabled (true);
+            ui->tcpPlayerComboBox->setEnabled (true);
+            ui->tcpRecoilVoltComboBox->setEnabled (true);
+
+            //Set Line Edit to 0 and then Port Number to make sure it Updates
+            ui->tcpPortLineEdit->setText ("0");
+            ui->tcpPortLineEdit->setText (QString::number(tcpPort));
+
+            //Set Recoil Voltage to right number
+            quint8 recVolt = p_comDeviceList->p_lightGunList[index]->GetRecoilVoltage ();
+            ui->tcpRecoilVoltComboBox->setCurrentIndex (recVolt);
+
+            ui->comPortComboBox->setEnabled(false);
+            ui->dipSwitchComboBox->setEnabled(false);
+            ui->hubComComboBox->setEnabled(false);
+            ui->analogLineEdit->setEnabled(false);
+
+            //ui->vendorIDUSBLineEdit->setEnabled(false);
+            //ui->productIDUSBLineEdit->setEnabled(false);
+            //ui->displayPathUSBLineEdit->setEnabled(false);
+            ui->usbDevicesComboBox->setEnabled(false);
         }
         else
         {
@@ -1246,9 +1474,9 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
             ui->analogLineEdit->clear();
             ui->analogLineEdit->setEnabled(false);
             ui->comPortComboBox->setEnabled(true);
-            ui->vendorIDUSBLineEdit->setEnabled(false);
-            ui->productIDUSBLineEdit->setEnabled(false);
-            ui->displayPathUSBLineEdit->setEnabled(false);
+            //ui->vendorIDUSBLineEdit->setEnabled(false);
+            //ui->productIDUSBLineEdit->setEnabled(false);
+            //ui->displayPathUSBLineEdit->setEnabled(false);
             ui->usbDevicesComboBox->setEnabled(false);
         }
 
@@ -1263,7 +1491,7 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
             ui->reloadRumbleRadioButton->setEnabled(false);
             ui->disableReloadradioButton->setEnabled(false);
         }
-        else if(defaultLightGun && defaultLightGunNum == XGUNNER)
+        else if(defaultLightGun && (defaultLightGunNum == XGUNNER || defaultLightGunNum == RS3_REAPER || defaultLightGunNum == SINDEN))
         {
             ui->reloadRadioButton->setEnabled(true);
             ui->disableReloadradioButton->setEnabled(true);
@@ -1290,16 +1518,16 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
         ui->analogLineEdit->clear();
         ui->analogLineEdit->setEnabled(false);
         ui->comPortComboBox->setEnabled(true);
-        ui->vendorIDUSBLineEdit->setEnabled(false);
-        ui->productIDUSBLineEdit->setEnabled(false);
-        ui->displayPathUSBLineEdit->setEnabled(false);
+        //ui->vendorIDUSBLineEdit->setEnabled(false);
+        //ui->productIDUSBLineEdit->setEnabled(false);
+        //ui->displayPathUSBLineEdit->setEnabled(false);
         ui->usbDevicesComboBox->setEnabled(false);
         ui->reloadRadioButton->setEnabled(true);
         ui->reloadRumbleRadioButton->setEnabled(true);
         ui->disableReloadradioButton->setEnabled(true);
     }
 
-    if((defaultLightGun && (defaultLightGunNum != ALIENUSB && defaultLightGunNum != AIMTRAK)) || !defaultLightGun)
+    if(outputConnection == SERIALPORT)
     {
         for(quint8 comPortIndx=0;comPortIndx<DIPSWITCH_NUMBER;comPortIndx++)
         {
@@ -1489,7 +1717,13 @@ void editLightGunWindow::FillUSBDevicesComboBox()
         {
             QString tempS;
             QTextStream tempTS(&tempS);
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             tempTS << "VID: " << hidInfoList[i].vendorIDString << " PID: " << hidInfoList[i].productIDString << " " << hidInfoList[i].displayPath.first(ALIENUSBPATHFIRST);
+#else
+            tempTS << "VID: " << hidInfoList[i].vendorIDString << " PID: " << hidInfoList[i].productIDString << " " << hidInfoList[i].displayPath.chopped(hidInfoList[i].displayPath.size() - ALIENUSBPATHFIRST);
+#endif
+
             ui->usbDevicesComboBox->insertItem(i,tempS);
             //qDebug() << "Item: " << i << " is: " << tempS;
         }
@@ -1584,9 +1818,9 @@ void editLightGunWindow::on_usbDevicesComboBox_currentIndexChanged(int index)
         ui->productIDLineEdit->clear ();
         ui->usageLineEdit->clear ();
         ui->releaseNumLineEdit->clear ();
-        ui->vendorIDUSBLineEdit->clear ();
-        ui->productIDUSBLineEdit->clear ();
-        ui->displayPathUSBLineEdit->clear ();
+        //ui->vendorIDUSBLineEdit->clear ();
+        //ui->productIDUSBLineEdit->clear ();
+        //ui->displayPathUSBLineEdit->clear ();
 
         //Turn On The 2 USB Info Line Edits
         ui->usageLineEdit->setEnabled (true);
@@ -1612,16 +1846,16 @@ void editLightGunWindow::on_usbDevicesComboBox_currentIndexChanged(int index)
 
         ui->releaseNumLineEdit->insert(hidInfoList[index].releaseString);
 
-        QString tempVID = hidInfoList[index].vendorIDString;
+        //QString tempVID = hidInfoList[index].vendorIDString;
         //tempVID.remove (0,2);
-        ui->vendorIDUSBLineEdit->insert (tempVID);
+        //ui->vendorIDUSBLineEdit->insert (tempVID);
 
-        QString tempPID = hidInfoList[index].productIDString;
+        //QString tempPID = hidInfoList[index].productIDString;
         //tempPID.remove (0,2);
-        ui->productIDUSBLineEdit->insert (tempPID);
+        //ui->productIDUSBLineEdit->insert (tempPID);
 
-        ui->displayPathUSBLineEdit->insert(hidInfoList[index].displayPath);
-        ui->displayPathUSBLineEdit->setCursorPosition (0);
+        //ui->displayPathUSBLineEdit->insert(hidInfoList[index].displayPath);
+        //ui->displayPathUSBLineEdit->setCursorPosition (0);
 
     }
     else if(index == -1)
@@ -1635,9 +1869,9 @@ void editLightGunWindow::on_usbDevicesComboBox_currentIndexChanged(int index)
         ui->productIDLineEdit->clear ();
         ui->usageLineEdit->clear ();
         ui->releaseNumLineEdit->clear ();
-        ui->vendorIDUSBLineEdit->clear ();
-        ui->productIDUSBLineEdit->clear ();
-        ui->displayPathUSBLineEdit->clear ();
+        //ui->vendorIDUSBLineEdit->clear ();
+        //ui->productIDUSBLineEdit->clear ();
+        //ui->displayPathUSBLineEdit->clear ();
     }
 }
 
@@ -1714,4 +1948,302 @@ bool editLightGunWindow::CheckRecoilComboBoxes()
         check = false;
 
     return check;
+}
+
+void editLightGunWindow::on_tcpPortLineEdit_textChanged(const QString &arg1)
+{
+    bool isNumber;
+    quint16 tempPort = arg1.toUInt (&isNumber);
+    qint8 tempPlayer = p_comDeviceList->GetTCPPortPlayerInfo(tempPort);
+    quint8 currentIndex = ui->savedLightGunsComboBox->currentIndex ();
+    quint8 lgPlayer = p_comDeviceList->p_lightGunList[currentIndex]->GetTCPPlayer ();
+    quint16 lgPort = p_comDeviceList->p_lightGunList[currentIndex]->GetTCPPort ();
+
+    //qDebug() << "tempPort" << tempPort << "tempPlayer" << tempPlayer << "currentIndex" << currentIndex << "lgPlayer" << lgPlayer;
+
+    if(isNumber)
+    {
+        //If LG TCP Port is the Same Port in Line Edit
+        if(tempPort == lgPort)
+        {
+
+            if(tempPlayer == -1)
+            {
+                ui->tcpPlayerComboBox->setItemText(0, TCPPLAYER1NAME);
+                ui->tcpPlayerComboBox->setItemText(1, TCPPLAYER2NAME);
+                ui->tcpPlayerComboBox->setCurrentIndex (0);
+
+            }
+            else if(tempPlayer == TCPPLAYER1 && lgPlayer == 0)
+            {
+                ui->tcpPlayerComboBox->setItemText(0,TCPPLAYER1NAME);
+                ui->tcpPlayerComboBox->setItemText(1, TCPPLAYER2NAME);
+                ui->tcpPlayerComboBox->setCurrentIndex (0);
+            }
+            else if(tempPlayer == TCPPLAYER2 && lgPlayer == 1)
+            {
+                ui->tcpPlayerComboBox->setItemText(0, TCPPLAYER1NAME);
+                ui->tcpPlayerComboBox->setItemText(1, TCPPLAYER2NAME);
+                ui->tcpPlayerComboBox->setCurrentIndex (1);
+            }
+            else if(tempPlayer == 0)
+            {
+                if(lgPlayer == 0)
+                {
+                    ui->tcpPlayerComboBox->setItemText(0, TCPPLAYER1NAME);
+                    ui->tcpPlayerComboBox->setItemText(1,"");
+                    ui->tcpPlayerComboBox->setCurrentIndex (0);
+                }
+                else if(lgPlayer == 1)
+                {
+                    ui->tcpPlayerComboBox->setItemText(0, "");
+                    ui->tcpPlayerComboBox->setItemText(1, TCPPLAYER2NAME);
+                    ui->tcpPlayerComboBox->setCurrentIndex (1);
+                }
+            }
+        }
+        else
+        {
+            //Different TCP Port than the LG
+            //-1 = TCP Port Not Used Yet, 0 = Both Players are Used
+            if(tempPlayer == -1)
+            {
+                ui->tcpPlayerComboBox->setItemText(0, TCPPLAYER1NAME);
+                ui->tcpPlayerComboBox->setItemText(1, TCPPLAYER2NAME);
+                ui->tcpPlayerComboBox->setCurrentIndex (0);
+
+            }
+            else if(tempPlayer == TCPPLAYER1)
+            {
+                ui->tcpPlayerComboBox->setItemText(0, "");
+                ui->tcpPlayerComboBox->setItemText(1, TCPPLAYER2NAME);
+                ui->tcpPlayerComboBox->setCurrentIndex (1);
+            }
+            else if(tempPlayer == TCPPLAYER2)
+            {
+                ui->tcpPlayerComboBox->setItemText(0, TCPPLAYER1NAME);
+                ui->tcpPlayerComboBox->setItemText(1, "");
+                ui->tcpPlayerComboBox->setCurrentIndex (0);
+            }
+            else if(tempPlayer == 0)
+            {
+                ui->tcpPlayerComboBox->setItemText(0, "");
+                ui->tcpPlayerComboBox->setItemText(1, "");
+                ui->tcpPlayerComboBox->setCurrentIndex (0);
+            }
+        }
+    }
+}
+
+void editLightGunWindow::ChangeLabels(int index)
+{
+    //Always Red, Name and Recoil Method
+    ui->nameLabel->setStyleSheet("QLabel { color: red; }");
+    ui->recoilLabel->setStyleSheet("QLabel { color: red; }");
+    ui->ammoLabel->setStyleSheet("QLabel { color: red; }");
+    ui->r2sLabel->setStyleSheet("QLabel { color: red; }");
+
+    if(index == 0 || index == -1)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: red; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: red; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: red; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: red; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: red; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
+
+        ui->tcpPortLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: black; }");
+    }
+    else if(index == RS3_REAPER || index == XGUNNER)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: red; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: black; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
+
+        ui->tcpPortLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: black; }");
+    }
+    else if(index == MX24)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: black; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: red; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: red; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: black; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: black; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: black; }");
+
+        ui->tcpPortLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: black; }");
+    }
+    else if(index == JBGUN4IR || index == OPENFIRE)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: red; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
+
+        ui->tcpPortLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: black; }");
+    }
+    else if(index == FUSION)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: red; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
+
+        ui->tcpPortLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: black; }");
+    }
+    else if(index == BLAMCON || index == XENAS)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: red; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
+
+        ui->tcpPortLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: black; }");
+    }
+    else if(index == ALIENUSB || index == AIMTRAK)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: black; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: black; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: black; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: black; }");
+
+        ui->tcpPortLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: black; }");
+    }
+    else if(index == SINDEN)
+    {
+        ui->comLabel->setStyleSheet("QLabel { color: black; }");
+        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
+        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
+        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
+        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
+        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->dipLabel->setStyleSheet("QLabel { color: black; }");
+        ui->hubLabel->setStyleSheet("QLabel { color: black; }");
+        ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->usbLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->valueLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadRumbleRadioButton->setStyleSheet("QRadioButton { color: black; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
+
+
+        ui->tcpPortLabel->setStyleSheet("QLabel { color: red; }");
+        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: red; }");
+        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: red; }");
+
+    }
+
 }

@@ -55,6 +55,9 @@ private slots:
 
     void on_allHIDDevicesCheckBox_checkStateChanged(const Qt::CheckState &arg1);
 
+    void on_tcpPortLineEdit_textChanged(const QString &arg1);
+
+
 private:
 
     //Checks if Data is Valid for a LightGun
@@ -139,6 +142,10 @@ private:
 
     //Sound Effects of Add Light Gun
     QSoundEffect            addLightGunSound;
+
+    //TCP Server Info
+    quint16                 tcpPort;
+    qint8                  tcpPlayer;
 
 };
 

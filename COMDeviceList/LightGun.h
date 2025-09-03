@@ -40,6 +40,8 @@ public:
     explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
     //For Ultimarc AimTrak USB Light Gun
     explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
+    //For Sinden Light Gun
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint16 port, quint8 player, quint8 recVolt, SupportedRecoils lgRecoils, bool reloadNR,bool reloadDis);
 
     ~LightGun();
 
@@ -70,6 +72,12 @@ public:
     void SetRecoilPriority(SupportedRecoils lgRecoils);
     void SetReloadOptions(bool reloadNR, bool reloadDis);
     void SetReaperAmmo0Delay(bool isAmmo0DelayEnabled, quint8 delayTime, quint16 reaperHST);
+    void SetTCPPort(quint16 port);
+    void SetTCPPlayer(quint8 player);
+    void SetRecoilVoltage(quint8 recVolt);
+    void SetRecoilVoltageOverride(quint8 recVoltOvr);
+    void SetSindenRecoilOverride(quint8 recOVRDE);
+    void SetAmmoCheck();
 
 
     //Get Functions that Gets the Stated Variable
@@ -109,6 +117,10 @@ public:
     bool GetReloadNoRumble();
     bool GetReloadDisabled();
     quint8 GetReaperAmmo0Delay(bool *isAmmo0DelayEnabled, quint16 *reaperHST);
+    qint8 GetOutputConnection();
+    quint16 GetTCPPort();
+    quint8 GetTCPPlayer();
+    quint8 GetRecoilVoltage();
 
 
     //If a Default Light Gun, is Needed Varibles Set
@@ -149,6 +161,10 @@ public:
     QStringList DisplayOtherCommands(bool *isSet, quint16 otherValue);
     QStringList OffscreenButtonCommands(bool *isSet);
     QStringList OffscreenNormalShotCommands(bool *isSet);
+    QStringList OffscreenLeftCornerCommands(bool *isSet);
+    QStringList OffscreenDisableCommands(bool *isSet);
+    QStringList LifeValueCommands(bool *isSet, quint8 lifeValue);
+    QStringList DeathValueCommands(bool *isSet, quint8 deathValue);
 
     //Resets Light Gun Back to Starting Start when Game Ends
     void ResetLightGun();
@@ -169,6 +185,9 @@ public:
     //Get Recoil Priority for Hooker EngineFormat
     quint8* GetRecoilPriorityHE();
 
+    //When Light Gun has Slow Mode Enabled
+    void SlowModeEnabled();
+
 private:
 
     //Private Member Functions
@@ -184,10 +203,17 @@ private slots:
     //Time Out Function for the Reaper Ammo 0 (Z0) Timer
     void ReaperAmmo0TimeOut();
 
+    //Ammo_Value for Light Gun not Reaper or Sinden
+    void AmmoValueNormal(quint16 ammoValue);
+    void AmmoValueReaper(quint16 ammoValue);
+    void AmmoValueSinden(quint16 ammoValue);
+
 
 signals:
 
     void WriteCOMPort(const quint8 &cpNum, const QString &cpData);
+
+    void DoAmmoValueCommands(quint16 ammoValue);
 
 
 private:
@@ -201,6 +227,8 @@ private:
     bool                defaultLightGun;
     quint8              defaultLightGunNum;
 
+    //Light Gun Output Connection - SERIALPORT, USBHID, BTLE, TCP
+    qint8               outputConnection;
 
     //RS3 Reaper
     quint16             maxAmmo;
@@ -225,6 +253,14 @@ private:
     //JB Gun4IR & OpenFire
     quint8              analogStrength;
     bool                isAnalogStrengthSet;
+    //Sinden
+    quint8              recoilVoltage;
+    QString             recoilVoltageCMD;
+    bool                recoilVoltageOverride;
+    quint8              recoilVoltageOriginal;
+    bool                sindenRecoilOverride;
+    quint8              sindenRecoilOverrideValue;
+    QString             sindenRecoilOverrideCMD;
 
     //OpenFire
     bool                displayAmmoLife;
@@ -245,6 +281,8 @@ private:
     bool                reloadNoRumble;
     bool                reloadDisable;
 
+    //Ammo Check Value
+    quint8              ammoCheckValue;
 
 
     //COM Port Info
@@ -267,6 +305,11 @@ private:
     QString             currentPath;
     QString             dataPath;
     QString             defaultLGFilePath;
+
+
+    //TCP Server Info
+    quint16             tcpPort;
+    quint8              tcpPlayer;
 
     //Commands QStringLists
     QStringList         openComPortCmds;
@@ -291,6 +334,15 @@ private:
     QStringList         displayOtherInitCmds;
     QStringList         offscreenButtonCmds;
     QStringList         offscreenNormalShotCmds;
+    QStringList         offscreenLeftCornerCmds;
+    QStringList         offscreenDisableCmds;
+    QStringList         outOfAmmoCmds;
+    QStringList         lifeValueCmds;
+    QStringList         deathValueCmds;
+
+    //Temp Command StringList
+    QStringList         tempCommands;
+    bool                tempEnableCommands;
 
     //Commands Bools
     bool                openComPortCmdsSet;
@@ -316,6 +368,11 @@ private:
     bool                displayRefreshSet;
     bool                offscreenButtonCmdsSet;
     bool                offscreenNormalShotCmdsSet;
+    bool                offscreenLeftCornerCmdsSet;
+    bool                offscreenDisableCmdsSet;
+    bool                outOfAmmoCmdSet;
+    bool                lifeValueCmdSet;
+    bool                deathValueCmdSet;
 
     //Ammo
     quint16             lastAmmoValue;
@@ -325,6 +382,9 @@ private:
     quint8              reaperBulletCount;
     bool                reaperLargeAmmo;
     quint8              reaperNumLEDOn;
+
+    //For Ammo Check
+    bool                doAmmoCheck;
 
     //Display
     bool                hasDisplayAmmoInited;
@@ -340,6 +400,13 @@ private:
     bool                displayAmmoPriority;
     bool                displayLifePriority;
     bool                displayOtherPriority;
+
+    //For Life and Death Value Commands
+    quint8              lastLifeValue;
+    quint8              lastDeathValue;
+    bool                playerAlive;
+    quint8              maxLifeValue;
+    quint8              maxDamage;
 
 
 };

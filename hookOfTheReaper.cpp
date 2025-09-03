@@ -20,7 +20,7 @@ quint8  STOPBITSDATA_ARRAY[STOPBITS_NUMBER] = {1, 2, 3};
 QString FLOWNAME_ARRAY[FLOW_NUMBER] = {"No Flow Control", "RTS/CTS Hardware", "Xon/Xoff Software"};
 quint8  FLOWDATA_ARRAY[FLOW_NUMBER] = {0, 1, 2};
 
-QString DEFAULTLGFILENAMES_ARRAY[NUM_DEFAULTLG] = {"nonDefaultLG.hor","rs3Reaper.hor","mx24.hor","jbgun4ir.hor","fusion.hor","blamcon.hor","openFire.hor","alienUSB.hor", "xGunner.hor", "", "xenas.hor"};
+QString DEFAULTLGFILENAMES_ARRAY[NUM_DEFAULTLG] = {"nonDefaultLG.hor","rs3Reaper.hor","mx24.hor","jbgun4ir.hor","fusion.hor","blamcon.hor","openFire.hor","alienUSB.hor", "xGunner.hor", "", "xenas.hor", "xenasBTLE.hor", "sinden.hor"};
 
 //Constructor
 HookOfTheReaper::HookOfTheReaper(QWidget *parent)
@@ -139,6 +139,28 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
     DEFAULTLG_ARRAY[XENAS].RELOADVALUE = XENASRELOAD;
     DEFAULTLG_ARRAY[XENAS].MAXAMMON = XENASMAXAMMONUM;
     DEFAULTLG_ARRAY[XENAS].RELOADVALUEN = XENASRELOADNUM;
+
+    //Set Up Xenas BlueToothLE Default Light Gun Settings
+    DEFAULTLG_ARRAY[XENASBTLE].BAUD = XENASBTLEBAUD;
+    DEFAULTLG_ARRAY[XENASBTLE].DATA = XENASBTLEDATA;
+    DEFAULTLG_ARRAY[XENASBTLE].PARITY = XENASBTLEPARITY;
+    DEFAULTLG_ARRAY[XENASBTLE].STOP = XENASBTLESTOP;
+    DEFAULTLG_ARRAY[XENASBTLE].FLOW = XENASBTLEFLOW;
+    DEFAULTLG_ARRAY[XENASBTLE].MAXAMMO = XENASBTLEMAXAMMO;
+    DEFAULTLG_ARRAY[XENASBTLE].RELOADVALUE = XENASBTLERELOAD;
+    DEFAULTLG_ARRAY[XENASBTLE].MAXAMMON = XENASBTLEMAXAMMONUM;
+    DEFAULTLG_ARRAY[XENASBTLE].RELOADVALUEN = XENASBTLERELOADNUM;
+
+    //Set Up Sinden Default Light Gun Settings
+    DEFAULTLG_ARRAY[SINDEN].BAUD = SINDENBAUD;
+    DEFAULTLG_ARRAY[SINDEN].DATA = SINDENDATA;
+    DEFAULTLG_ARRAY[SINDEN].PARITY = SINDENPARITY;
+    DEFAULTLG_ARRAY[SINDEN].STOP = SINDENSTOP;
+    DEFAULTLG_ARRAY[SINDEN].FLOW = SINDENFLOW;
+    DEFAULTLG_ARRAY[SINDEN].MAXAMMO = SINDENMAXAMMO;
+    DEFAULTLG_ARRAY[SINDEN].RELOADVALUE = SINDENRELOAD;
+    DEFAULTLG_ARRAY[SINDEN].MAXAMMON = SINDENMAXAMMONUM;
+    DEFAULTLG_ARRAY[SINDEN].RELOADVALUEN = SINDENRELOADNUM;
 
 
     //TCP Socket is Not Connected Yet
@@ -701,7 +723,14 @@ void HookOfTheReaper::on_actionTest_defaultLG_Game_File_triggered()
             isGoodFile = p_hookEngine->LoadLGFileTest(fileNames[i]);
 
             qint16 lastIndex = fileNames[i].lastIndexOf ('/');
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             QString fName = fileNames[i].sliced (lastIndex+1);
+#else
+            QString fName;
+            for(quint16 k = lastIndex+1; k < fileNames[i].size(); k++)
+                fName.append (fileNames[i][k]);
+#endif
 
             if(isGoodFile)
                 QMessageBox::information (this, "DefaultLG Game File: "+fName, "The DefaultLG game file, "+fName+" passed the checks.\nFile: "+fileNames[i]);
@@ -734,7 +763,14 @@ void HookOfTheReaper::on_actionTest_INI_Game_File_triggered()
             isGoodFile = p_hookEngine->LoadINIFileTest(fileNames[i]);
 
             qint16 lastIndex = fileNames[i].lastIndexOf ('/');
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             QString fName = fileNames[i].sliced (lastIndex+1);
+#else
+            QString fName;
+            for(quint16 k = lastIndex+1; k < fileNames[i].size(); k++)
+                fName.append (fileNames[i][k]);
+#endif
 
             if(isGoodFile)
                 QMessageBox::information (this, "INI Game File: "+fName, "The INI game file, "+fName+" passed the checks.\nFile: "+fileNames[i]);

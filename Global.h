@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.1.9 QR"
+#define VERSION                 "1.2.0"
 #define VERSIONMAIN             1
 #define VERSIONMID              1
 #define VERSIONLAST             3
@@ -38,6 +38,13 @@
 
 #define DEFAULTANALOGSTRENGTH   63
 
+//Light Guns Output Connections
+#define SERIALPORT              0
+#define USBHID                  1
+#define BTLE                    2
+#define TCP                     3
+#define UNKNOWNCONNECT          -1
+
 //Arrays that Store the Different Settings
 //Located in the Top of hookOfTheReaper.cpp
 extern QString BAUDNAME_ARRAY[];
@@ -54,7 +61,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Default Light Gun Definition - There is No Zero, as that is blan and nonDefaultLG
-#define NUM_DEFAULTLG           11
+#define NUM_DEFAULTLG           13
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -217,7 +224,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define AIMTRAKPATHFIRST       15
 #define AIMTRAKMINDELAY        250
 #define AIMTRAKDELAYDFLT       250
-#define AIMTRAKDELAYDFLTS      "250"
+#define AIMTRAKDELAYDFLTS      "550"
 
 
 //Tenth Default Light Gun
@@ -234,6 +241,52 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define XENASMAXAMMONUM         0
 #define XENASRELOADNUM          0
 
+//Eleventh Default Light Gun
+//Xenas Light Gun - BlueToothLE
+#define XENASBTLE               11
+#define XENASBTLENAME           "Xenas Gun BlueToothLE"
+#define XENASBTLEBAUD           0
+#define XENASBTLEDATA           0
+#define XENASBTLEPARITY         0
+#define XENASBTLESTOP           0
+#define XENASBTLEFLOW           0
+#define XENASBTLEMAXAMMO        "0"
+#define XENASBTLERELOAD         "0"
+#define XENASBTLEMAXAMMONUM     0
+#define XENASBTLERELOADNUM      0
+
+//Twelth Default Light Gun
+//Sinden Light Gun - TCP Server on localhost
+#define SINDEN                  12
+#define SINDENNAME              "Sinden"
+#define SINDENBAUD              0
+#define SINDENDATA              0
+#define SINDENPARITY            0
+#define SINDENSTOP              0
+#define SINDENFLOW              0
+#define SINDENMAXAMMO           "0"
+#define SINDENRELOAD            "0"
+#define SINDENMAXAMMONUM        0
+#define SINDENRELOADNUM         0
+
+#define DISABLETRIGGERP1        "1K0"
+#define DISABLETRIGGERP2        "2K0"
+#define ENABLETRIGGERP1         "1K1"
+#define ENABLETRIGGERP2         "2K1"
+#define RECOILVOLTAGESETNUM     11
+#define RECOILVOLTAGEMAX        10
+#define RECOILVOLTDEFAULT       8
+#define RECOILVOLTP1CMD         "1N"
+#define RECOILVOLTP2CMD         "2N"
+#define SINDENSINGLESHOT        0
+#define SINDENSINGLESHOTCMD     'D'
+#define SINDENAUTODEFAULT       1
+#define SINDENAUTODEFAULTCMD    'G'
+#define SINDENAUTOFAST          2
+#define SINDENAUTOFASTCMD       'H'
+#define SINDENAUTOSTRONGE       3
+#define SINDENAUTOSTRONGECMD    'I'
+
 
 //TCP Socket
 //Address Name & Port Number
@@ -243,6 +296,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define TIMETOWAIT              12000
 //Time for the TCP Socket Timer (msec)
 #define TCPTIMERTIME            12200
+#define TCPSLEEPTIME            500    // In ms
 
 
 //File & Dir Data
@@ -301,6 +355,16 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define TESTHIDMASK             "HHHHHHHHHHHHHHHHHHHHHHHH"
 #define TESTCOMMASK             "NNNNNNNNNNNNNNNNNNNNNNNN"
 
+#define TCPSERVERMASK           "00000"
+#define TCPSERVERDEFAULT        "13000"
+#define TCPSERVERDEFAULTNUM     13000
+#define MAXTCPPORT              65535
+#define TCPPLAYER1              1
+#define TCPPLAYER2              2
+#define TCPPLAYER1NAME          "Player 1"
+#define TCPPLAYER2NAME          "Player 2"
+#define MAXTCPSERVERS           2
+
 //Display
 #define GAMEINFO                "Game Info:"
 #define GAMEINFODASHES          "------------"
@@ -339,6 +403,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define REFRESHTIME             "refreshtime"
 #define ORIENTATION             "Orientation"
 #define GAMESTART               "game = "
+#define GAMESTOP                "game_stop"
 
 
 
@@ -387,6 +452,15 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define BLOCKRECOIL_R2SOPTION   "Block Recoil_R2S"
 #define BLOCKSHAKELENGTH        4
 #define BLOCKRECOIL_R2SLENGTH   4
+#define OVERRIDERECOILVOLT      "Override_Recoil_Voltage"
+#define OVERRIDERECOILLENGTH    2
+#define OVERRIDERECOILVOLTNUM   1
+#define SINDENTRIGGERRECOIL     "Sinden_Trigger_Recoil"
+#define SINDENTRIGGERRECOILLEN  2
+#define SINDENTRIGGERRECOILNUM  1
+#define SINDENTRIGGERRECOILMAX  3
+#define AMMOCHECKOPTION         "Ammo_Check"
+
 
 //Number of Supported Recoil Commands 4: Ammo_Value, Recoil, Recoil_R2S, and Recoil_Value
 #define NUMBEROFRECOILS         4
@@ -446,7 +520,16 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define RELOADVALUECMD          ">Reload_Value"
 #define OFFSCREENBUTTONCMD      ">Offscreen_Button"
 #define OFFSCREENNORMALSHOTCMD  ">Offscreen_Normal_Shot"
+#define OFFSCREENLEFTCORNERCMD  ">Offscreen_Left_Corner"
+#define OFFSCREENDISABLECMD     ">Offscreen_Disable"
 #define BLOCKSIGNALCOMMAND      ">Block_Signal"
+#define RELOADVALUECMDSIZE      8
+#define OFFSCREENCHARAT         11
+#define OFFSCREENCHARATBUTTON   'B'
+#define OFFSCREENCHARATNORMAL   'N'
+#define OFFSCREENCHARATLEFT     'L'
+#define LIFEVALUECMD            ">Life_Value"
+#define DEATHVALUECMD           ">Death_Value"
 
 #define OPENCOMPORTONLY         "Open_COM"
 #define CLOSECOMPORTONLY        "Close_COM"
@@ -476,12 +559,22 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define DISPLAYREFRESHONLY      "Display_Refresh"
 #define RECOILVALUEONLY         "Recoil_Value"
 #define RELOADVALUECMDONLY      "Reload_Value"
-#define RELOADVALUECMDSIZE      8
+#define OUTOFAMMOONLY           "Out_Of_Ammo"
+#define RELOADAMMOONLY          "Reload_Ammo"
 #define OFFSCREENBUTTONCMDONLY  "Offscreen_Button"
 #define OFFSCREENRMLSHOTCMDONLY "Offscreen_Normal_Shot"
-#define OFFSCREENCHARAT         11
-#define OFFSCREENCHARATBUTTON   'B'
+#define OFFSCREENLEFTCORNERONLY "Offscreen_Left_Corner"
+#define OFFSCREENDISABLECMDONLY "Offscreen_Disable"
+#define LIFEVALUECMDONLY        "Life_Value"
+#define DEATHVALUECMDONLY       "Death_Value"
 
+//Max Damage Percentage
+#define MAXDAMAGEPERCENTAGE     0.35f
+
+
+//Delay
+#define DELAYCMD0               'D'
+#define DELAYCMD1               ':'
 
 
 //Open Solenoid Safety Timer Default Time

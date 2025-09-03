@@ -2,6 +2,7 @@
 #define HOOKCOMPORTWIN_H
 
 #include <QObject>
+#include <QTcpSocket>
 #include <QDebug>
 
 
@@ -23,6 +24,13 @@ class HookCOMPortWin : public QObject
 public:
     explicit HookCOMPortWin(QObject *parent = nullptr);
     ~HookCOMPortWin();
+
+    //Says if the TCP is Connected or Not
+    bool IsTCPConnected(quint16 port);
+    //Says if the TCP is Trying to Connect to a Server
+    bool IsTCPConnecting(quint16 port);
+    //Send the TCP Port Number
+    quint16 TCPPortNumber();
 
 public slots:
 
@@ -56,10 +64,27 @@ public slots:
     //Slot to for setting the Bypass COM Port Connection Fail Warning Pop-Up
     void SetBypassCOMPortConnectFailWarning(const bool &bypassCPCFW);
 
+    //Connect to a TCP Server
+    void ConnectTCP(const quint16 &port);
+    void DisconnectTCP();
+
+    void FoundTCPServer();
+    void LostTCPServer();
+    void TCPServerRead();
+
+    void FoundTCPServer1();
+    void LostTCPServer1();
+    void TCPServerRead1();
+
+    void WriteTCP(const QByteArray &writeData);
+
+    void WriteTCP1(const QByteArray &writeData);
+
 signals:
 
     //Signal Used to Display Error Message from COM Port
     void ErrorMessage(const QString &title, const QString &errorMsg);
+
 
 private:
 
@@ -97,6 +122,22 @@ private:
 
 
     bool                            noLightGunWarning[MAXCOMPORTS];
+
+    // TCP Server 0
+    quint16                         connectedTCPPort;
+    bool                            isTCPConnected;
+    bool                            isTCPConnecting;
+    QTcpSocket                      *p_tcpServer;
+    QByteArray                      readDataTCP;
+
+    // TCP Server 1
+    quint16                         connectedTCPPort1;
+    bool                            isTCPConnected1;
+    bool                            isTCPConnecting1;
+    QTcpSocket                      *p_tcpServer1;
+    QByteArray                      readDataTCP1;
+
+
 
 };
 

@@ -6,6 +6,7 @@
 #include <QSerialPortInfo>
 #include <QMessageBox>
 #include <QByteArray>
+#include <QTcpSocket>
 
 #include "../COMDeviceList/ComDeviceList.h"
 
@@ -34,6 +35,9 @@ private slots:
 
     void on_sendDataPushButton_clicked();
 
+    void SocketConnected();
+    void SocketDisconnected();
+    void TCPReadData();
 
 
 private:
@@ -41,6 +45,8 @@ private:
     bool ConnectComPort();
 
     bool ConnectUSBHID();
+
+    void ConnectTCP();
 
     Ui::testComPortWindow *ui;
 
@@ -56,6 +62,9 @@ private:
 
     //Current Light Gun Number
     quint8 currentLG;
+
+    //Current LG Connection Method
+    quint8 outputConnection;
 
     //Light Gun Data
     QString lightGunName;
@@ -73,6 +82,13 @@ private:
     bool isUSB;
     hid_device *p_hidConnection;
     bool isUSBConnected;
+
+    //Light Gun TCP Socket Data
+    quint16 tcpPort;
+    bool tcpConnected;
+    bool tcpInit;
+    QTcpSocket *p_testSocket;
+    QByteArray readData;
 
 };
 

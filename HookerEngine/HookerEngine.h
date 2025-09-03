@@ -19,6 +19,7 @@
 
 
 #include "HookTCPSocket.h"
+#include "GamePlayer.h"
 
 #ifdef Q_OS_WIN
 #include "HookCOMPortWin.h"
@@ -84,6 +85,7 @@ public slots:
     void WriteLGComPortSlot(quint8 cpNum, QString cpData);
 
 
+
 signals:
 
     //Starts and Stops the TCP Socket (different thread)
@@ -124,6 +126,13 @@ signals:
     void UpdatePauseFromGame(QString dat);
     void UpdateOrientationFromGame(QString sig, QString dat);
 
+    //TCP Server Signals
+    void ConnectTCPServer(const quint16 &port);
+    void DisconnectTCPServer();
+    void WriteTCPServer(const QByteArray &writeData);
+
+    void WriteTCPServer1(const QByteArray &writeData);
+
 private slots:
 
     //Used to Control the TCP Socket When Looking for a Hook Up
@@ -162,8 +171,26 @@ private slots:
     void PXCloseSolenoid(quint8 player);
     void PXRecoilDelay(quint8 player);
 
+    //Serial Port Connection Open/Close/Write Slots
+    void OpenSerialPortSlot(quint8 playerNum, bool noInit);
+    void CloseSerialPortSlot(quint8 playerNum, bool noInit, bool initOnly);
+    void WriteSerialPortSlot(quint8 playerNum, QString cpData);
+
+    //USB HID Connection Open/Close/Write Slots
+    void OpenUSBHIDSlot(quint8 playerNum, bool noInit);
+    void CloseUSBHIDSlot(quint8 playerNum, bool noInit, bool initOnly);
+    void WriteUSBHIDSlot(quint8 playerNum, QString cpData);
+
+
+    //TCP Server Connection Open/Close/Write
+    void OpenTCPServerSlot(quint8 playerNum, bool noInit);
+    void CloseTCPServerSlot(quint8 playerNum, bool noInit, bool initOnly);
+    void WriteTCPServerSlot(quint8 playerNum, QString cpData);
+
+
 
 private:
+
 
     //Clears Things out on a TCP Diconnect, if a Game has Run
     void ClearOnDisconnect();
@@ -266,7 +293,8 @@ private:
 
 
 
-
+    //Disconnects the Game Player Connections, before connecting them again.
+    void DisconnectGamePlayers();
 
 
 
@@ -406,9 +434,25 @@ private:
     bool                            loadedLGSlowMode[MAXGAMEPLAYERS];
     //If Recoil is even, for slow mode
     bool                            skipRecoilSlowMode[MAXGAMEPLAYERS];
+    //If Light Gun Output Connection Closed
+    bool                            lgConnectionClosed[MAXGAMEPLAYERS];
+    //Light Gun's Output Connection - Serial Port, USB HID, BTLE, TCP
+    qint8                           lgOutputConnection[MAXGAMEPLAYERS];
+    //Light Gun's TCP Port & Player
+    quint16                         lgTCPPort[MAXGAMEPLAYERS];
+    quint8                          lgTCPPlayer[MAXGAMEPLAYERS];
+    bool                            isTCPConnected;
+    bool                            isTCPConnecting;
+    quint8                          lgTCPConnections;
+    bool                            isMultipleTCPPorts;
+    quint16                         firstTCPPort;
+    quint16                         secondTCPPort;
+
+    //Game Players
+    GamePlayer                      lgGamePlayers[MAXGAMEPLAYERS];
 
     //Options
-
+    //Block Shake
     //Block Shake with Player's Life Value
     bool                            blockShake[MAXGAMEPLAYERS];
     //Is Block Shake Equal or Not Equal
@@ -417,6 +461,7 @@ private:
     quint16                         blockShakeValue;
     //Is Block Shake Active for Player
     bool                            blockShakeActive[MAXGAMEPLAYERS];
+    //Block Recoil_R2S
     //Block Recoil_R2S with Player's Life Value
     bool                            blockRecoil_R2S[MAXGAMEPLAYERS];
     //Is Block Recoil_R2S Equal or Not Equal

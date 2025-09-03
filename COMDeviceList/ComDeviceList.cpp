@@ -223,7 +223,26 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
     numberLightGuns++;
 }
 
+//For Sinden Light Gun
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint16 port, quint8 player, quint8 recVolt, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
+{
+    if(tcpPortPlayersMap.contains (port))
+    {
+        //Means Player 1 or Player 2 is already there, so make 0, meaning both players taken for port
+        tcpPortPlayersMap[port] = 0;
+    }
+    else
+    {
+        if(player == 0)
+            tcpPortPlayersMap.insert (port,TCPPLAYER1);
+        else if(player == 1)
+            tcpPortPlayersMap.insert (port,TCPPLAYER2);
+    }
 
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, port, player, recVolt, lgRecoils, reloadNR, reloadDis);
+
+    numberLightGuns++;
+}
 
 //Add COM Devices to the List
 void ComDeviceList::AddComPortDevice(ComPortDevice const &cpdMember)
@@ -290,10 +309,36 @@ void ComDeviceList::DeleteLightGun(quint8 lgNumber)
 {
     quint8 index;
     quint8 openComPort;
+    quint8 connectionType;
 
     openComPort = p_lightGunList[lgNumber]->GetComPortNumberBypass ();
     if(openComPort != UNASSIGN)
         availableComPorts[openComPort] = true;
+
+    connectionType = p_lightGunList[lgNumber]->GetOutputConnection();
+
+    //If TCP, then remove player from TCP Port Map
+    if(connectionType == TCP)
+    {
+        quint16 port = p_lightGunList[lgNumber]->GetTCPPort();
+        quint8 player = p_lightGunList[lgNumber]->GetTCPPlayer();
+
+        if(tcpPortPlayersMap.contains (port))
+        {
+            if(tcpPortPlayersMap[port] == 0)
+            {
+                //If Both Players are Assigned
+                if(player == 0)
+                    tcpPortPlayersMap[port] = TCPPLAYER2; //Remove Player 1, then just have Player 2
+                else if(player == 1)
+                    tcpPortPlayersMap[port] = TCPPLAYER1; //Remove Player 2, then just have Player 1
+            }
+            else if(tcpPortPlayersMap[port] == TCPPLAYER1 && player == 0)
+                tcpPortPlayersMap.remove(port);         //If Player 1 is set and deleting Player 1, remove port number
+            else if(tcpPortPlayersMap[port] == TCPPLAYER2 && player == 1)
+                tcpPortPlayersMap.remove(port);         //If Player 2 is set and deleting Player 2, remove port number
+        }
+    }
 
     //Check if it is MX24, for Used Dip Switch Player
     bool isDefaultLG = p_lightGunList[lgNumber]->GetDefaultLightGun ();
@@ -485,7 +530,12 @@ void ComDeviceList::SaveLightGunList()
         return;
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     openFile = saveLGData.open(QIODeviceBase::WriteOnly | QIODevice::Text);
+#else
+    openFile = saveLGData.open(QIODevice::WriteOnly | QIODevice::Text);
+#endif
+
 
     if(!openFile)
     {
@@ -543,7 +593,7 @@ void ComDeviceList::SaveLightGunList()
             out << "0\n";
 
         //Check if Ligth Gun is a Serial COM Port
-        if(!p_lightGunList[i]->IsLightGunUSB ())
+        if(p_lightGunList[i]->GetOutputConnection() == SERIALPORT)
         {
 
             //COM Port Data
@@ -619,7 +669,7 @@ void ComDeviceList::SaveLightGunList()
             }
 
         } //Light Gun is a USB Light Gun
-        else
+        else if(p_lightGunList[i]->GetOutputConnection() == USBHID)
         {
             HIDInfo tempHIDInfo = p_lightGunList[i]->GetUSBHIDInfo ();
 
@@ -637,6 +687,21 @@ void ComDeviceList::SaveLightGunList()
             out << tempHIDInfo.usage << "\n";
             out << tempHIDInfo.usageString << "\n";
             out << tempHIDInfo.interfaceNumber << "\n";
+        }
+        else if(p_lightGunList[i]->GetOutputConnection() == TCP)
+        {
+            quint16 port = p_lightGunList[i]->GetTCPPort ();
+            quint8 player = p_lightGunList[i]->GetTCPPlayer ();
+            quint8 recVolt = p_lightGunList[i]->GetRecoilVoltage ();
+
+            out << port << "\n";
+            out << player << "\n";
+            out << recVolt << "\n";
+        }
+        else
+        {
+            QString errMsg = "Light Gun output connection type is wrong. It is set at " + QString::number (p_lightGunList[i]->GetOutputConnection());
+            QMessageBox::critical (nullptr, "File Error", errMsg, QMessageBox::Ok);
         }
     }
 
@@ -688,7 +753,11 @@ void ComDeviceList::LoadLightGunList()
         return;
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     openFile = loadLGData.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+#else
+    openFile = loadLGData.open (QIODevice::ReadOnly | QIODevice::Text);
+#endif
 
     if(!openFile)
     {
@@ -779,7 +848,7 @@ void ComDeviceList::LoadLightGunList()
 
 
         //For Serial Port Light Guns
-        if(!tempIsDefaultGun || (tempIsDefaultGun && (tempDefaultGunNum != ALIENUSB && tempDefaultGunNum != AIMTRAK)))
+        if(!tempIsDefaultGun || (tempIsDefaultGun && (tempDefaultGunNum != ALIENUSB && tempDefaultGunNum != AIMTRAK && tempDefaultGunNum != XENASBTLE && tempDefaultGunNum != SINDEN)))
         {
 
             //COM Port Number
@@ -890,7 +959,7 @@ void ComDeviceList::LoadLightGunList()
             p_tempComPortInfo = nullptr;
 
         }
-        else
+        else if(tempIsDefaultGun && (tempDefaultGunNum == ALIENUSB || tempDefaultGunNum == AIMTRAK)) //USB HID Light Guns
         {
             //This is For USB Light Guns
             HIDInfo tempHIDInfo;
@@ -945,6 +1014,22 @@ void ComDeviceList::LoadLightGunList()
             else if(tempDefaultGunNum == AIMTRAK)
                 AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempHIDInfo, AIMTRAKDELAYDFLT, recoilPriority, reloadNR, reloadDis);
         }
+        else if(tempIsDefaultGun && tempDefaultGunNum == SINDEN)
+        {
+            //TCP Port Number
+            line = in.readLine();
+            quint16 tempTCPPort = line.toUInt ();
+
+            //TCP Port Player
+            line = in.readLine();
+            quint8 tempTCPPlayer = line.toUInt ();
+
+            //Recoil Voltage
+            line = in.readLine();
+            quint8 tempRecVolt = line.toUInt ();
+
+            AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempTCPPort, tempTCPPlayer, tempRecVolt, recoilPriority, reloadNR, reloadDis);
+        }
 
 
 
@@ -983,7 +1068,11 @@ void ComDeviceList::SavePlayersAss()
         return;
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     openFile = savePlayersAss.open(QIODeviceBase::WriteOnly | QIODevice::Text);
+#else
+    openFile = savePlayersAss.open(QIODevice::WriteOnly | QIODevice::Text);
+#endif
 
     if(!openFile)
     {
@@ -1025,7 +1114,11 @@ void ComDeviceList::LoadPlayersAss()
         return;
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     openFile = loadPlayerAss.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+#else
+    openFile = loadPlayerAss.open (QIODevice::ReadOnly | QIODevice::Text);
+#endif
 
     if(!openFile)
     {
@@ -1093,7 +1186,11 @@ void ComDeviceList::SaveComDeviceList()
         return;
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     openFile = saveCDData.open(QIODeviceBase::WriteOnly | QIODevice::Text);
+#else
+    openFile = saveCDData.open(QIODevice::WriteOnly | QIODevice::Text);
+#endif
 
     if(!openFile)
     {
@@ -1296,7 +1393,11 @@ void ComDeviceList::SaveSettings()
         return;
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     openFile = saveSetData.open(QIODeviceBase::WriteOnly | QIODevice::Text);
+#else
+    openFile = saveSetData.open(QIODevice::WriteOnly | QIODevice::Text);
+#endif
 
     if(!openFile)
     {
@@ -1423,8 +1524,11 @@ void ComDeviceList::LoadSettings()
         return;
     }
 
-
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     openFile = loadSetData.open(QIODeviceBase::ReadOnly | QIODevice::Text);
+#else
+    openFile = loadSetData.open(QIODevice::ReadOnly | QIODevice::Text);
+#endif
 
     if(!openFile)
     {
@@ -1933,6 +2037,57 @@ void ComDeviceList::SetReaperAmmo0Delay(bool isAmmo0DelayEnabled, quint8 delayTi
 }
 
 
+qint8 ComDeviceList::GetTCPPortPlayerInfo(quint16 portNumber)
+{
+    if(tcpPortPlayersMap.contains (portNumber))
+        return tcpPortPlayersMap[portNumber];
+    else
+        return -1;
+
+    return -1;
+}
+
+void ComDeviceList::SetTCPPortPlayerInfo(quint16 portNumber, quint8 playerInfo)
+{
+    if(tcpPortPlayersMap.contains (portNumber))
+        tcpPortPlayersMap[portNumber] = playerInfo;
+    else
+        tcpPortPlayersMap.insert (portNumber, playerInfo);
+}
+
+bool ComDeviceList::CheckTCPPortPlayer(quint16 portNumber, quint8 playerInfo)
+{
+    if(tcpPortPlayersMap.contains (portNumber))
+    {
+        if(tcpPortPlayersMap[portNumber] == 0)
+            return false;
+        else if(tcpPortPlayersMap[portNumber] == 1 && playerInfo == 0)
+            return false;
+        else if(tcpPortPlayersMap[portNumber] == 2 && playerInfo == 1)
+            return false;
+    }
+
+    //Ran the Gaunlet
+    return true;
+}
+
+void ComDeviceList::RemoveTCPPortPlayer(quint16 portNumber, quint8 playerInfo)
+{
+    if(tcpPortPlayersMap.contains (portNumber))
+    {
+        if(tcpPortPlayersMap[portNumber] == 0)
+        {
+            if(playerInfo == 0)
+                tcpPortPlayersMap[portNumber] = TCPPLAYER2;
+            else if(playerInfo == 1)
+                tcpPortPlayersMap[portNumber] = TCPPLAYER1;
+        }
+        else if(tcpPortPlayersMap[portNumber] == TCPPLAYER1 && playerInfo == 0)
+            tcpPortPlayersMap.remove(portNumber);
+        else if(tcpPortPlayersMap[portNumber] == TCPPLAYER2 && playerInfo == 1)
+            tcpPortPlayersMap.remove(portNumber);
+    }
+}
 
 
 void ComDeviceList::UpdateLightGunWithSettings()

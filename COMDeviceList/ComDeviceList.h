@@ -43,7 +43,8 @@ public:
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
     //For USB Light Gun
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
-
+    // For Sinden Light Gun
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint16 port, quint8 player, quint8 recVolt, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
 
     //Adds a COM Device in the List
     void            AddComPortDevice(ComPortDevice const &cpdMember);
@@ -137,6 +138,12 @@ public:
     quint8          GetReaperAmmo0Delay(bool *isAmmo0DelayEnabled, quint16 *reaperHST);
     void            SetReaperAmmo0Delay(bool isAmmo0DelayEnabled, quint8 delayTime, quint16 reaperHST);
 
+    //Get TCP Port Player Info
+    qint8           GetTCPPortPlayerInfo(quint16 portNumber);
+    void            SetTCPPortPlayerInfo(quint16 portNumber, quint8 playerInfo);
+    bool            CheckTCPPortPlayer(quint16 portNumber, quint8 playerInfo);
+    void            RemoveTCPPortPlayer(quint16 portNumber, quint8 playerInfo);
+
     //Update Light Gun Settings
     void            UpdateLightGunWithSettings();
 
@@ -228,6 +235,9 @@ private:
     bool                displayAmmoLifeBar;
     bool                displayAmmoLifeNumber;
 
+    //TCP Server Port and Players
+    //0 - Both P1 and P2 Taken, 1 - P1 Taken, 2 - P2 Taken
+    QMap<quint16,quint8>    tcpPortPlayersMap;
 
 };
 

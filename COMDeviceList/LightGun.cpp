@@ -35,6 +35,19 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     disableReaperLEDs = false;
 
     lastAmmoValue = 0;
+    ammoCheckValue = 1;
+    lastLifeValue = 0;
+    lastDeathValue = 0;
+    playerAlive = false;
+    maxLifeValue = 0;
+    maxDamage = 0;
+    doAmmoCheck = false;
+
+    tcpPort = 0;
+    tcpPlayer = 0;
+    recoilVoltage = 0;
+    recoilVoltageOverride = false;
+    sindenRecoilOverride = false;
 
     isDipSwitchPlayerNumberSet = false;
 
@@ -42,6 +55,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isAnalogStrengthSet = false;
 
     hubComPortNumber = UNASSIGN;
+
+    outputConnection = SERIALPORT;
 
     isUSBLightGun = false;
     isRecoilDelaySet = false;
@@ -86,6 +101,9 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     FillSerialPortInfo();
 
     LoadDefaultLGCommands();
+
+    //Connect Commands up
+    connect(this, &LightGun::DoAmmoValueCommands, this, &LightGun::AmmoValueReaper);
 
 }
 
@@ -140,6 +158,21 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isAnalogStrengthSet = false;
 
     lastAmmoValue = 0;
+    ammoCheckValue = 1;
+    lastLifeValue = 0;
+    lastDeathValue = 0;
+    playerAlive = false;
+    maxLifeValue = 0;
+    maxDamage = 0;
+    doAmmoCheck = false;
+
+    tcpPort = 0;
+    tcpPlayer = 0;
+    recoilVoltage = 0;
+    recoilVoltageOverride = false;
+    sindenRecoilOverride = false;
+
+    outputConnection = SERIALPORT;
 
     isUSBLightGun = false;
     isRecoilDelaySet = false;
@@ -184,6 +217,9 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     FillSerialPortInfo();
 
     LoadDefaultLGCommands();
+
+    //Connect Commands up
+    connect(this, &LightGun::DoAmmoValueCommands, this, &LightGun::AmmoValueNormal);
 }
 
 //For Copy Light Gun
@@ -284,6 +320,21 @@ LightGun::LightGun(LightGun const &lgMember)
     defaultLGFilePath = lgMember.defaultLGFilePath;
 
     lastAmmoValue = 0;
+    ammoCheckValue = lgMember.ammoCheckValue;
+    lastLifeValue = 0;
+    lastDeathValue = 0;
+    playerAlive = false;
+    maxLifeValue = 0;
+    maxDamage = 0;
+    doAmmoCheck = false;
+
+    tcpPort = lgMember.tcpPort;
+    tcpPlayer = lgMember.tcpPlayer;
+    recoilVoltage = lgMember.recoilVoltage;
+    recoilVoltageOverride = lgMember.recoilVoltageOverride;
+    sindenRecoilOverride = lgMember.sindenRecoilOverride;
+
+    outputConnection = lgMember.outputConnection;
 
     //Display Init
     hasDisplayAmmoInited = lgMember.hasDisplayAmmoInited;
@@ -383,6 +434,21 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isAnalogStrengthSet = false;
 
     lastAmmoValue = 0;
+    ammoCheckValue = 1;
+    lastLifeValue = 0;
+    lastDeathValue = 0;
+    playerAlive = false;
+    maxLifeValue = 0;
+    maxDamage = 0;
+    doAmmoCheck = false;
+
+    tcpPort = 0;
+    tcpPlayer = 0;
+    recoilVoltage = 0;
+    recoilVoltageOverride = false;
+    sindenRecoilOverride = false;
+
+    outputConnection = SERIALPORT;
 
     isUSBLightGun = false;
     isRecoilDelaySet = false;
@@ -426,9 +492,12 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     FillSerialPortInfo();
 
     LoadDefaultLGCommands();
+
+    //Connect Commands up
+    connect(this, &LightGun::DoAmmoValueCommands, this, &LightGun::AmmoValueNormal);
 }
 
-//For JB Gun4IR
+//For JB Gun4IR & OpenFire
 LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
 {
     defaultLightGun = lgDefault;
@@ -482,6 +551,21 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isAnalogStrengthSet = true;
 
     lastAmmoValue = 0;
+    ammoCheckValue = 1;
+    lastLifeValue = 0;
+    lastDeathValue = 0;
+    playerAlive = false;
+    maxLifeValue = 0;
+    maxDamage = 0;
+    doAmmoCheck = false;
+
+    tcpPort = 0;
+    tcpPlayer = 0;
+    recoilVoltage = 0;
+    recoilVoltageOverride = false;
+    sindenRecoilOverride = false;
+
+    outputConnection = SERIALPORT;
 
     isUSBLightGun = false;
     isRecoilDelaySet = false;
@@ -525,6 +609,9 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     FillSerialPortInfo();
 
     LoadDefaultLGCommands();
+
+    //Connect Commands up
+    connect(this, &LightGun::DoAmmoValueCommands, this, &LightGun::AmmoValueNormal);
 }
 
 //Alien USB Light Gun
@@ -552,6 +639,21 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isAnalogStrengthSet = false;
 
     lastAmmoValue = 0;
+    ammoCheckValue = 1;
+    lastLifeValue = 0;
+    lastDeathValue = 0;
+    playerAlive = false;
+    maxLifeValue = 0;
+    maxDamage = 0;
+    doAmmoCheck = false;
+
+    tcpPort = 0;
+    tcpPlayer = 0;
+    recoilVoltage = 0;
+    recoilVoltageOverride = false;
+    sindenRecoilOverride = false;
+
+    outputConnection = USBHID;
 
     isUSBLightGun = true;
     isRecoilDelaySet = false;
@@ -594,9 +696,12 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isReaperSlideHeldBack = false;
 
     LoadDefaultLGCommands();
+
+    //Connect Commands up
+    connect(this, &LightGun::DoAmmoValueCommands, this, &LightGun::AmmoValueNormal);
 }
 
-
+//AimTrak
 LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
 {
     defaultLightGun = lgDefault;
@@ -621,6 +726,21 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isAnalogStrengthSet = false;
 
     lastAmmoValue = 0;
+    ammoCheckValue = 1;
+    lastLifeValue = 0;
+    lastDeathValue = 0;
+    playerAlive = false;
+    maxLifeValue = 0;
+    maxDamage = 0;
+    doAmmoCheck = false;
+
+    tcpPort = 0;
+    tcpPlayer = 0;
+    recoilVoltage = 0;
+    recoilVoltageOverride = false;
+    sindenRecoilOverride = false;
+
+    outputConnection = USBHID;
 
     isUSBLightGun = true;
     isRecoilDelaySet = true;
@@ -667,7 +787,104 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     isReaperSlideHeldBack = false;
 
     LoadDefaultLGCommands();
+
+    //Connect Commands up
+    connect(this, &LightGun::DoAmmoValueCommands, this, &LightGun::AmmoValueNormal);
 }
+
+//Sinden
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint16 port, quint8 player, quint8 recVolt, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
+{
+    defaultLightGun = lgDefault;
+    defaultLightGunNum = dlgNum;
+    lightGunName = lgName;
+    lightGunNum = lgNumber;
+
+    tcpPort = port;
+    tcpPlayer = player;
+
+    recoilVoltage = recVolt;
+    recoilVoltageOverride = false;
+    sindenRecoilOverride = false;
+
+    if(tcpPlayer == 0)
+        recoilVoltageCMD = RECOILVOLTP1CMD;
+    else
+        recoilVoltageCMD = RECOILVOLTP2CMD;
+
+    recoilVoltageCMD.append (QString::number(recoilVoltage));
+
+    comPortNum = UNASSIGN;
+    comPortBaud = UNASSIGN;
+    comPortDataBits = UNASSIGN;
+    comPortParity = UNASSIGN;
+    comPortStopBits = UNASSIGN;
+    comPortFlow = UNASSIGN;
+
+    isDipSwitchPlayerNumberSet = false;
+    hubComPortNumber = UNASSIGN;
+    maxAmmoSet = false;
+    reloadValueSet = false;
+    disableReaperLEDs = false;
+    isAnalogStrengthSet = false;
+
+    lastAmmoValue = 0;
+    ammoCheckValue = 1;
+    lastLifeValue = 0;
+    lastDeathValue = 0;
+    playerAlive = false;
+    maxLifeValue = 0;
+    maxDamage = 0;
+    doAmmoCheck = false;
+
+    outputConnection = TCP;
+
+    isUSBLightGun = false;
+    isRecoilDelaySet = false;
+
+    //Display Init
+    hasDisplayAmmoInited = false;
+    hasDisplayLifeInited = false;
+    hasDisplayOtherInited = false;
+    hasDisplayAmmoAndLifeInited = false;
+    ammoDisplayValue = -1;
+    lifeDisplayValue = -1;
+    otherDisplayValue = -1;
+    displayAmmoPriority = true;
+    displayLifePriority = false;
+    displayOtherPriority = false;
+    displayRefresh = DISPLAYREFRESHDEFAULT;
+
+    displayAmmoLife = false;
+    displayAmmoLifeGlyphs = true;
+    displayAmmoLifeBar = false;
+    displayAmmoLifeNumber = false;
+    lifeBarMaxLife = 0;
+
+    lgRecoilPriority[0] = lgRecoils.ammoValue;
+    lgRecoilPriority[1] = lgRecoils.recoil;
+    lgRecoilPriority[2] = lgRecoils.recoilR2S;
+    lgRecoilPriority[3] = lgRecoils.recoilValue;
+
+    reloadNoRumble = reloadNR;
+    reloadDisable = reloadDis;
+
+    reaperLargeAmmo = false;
+    isReaper5LEDsInited = false;
+    enableReaperAmmo0Delay = false;
+    repearAmmo0Delay = 1;
+    isReaperAmmo0TimerInited = false;
+    reaperHoldSlideTime = REAPERHOLDSLIDETIME;
+    isReaperTimerRunning = false;
+    isReaperSlideHeldBack = false;
+
+    LoadDefaultLGCommands();
+
+    //Connect Commands up
+    connect(this, &LightGun::DoAmmoValueCommands, this, &LightGun::AmmoValueSinden);
+}
+
+
 
 //Deconstructor
 
@@ -859,6 +1076,77 @@ void LightGun::SetReaperAmmo0Delay(bool isAmmo0DelayEnabled, quint8 delayTime, q
         p_reaperAmmo0Timer->setInterval(repearAmmo0Delay);
 
 }
+
+void LightGun::SetTCPPort(quint16 port)
+{
+    tcpPort = port;
+}
+
+void LightGun::SetTCPPlayer(quint8 player)
+{
+    tcpPlayer = player;
+}
+
+void LightGun::SetRecoilVoltage(quint8 recVolt)
+{
+    recoilVoltage = recVolt;
+
+    if(tcpPlayer == 0)
+        recoilVoltageCMD = RECOILVOLTP1CMD;
+    else
+        recoilVoltageCMD = RECOILVOLTP2CMD;
+
+    recoilVoltageCMD.append (QString::number(recoilVoltage));
+}
+
+void LightGun::SetRecoilVoltageOverride(quint8 recVoltOvr)
+{
+    recoilVoltageOverride = true;
+    recoilVoltageOriginal = recoilVoltage;
+
+    if(recVoltOvr > RECOILVOLTAGEMAX)
+        recoilVoltage = RECOILVOLTAGEMAX;
+    else
+        recoilVoltage = recVoltOvr;
+
+    if(tcpPlayer == 0)
+        recoilVoltageCMD = RECOILVOLTP1CMD;
+    else
+        recoilVoltageCMD = RECOILVOLTP2CMD;
+
+    recoilVoltageCMD.append (QString::number(recoilVoltage));
+}
+
+void LightGun::SetSindenRecoilOverride(quint8 recOVRDE)
+{
+    if(defaultLightGunNum == SINDEN)
+    {
+        sindenRecoilOverride = true;
+        sindenRecoilOverrideValue = recOVRDE;
+
+        if(tcpPlayer == 0)
+            sindenRecoilOverrideCMD = '1';
+        else
+            sindenRecoilOverrideCMD = '2';
+
+        if(sindenRecoilOverrideValue == SINDENSINGLESHOT)
+            sindenRecoilOverrideCMD.append (SINDENSINGLESHOTCMD);
+        else if(sindenRecoilOverrideValue == SINDENAUTODEFAULT)
+            sindenRecoilOverrideCMD.append (SINDENAUTODEFAULTCMD);
+        else if(sindenRecoilOverrideValue == SINDENAUTOFAST)
+            sindenRecoilOverrideCMD.append (SINDENAUTOFASTCMD);
+        else if(sindenRecoilOverrideValue == SINDENAUTOSTRONGE)
+            sindenRecoilOverrideCMD.append (SINDENAUTOSTRONGECMD);
+
+        //qDebug() << "sindenRecoilOverrideValue" << sindenRecoilOverrideValue << "sindenRecoilOverrideCMD" << sindenRecoilOverrideCMD;
+    }
+}
+
+void LightGun::SetAmmoCheck()
+{
+    doAmmoCheck = true;
+}
+
 
 //Get Member Functions
 
@@ -1103,6 +1391,26 @@ quint8 LightGun::GetReaperAmmo0Delay(bool *isAmmo0DelayEnabled, quint16 *reaperH
     return repearAmmo0Delay;
 }
 
+qint8 LightGun::GetOutputConnection()
+{
+    return outputConnection;
+}
+
+quint16 LightGun::GetTCPPort()
+{
+    return tcpPort;
+}
+
+quint8 LightGun::GetTCPPlayer()
+{
+    return tcpPlayer;
+}
+
+quint8 LightGun::GetRecoilVoltage()
+{
+    return recoilVoltage;
+}
+
 
 void LightGun::CopyLightGun(LightGun const &lgMember)
 {
@@ -1200,6 +1508,21 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
     defaultLGFilePath = lgMember.defaultLGFilePath;
 
     lastAmmoValue = 0;
+    ammoCheckValue = lgMember.ammoCheckValue;
+    lastLifeValue = 0;
+    lastDeathValue = 0;
+    playerAlive = false;
+    maxLifeValue = 0;
+    maxDamage = 0;
+    doAmmoCheck = false;
+
+    tcpPort = lgMember.tcpPort;
+    tcpPlayer = lgMember.tcpPlayer;
+    recoilVoltage = lgMember.recoilVoltage;
+    recoilVoltageOverride = lgMember.recoilVoltageOverride;
+    sindenRecoilOverride = lgMember.sindenRecoilOverride;
+
+    outputConnection = lgMember.outputConnection;
 
     //Display Init
     hasDisplayAmmoInited = lgMember.hasDisplayAmmoInited;
@@ -1277,6 +1600,11 @@ void LightGun::LoadDefaultLGCommands()
     recoilValueCmdsSet = false;
     offscreenButtonCmdsSet = false;
     offscreenNormalShotCmdsSet = false;
+    offscreenLeftCornerCmdsSet = false;
+    offscreenDisableCmdsSet = false;
+    outOfAmmoCmdSet = false;
+    lifeValueCmdSet = false;
+    deathValueCmdSet = false;
 
 
     openComPortCmds.clear();
@@ -1301,6 +1629,12 @@ void LightGun::LoadDefaultLGCommands()
     displayOtherInitCmds.clear();
     offscreenButtonCmds.clear();
     offscreenNormalShotCmds.clear();
+    offscreenLeftCornerCmds.clear();
+    offscreenDisableCmds.clear();
+    outOfAmmoCmds.clear();
+    lifeValueCmds.clear();
+    deathValueCmds.clear();
+
 
     //If Not a Default Light Gun, then make sure defaultLightGunNum is 0
     //To load in nonDefaultLG.hor file
@@ -1321,7 +1655,11 @@ void LightGun::LoadDefaultLGCommands()
 
         QFile defaultLGCmdFile(defaultLGFilePath);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         bool openFile = defaultLGCmdFile.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+#else
+        bool openFile = defaultLGCmdFile.open (QIODevice::ReadOnly | QIODevice::Text);
+#endif
 
         if(!openFile)
         {
@@ -1641,6 +1979,52 @@ void LightGun::LoadDefaultLGCommands()
                         offscreenNormalShotCmdsSet = true;
                     }
 
+                    else if(splitLines[0] == OFFSCREENLEFTCORNERONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            offscreenLeftCornerCmds << commands[i];
+                        }
+                        offscreenLeftCornerCmdsSet = true;
+                    }
+                    else if(splitLines[0] == OFFSCREENDISABLECMDONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            offscreenDisableCmds << commands[i];
+                        }
+                        offscreenDisableCmdsSet = true;
+                    }
+                    else if(splitLines[0] == OUTOFAMMOONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            outOfAmmoCmds << commands[i];
+                        }
+                        outOfAmmoCmdSet = true;
+                    }
+                    else if(splitLines[0] == LIFEVALUECMDONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            lifeValueCmds << commands[i];
+                        }
+                        lifeValueCmdSet = true;
+                    }
+                    else if(splitLines[0] == DEATHVALUECMDONLY)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            deathValueCmds << commands[i];
+                        }
+                        deathValueCmdSet = true;
+                    }
+
 
                 }//if(numberCommands > 1)
 
@@ -1679,15 +2063,15 @@ void LightGun::LoadDefaultLGCommands()
 
         //ReadConfigData();
     }
+
 /*
     qDebug() << openComPortCmdsSet;
     qDebug() << closeComPortCmdsSet;
     qDebug() << damageCmdsSet;
     qDebug() << recoilCmdsSet;
     qDebug() << recoilR2SCmdsSet;
-    qDebug() << recoilValueCmdsSet
+    qDebug() << recoilValueCmdsSet;
     qDebug() << reloadCmdsSet;
-    qDebug() << ammoCmdsSet;
     qDebug() << ammoValueCmdsSet;
     qDebug() << shakeCmdsSet;
     qDebug() << autoLedCmdsSet;
@@ -1701,7 +2085,8 @@ void LightGun::LoadDefaultLGCommands()
     qDebug() << displayLifeInitCmdsSet;
     qDebug() << displayOtherCmdsSet;
     qDebug() << displayOtherInitCmdsSet;
-    qDebug() << displayRefreshSet
+    qDebug() << displayRefreshSet;
+    qDebug() << outOfAmmoCmdSet;
 
     qDebug() << openComPortCmds;
     qDebug() << closeComPortCmds;
@@ -1710,7 +2095,6 @@ void LightGun::LoadDefaultLGCommands()
     qDebug() << recoilR2SCmds;
     qDebug() << recoilR2SCmds;
     qDebug() << reloadCmds;
-    qDebug() << ammoCmds;
     qDebug() << ammoValueCmds;
     qDebug() << shakeCmds;
     qDebug() << autoLedCmds;
@@ -1725,6 +2109,7 @@ void LightGun::LoadDefaultLGCommands()
     qDebug() << displayOtherCmds;
     qDebug() << displayOtherInitCmds;
     qDebug() << displayRefresh;
+    qDebug() << outOfAmmoCmds;
 
 */
 }
@@ -1745,7 +2130,12 @@ QStringList LightGun::SplitLoadedCommands(QString commandList)
 
     if(indexOfP != 0)
     {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         frontPart = commandList.first (indexOfP);
+#else
+        quint16 chopLength = sizeCMD - indexOfP;
+        frontPart = commandList.chopped(chopLength);
+#endif
         frontPart = frontPart.trimmed ();
         commandList = commandList.remove(0,indexOfP);
         needFront = true;
@@ -1753,21 +2143,43 @@ QStringList LightGun::SplitLoadedCommands(QString commandList)
 
     cmdSplit = commandList.split ('|', Qt::SkipEmptyParts);
 
-    if(defaultLightGunNum == MX24 && isDipSwitchPlayerNumberSet)
+    if((defaultLightGunNum == MX24 && isDipSwitchPlayerNumberSet) || defaultLightGunNum == SINDEN)
     {
-        if(dipSwitchPlayerNumber == 0)
+        if(dipSwitchPlayerNumber == 0 || tcpPlayer == 0)
         {
             if(cmdSplit[0][1] == '1')
                 goodCMD = cmdSplit[0].remove (0,3);
             else if (cmdSplit[1][1] == '1')
                 goodCMD = cmdSplit[1].remove (0,3);
         }
-        else if(dipSwitchPlayerNumber == 1)
+        else if(dipSwitchPlayerNumber == 1 || tcpPlayer == 1)
         {
             if(cmdSplit[0][1] == '2')
                 goodCMD = cmdSplit[0].remove (0,3);
             else if (cmdSplit[1][1] == '2')
                 goodCMD = cmdSplit[1].remove (0,3);
+        }
+        else if(dipSwitchPlayerNumber == 2)
+        {
+            if(cmdSplit[0][1] == '3')
+                goodCMD = cmdSplit[0].remove (0,3);
+            else if (cmdSplit[1][1] == '3')
+                goodCMD = cmdSplit[1].remove (0,3);
+            else if (cmdSplit[2][1] == '3')
+                goodCMD = cmdSplit[2].remove (0,3);
+            else if (cmdSplit[3][1] == '3')
+                goodCMD = cmdSplit[3].remove (0,3);
+        }
+        else if(dipSwitchPlayerNumber == 3)
+        {
+            if(cmdSplit[0][1] == '4')
+                goodCMD = cmdSplit[0].remove (0,3);
+            else if (cmdSplit[1][1] == '4')
+                goodCMD = cmdSplit[1].remove (0,3);
+            else if (cmdSplit[2][1] == '4')
+                goodCMD = cmdSplit[2].remove (0,3);
+            else if (cmdSplit[3][1] == '4')
+                goodCMD = cmdSplit[3].remove (0,3);
         }
 
         returnList = goodCMD.split (' ', Qt::SkipEmptyParts);
@@ -1798,6 +2210,18 @@ QStringList LightGun::SplitLoadedCommands(QString commandList)
 QStringList LightGun::OpenComPortCommands(bool *isSet)
 {
     *isSet = openComPortCmdsSet;
+
+    if(defaultLightGunNum == SINDEN)
+    {
+        QStringList tempCMDs = openComPortCmds;
+        tempCMDs.append (recoilVoltageCMD);
+
+        if(sindenRecoilOverride)
+            tempCMDs.append (sindenRecoilOverrideCMD);
+
+        return tempCMDs;
+    }
+
     return openComPortCmds;
 }
 
@@ -1871,134 +2295,13 @@ QStringList LightGun::ReloadValueCommands(bool *isSet, quint16 ammoValue)
 
 QStringList LightGun::AmmoValueCommands(bool *isSet, quint16 ammoValue)
 {
-    QString tempAVS;
-    QString cmdString;
-    QStringList tempSL;
-    quint8 cmdCount = ammoValueCmds.length ();
-    bool doReloadCMD = false;
+    tempCommands.clear();
 
-    //If Ammo is the same, do nothing
-    if(ammoValue == lastAmmoValue)
-    {
-        *isSet = false;
-        return tempSL;
-    }
-    //Check if Reload Happened
-    else if(ammoValue > lastAmmoValue)
-    {
-        lastAmmoValue = ammoValue;
-        *isSet = reloadCmdsSet;
-        reloadAmmoValue = ammoValue;
+    emit DoAmmoValueCommands(ammoValue);
 
-        if(defaultLightGunNum == RS3_REAPER)
-        {
-            //If Reaper Ammo 0 Timer Running, cancel it, as reload happen (Z6 command)
-            if(isReaperTimerRunning)
-            {
-                p_reaperAmmo0Timer->stop();
-                isReaperTimerRunning = false;
-                isReaperSlideHeldBack = false;
-                p_reaperAmmo0Timer->setInterval(repearAmmo0Delay);
-            }
+    *isSet = tempEnableCommands;
 
-            if(!disableReaperLEDs)
-            {
-                if(reloadAmmoValue > MAXRELOADVALUE)
-                {
-                    reaperLargeAmmo = true;
-                    reaper5LEDNumber = REAPERMAXAMMONUM;
-                    reaperBulletCount = 0;
-                    reaperBullets1LED = static_cast<quint8>(qRound(static_cast<float>(reloadAmmoValue)/REAPERMAXAMMOF));
-                    //qDebug() << "reaperBullets1LED:" <<  reaperBullets1LED;
-                }
-                else
-                    reaperLargeAmmo = false;
-
-                if(!isReaper5LEDsInited)
-                {
-                    isReaper5LEDsInited = true;
-                    tempSL = reloadCmds;
-                    tempSL.prepend(REAPERINITLEDS);
-                    return tempSL;
-                }
-            }
-        }
-
-        return reloadCmds;
-    }
-    else if((lastAmmoValue == 0 && ammoValue == 0) || (lastAmmoValue > 1 && ammoValue == 0)) //Boot Up or Closing Game, Do Nothing
-    {
-        lastAmmoValue = ammoValue;
-        *isSet = false;
-        return tempSL;
-    }
-
-    //If Command Set Loaded
-    *isSet = ammoValueCmdsSet;
-
-    if(ammoValueCmdsSet) //If There is Ammo_Value CMDs
-    {
-        if(defaultLightGunNum == RS3_REAPER) //RS3 Reaper
-        {
-            quint16 tempAV;
-
-            if(ammoValue == 0 && enableReaperAmmo0Delay)
-            {
-                //Start Timer
-                p_reaperAmmo0Timer->start();
-                isReaperTimerRunning = true;
-                //Do Nothing, as after timeout, it will then send Z0 Command, unless reload happens
-                *isSet = false;
-                return tempSL;
-            }
-
-
-            if(reaperLargeAmmo)
-            {
-                if(ammoValue == 0)
-                    tempAV = 0;
-                else
-                {
-                    reaperBulletCount++;
-
-                    if(reaperBulletCount == reaperBullets1LED && reaper5LEDNumber > 1)
-                    {
-                        reaperBulletCount = 0;
-                        reaper5LEDNumber--;
-                        //qDebug() << "reaper5LEDNumber:" << reaper5LEDNumber << "ammoValue:" << ammoValue;
-                    }
-
-                    tempAV = reaper5LEDNumber;
-                }
-            }
-            else
-            {
-                if(ammoValue > maxAmmo) //If ammoValue is higher than maxAmmo, then = to maxValue
-                    tempAV = maxAmmo;
-                else
-                    tempAV = ammoValue;
-            }
-
-            tempAVS = QString::number (tempAV);
-
-        }
-        else
-            tempAVS = QString::number (ammoValue); //Non-Reaper Light Guns, Including USB HID
-
-        //Replace the %s% with the ammo value (tempAVS)
-        for(quint8 i = 0; i < cmdCount; i++)
-        {
-            cmdString = ammoValueCmds[i];
-            if(cmdString.contains (SIGNALDATAVARIBLE))
-                cmdString.replace (SIGNALDATAVARIBLE,tempAVS);
-            tempSL << cmdString;
-        }
-    }
-
-    lastAmmoValue = ammoValue;
-
-    //Return the Commands
-    return tempSL;
+    return tempCommands;
 }
 
 //QString tempAVS = QString::number(ammoValue, 16).rightJustified(2, '0');
@@ -2098,8 +2401,15 @@ QStringList LightGun::DisplayAmmoCommands(bool *isSet, quint16 ammoValue)
             //For Alien USB Light Gun Ammo Counter which is 2 Digits, so 0-99
             tempAVS = QString::number(newAmmoValue, 10).rightJustified(2, '0');
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             ammoValueD1 = '0'+tempAVS[0];
             ammoValueD0 = '0'+tempAVS[1];
+#else
+            ammoValueD1 = tempAVS[0];
+            ammoValueD0 = tempAVS[1];
+            ammoValueD1.prepend ('0');
+            ammoValueD0.prepend ('0');
+#endif
 
             //qDebug() << "ammoValueD1: " << ammoValueD1 << " ammoValueD0: " << ammoValueD0 << " tempAVS: " << tempAVS;
 
@@ -2183,8 +2493,15 @@ QStringList LightGun::DisplayLifeCommands(bool *isSet, quint16 lifeValue)
             //For Alien USB Light Gun Ammo Counter which is 2 Digits, so 0-99
             tempAVS = QString::number(newLifeValue, 10).rightJustified(2, '0');
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             lifeValueD1 = '0'+tempAVS[0];
             lifeValueD0 = '0'+tempAVS[1];
+#else
+            lifeValueD1 = tempAVS[0];
+            lifeValueD0 = tempAVS[1];
+            lifeValueD1.prepend ('0');
+            lifeValueD0.prepend ('0');
+#endif
 
             //qDebug() << "lifeValueD1: " << lifeValueD1 << " lifeValueD0: " << lifeValueD0 << " tempAVS: " << tempAVS;
 
@@ -2278,8 +2595,15 @@ QStringList LightGun::DisplayOtherCommands(bool *isSet, quint16 otherValue)
             //For Alien USB Light Gun Ammo Counter which is 2 Digits, so 0-99
             tempAVS = QString::number(newOtherValue, 10).rightJustified(2, '0');
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             otherValueD1 = '0'+tempAVS[0];
             otherValueD0 = '0'+tempAVS[1];
+#else
+            otherValueD1 = tempAVS[0];
+            otherValueD0 = tempAVS[1];
+            otherValueD1.prepend ('0');
+            otherValueD0.prepend ('0');
+#endif
 
             //qDebug() << "otherValueD1: " << otherValueD1 << " otherValueD0: " << otherValueD0 << " tempAVS: " << tempAVS;
 
@@ -2321,13 +2645,125 @@ QStringList LightGun::OffscreenNormalShotCommands(bool *isSet)
     return offscreenNormalShotCmds;
 }
 
+QStringList LightGun::OffscreenLeftCornerCommands(bool *isSet)
+{
+    *isSet = offscreenLeftCornerCmdsSet;
+    return offscreenLeftCornerCmds;
+}
 
+QStringList LightGun::OffscreenDisableCommands(bool *isSet)
+{
+    *isSet = offscreenDisableCmdsSet;
+    return offscreenDisableCmds;
+}
 
+QStringList LightGun::LifeValueCommands(bool *isSet, quint8 lifeValue)
+{
+    QStringList tempCMDs;
+
+    //If Player is not in game yet or died
+    if(!playerAlive)
+    {
+        //If player starts game, make playerAlive = true
+        //And Do Nothing
+        if(lifeValue > lastLifeValue)
+        {
+            playerAlive = true;
+            maxLifeValue = lifeValue;
+
+            if(maxDamage == 0)
+                maxDamage = maxLifeValue * MAXDAMAGEPERCENTAGE;
+        }
+    }
+    else  //Player is in the game now and Alive
+    {
+        if(lifeValue < lastLifeValue)
+        {
+            //Try to catch skip cut scene stuff
+            quint8 damage = lastLifeValue - lifeValue;
+
+            if(damage <= maxDamage)
+            {
+                //Check Damage, as it will happen more than Death
+                if(lifeValue != 0)
+                {
+                    lastLifeValue = lifeValue;
+                    *isSet = damageCmdsSet;
+                    return damageCmds;
+                }
+                else  //Death Happended
+                {
+                    playerAlive = false;
+                    lastLifeValue = lifeValue;
+                    *isSet = lifeValueCmdSet;
+                    return lifeValueCmds;
+                }
+            }
+        }
+    }
+
+    //Everything else, do nothing
+    lastLifeValue = lifeValue;
+    *isSet = false;
+    return tempCMDs;
+}
+
+QStringList LightGun::DeathValueCommands(bool *isSet, quint8 deathValue)
+{
+    QStringList tempCMDs;
+
+    //If Player is not in game yet or died
+    if(!playerAlive)
+    {
+        //If player starts game, make playerAlive = true
+        //And Do Nothing
+        if(deathValue > lastDeathValue)
+        {
+            playerAlive = true;
+            maxLifeValue = deathValue;
+
+            if(maxDamage == 0)
+                maxDamage = maxLifeValue * MAXDAMAGEPERCENTAGE;
+        }
+    }
+    else  //Player is in the game now and Alive
+    {
+        //Check if Damage & Death Happened
+        if(deathValue < lastDeathValue)
+        {
+            //Try to catch skip cut scene stuff
+            quint8 damage = lastDeathValue - deathValue;
+            if(damage <= maxDamage)
+            {
+                //Check Death, as Death Value only Check for Death, and not Damage
+                if(deathValue == 0)
+                {
+                    playerAlive = false;
+                    lastDeathValue = deathValue;
+                    *isSet = deathValueCmdSet;
+                    return deathValueCmds;
+                }
+            }
+        }
+    }
+
+    //Everything else, do nothing
+    lastDeathValue = deathValue;
+    *isSet = false;
+    return tempCMDs;
+}
 
 
 void LightGun::ResetLightGun()
 {
     lastAmmoValue = 0;
+    ammoCheckValue = 1;
+    lastLifeValue = 0;
+    lastDeathValue = 0;
+    playerAlive = false;
+    maxLifeValue = 0;
+    maxDamage = 0;
+    doAmmoCheck = false;
     hasDisplayAmmoInited = false;
     hasDisplayLifeInited = false;
     hasDisplayOtherInited = false;
@@ -2347,6 +2783,23 @@ void LightGun::ResetLightGun()
         isReaperSlideHeldBack = false;
         isReaperTimerRunning = false;
     }
+
+    if(recoilVoltageOverride)
+    {
+        recoilVoltageOverride = false;
+        recoilVoltage = recoilVoltageOriginal;
+
+        if(tcpPlayer == 0)
+            recoilVoltageCMD = RECOILVOLTP1CMD;
+        else
+            recoilVoltageCMD = RECOILVOLTP2CMD;
+
+        recoilVoltageCMD.append (QString::number(recoilVoltage));
+    }
+
+    sindenRecoilOverride = false;
+
+
 }
 
 
@@ -2386,6 +2839,14 @@ quint8* LightGun::GetRecoilPriorityHE()
     recoilPriorityHE[lgRecoilPriority[3]] = 3;
 
     return recoilPriorityHE;
+}
+
+void LightGun::SlowModeEnabled()
+{
+    //Ammo Check Value is 2, as skipping odd ammo, so 8-6=2
+    //Resets to 1, when game ends
+    ammoCheckValue = 2;
+    //qDebug() << "Slow Mode Enabled for Light Gun" << lightGunNum;
 }
 
 /////////////////////////////////////////////
@@ -2467,4 +2928,301 @@ void LightGun::ReaperAmmo0TimeOut()
         p_reaperAmmo0Timer->start();
     }
 }
+
+
+void LightGun::AmmoValueNormal(quint16 ammoValue)
+{
+    QString tempAVS;
+    QString cmdString;
+
+    tempCommands.clear();
+
+    //If Ammo is the same, do nothing
+    if(ammoValue == lastAmmoValue)
+    {
+        tempEnableCommands = false;
+        return;
+    }
+    //Check if Reload Happened
+    else if(ammoValue > lastAmmoValue)
+    {
+        lastAmmoValue = ammoValue;
+        tempEnableCommands = reloadCmdsSet;
+        tempCommands = reloadCmds;
+
+        return;
+    }
+    else if((lastAmmoValue == 0 && ammoValue == 0) || (lastAmmoValue > ammoCheckValue && ammoValue == 0)) //Boot Up or Closing Game, Do Nothing
+    {
+        lastAmmoValue = ammoValue;
+        tempEnableCommands = false;
+        return;
+    }
+    else if(doAmmoCheck && (lastAmmoValue - ammoValue) != ammoCheckValue)
+    {
+        //When doAmmoCheck is set, it checks the ammo delta against the ammoCheckValue
+        //If not equal, then do reload. In Slow Mode, ammoCheckValue is 2, all other times it is 1
+        lastAmmoValue = ammoValue;
+        tempEnableCommands = reloadCmdsSet;
+        tempCommands = reloadCmds;
+        return;
+    }
+
+    //If Command Set Loaded
+    tempEnableCommands = ammoValueCmdsSet;
+
+    if(ammoValueCmdsSet) //If There is Ammo_Value CMDs
+    {
+        tempAVS = QString::number (ammoValue); //Non-Reaper Light Guns, Including USB HID
+
+        //Replace the %s% with the ammo value (tempAVS)
+        for(quint8 i = 0; i < ammoValueCmds.length(); i++)
+        {
+            cmdString = ammoValueCmds[i];
+            if(cmdString.contains (SIGNALDATAVARIBLE))
+                cmdString.replace (SIGNALDATAVARIBLE,tempAVS);
+            tempCommands << cmdString;
+        }
+    }
+
+    lastAmmoValue = ammoValue;
+
+    //Return the Commands
+    return;
+}
+
+
+void LightGun::AmmoValueReaper(quint16 ammoValue)
+{
+    QString tempAVS;
+    QString cmdString;
+
+    //If Ammo is the same, do nothing
+    if(ammoValue == lastAmmoValue)
+    {
+        tempEnableCommands = false;
+        return;
+    }
+    //Check if Reload Happened
+    else if(ammoValue > lastAmmoValue)
+    {
+        lastAmmoValue = ammoValue;
+        tempEnableCommands = reloadCmdsSet;
+        reloadAmmoValue = ammoValue;
+
+
+        //If Reaper Ammo 0 Timer Running, cancel it, as reload happen (Z6 command)
+        if(isReaperTimerRunning)
+        {
+            p_reaperAmmo0Timer->stop();
+            isReaperTimerRunning = false;
+            isReaperSlideHeldBack = false;
+            p_reaperAmmo0Timer->setInterval(repearAmmo0Delay);
+        }
+
+        if(!disableReaperLEDs)
+        {
+            if(reloadAmmoValue > MAXRELOADVALUE)
+            {
+                reaperLargeAmmo = true;
+                reaper5LEDNumber = REAPERMAXAMMONUM;
+                reaperBulletCount = 0;
+                reaperBullets1LED = static_cast<quint8>(qRound(static_cast<float>(reloadAmmoValue)/REAPERMAXAMMOF));
+                //qDebug() << "reaperBullets1LED:" <<  reaperBullets1LED;
+            }
+            else
+                reaperLargeAmmo = false;
+
+            if(!isReaper5LEDsInited)
+            {
+                isReaper5LEDsInited = true;
+                tempCommands = reloadCmds;
+                tempCommands.prepend(REAPERINITLEDS);
+                return;
+            }
+        }
+
+        tempCommands = reloadCmds;
+        return;
+    }
+    else if((lastAmmoValue == 0 && ammoValue == 0) || (lastAmmoValue > ammoCheckValue && ammoValue == 0)) //Boot Up or Closing Game, Do Nothing
+    {
+        lastAmmoValue = ammoValue;
+        tempEnableCommands = false;
+        return;
+    }
+    else if(doAmmoCheck && (lastAmmoValue - ammoValue) != ammoCheckValue)
+    {
+        //When doAmmoCheck is set, it checks the ammo delta against the ammoCheckValue
+        //If not equal, then do reload. In Slow Mode, ammoCheckValue is 2, all other times it is 1
+        lastAmmoValue = ammoValue;
+        tempEnableCommands = reloadCmdsSet;
+        tempCommands = reloadCmds;
+        return;
+    }
+
+    //If Command Set Loaded
+    tempEnableCommands = ammoValueCmdsSet;
+
+    if(ammoValueCmdsSet) //If There is Ammo_Value CMDs
+    {
+        quint16 tempAV;
+
+        if(ammoValue == 0 && enableReaperAmmo0Delay)
+        {
+            //Start Timer
+            p_reaperAmmo0Timer->start();
+            isReaperTimerRunning = true;
+            //Do Nothing, as after timeout, it will then send Z0 Command, unless reload happens
+            tempEnableCommands = false;
+            return;
+        }
+
+
+        if(reaperLargeAmmo)
+        {
+            if(ammoValue == 0)
+                tempAV = 0;
+            else
+            {
+                //Use ammoCheckValue as it is 2 in Slow Mode, or 1 normally
+                reaperBulletCount = reaperBulletCount + ammoCheckValue;
+
+                if(reaperBulletCount == reaperBullets1LED && reaper5LEDNumber > 1)
+                {
+                    reaperBulletCount = 0;
+                    reaper5LEDNumber--;
+                    //qDebug() << "reaper5LEDNumber:" << reaper5LEDNumber << "ammoValue:" << ammoValue;
+                }
+
+                tempAV = reaper5LEDNumber;
+            }
+        }
+        else
+        {
+            if(ammoValue > maxAmmo) //If ammoValue is higher than maxAmmo, then = to maxValue
+                tempAV = maxAmmo;
+            else
+                tempAV = ammoValue;
+        }
+
+        tempAVS = QString::number (tempAV);
+
+
+        //Replace the %s% with the ammo value (tempAVS)
+        for(quint8 i = 0; i < ammoValueCmds.length(); i++)
+        {
+            cmdString = ammoValueCmds[i];
+            if(cmdString.contains (SIGNALDATAVARIBLE))
+                cmdString.replace (SIGNALDATAVARIBLE,tempAVS);
+            tempCommands << cmdString;
+        }
+    }
+
+    lastAmmoValue = ammoValue;
+
+    return;
+}
+
+
+void LightGun::AmmoValueSinden(quint16 ammoValue)
+{
+    //If Ammo is the same, do nothing
+    if(ammoValue == lastAmmoValue)
+    {
+        tempEnableCommands = false;
+        return;
+    }
+    //Check if Reload Happened
+    else if(ammoValue > lastAmmoValue)
+    {
+        lastAmmoValue = ammoValue;
+        tempEnableCommands = reloadCmdsSet;
+        reloadAmmoValue = ammoValue;
+
+        if(reloadCmdsSet)
+            tempCommands = reloadCmds;
+
+        if(sindenRecoilOverride)
+        {
+            tempEnableCommands = true;
+
+            if(tcpPlayer == 0)
+                tempCommands.prepend(ENABLETRIGGERP1);
+            else
+                tempCommands.prepend(ENABLETRIGGERP2);
+        }
+
+        //qDebug() << "Reload Commands:" << tempSL;
+
+        return;
+    }
+    else if((lastAmmoValue == 0 && ammoValue == 0) || (lastAmmoValue > ammoCheckValue && ammoValue == 0)) //Boot Up or Closing Game, Do Nothing
+    {
+        lastAmmoValue = ammoValue;
+        tempEnableCommands = false;
+        return;
+    }
+    else if(doAmmoCheck && (lastAmmoValue - ammoValue) != ammoCheckValue)
+    {
+        //When doAmmoCheck is set, it checks the ammo delta against the ammoCheckValue
+        //If not equal, then do reload. In Slow Mode, ammoCheckValue is 2, all other times it is 1
+        lastAmmoValue = ammoValue;
+        tempEnableCommands = reloadCmdsSet;
+        tempCommands = reloadCmds;
+        return;
+    }
+
+    //If Command Set Loaded
+    tempEnableCommands = ammoValueCmdsSet;
+
+    if(ammoValueCmdsSet) //If There is Ammo_Value CMDs
+    {
+        if(!sindenRecoilOverride)
+        {
+            if(ammoValue == 0)
+                tempCommands = ammoValueCmds + outOfAmmoCmds;
+            else
+                tempCommands = ammoValueCmds;
+
+            lastAmmoValue = ammoValue;
+            return;
+        }
+        else
+        {
+            if(ammoValue == 0)
+            {
+                //Turn Off Trigger Recoil
+                tempEnableCommands = true;
+                if(tcpPlayer == 0)
+                    tempCommands << DISABLETRIGGERP1;
+                else
+                    tempCommands << DISABLETRIGGERP2;
+            }
+            else
+                tempEnableCommands = false;
+
+            //qDebug() << "Ammo is" << ammoValue << "Cmds is" << tempSL;
+
+            lastAmmoValue = ammoValue;
+            return;
+        }
+    }
+
+    lastAmmoValue = ammoValue;
+
+    //Return the Commands
+    return;
+}
+
+
+
+
+
+
+
+
+
+
+
 

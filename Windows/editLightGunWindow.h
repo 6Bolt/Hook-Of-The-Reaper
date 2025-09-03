@@ -61,6 +61,8 @@ private slots:
 
     void on_allHIDDevicesCheckBox_checkStateChanged(const Qt::CheckState &arg1);
 
+    void on_tcpPortLineEdit_textChanged(const QString &arg1);
+
 private:
 
     //Checks if Data is Valid for a LightGun
@@ -107,6 +109,8 @@ private:
 
     bool CheckRecoilComboBoxes();
 
+    void ChangeLabels(int index);
+
     ///////////////////////////////////////////////////////////////////////////
 
     //For Window
@@ -123,6 +127,7 @@ private:
     quint8                  defaultLightGunNum;
     QString                 lightGunName;
     quint8                  lightGunNum;
+    qint8                   outputConnection;
     quint8                  comPortNum;
     QString                 comPortName;
     qint32                  comPortBaud;

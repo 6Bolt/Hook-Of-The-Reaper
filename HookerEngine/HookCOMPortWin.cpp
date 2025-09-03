@@ -6,6 +6,7 @@ HookCOMPortWin::HookCOMPortWin(QObject *parent)
     numPortOpen = 0;
     isPortOpen = false;
     bypassCOMPortConnectFailWarning = false;
+    connectedTCPPort = 0;
 
     for(quint8 i = 0; i < MAXCOMPORTS; i++)
     {
@@ -26,6 +27,25 @@ HookCOMPortWin::HookCOMPortWin(QObject *parent)
         //p_hidConnection[i] = nullptr;
         hidOpen[i] = false;
     }
+
+    isTCPConnected = false;
+    isTCPConnecting = false;
+    isTCPConnected1 = false;
+    isTCPConnecting1 = false;
+
+    //Create the New TCP Socket
+    p_tcpServer = new QTcpSocket(this);
+    p_tcpServer1 = new QTcpSocket(this);
+
+    //Connect Signal of when there is read data, to the slot that will read it
+    connect(p_tcpServer,SIGNAL(readyRead()), this, SLOT(TCPServerRead()));
+    connect(p_tcpServer,SIGNAL(connected()), this, SLOT(FoundTCPServer()));
+    connect(p_tcpServer,SIGNAL(disconnected()), this, SLOT(LostTCPServer()));
+
+    //Connect Signal of when there is read data, to the slot that will read it
+    connect(p_tcpServer1,SIGNAL(readyRead()), this, SLOT(TCPServerRead1()));
+    connect(p_tcpServer1,SIGNAL(connected()), this, SLOT(FoundTCPServer1()));
+    connect(p_tcpServer1,SIGNAL(disconnected()), this, SLOT(LostTCPServer1()));
 }
 
 
@@ -54,6 +74,36 @@ HookCOMPortWin::~HookCOMPortWin()
 
 }
 
+//public member functions
+
+bool HookCOMPortWin::IsTCPConnected(quint16 port)
+{
+    if(connectedTCPPort == 0 && connectedTCPPort1 == 0)
+        return false;
+    else if(connectedTCPPort == port)
+        return isTCPConnected;
+    else if(connectedTCPPort1 == port)
+        return isTCPConnected1;
+
+    return false;
+}
+
+bool HookCOMPortWin::IsTCPConnecting(quint16 port)
+{
+    if(connectedTCPPort == 0 && connectedTCPPort1 == 0)
+        return false;
+    else if(connectedTCPPort == port)
+        return isTCPConnecting;
+    else if(connectedTCPPort1 == port)
+        return isTCPConnecting1;
+
+    return false;
+}
+
+quint16 HookCOMPortWin::TCPPortNumber()
+{
+    return connectedTCPPort;
+}
 
 //public slots
 
@@ -73,8 +123,13 @@ HookCOMPortWin::~HookCOMPortWin()
             return;
         }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         std::wstring portName = comPortName.toStdWString ();
         LPCWSTR portNameLPC = portName.c_str ();
+#else
+        std::string portName = comPortName.toStdString ();
+        LPCSTR portNameLPC = portName.c_str ();
+#endif
 
         if(isWriteOnly)
             comPortArray[comPortNum] = CreateFile(portNameLPC, GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
@@ -85,8 +140,13 @@ HookCOMPortWin::~HookCOMPortWin()
         //Use Old COM Port Naming, for people who cannot update their drivers. Not naming anyone
         if (comPortArray[comPortNum] == INVALID_HANDLE_VALUE)
         {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             portName = comPortPath.toStdWString ();
             portNameLPC = portName.c_str ();
+#else
+            portName = comPortPath.toStdString ();
+            portNameLPC = portName.c_str ();
+#endif
 
             if(isWriteOnly)
                 comPortArray[comPortNum] = CreateFile(portNameLPC, GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
@@ -146,18 +206,18 @@ HookCOMPortWin::~HookCOMPortWin()
                 COMSTAT status;
                 DWORD errors;
 
-                DWORD charsCopied = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                              (LPWSTR)&messageBuffer, 0, NULL);
+                //DWORD charsCopied = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                //              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                //              (LPWSTR)&messageBuffer, 0, NULL);
 
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                if(messageBuffer == nullptr || charsCopied == 0)
+                //if(messageBuffer == nullptr || charsCopied == 0)
                     critMessage = "Can not get the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the default settings for the serial port.";
-                else
-                    critMessage = "Can not get the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the default settings for the serial port. "+QString::fromWCharArray(messageBuffer);
+                //else
+                //    critMessage = "Can not get the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the default settings for the serial port. "+QString::fromWCharArray(messageBuffer);
 
                 emit ErrorMessage("Serial COM Port Error",critMessage);
                 return;
@@ -245,18 +305,18 @@ HookCOMPortWin::~HookCOMPortWin()
                 COMSTAT status;
                 DWORD errors;
 
-                DWORD charsCopied = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                              (LPWSTR)&messageBuffer, 0, NULL);
+                //DWORD charsCopied = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                //              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                //              (LPWSTR)&messageBuffer, 0, NULL);
 
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                if(messageBuffer == nullptr || charsCopied == 0)
-                    critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. ";
-                else
-                    critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. "+QString::fromWCharArray(messageBuffer);
+                //if(messageBuffer == nullptr || charsCopied == 0)
+                //    critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. ";
+                //else
+                //    critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. "+QString::fromWCharArray(messageBuffer);
                 critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. ";
                 emit ErrorMessage("Serial COM Port Error",critMessage);
                 return;
@@ -293,18 +353,18 @@ HookCOMPortWin::~HookCOMPortWin()
                 COMSTAT status;
                 DWORD errors;
 
-                DWORD charsCopied = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                              (LPWSTR)&messageBuffer, 0, NULL);
+                //DWORD charsCopied = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                //              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                //              (LPWSTR)&messageBuffer, 0, NULL);
 
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                if(messageBuffer == nullptr || charsCopied == 0)
+                //if(messageBuffer == nullptr || charsCopied == 0)
                     critMessage = "Serial COM Port failed to set TimeOuts, on COM Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
-                else
-                    critMessage = "Serial COM Port failed to set TimeOuts, on COM Port: : "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
+                //else
+                //    critMessage = "Serial COM Port failed to set TimeOuts, on COM Port: : "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
                 emit ErrorMessage("Serial COM Port Error",critMessage);
                 return;
             }
@@ -380,18 +440,18 @@ void HookCOMPortWin::WriteData(const quint8 &comPortNum, const QByteArray &write
             //If Write Failed
             if (writeOutput == 0)
             {
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                              (LPWSTR)&messageBuffer, 1020, NULL);
+                //FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                //              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                //              (LPWSTR)&messageBuffer, 1020, NULL);
 
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                if(messageBuffer == nullptr)
+                //if(messageBuffer == nullptr)
                     critMessage = "Serial COM Port write failed on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
-                else
-                    critMessage = "Serial COM Port write failed on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
+                //else
+                //    critMessage = "Serial COM Port write failed on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
                 emit ErrorMessage("Serial COM Port Error",critMessage);
                 delete [] charArray;
                 return;
@@ -400,18 +460,18 @@ void HookCOMPortWin::WriteData(const quint8 &comPortNum, const QByteArray &write
             //If Size Doesn't Match Byte Written
             if(size != dwWrite)
             {
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                              (LPWSTR)&messageBuffer, 1020, NULL);
+                //FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                //              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                //              (LPWSTR)&messageBuffer, 1020, NULL);
 
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                if(messageBuffer == nullptr)
+                //if(messageBuffer == nullptr)
                     critMessage = "Serial COM Port write failed on number of bytes written on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
-                else
-                    critMessage = "Serial COM Port write failed on number of bytes written on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
+                //else
+                //    critMessage = "Serial COM Port write failed on number of bytes written on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
                 emit ErrorMessage("Serial COM Port Error",critMessage);
             }
         }
@@ -540,3 +600,171 @@ void HookCOMPortWin::SetBypassCOMPortConnectFailWarning(const bool &bypassCPCFW)
 {
     bypassCOMPortConnectFailWarning = bypassCPCFW;
 }
+
+
+void HookCOMPortWin::ConnectTCP(const quint16 &port)
+{
+    if(!isTCPConnected && !isTCPConnecting)
+    {
+        connectedTCPPort = port;
+
+        //Set the Address for the TCP Socket  QHostAddress("127.0.0.1")
+        //p_tcpServer->connectToHost (TCPHOSTNAME, connectedTCPPort);
+        //p_tcpServer->connectToHost (QHostAddress::SpecialAddress::LocalHost, connectedTCPPort);
+        p_tcpServer->connectToHost (QHostAddress("127.0.0.1"), connectedTCPPort);
+
+        isTCPConnecting = true;
+
+        //Wait for Connection
+        p_tcpServer->waitForConnected (TIMETOWAIT);
+
+        if(!isTCPConnected)
+        {
+            QString critMessage = "Hook of the Reaper couldn't connect to the Light Guns TCP Socket Server.";
+            emit ErrorMessage("Light Gun TCP Connection Failed",critMessage);
+        }
+    }
+    else if(!isTCPConnected1 && !isTCPConnecting1)
+    {
+        if(connectedTCPPort != port)
+        {
+            connectedTCPPort1 = port;
+            p_tcpServer1->connectToHost (QHostAddress("127.0.0.1"), connectedTCPPort1);
+            isTCPConnecting1 = true;
+
+            p_tcpServer1->waitForConnected (TIMETOWAIT);
+
+            if(!isTCPConnected1)
+            {
+                QString critMessage = "Hook of the Reaper couldn't connect to the Light Guns TCP Socket Server1.";
+                emit ErrorMessage("Light Gun TCP Connection Failed",critMessage);
+            }
+        }
+    }
+}
+
+void HookCOMPortWin::DisconnectTCP()
+{
+    if(isTCPConnected)
+    {
+        p_tcpServer->close ();
+        isTCPConnected = false;
+        connectedTCPPort = 0;
+    }
+
+    if(isTCPConnected1)
+    {
+        p_tcpServer1->close ();
+        isTCPConnected1 = false;
+        connectedTCPPort1 = 0;
+    }
+
+}
+
+//For TCP Sever 0
+void HookCOMPortWin::FoundTCPServer()
+{
+    isTCPConnected = true;
+    isTCPConnecting = false;
+
+    //qDebug() << "Connected to TCP Server";
+}
+
+void HookCOMPortWin::LostTCPServer()
+{
+    isTCPConnected = false;
+    isTCPConnecting = false;
+
+    connectedTCPPort = 0;
+
+    //qDebug() << "Disconnected to TCP Server";
+}
+
+void HookCOMPortWin::TCPServerRead()
+{
+    //Read the TCP Socket Data
+    readDataTCP = p_tcpServer->readAll ();
+
+    //qDebug() << "TCP Server:" << QString::fromUtf8(readDataTCP);
+}
+
+//For TCP Server 1
+void HookCOMPortWin::FoundTCPServer1()
+{
+    isTCPConnected1 = true;
+    isTCPConnecting1 = false;
+
+    //qDebug() << "Connected to TCP Server1";
+}
+
+void HookCOMPortWin::LostTCPServer1()
+{
+    isTCPConnected1 = false;
+    isTCPConnecting1 = false;
+
+    connectedTCPPort1 = 0;
+
+    //qDebug() << "Disconnected to TCP Server1";
+}
+
+void HookCOMPortWin::TCPServerRead1()
+{
+    //Read the TCP Socket Data
+    readDataTCP1 = p_tcpServer1->readAll ();
+
+    //qDebug() << "TCP Server1:" << QString::fromUtf8(readDataTCP1);
+}
+
+
+void HookCOMPortWin::WriteTCP(const QByteArray &writeData)
+{
+    if(isTCPConnected)
+    {
+        quint8 retry = 0;
+
+        qint32 byteWrite = p_tcpServer->write(writeData);
+
+        //qDebug() << "TCP Write Data:" << writeData.toStdString () << "byteWrite" << byteWrite;
+
+        while(byteWrite == -1 && retry != WRITERETRYATTEMPTS)
+        {
+            byteWrite = p_tcpServer->write(writeData);
+            retry++;
+        }
+
+        if(byteWrite == -1)
+            qDebug() << "TCP Server Write Total Fail, got -1";
+        else if(byteWrite != writeData.size())
+        {
+            if (!p_tcpServer->waitForBytesWritten(20))
+                qDebug() << "Failed to write bytes to TCP server after wait:" << p_tcpServer->errorString();
+        }
+    }
+}
+
+void HookCOMPortWin::WriteTCP1(const QByteArray &writeData)
+{
+    if(isTCPConnected1)
+    {
+        quint8 retry = 0;
+
+        qint32 byteWrite = p_tcpServer1->write(writeData);
+
+        //qDebug() << "TCP Write Data1:" << writeData.toStdString () << "byteWrite" << byteWrite;
+
+        while(byteWrite == -1 && retry != WRITERETRYATTEMPTS)
+        {
+            byteWrite = p_tcpServer1->write(writeData);
+            retry++;
+        }
+
+        if(byteWrite == -1)
+            qDebug() << "TCP Server1 Write Total Fail, got -1";
+        else if(byteWrite != writeData.size())
+        {
+            if (!p_tcpServer1->waitForBytesWritten(20))
+                qDebug() << "Failed to write bytes to TCP server1 after wait:" << p_tcpServer1->errorString();
+        }
+    }
+}
+

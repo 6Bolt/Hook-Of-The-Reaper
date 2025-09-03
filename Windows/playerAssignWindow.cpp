@@ -32,18 +32,28 @@ playerAssignWindow::playerAssignWindow(ComDeviceList *cdList, QWidget *parent)
 
     for(i = 0; i < numberLightGuns; i++)
     {
+        quint8 outputConnection = p_comDeviceList->p_lightGunList[i]->GetOutputConnection();
         tempQS = QString::number(i+1);
         tempQS.append (": ");
         tempQS.append (p_comDeviceList->p_lightGunList[i]->GetLightGunName());
         tempQS.append (" on ");
-        if(!p_comDeviceList->p_lightGunList[i]->IsLightGunUSB ())
+        if(outputConnection == SERIALPORT)
         {
             quint8 cpNum = p_comDeviceList->p_lightGunList[i]->GetComPortNumber();
             tempQS.append ("COM");
             tempQS.append (QString::number (cpNum));
         }
-        else
+        else if(outputConnection == USBHID)
             tempQS.append ("USB");
+        else if(outputConnection == BTLE)
+            tempQS.append ("BTLE");
+        else if(outputConnection == TCP)
+        {
+            tempQS.append ("TCP(");
+            quint16 tempTCP = p_comDeviceList->p_lightGunList[i]->GetTCPPort ();
+            tempQS.append(QString::number (tempTCP));
+            tempQS.append (")");
+        }
 
         ui->player1ComboBox->insertItem(i+1,tempQS);
         ui->player2ComboBox->insertItem(i+1,tempQS);

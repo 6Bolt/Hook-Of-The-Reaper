@@ -47,7 +47,8 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     commandLGList << OPENCOMPORTNOINIT << CLOSECOMPORTNOINIT << DISPLAYAMMOCMD << DISPLAYAMMOINITCMD;
     commandLGList << DISPLAYLIFECMD << DISPLAYLIFEINITCMD << DISPLAYOTHERCMD << DISPLAYOTHERINITCMD;
     commandLGList << CLOSECOMPORTINITONLYCMD << RECOILVALUECMD << RELOADVALUECMD << OFFSCREENBUTTONCMD;
-    commandLGList << OFFSCREENNORMALSHOTCMD << BLOCKSIGNALCOMMAND;
+    commandLGList << OFFSCREENNORMALSHOTCMD << BLOCKSIGNALCOMMAND << OFFSCREENLEFTCORNERCMD << OFFSCREENDISABLECMD;
+    commandLGList << LIFEVALUECMD << DEATHVALUECMD;
 
     //qDebug() << "Hooker Engine Started";
 
@@ -187,6 +188,12 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     connect(this, &HookerEngine::StopUSBHID, p_hookComPortWin, &HookCOMPortWin::DisconnectHID);
     connect(this, &HookerEngine::WriteUSBHID, p_hookComPortWin, &HookCOMPortWin::WriteDataHID);
 
+    //Connect the Signals & Slots for TCP Server
+    connect(this, &HookerEngine::ConnectTCPServer, p_hookComPortWin, &HookCOMPortWin::ConnectTCP);
+    connect(this, &HookerEngine::DisconnectTCPServer, p_hookComPortWin, &HookCOMPortWin::DisconnectTCP);
+    connect(this, &HookerEngine::WriteTCPServer, p_hookComPortWin, &HookCOMPortWin::WriteTCP);
+    connect(this, &HookerEngine::WriteTCPServer1, p_hookComPortWin, &HookCOMPortWin::WriteTCP1);
+
 
     connect(this, &HookerEngine::StopAllConnections, p_hookComPortWin, &HookCOMPortWin::DisconnectAll);
     connect(p_hookComPortWin, &HookCOMPortWin::ErrorMessage, this, &HookerEngine::ErrorMessageCom);
@@ -208,6 +215,16 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     connect(p_hookComPort, &HookCOMPort::ReadDataSig, this, &HookerEngine::ReadComPortSig);
     connect(this, &HookerEngine::StopAllConnections, p_hookComPort, &HookCOMPort::DisconnectAll);
     connect(p_hookComPort, &HookCOMPort::ErrorMessage, this, &HookerEngine::ErrorMessageCom);
+
+    //Connect the Signals & Slots for USB HID
+    connect(this, &HookerEngine::StartUSBHID, p_hookComPortWin, &HookCOMPortWin::ConnectHID);
+    connect(this, &HookerEngine::StopUSBHID, p_hookComPortWin, &HookCOMPortWin::DisconnectHID);
+    connect(this, &HookerEngine::WriteUSBHID, p_hookComPortWin, &HookCOMPortWin::WriteDataHID);
+
+    //Connect the Signals & Slots for TCP Server
+    connect(this, &HookerEngine::ConnectTCPServer, p_hookComPortWin, &HookCOMPortWin::ConnectTCP);
+    connect(this, &HookerEngine::DisconnectTCPServer, p_hookComPortWin, &HookCOMPortWin::DisconnectTCP);
+    connect(this, &HookerEngine::WriteTCPServer, p_hookComPortWin, &HookCOMPortWin::WriteTCP);
 
 
 #endif
@@ -239,8 +256,12 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     connect(&openSolenoidOrRecoilDelay[3], SIGNAL(timeout()), this, SLOT(P4CloseSolenoidOrRecoilDelay()));
 
 
+
     for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
     {
+        //Set Up Game Players
+        lgGamePlayers[i].SetPlayer (i);
+
         isPRecoilR2SFirstTime[i] = true;
         recoilR2SSkewPrec[i] = 100;
         isLGDisplayOnDelay[i] = false;
@@ -262,7 +283,16 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
         blockRecoil_R2S[i] = false;
         blockShakeActive[i] = false;
         blockRecoil_R2SActive[i] = false;
+        lgConnectionClosed[i] = true;
+        lgOutputConnection[i] = -1;
+        lgTCPPort[i] = 0;
+        lgTCPPlayer[i] = UNASSIGN;
     }
+
+    //Status of the LG TCP Server
+    isTCPConnected = false;
+    isTCPConnecting = false;
+    lgTCPConnections = 0;
 
     //Set-up Light Guns with HookerEngine. Currently only for Reaper Ammo 0 (Z0) delay buffer
     SetUpLightGuns();
@@ -361,7 +391,11 @@ bool HookerEngine::LoadINIFileTest(QString fileNamePath)
     //Open File. If Failed to Open, so Critical Message Box
     QFile iniFile(fileNamePath);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     bool openFile = iniFile.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+#else
+    bool openFile = iniFile.open (QIODevice::ReadOnly | QIODevice::Text);
+#endif
 
     if(!openFile)
     {
@@ -392,6 +426,7 @@ bool HookerEngine::LoadINIFileTest(QString fileNamePath)
             if(line.length() != indexEqual+1)
             {
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
                 if(line[indexEqual-1] == ' ')
                     signal = line.first(indexEqual-1);
                 else
@@ -401,6 +436,21 @@ bool HookerEngine::LoadINIFileTest(QString fileNamePath)
                     commands = line.sliced(indexEqual+2);
                 else
                     commands = line.sliced(indexEqual+1);
+#else
+                if(line[indexEqual-1] == ' ')
+                    signal = line.chopped(line.size()-(indexEqual-1));
+                else
+                    signal = line.chopped(line.size()-indexEqual);
+
+                quint16 indexOverEq;
+                if(line[indexEqual+1] == ' ')
+                    indexOverEq = indexEqual + 2;
+                else
+                    indexOverEq = indexEqual + 1;
+
+                for(quint16 k = indexOverEq; k < line.size(); k++)
+                    signal.append (line[k]);
+#endif
 
                 commands.replace(", ", ",");
                 commands.replace(" ,", ",");
@@ -475,7 +525,7 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
     QStringList subCommands;
     quint8 subCmdsCnt;
     quint16 lineNumber = 0;
-    bool isOutput = false;
+    bool isStates = false;
     quint8 unassignLG = 0;
     quint8 numberLGPlayersTest;
     quint8 lgPlayerOrderTest[MAXPLAYERLIGHTGUNS];
@@ -515,7 +565,11 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
 
     QFile lgFile(fileNamePath);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     bool openFile = lgFile.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+#else
+    bool openFile = lgFile.open (QIODevice::ReadOnly | QIODevice::Text);
+#endif
 
     if(!openFile)
     {
@@ -711,7 +765,7 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
             else
             {
                 lgFile.close();
-                QString tempCrit = "The line didn't match 'Ammo_Value' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+fileNamePath;
+                QString tempCrit = "The line didn't match 'Ammo_Value' Recoil Options\nLine"+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -748,7 +802,7 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
             else
             {
                 lgFile.close();
-                QString tempCrit = "The line didn't match 'Recoil' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+fileNamePath;
+                QString tempCrit = "The line didn't match 'Recoil' Recoil Options\nLine"+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -785,7 +839,7 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
             else
             {
                 lgFile.close();
-                QString tempCrit = "The line didn't match 'Recoil_R2S' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+fileNamePath;
+                QString tempCrit = "The line didn't match 'Recoil_R2S' Recoil Options\nLine"+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -822,7 +876,7 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
             else
             {
                 lgFile.close();
-                QString tempCrit = "The line didn't match 'Recoil_Value' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+fileNamePath;
+                QString tempCrit = "The line didn't match 'Recoil_Value' Recoil Options\nLine"+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return false;
@@ -889,7 +943,188 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
         {
             //Nothing In Here Yet, But Might Be Used Later
             if(line.startsWith("[Sig"))
-                isOutput = true;
+            {
+                isStates = true;
+            }
+            else if(line.startsWith(OPTIONSSECTION) && isStates)
+            {
+                lgFile.close();
+                QString tempCrit = "Options need to come before the States.\nLine"+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+            else if(line.startsWith(OPTIONSSECTION))
+            {
+                //Only Options Supported is Block for Shake & Recoil_R2S command, using the player's life value.
+                //Go through the Lines, until "End Options" happens
+
+                //Get a line of data from file
+                line = in.readLine();
+                lineNumber++;
+
+                while(line.startsWith(ENDOPTIONS) == false)
+                {
+                    if(line.startsWith(BLOCKSHAKEOPTION))
+                    {
+                        //for(quint8 k = 0; k < numberLGPlayers; k++)
+                        //    blockShake[k] = true;
+
+                        QStringList blockShakeSL = line.split (' ', Qt::SkipEmptyParts);
+
+                        if(blockShakeSL.length() != BLOCKSHAKELENGTH)
+                        {
+                            lgFile.close();
+                            QString tempCrit = "Block Shake needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return false;
+                        }
+
+                        if(blockShakeSL[2] == "NE")
+                            isBlockShakeEqual = false;
+                        else if(blockShakeSL[2] == "E")
+                            isBlockShakeEqual = true;
+                        else
+                        {
+                            lgFile.close();
+                            QString tempCrit = "Block Shake needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return false;
+                        }
+
+                        blockShakeValue = blockShakeSL[3].toUShort(&isNumber);
+
+                        if(!isNumber)
+                        {
+                            lgFile.close();
+                            QString tempCrit = "Block Shake needs a number at the end.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return false;
+                        }
+                    }
+                    else if(line.startsWith(BLOCKRECOIL_R2SOPTION))
+                    {
+                        for(quint8 k = 0; k < numberLGPlayers; k++)
+                            blockRecoil_R2S[k] = true;
+
+                        QStringList blockRecoil_R2SSL = line.split (' ', Qt::SkipEmptyParts);
+
+                        if(blockRecoil_R2SSL.length() != BLOCKRECOIL_R2SLENGTH)
+                        {
+                            lgFile.close();
+                            QString tempCrit = "Block Recoil_R2S needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return false;
+                        }
+
+                        if(blockRecoil_R2SSL[2] == "NE")
+                            isBlockRecoil_R2SEqual = false;
+                        else if(blockRecoil_R2SSL[2] == "E")
+                            isBlockRecoil_R2SEqual = true;
+                        else
+                        {
+                            lgFile.close();
+                            QString tempCrit = "Block Recoil_R2S needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return false;
+                        }
+
+                        blockRecoil_R2SValue = blockRecoil_R2SSL[3].toUShort(&isNumber);
+
+                        if(!isNumber)
+                        {
+                            lgFile.close();
+                            QString tempCrit = "Block Recoil_R2S needs a number at the end.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return false;
+                        }
+                    }
+                    else if(line.startsWith(OVERRIDERECOILVOLT))
+                    {
+                        QStringList overrideRecoilVoltSL = line.split (' ', Qt::SkipEmptyParts);
+
+                        if(overrideRecoilVoltSL.length() != OVERRIDERECOILLENGTH)
+                        {
+                            lgFile.close();
+                            QString tempCrit = "The Override_Recoil_Voltage should have 2 parts. The Override_Recoil_Voltage and a number from 0-10.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return false;
+                        }
+
+                        quint8 orRecoilVolt = overrideRecoilVoltSL[OVERRIDERECOILVOLTNUM].toUShort(&isNumber);
+
+                        if(!isNumber || orRecoilVolt > RECOILVOLTAGEMAX)
+                        {
+                            lgFile.close();
+                            QString tempCrit = "The Override Recoil Voltage number is not a number or greater than 10.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return false;
+                        }
+
+                        for(quint8 k = 0; k < numberLGPlayers; k++)
+                        {
+                            if(lgOutputConnection[k] == TCP)
+                            {
+                                if(p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->GetDefaultLightGunNumber() == SINDEN)
+                                    p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetRecoilVoltageOverride (orRecoilVolt);
+                            }
+                        }
+                    }
+                    else if(line.startsWith(SINDENTRIGGERRECOIL))
+                    {
+                        QStringList sindenTriggerRecoilSL = line.split (' ', Qt::SkipEmptyParts);
+
+                        if(sindenTriggerRecoilSL.length() != SINDENTRIGGERRECOILLEN)
+                        {
+                            lgFile.close();
+                            QString tempCrit = "The Sinden_Trigger_Recoil should have 2 parts. The Sinden_Trigger_Recoil and a number from 0-3.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return false;
+                        }
+
+                        quint8 sinTrigRec = sindenTriggerRecoilSL[SINDENTRIGGERRECOILNUM].toUShort(&isNumber);
+
+                        if(!isNumber || sinTrigRec > SINDENTRIGGERRECOILMAX)
+                        {
+                            lgFile.close();
+                            QString tempCrit = "The Sinden Trigger Recoil number is not a number or greater than 3.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return false;
+                        }
+
+                        for(quint8 k = 0; k < numberLGPlayers; k++)
+                        {
+                            if(lgOutputConnection[k] == TCP)
+                            {
+                                if(p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->GetDefaultLightGunNumber() == SINDEN)
+                                    p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetSindenRecoilOverride (sinTrigRec);
+                            }
+                        }
+                    }
+                    else if(line.startsWith(AMMOCHECKOPTION))
+                    {
+                        for(quint8 k = 0; k < numberLGPlayers; k++)
+                        {
+                            if(loadedLGNumbers[k] != UNASSIGN)
+                                p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetAmmoCheck ();
+                        }
+                    }
+
+                    //Get Next Line and Increment the Line Count
+                    line = in.readLine();
+                    lineNumber++;
+                }
+            }
         }
         else if(line[0] == SIGNALSTARTCHAR)
         {
@@ -1660,6 +1895,10 @@ void HookerEngine::PXRecoilR2S(quint8 player)
         //Get Recoil Commands
         dlgCommands = p_comDeviceList->p_lightGunList[loadedLGNumbers[player]]->RecoilCommands(&dlgCMDFound);
 
+        for(quint8 k = 0; k < dlgCommands.count(); k++)
+            lgGamePlayers[player].Write (dlgCommands[k]);
+
+        /*
         if(!isLoadedLGUSB[player])
         {
             for(quint8 k = 0; k < dlgCommands.count(); k++)
@@ -1672,6 +1911,7 @@ void HookerEngine::PXRecoilR2S(quint8 player)
             for(quint8 k = 0; k < dlgCommands.count(); k++)
                 WriteLGUSBHID(player, dlgCommands[k]);
         }
+        */
 
         if(isRecoilDelaySet[player])
         {
@@ -1738,15 +1978,19 @@ void HookerEngine::PXLGDisplayDelay(quint8 player)
 
 void HookerEngine::WriteDisplayDelayCMD(quint8 player, QString command)
 {
-    if(!isLoadedLGUSB[player])
-        WriteLGComPort(loadedLGComPortNumber[player], command);
-    else
-        WriteLGUSBHID(player, command);
+    lgGamePlayers[player].Write (command);
+
+    //if(!isLoadedLGUSB[player])
+    //    WriteLGComPort(loadedLGComPortNumber[player], command);
+    //else
+    //    WriteLGUSBHID(player, command);
 }
 
 
 void HookerEngine::P1CloseSolenoidOrRecoilDelay()
 {
+    //qDebug() << "Recoil Delay Timer Ended" << isRecoilDelaySet[0];
+
     if(isRecoilDelaySet[0])
         PXRecoilDelay(0);
     else
@@ -1795,10 +2039,12 @@ void HookerEngine::PXCloseSolenoid(quint8 player)
 
     for(quint8 i = 0; i < closeSolenoidCMDs[player].length(); i++)
     {
-        if(!isLoadedLGUSB[player])
-            WriteLGComPort(loadedLGComPortNumber[player], closeSolenoidCMDs[player][i]);
-        else
-            WriteLGUSBHID(player, closeSolenoidCMDs[player][i]);
+        lgGamePlayers[player].Write (closeSolenoidCMDs[player][i]);
+
+        //if(!isLoadedLGUSB[player])
+        //    WriteLGComPort(loadedLGComPortNumber[player], closeSolenoidCMDs[player][i]);
+        //else
+        //    WriteLGUSBHID(player, closeSolenoidCMDs[player][i]);
     }
 
     isLGSolenoidOpen[player] = false;
@@ -1832,7 +2078,9 @@ void HookerEngine::PXRecoilDelay(quint8 player)
         dlgCommands = p_comDeviceList->p_lightGunList[loadedLGNumbers[player]]->RecoilCommands(&dlgCMDFound);
 
         for(quint8 k = 0; k < dlgCommands.count(); k++)
-            WriteLGUSBHID(player, dlgCommands[k]);
+            lgGamePlayers[player].Write (dlgCommands[k]);
+
+            //WriteLGUSBHID(player, dlgCommands[k]);
 
         openSolenoidOrRecoilDelay[player].start();
         doRecoilDelayEnds[player] = false;
@@ -1843,6 +2091,336 @@ void HookerEngine::PXRecoilDelay(quint8 player)
 }
 
 
+void HookerEngine::OpenSerialPortSlot(quint8 playerNum, bool noInit)
+{
+    quint8 i, lightGun, j;
+
+    quint8 tempCPNum;
+    QString tempCPName;
+    qint32 tempBaud;
+    quint8 tempData;
+    quint8 tempParity;
+    quint8 tempStop;
+    quint8 tempFlow;
+    QString tempPath;
+    QStringList commands;
+    QByteArray cpBA;
+    bool isCommands;
+
+    //Get Light Gun Number
+    lightGun = loadedLGNumbers[playerNum];
+
+    //Check if Light Gun is not Unassign
+    if(lightGun != UNASSIGN)
+    {
+        //Gets COM Port Settings
+        tempCPNum = loadedLGComPortNumber[playerNum];
+        tempCPName = p_comDeviceList->p_lightGunList[lightGun]->GetComPortString();
+        tempBaud = p_comDeviceList->p_lightGunList[lightGun]->GetComPortBaud();
+        tempData = p_comDeviceList->p_lightGunList[lightGun]->GetComPortDataBits();
+        tempParity = p_comDeviceList->p_lightGunList[lightGun]->GetComPortParity();
+        tempStop = p_comDeviceList->p_lightGunList[lightGun]->GetComPortStopBits();
+        tempFlow = p_comDeviceList->p_lightGunList[lightGun]->GetComPortFlow();
+        tempPath = p_comDeviceList->p_lightGunList[lightGun]->GetComPortPath();
+
+        //Opens the COM Port
+        emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, tempPath, true);
+
+        lgConnectionClosed[playerNum] = false;
+
+        if(!noInit)
+        {
+            //Get the Commnds for Open COM Port
+            commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
+
+            //qDebug() << "Command Count: " << cmdCount << " Commands: " << commands;
+
+            //Write Commands to the COM Port
+            if(isCommands)
+            {
+                for(j = 0; j < commands.count(); j++)
+                {
+                    cpBA = commands[j].toUtf8 ();
+                    emit WriteComPortSig(tempCPNum, cpBA);
+                }
+            }
+        }
+    } //if(lightGun != UNASSIGN)
+
+}
+
+
+void HookerEngine::CloseSerialPortSlot(quint8 playerNum, bool noInit, bool initOnly)
+{
+    quint8 i, j, lightGun;
+    quint8 tempCPNum;
+    QStringList commands;
+    QByteArray cpBA;
+    bool isCommands;
+
+    //Get Light Gun Number
+    lightGun = loadedLGNumbers[playerNum];
+
+    //Check if Light Gun is not Unassign
+    if(lightGun != UNASSIGN)
+    {
+        //Get COM Port For Light Gun
+        tempCPNum = loadedLGComPortNumber[playerNum];
+
+        if(!noInit || initOnly)
+        {
+            //Get Close COM Port Commands for Light Gun
+            commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
+
+            //Write Commnds to COM Port
+            if(isCommands)
+            {
+                for(j = 0; j < commands.count(); j++)
+                {
+                    cpBA = commands[j].toUtf8 ();
+                    emit WriteComPortSig(tempCPNum, cpBA);
+                }
+            }
+        }
+
+        //Closes The COM Port
+        if(closeComPortGameExit && !initOnly)
+            emit StopComPort(tempCPNum);
+
+        lgConnectionClosed[playerNum] = true;
+    }
+
+}
+
+void HookerEngine::WriteSerialPortSlot(quint8 cpNum, QString cpData)
+{
+    QByteArray cpBA = cpData.toUtf8 ();
+
+    //qDebug() << "COM Port: " << cpNum << " Data: " << cpData;
+
+    //Send Data to COM Port
+    emit WriteComPortSig(cpNum, cpBA);
+}
+
+
+void HookerEngine::OpenUSBHIDSlot(quint8 playerNum, bool noInit)
+{
+    quint8 i, lightGun, j;
+    QByteArray cpBA;
+    QStringList commands;
+    bool isCommands;
+
+    //Get Light Gun Number
+    lightGun = loadedLGNumbers[playerNum];
+
+    //Check if Light Gun is not Unassign
+    if(lightGun != UNASSIGN)
+    {
+        //For USB HID Connection
+        HIDInfo lgHIDInfo = p_comDeviceList->p_lightGunList[lightGun]->GetUSBHIDInfo ();
+        emit StartUSBHID(playerNum, lgHIDInfo);
+
+        lgConnectionClosed[playerNum] = false;
+
+        if(!noInit)
+        {
+            //Get the Commnds for Open USB HID
+            commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
+
+            //qDebug() << "Command Count: " << cmdCount << " Commands: " << commands;
+
+            //Write Commands to the USB HID
+            if(isCommands)
+            {
+                for(j = 0; j < commands.count(); j++)
+                {
+                    cpBA = QByteArray::fromHex(commands[j].toUtf8 ());
+                    emit WriteUSBHID(playerNum, cpBA);
+                }
+            }
+        }
+    } //if(lightGun != UNASSIGN)
+}
+
+void HookerEngine::CloseUSBHIDSlot(quint8 playerNum, bool noInit, bool initOnly)
+{
+    quint8 i, j, lightGun;
+    QStringList commands;
+    bool isCommands;
+    QByteArray cpBA;
+
+    //Get Light Gun Number
+    lightGun = loadedLGNumbers[playerNum];
+
+    //Check if Light Gun is not Unassign
+    if(lightGun != UNASSIGN)
+    {
+        if(!noInit || initOnly)
+        {
+            //Get Close USB HID Commands for Light Gun
+            commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
+
+            //Write Commnds to USB HID
+            if(isCommands)
+            {
+                for(j = 0; j < commands.count(); j++)
+                {
+                    cpBA = QByteArray::fromHex(commands[j].toUtf8 ());
+                    emit WriteUSBHID(playerNum, cpBA);
+                }
+            }
+        }
+
+        //Closes The USB HID
+        if(closeComPortGameExit && !initOnly)
+            emit StopUSBHID(playerNum);
+
+        lgConnectionClosed[playerNum] = true;
+    }
+}
+
+void HookerEngine::WriteUSBHIDSlot(quint8 playerNum, QString cpData)
+{
+    //Check to make Sure Even Number of Hex Values as 2 Hex Values = 1 Byte
+    if (cpData.length() % 2 != 0)
+    {
+        //cpData.prepend ('0');
+        QString tempCrit = "The USB HID data needs to have even number of hex values. As two hex values is one byte. Cannot transfer a half of a byte. Please correct the data";
+        if(displayMB)
+            QMessageBox::warning (p_guiConnect, "USB HID Data Not Correct", tempCrit, QMessageBox::Ok);
+        return;
+    }
+
+    //Convert String to Hex QByteArray
+    QByteArray cpBA = QByteArray::fromHex(cpData.toUtf8 ());
+
+    //Send Data to USB HID
+    emit WriteUSBHID(playerNum, cpBA);
+}
+
+
+void HookerEngine::OpenTCPServerSlot(quint8 playerNum, bool noInit)
+{
+    quint8 i, lightGun, j;
+    QByteArray cpBA;
+    QStringList commands;
+    bool isCommands;
+
+    //Get Light Gun Number
+    lightGun = loadedLGNumbers[playerNum];
+
+    //Check if Light Gun is not Unassign
+    if(lightGun != UNASSIGN)
+    {
+        isTCPConnected = p_hookComPortWin->IsTCPConnected (lgTCPPort[playerNum]);
+        isTCPConnecting = p_hookComPortWin->IsTCPConnecting (lgTCPPort[playerNum]);
+
+        if(!isTCPConnected && !isTCPConnecting)
+        {
+            //Connect to TCP Server
+            emit ConnectTCPServer(lgTCPPort[playerNum]);
+        }
+
+        isTCPConnected = p_hookComPortWin->IsTCPConnected (lgTCPPort[playerNum]);
+
+        //Wait until connected, can take 3-4 seconds. Connecting started when loading DefaultLG game file
+        while(!isTCPConnected)
+        {
+            QThread::msleep(TCPSLEEPTIME);
+            isTCPConnected = p_hookComPortWin->IsTCPConnected (lgTCPPort[playerNum]);
+            //qDebug() << "Waiting for TCP Server connected" << isTCPConnected;
+        }
+
+        if(!noInit)
+        {
+            //Get the Commnds for Open COM Port
+            commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
+
+            //qDebug() << "Command Count: " << commands.count() << " Commands: " << commands;
+
+            //Write Commands to the TCP
+            if(isCommands)
+            {
+                for(j = 0; j < commands.count(); j++)
+                {
+                    QString tempCMD = commands[j] + '\n';
+                    cpBA = tempCMD.toUtf8 ();
+                    if(firstTCPPort == lgTCPPort[playerNum])
+                        emit WriteTCPServer(cpBA);
+                    else
+                        emit WriteTCPServer1(cpBA);
+                }
+            }
+        }
+
+        //Says LG Has Open and Init
+        lgConnectionClosed[playerNum] = false;
+        lgTCPConnections++;
+
+    } //if(lightGun != UNASSIGN)
+}
+
+void HookerEngine::CloseTCPServerSlot(quint8 playerNum, bool noInit, bool initOnly)
+{
+    quint8 i, j, lightGun;
+    QStringList commands;
+    bool isCommands;
+    QByteArray cpBA;
+
+    //Get Light Gun Number
+    lightGun = loadedLGNumbers[playerNum];
+
+    //Check if Light Gun is not Unassign
+    if(lightGun != UNASSIGN)
+    {
+        if(!noInit || initOnly)
+        {
+            //Get Close TCP Commands for Light Gun
+            commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
+
+            //Write Commnds to TCP
+            if(isCommands)
+            {
+                for(j = 0; j < commands.count(); j++)
+                {
+                    QString tempCMD = commands[j] + '\n';
+                    cpBA = tempCMD.toUtf8 ();
+                    if(firstTCPPort == lgTCPPort[playerNum])
+                        emit WriteTCPServer(cpBA);
+                    else
+                        emit WriteTCPServer1(cpBA);
+                }
+            }
+        }
+
+        //isTCPConnected = p_hookComPortWin->IsTCPConnected (firstTCPPort);
+        lgTCPConnections--;
+
+        if(closeComPortGameExit && !initOnly)
+        {
+            if(lgTCPConnections == 0)
+                emit DisconnectTCPServer();
+        }
+
+        //Says LG is Init & Closed if closeComPortGameExit is true
+        lgConnectionClosed[playerNum] = true;
+
+    }
+}
+
+void HookerEngine::WriteTCPServerSlot(quint8 playerNum, QString cpData)
+{
+    //QString tempData = cpData + "\n";
+    cpData.append ('\n');
+    QByteArray cpBA = cpData.toUtf8 ();
+
+    //qDebug() << "TCP Player: " << playerNum << " Data: " << cpData;
+    //Send Data to COM Port
+    if(playerNum == 0)
+        emit WriteTCPServer(cpBA);
+    else
+        emit WriteTCPServer1(cpBA);
+}
 
 
 //Private Member Functions
@@ -1851,8 +2429,20 @@ void HookerEngine::PXRecoilDelay(quint8 player)
 void HookerEngine::ClearOnDisconnect()
 {
     quint8 j;
+    bool stillOpen = false;
 
     //When TCP Socket Disconnects, Then Clear Out Game Data
+
+    //Check if the Light Gun connection Closed or Not
+    for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
+    {
+        if(lgConnectionClosed[i] == false)
+            stillOpen = true;
+    }
+
+    //If Connections are not closed, then Run mame_stop command
+    if(stillOpen)
+        ProcessCommands(MAMESTOPFRONT, "", true);
 
     //Output Says No Game
     emit MameConnectedNoGame();
@@ -1970,6 +2560,9 @@ void HookerEngine::ClearOnDisconnect()
         blockRecoil_R2S[i] = false;
         blockShakeActive[i] = false;
         blockRecoil_R2SActive[i] = false;
+        //lgOutputConnection[i] = -1;
+        lgTCPPort[i] = 0;
+        lgTCPPlayer[i] = UNASSIGN;
     }
 
 
@@ -2071,7 +2664,7 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
             //qDebug() << tcpSocketData[i];
 
             //Looks for "mame_stop" to Know Game has Stopped
-            if(tcpSocketData[i].startsWith(MAMESTOPFRONT, Qt::CaseInsensitive))
+            if(tcpSocketData[i].startsWith(MAMESTOPFRONT, Qt::CaseInsensitive) || tcpSocketData[i].startsWith(GAMESTOP, Qt::CaseInsensitive))
             {
                 //qDebug() << "Game Has Stopped!!!!!!!!!!!";
 
@@ -2199,6 +2792,9 @@ void HookerEngine::ProcessTCPData(QStringList tcpReadData)
                     blockRecoil_R2S[i] = false;
                     blockShakeActive[i] = false;
                     blockRecoil_R2SActive[i] = false;
+                    //lgOutputConnection[i] = -1;
+                    lgTCPPort[i] = 0;
+                    lgTCPPlayer[i] = UNASSIGN;
                 }
 
             }
@@ -2450,7 +3046,11 @@ void HookerEngine::LoadINIFile()
     //Open File. If Failed to Open, so Critical Message Box
     QFile iniFile(gameINIFilePath);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     bool openFile = iniFile.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+#else
+    bool openFile = iniFile.open (QIODevice::ReadOnly | QIODevice::Text);
+#endif
 
     if(!openFile)
     {
@@ -2481,6 +3081,7 @@ void HookerEngine::LoadINIFile()
             if(line.length() != indexEqual+1)
             {
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
                 if(line[indexEqual-1] == ' ')
                     signal = line.first(indexEqual-1);
                 else
@@ -2490,6 +3091,21 @@ void HookerEngine::LoadINIFile()
                     commands = line.sliced(indexEqual+2);
                 else
                     commands = line.sliced(indexEqual+1);
+#else
+                if(line[indexEqual-1] == ' ')
+                    signal = line.chopped(line.size()-(indexEqual-1));
+                else
+                    signal = line.chopped(line.size()-indexEqual);
+
+                quint16 indexOverEq;
+                if(line[indexEqual+1] == ' ')
+                    indexOverEq = indexEqual + 2;
+                else
+                    indexOverEq = indexEqual + 1;
+
+                for(quint16 k = indexOverEq; k < line.size(); k++)
+                    signal.append (line[k]);
+#endif
 
                 commands.replace(", ", ",");
                 commands.replace(" ,", ",");
@@ -3542,6 +4158,7 @@ void HookerEngine::LoadLGFile()
     bool isStates = false;
     quint8 unassignLG = 0;
     quint16 signalsAndCommandsCountTest = 0;
+    quint8 tcpServerCount = 0;
 
     bool gameRecoilsSupported[NUMBEROFRECOILS];
     bool gameReloadsSupported[NUMBEROFRECOILS];
@@ -3553,6 +4170,11 @@ void HookerEngine::LoadLGFile()
     bool hasRecoilOption = false;
 
     bool isGoodLG;
+
+    isMultipleTCPPorts = false;
+    firstTCPPort = 0;
+    secondTCPPort = 0;
+
 
     for(quint8 x = 0; x < MAXGAMEPLAYERS; x++)
     {
@@ -3571,7 +4193,11 @@ void HookerEngine::LoadLGFile()
 
     QFile lgFile(gameLGFilePath);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     bool openFile = lgFile.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+#else
+    bool openFile = lgFile.open (QIODevice::ReadOnly | QIODevice::Text);
+#endif
 
     if(!openFile)
     {
@@ -3611,6 +4237,9 @@ void HookerEngine::LoadLGFile()
                         QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                     return;
                 }
+
+                //Disconnect Game Players
+                DisconnectGamePlayers();
 
                 //qDebug() << "Number of Players: " << numberLGPlayers;
 
@@ -3688,14 +4317,27 @@ void HookerEngine::LoadLGFile()
                     //Load Light Gun Order, based on Player Order and Player's Assignment
                     loadedLGNumbers[i] = lgNumber;
 
-                    //If Player Assignment is Unassign, increament unassignLG
+                    //If Player Assignment is Unassign, increament unassignLG and set Output Connection to Unknown
                     if(lgNumber == UNASSIGN)
+                    {
                         unassignLG++;
+                        lgOutputConnection[i] = UNKNOWNCONNECT;
+                    }
                     else
                     {
+                        //Check if Slow mode enabled, if so then enable it in light gun
+                        if(loadedLGSlowMode[i])
+                            p_comDeviceList->p_lightGunList[lgNumber]->SlowModeEnabled ();
+
+                        lgOutputConnection[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetOutputConnection();
+
+                        //qDebug() << "Game Player" << i << "Output Connection:" << lgOutputConnection[i];
+
                         //Check if Serial Port or USB HID. If Serial Port, get Serial Port Number
-                        if(p_comDeviceList->p_lightGunList[lgNumber]->IsLightGunUSB ())
+                        if(lgOutputConnection[i] == USBHID)
                         {
+                            //qDebug() << "Game Player" << i << "Setting up USB HID";
+
                             isLoadedLGUSB[i] = true;
                             loadedLGComPortNumber[i] = UNASSIGN;
 
@@ -3704,16 +4346,113 @@ void HookerEngine::LoadLGFile()
                                 isRecoilDelaySet[i] = true;
                                 delayRecoilTime[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetRecoilDelay ();
                                 openSolenoidOrRecoilDelay[i].setInterval (delayRecoilTime[i]);
+                                //qDebug() << "Setting Up Recoil Delay to" << delayRecoilTime[i] << "ms";
                             }
                             else
                                 isRecoilDelaySet[i] = false;
+
+                            connect(&lgGamePlayers[i], &GamePlayer::ConnectToLG, this, &HookerEngine::OpenUSBHIDSlot);
+                            connect(&lgGamePlayers[i], &GamePlayer::DisconnectFromLG, this, &HookerEngine::CloseUSBHIDSlot);
+                            connect(&lgGamePlayers[i], &GamePlayer::WriteToLG, this, &HookerEngine::WriteUSBHIDSlot);
+
+                            lgGamePlayers[i].SetWriteNumber (i);
                         }
-                        else
+                        else if(lgOutputConnection[i] == SERIALPORT)
                         {
+                            //qDebug() << "Game Player" << i << "Setting up USB HID";
+
                             isLoadedLGUSB[i] = false;
                             loadedLGComPortNumber[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetComPortNumber();
                             isRecoilDelaySet[i] = false;
                             openSolenoidOrRecoilDelay[i].setInterval (OPENSOLENOIDDEFAULTTIME);
+
+                            connect(&lgGamePlayers[i], &GamePlayer::ConnectToLG, this, &HookerEngine::OpenSerialPortSlot);
+                            connect(&lgGamePlayers[i], &GamePlayer::DisconnectFromLG, this, &HookerEngine::CloseSerialPortSlot);
+                            connect(&lgGamePlayers[i], &GamePlayer::WriteToLG, this, &HookerEngine::WriteSerialPortSlot);
+
+                            lgGamePlayers[i].SetWriteNumber (loadedLGComPortNumber[i]);
+                        }
+                        else if(lgOutputConnection[i] == TCP)
+                        {
+                            isLoadedLGUSB[i] = false;
+                            isRecoilDelaySet[i] = false;
+                            loadedLGComPortNumber[i] = UNASSIGN;
+                            //quint16 tcpServerPort = p_hookComPortWin->TCPPortNumber();
+
+                            //Get TCP LG Port and Player Number
+                            lgTCPPort[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetTCPPort ();
+                            lgTCPPlayer[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetTCPPlayer ();
+
+                            //isTCPConnected = p_hookComPortWin->IsTCPConnected ();
+                            //isTCPConnecting = p_hookComPortWin->IsTCPConnecting ();
+
+                            /*
+                            //Since it takes 3-4 seconds to connect to TCP, connect when game loads and stay connected
+                            //unless the TCP Port is different, then disconnect and connect to new port number
+                            if(!isTCPConnected && !isTCPConnecting)
+                                ConnectLGTCP(lgTCPPort[i]);
+                            else
+                            {
+                                if(tcpServerPort != lgTCPPort[i] && tcpServerPort != 0)
+                                {
+                                    DisconnectLGTCP();
+                                    //Wait for disconnection
+                                    while(isTCPConnected || isTCPConnecting)
+                                    {
+                                        QThread::msleep (50);
+                                        isTCPConnected = p_hookComPortWin->IsTCPConnected ();
+                                        isTCPConnecting = p_hookComPortWin->IsTCPConnecting ();
+                                    }
+                                    ConnectLGTCP(lgTCPPort[i]);
+                                }
+                            }
+                            */
+
+                            //Makes Sure that the Players TCP Port number is the same
+                            if(tcpServerCount == 0)
+                            {
+                                firstTCPPort = lgTCPPort[i];
+                                tcpServerCount++;
+                            }
+                            else
+                            {
+                                //Checks if the Ports are the same
+                                if(firstTCPPort != lgTCPPort[i])
+                                {
+                                    tcpServerCount++;
+                                    isMultipleTCPPorts = true;
+
+                                    if(tcpServerCount > MAXTCPSERVERS)
+                                    {
+                                        lgFileLoadFail = true;
+                                        lgFile.close();
+                                        QString tempCrit = "Three or more TCP Server ports cannot be used.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number: "+line+"\nFile: "+gameLGFilePath;
+                                        if(displayMB)
+                                            QMessageBox::critical (p_guiConnect, "DefaultLG Game File Load Error", tempCrit, QMessageBox::Ok);
+                                        return;
+                                    }
+                                    else
+                                        secondTCPPort = lgTCPPort[i];
+                                }
+                            }
+
+                            connect(&lgGamePlayers[i], &GamePlayer::ConnectToLG, this, &HookerEngine::OpenTCPServerSlot);
+                            connect(&lgGamePlayers[i], &GamePlayer::DisconnectFromLG, this, &HookerEngine::CloseTCPServerSlot);
+                            connect(&lgGamePlayers[i], &GamePlayer::WriteToLG, this, &HookerEngine::WriteTCPServerSlot);
+
+                            if(firstTCPPort == lgTCPPort[i])
+                                lgGamePlayers[i].SetWriteNumber (0);
+                            else
+                                lgGamePlayers[i].SetWriteNumber (1);
+                        }
+                        else if(lgOutputConnection[i] == UNKNOWNCONNECT)
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "Game Player " + QString::number(i) + " light gun doesn't have output connection method.\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "DefaultLG Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
                         }
 
                         //Does Light Gun Support Recoil_Value Command
@@ -3788,7 +4527,7 @@ void HookerEngine::LoadLGFile()
             {
                 lgFileLoadFail = true;
                 lgFile.close();
-                QString tempCrit = "The line didn't match 'Ammo_Value' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                QString tempCrit = "The line didn't match 'Ammo_Value' Recoil Options\nLine"+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return;
@@ -3826,7 +4565,7 @@ void HookerEngine::LoadLGFile()
             {
                 lgFileLoadFail = true;
                 lgFile.close();
-                QString tempCrit = "The line didn't match 'Recoil' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                QString tempCrit = "The line didn't match 'Recoil' Recoil Options\nLine"+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return;
@@ -3864,7 +4603,7 @@ void HookerEngine::LoadLGFile()
             {
                 lgFileLoadFail = true;
                 lgFile.close();
-                QString tempCrit = "The line didn't match 'Recoil_R2S' Recoil Options\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                QString tempCrit = "The line didn't match 'Recoil_R2S' Recoil Options\nLine"+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return;
@@ -3902,7 +4641,7 @@ void HookerEngine::LoadLGFile()
             {
                 lgFileLoadFail = true;
                 lgFile.close();
-                QString tempCrit = "The line didn't match 'Recoil_Value' Recoil Options\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                QString tempCrit = "The line didn't match 'Recoil_Value' Recoil Options\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return;
@@ -3975,7 +4714,7 @@ void HookerEngine::LoadLGFile()
             {
                 lgFileLoadFail = true;
                 lgFile.close();
-                QString tempCrit = "Options need to come before the States.\nLine"+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                QString tempCrit = "Options need to come before the States.\nLine"+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                 if(displayMB)
                     QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                 return;
@@ -4002,7 +4741,7 @@ void HookerEngine::LoadLGFile()
                         {
                             lgFileLoadFail = true;
                             lgFile.close();
-                            QString tempCrit = "Block Shake needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                            QString tempCrit = "Block Shake needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                             if(displayMB)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return;
@@ -4016,7 +4755,7 @@ void HookerEngine::LoadLGFile()
                         {
                             lgFileLoadFail = true;
                             lgFile.close();
-                            QString tempCrit = "Block Shake needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                            QString tempCrit = "Block Shake needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                             if(displayMB)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return;
@@ -4028,7 +4767,7 @@ void HookerEngine::LoadLGFile()
                         {
                             lgFileLoadFail = true;
                             lgFile.close();
-                            QString tempCrit = "Block Shake needs a number at the end.\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                            QString tempCrit = "Block Shake needs a number at the end.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                             if(displayMB)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return;
@@ -4045,7 +4784,7 @@ void HookerEngine::LoadLGFile()
                         {
                             lgFileLoadFail = true;
                             lgFile.close();
-                            QString tempCrit = "Block Recoil_R2S needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                            QString tempCrit = "Block Recoil_R2S needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                             if(displayMB)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return;
@@ -4059,7 +4798,7 @@ void HookerEngine::LoadLGFile()
                         {
                             lgFileLoadFail = true;
                             lgFile.close();
-                            QString tempCrit = "Block Recoil_R2S needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                            QString tempCrit = "Block Recoil_R2S needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                             if(displayMB)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return;
@@ -4071,10 +4810,88 @@ void HookerEngine::LoadLGFile()
                         {
                             lgFileLoadFail = true;
                             lgFile.close();
-                            QString tempCrit = "Block Recoil_R2S needs a number at the end.\nLine: "+line+"\nLine Number: "+lineNumber+"\nFile: "+gameLGFilePath;
+                            QString tempCrit = "Block Recoil_R2S needs a number at the end.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                             if(displayMB)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return;
+                        }
+                    }
+                    else if(line.startsWith(OVERRIDERECOILVOLT))
+                    {
+                        QStringList overrideRecoilVoltSL = line.split (' ', Qt::SkipEmptyParts);
+
+                        if(overrideRecoilVoltSL.length() != OVERRIDERECOILLENGTH)
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "The Override_Recoil_Voltage should have 2 parts. The Override_Recoil_Voltage and a number from 0-10.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
+
+                        quint8 orRecoilVolt = overrideRecoilVoltSL[OVERRIDERECOILVOLTNUM].toUShort(&isNumber);
+
+                        if(!isNumber || orRecoilVolt > RECOILVOLTAGEMAX)
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "The Override Recoil Voltage number is not a number or greater than 10.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
+
+                        for(quint8 k = 0; k < numberLGPlayers; k++)
+                        {
+                            if(lgOutputConnection[k] == TCP)
+                            {
+                                if(p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->GetDefaultLightGunNumber() == SINDEN)
+                                    p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetRecoilVoltageOverride (orRecoilVolt);
+                            }
+                        }
+                    }
+                    else if(line.startsWith(SINDENTRIGGERRECOIL))
+                    {
+                        QStringList sindenTriggerRecoilSL = line.split (' ', Qt::SkipEmptyParts);
+
+                        if(sindenTriggerRecoilSL.length() != SINDENTRIGGERRECOILLEN)
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "The Sinden_Trigger_Recoil should have 2 parts. The Sinden_Trigger_Recoil and a number from 0-3.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
+
+                        quint8 sinTrigRec = sindenTriggerRecoilSL[SINDENTRIGGERRECOILNUM].toUShort(&isNumber);
+
+                        if(!isNumber || sinTrigRec > SINDENTRIGGERRECOILMAX)
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "The Sinden Trigger Recoil number is not a number or greater than 3.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
+
+                        for(quint8 k = 0; k < numberLGPlayers; k++)
+                        {
+                            if(lgOutputConnection[k] == TCP)
+                            {
+                                if(p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->GetDefaultLightGunNumber() == SINDEN)
+                                    p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetSindenRecoilOverride (sinTrigRec);
+                            }
+                        }
+                    }
+                    else if(line.startsWith(AMMOCHECKOPTION))
+                    {
+                        for(quint8 k = 0; k < numberLGPlayers; k++)
+                        {
+                            if(loadedLGNumbers[k] != UNASSIGN)
+                                p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetAmmoCheck ();
                         }
                     }
 
@@ -4622,7 +5439,7 @@ void HookerEngine::LoadLGFile()
     lgFileLoaded = true;
 
     //Don't Bypass the COM Port Connection Fail Warning Pop-up, for the DefaultLG Side
-    emit SetBypassComPortConnectFailWarning(false);
+    emit SetBypassComPortConnectFailWarning(true);
 
     //Process the mame_start Command
     ProcessLGCommands(MAMESTARTAFTER, gameName);
@@ -4710,24 +5527,54 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
         //Check Chars for Faster Processing
         if(commands[i][1] == OPENCOMPORT2CHAR && commands[i][2] == OPENCOMPORT2CHAR2)
         {
+            bool noInitOpen;
             if(commands[i].length () > OPENCOMPORTLENGTH)
-                OpenLGComPort(allPlayers, playerNum, true);
+            {
+                //OpenLGComPort(allPlayers, playerNum, true);
+                noInitOpen = true;
+            }
             else
-                OpenLGComPort(allPlayers, playerNum, false);
+            {
+                //OpenLGComPort(allPlayers, playerNum, false);
+                noInitOpen = false;
+            }
+
+            if(allPlayers)
+            {
+                for(quint8 p = 0; p < numberLGPlayers; p++)
+                    lgGamePlayers[p].Connect (noInitOpen);
+            }
+            else
+                lgGamePlayers[playerNum].Connect (noInitOpen);
         }
         else if(commands[i][1] == CLOSECOMPORT2CHAR)
         {
+            bool noInitClose = false;
+            bool initOnlyClose = false;
 
             if(commands[i].length () > CLOSECOMPORTLENGTH)
             {
                 if(commands[i][CLOSECOMPORTINITCHK] == CLOSECOMPORTNOINIT11)
-                    CloseLGComPort(allPlayers, playerNum, true, false);   // NoInit
+                {
+                    //CloseLGComPort(allPlayers, playerNum, true, false);   // NoInit
+                    noInitClose = true;
+                }
                 else
-                    CloseLGComPort(allPlayers, playerNum, false, true);   // InitOnly
+                {
+                    //CloseLGComPort(allPlayers, playerNum, false, true);   // InitOnly
+                    initOnlyClose = true;
+                }
+            }
+            //else
+                //CloseLGComPort(allPlayers, playerNum, false, false);      // Regular
+
+            if(allPlayers)
+            {
+                for(quint8 p = 0; p < numberLGPlayers; p++)
+                    lgGamePlayers[p].Disconnect (noInitClose, initOnlyClose);
             }
             else
-                CloseLGComPort(allPlayers, playerNum, false, false);      // Regular
-
+                lgGamePlayers[playerNum].Disconnect (noInitClose, initOnlyClose);
         }
         else if(commands[i][0] == CMDSIGNAL)
         {
@@ -4753,7 +5600,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                 if(lightGun != UNASSIGN)
                 {
                     //Get COM Port Number
-                    tempCPNum = loadedLGComPortNumber[player];
+                    //tempCPNum = loadedLGComPortNumber[player];
 
                     //Set True. If No Command or Null, then it is set to false
                     dlgCMDFound = false;
@@ -4771,6 +5618,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                             if(commands[i][2] == 'm')
                             {
                                 //Has to Be Ammo_Value - Reload is checked in AmmoValueCommands
+                                //For Recoil Delay
                                 if(isRecoilDelaySet[player])
                                 {
                                     if(blockRecoil[player])
@@ -4786,20 +5634,21 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                         blockRecoil[player] = true;
                                         doRecoilDelayEnds[player] = false;
                                     }
-                                }
-                                if(loadedLGSlowMode[player])
+                                } //For Slow Mode
+                                else if(loadedLGSlowMode[player])
                                 {
-                                    if(skipRecoilSlowMode[player])
+                                    //Do recoil only when ammo is even number, so it gets 0 and only even ammo. Cuts recoil in half
+                                    quint16 ammoValue = value.toUShort();
+                                    //qDebug() << "Ammo Value" << ammoValue << "Modulus value" << ammoValue % 2;
+                                    if(ammoValue % 2 != 0)
                                     {
                                         dlgCMDFound = false;
-                                        skipRecoilSlowMode[player] = false;
                                     }
                                     else
                                     {
-                                        skipRecoilSlowMode[player] = true;
-                                        dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(&dlgCMDFound, value.toUShort());
+                                        dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->AmmoValueCommands(&dlgCMDFound, ammoValue);
                                     }
-                                }
+                                } //Normal Ammo_Value
                                 else
                                 {
                                     //qDebug() << "CMD: " << commands[i] << " value: " << value;
@@ -4894,6 +5743,11 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                     }
                                 }
                             }
+                            else if(commands[i][2] == 'e')
+                            {
+                                //Must Be Death_Value
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->DeathValueCommands(&dlgCMDFound, value.toUShort());
+                            }
                         }
                         else if(commands[i][1] == 'B')
                         {
@@ -4935,6 +5789,11 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                 }
                             }
 
+                        }
+                        else if(commands[i][1] == 'L')
+                        {
+                            //Must Be Life_Value
+                            dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->LifeValueCommands(&dlgCMDFound, value.toUShort());
                         }
                     }
                     else  //E-Z
@@ -5091,7 +5950,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                 else if(value != "0")
                                 {
                                     //Must be Recoil Command, Only Do when Value != 0
-
+                                    //For Recoil Delay
                                     if(isRecoilDelaySet[player])
                                     {
                                         if(blockRecoil[player])
@@ -5108,8 +5967,8 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                             blockRecoil[player] = true;
                                             doRecoilDelayEnds[player] = false;
                                         }
-                                    }
-                                    if(loadedLGSlowMode[player])
+                                    }  //For Slow Mode
+                                    else if(loadedLGSlowMode[player])
                                     {
                                         if(skipRecoilSlowMode[player])
                                         {
@@ -5121,7 +5980,7 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                             skipRecoilSlowMode[player] = true;
                                             dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
                                         }
-                                    }
+                                    } //For Normal Recoil
                                     else
                                         dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
                                 }
@@ -5157,8 +6016,12 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                             //Offscreen Commands
                             if(commands[i][OFFSCREENCHARAT] == OFFSCREENCHARATBUTTON)
                                 dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->OffscreenButtonCommands(&dlgCMDFound);
-                            else
+                            else if(commands[i][OFFSCREENCHARAT] == OFFSCREENCHARATNORMAL)
                                 dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->OffscreenNormalShotCommands(&dlgCMDFound);
+                            else if(commands[i][OFFSCREENCHARAT] == OFFSCREENCHARATLEFT)
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->OffscreenLeftCornerCommands(&dlgCMDFound);
+                            else
+                                dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->OffscreenDisableCommands(&dlgCMDFound);
                         }
                     }
 
@@ -5169,16 +6032,20 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                         //Write Command(s) to the Default Light Gun's COM Port
                         for(k = 0; k < dlgCommands.count(); k++)
                         {
-                            //qDebug() << "Writting to Port: " << tempCPNum << " with Commands: " << dlgCommands[k];
-                            if(isLoadedLGUSB[player])
-                                WriteLGUSBHID(player, dlgCommands[k]);
+                            //qDebug() << "Writting Commands: " << dlgCommands[k];
+
+                            if(dlgCommands[k][0] == DELAYCMD0 && dlgCommands[k][1] == DELAYCMD1)
+                            {
+                                //Remove the "D:" from the front
+                                dlgCommands[k].remove (0,2);
+                                quint32 delay = dlgCommands[k].toUInt ();
+                                //qDebug() << "Delay Commands for" << delay << "isNum" << isNum;
+                                QThread::msleep (delay);
+                            }
                             else
-                                WriteLGComPort(tempCPNum, dlgCommands[k]);
+                                lgGamePlayers[player].Write (dlgCommands[k]);
                         }
-
-
                     }
-
                 } //if(lightGun != UNASSIGN)
 
             } //for(j = 0; j < howManyPlayers; j++)
@@ -5256,6 +6123,8 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum, bool noInit)
 
                 //Opens the COM Port
                 emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, tempPath, true);
+
+                lgConnectionClosed[player] = false;
             }
             else
             {
@@ -5263,6 +6132,8 @@ void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum, bool noInit)
                 tempCPNum = UNASSIGN;
                 HIDInfo lgHIDInfo = p_comDeviceList->p_lightGunList[lightGun]->GetUSBHIDInfo ();
                 emit StartUSBHID(player, lgHIDInfo);
+
+                lgConnectionClosed[player] = false;
             }
 
             if(!noInit)
@@ -5350,6 +6221,8 @@ void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum, bool noInit
                     emit StopUSBHID(player);
                 else
                     emit StopComPort(tempCPNum);
+
+                lgConnectionClosed[player] = true;
             }
         }
     }
@@ -5405,3 +6278,34 @@ void HookerEngine::UpdateSignalForDisplay(QString sig, QString dat)
 
 
 
+void HookerEngine::DisconnectGamePlayers()
+{
+    quint8 i;
+
+    for(i = 0; i < MAXGAMEPLAYERS; i++)
+    {
+        if(lgOutputConnection[i] == SERIALPORT)
+        {
+            disconnect(&lgGamePlayers[i], &GamePlayer::ConnectToLG, this, &HookerEngine::OpenSerialPortSlot);
+            disconnect(&lgGamePlayers[i], &GamePlayer::DisconnectFromLG, this, &HookerEngine::CloseSerialPortSlot);
+            disconnect(&lgGamePlayers[i], &GamePlayer::WriteToLG, this, &HookerEngine::WriteSerialPortSlot);
+        }
+        else if(lgOutputConnection[i] == USBHID)
+        {
+            disconnect(&lgGamePlayers[i], &GamePlayer::ConnectToLG, this, &HookerEngine::OpenUSBHIDSlot);
+            disconnect(&lgGamePlayers[i], &GamePlayer::DisconnectFromLG, this, &HookerEngine::CloseUSBHIDSlot);
+            disconnect(&lgGamePlayers[i], &GamePlayer::WriteToLG, this, &HookerEngine::WriteUSBHIDSlot);
+        }
+        else if(lgOutputConnection[i] == BTLE)
+        {
+
+        }
+        else if(lgOutputConnection[i] == TCP)
+        {
+            //qDebug() << "Disconnecting Player" << i << "from TCP";
+            disconnect(&lgGamePlayers[i], &GamePlayer::ConnectToLG, this, &HookerEngine::OpenTCPServerSlot);
+            disconnect(&lgGamePlayers[i], &GamePlayer::DisconnectFromLG, this, &HookerEngine::CloseTCPServerSlot);
+            disconnect(&lgGamePlayers[i], &GamePlayer::WriteToLG, this, &HookerEngine::WriteTCPServerSlot);
+        }
+    }
+}

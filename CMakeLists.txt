@@ -5,6 +5,8 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
 find_package(Qt6 REQUIRED COMPONENTS SerialPort)
 find_package(Qt6 REQUIRED COMPONENTS Network)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Bluetooth)
+find_package(Qt6 REQUIRED COMPONENTS Core)
 
 qt_standard_project_setup()
 
@@ -47,6 +49,7 @@ qt_add_executable(HookOfTheReaper
     data/sounds/sounds.qrc
     data/icons/icons.qrc
     data/alienUSB.hor data/openFire.hor data/xGunner.hor
+    HookerEngine/GamePlayer.h HookerEngine/GamePlayer.cpp
 
 )
 
@@ -59,6 +62,7 @@ target_include_directories(HookOfTheReaper
     ${Qt6SerialPort_INCLUDE_DIRS}
     ${Qt6Network_INCLUDE_DIRS}
     ${Qt6Multimedia_INCLUDE_DIRS}
+    ${Qt6Bluetooth_INCLUDE_DIRS}
     D:/QtProjects/HookOfTheReaperGit/HIDAPI/include
 )
 target_link_directories(HookOfTheReaper
@@ -66,16 +70,18 @@ target_link_directories(HookOfTheReaper
     D:/QtProjects/HookOfTheReaperGit/HIDAPI/x64
 )
 
-
 target_link_libraries(HookOfTheReaper
     PRIVATE
-        Qt::Core
-        Qt::Widgets
+        Qt6::Core
+        Qt6::Widgets
         Qt6::SerialPort
         Qt6::Network
         Qt6::Multimedia
+        Qt6::Bluetooth
         hidapi
 )
+target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
+
 
 include(GNUInstallDirs)
 
@@ -89,8 +95,10 @@ qt_generate_deploy_app_script(
     TARGET HookOfTheReaper
     OUTPUT_SCRIPT deploy_script
     NO_UNSUPPORTED_PLATFORM_ERROR
+    NO_TRANSLATIONS
 )
 install(SCRIPT ${deploy_script})
+
 
 set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/data/icons/icons.rc")
 

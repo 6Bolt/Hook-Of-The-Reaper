@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Test Serial Port or USB HID</string>
+   <string>Test Light Gun</string>
   </property>
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">

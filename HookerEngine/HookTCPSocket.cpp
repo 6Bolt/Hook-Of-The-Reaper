@@ -32,7 +32,9 @@ void HookTCPSocket::Connect()
     //qDebug() << "Waiting for a TCP Connection - Connect";
 
     //Set the Address for the TCP Socket
-    p_hookSocket->connectToHost (TCPHOSTNAME, TCPHOSTPORT);
+    //p_hookSocket->connectToHost (TCPHOSTNAME, TCPHOSTPORT);
+    //p_hookSocket->connectToHost (QHostAddress::SpecialAddress::LocalHost, TCPHOSTPORT);
+    p_hookSocket->connectToHost (QHostAddress("127.0.0.1"), TCPHOSTPORT);
 
     //Wait for Connection
     p_hookSocket->waitForConnected (TIMETOWAIT);
