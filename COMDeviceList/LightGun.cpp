@@ -44,14 +44,15 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     doAmmoCheck = false;
 
     tcpPort = 0;
-    tcpPlayer = 0;
-    recoilVoltage = 0;
+    tcpPlayer = UNASSIGN;
+    recoilVoltage = UNASSIGN;
     recoilVoltageOverride = false;
     sindenRecoilOverride = false;
 
     isDipSwitchPlayerNumberSet = false;
+    dipSwitchPlayerNumber = UNASSIGN;
 
-    analogStrength = DEFAULTANALOGSTRENGTH;
+    analogStrength = UNASSIGN;
     isAnalogStrengthSet = false;
 
     hubComPortNumber = UNASSIGN;
@@ -152,9 +153,11 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     disableReaperLEDs = false;
 
     isDipSwitchPlayerNumberSet = false;
+    dipSwitchPlayerNumber = UNASSIGN;
+
     hubComPortNumber = UNASSIGN;
 
-    analogStrength = DEFAULTANALOGSTRENGTH;
+    analogStrength = UNASSIGN;
     isAnalogStrengthSet = false;
 
     lastAmmoValue = 0;
@@ -167,8 +170,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     doAmmoCheck = false;
 
     tcpPort = 0;
-    tcpPlayer = 0;
-    recoilVoltage = 0;
+    tcpPlayer = UNASSIGN;
+    recoilVoltage = UNASSIGN;
     recoilVoltageOverride = false;
     sindenRecoilOverride = false;
 
@@ -283,7 +286,10 @@ LightGun::LightGun(LightGun const &lgMember)
         isDipSwitchPlayerNumberSet = true;
     }
     else
+    {
         isDipSwitchPlayerNumberSet = false;
+        dipSwitchPlayerNumber = UNASSIGN;
+    }
 
     hubComPortNumber = lgMember.hubComPortNumber;
 
@@ -294,7 +300,7 @@ LightGun::LightGun(LightGun const &lgMember)
     }
     else
     {
-        analogStrength = DEFAULTANALOGSTRENGTH;
+        analogStrength = UNASSIGN;
         isAnalogStrengthSet = false;
     }
 
@@ -430,7 +436,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     disableReaperLEDs = false;
 
-    analogStrength = DEFAULTANALOGSTRENGTH;
+    analogStrength = UNASSIGN;
     isAnalogStrengthSet = false;
 
     lastAmmoValue = 0;
@@ -443,8 +449,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     doAmmoCheck = false;
 
     tcpPort = 0;
-    tcpPlayer = 0;
-    recoilVoltage = 0;
+    tcpPlayer = UNASSIGN;
+    recoilVoltage = UNASSIGN;
     recoilVoltageOverride = false;
     sindenRecoilOverride = false;
 
@@ -520,6 +526,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     //For MX24
     isDipSwitchPlayerNumberSet = false;
+    dipSwitchPlayerNumber = UNASSIGN;
     hubComPortNumber = UNASSIGN;
 
 
@@ -560,8 +567,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     doAmmoCheck = false;
 
     tcpPort = 0;
-    tcpPlayer = 0;
-    recoilVoltage = 0;
+    tcpPlayer = UNASSIGN;
+    recoilVoltage = UNASSIGN;
     recoilVoltageOverride = false;
     sindenRecoilOverride = false;
 
@@ -632,11 +639,13 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     comPortFlow = UNASSIGN;
 
     isDipSwitchPlayerNumberSet = false;
+    dipSwitchPlayerNumber = UNASSIGN;
     hubComPortNumber = UNASSIGN;
     maxAmmoSet = false;
     reloadValueSet = false;
     disableReaperLEDs = false;
     isAnalogStrengthSet = false;
+    analogStrength = UNASSIGN;
 
     lastAmmoValue = 0;
     ammoCheckValue = 1;
@@ -648,8 +657,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     doAmmoCheck = false;
 
     tcpPort = 0;
-    tcpPlayer = 0;
-    recoilVoltage = 0;
+    tcpPlayer = UNASSIGN;
+    recoilVoltage = UNASSIGN;
     recoilVoltageOverride = false;
     sindenRecoilOverride = false;
 
@@ -719,11 +728,13 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     comPortFlow = UNASSIGN;
 
     isDipSwitchPlayerNumberSet = false;
+    dipSwitchPlayerNumber = UNASSIGN;
     hubComPortNumber = UNASSIGN;
     maxAmmoSet = false;
     reloadValueSet = false;
     disableReaperLEDs = false;
     isAnalogStrengthSet = false;
+    analogStrength = UNASSIGN;
 
     lastAmmoValue = 0;
     ammoCheckValue = 1;
@@ -735,8 +746,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     doAmmoCheck = false;
 
     tcpPort = 0;
-    tcpPlayer = 0;
-    recoilVoltage = 0;
+    tcpPlayer = UNASSIGN;
+    recoilVoltage = UNASSIGN;
     recoilVoltageOverride = false;
     sindenRecoilOverride = false;
 
@@ -822,11 +833,13 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     comPortFlow = UNASSIGN;
 
     isDipSwitchPlayerNumberSet = false;
+    dipSwitchPlayerNumber = UNASSIGN;
     hubComPortNumber = UNASSIGN;
     maxAmmoSet = false;
     reloadValueSet = false;
     disableReaperLEDs = false;
     isAnalogStrengthSet = false;
+    analogStrength = UNASSIGN;
 
     lastAmmoValue = 0;
     ammoCheckValue = 1;
@@ -1473,7 +1486,10 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
         isDipSwitchPlayerNumberSet = true;
     }
     else
+    {
         isDipSwitchPlayerNumberSet = false;
+        dipSwitchPlayerNumber = UNASSIGN;
+    }
 
     hubComPortNumber = lgMember.hubComPortNumber;
 
@@ -1484,7 +1500,7 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
     }
     else
     {
-        analogStrength = DEFAULTANALOGSTRENGTH;
+        analogStrength = UNASSIGN;
         isAnalogStrengthSet = false;
     }
 
@@ -1691,6 +1707,9 @@ void LightGun::LoadDefaultLGCommands()
 
             if(line != ENDOFFILE && !noCommands)
             {
+                //Get rid of any blank spaces at the end and front
+                line = line.trimmed ();
+
                 splitLines = line.split ('=', Qt::SkipEmptyParts);
 
                 if(splitLines[1].contains ('|'))
@@ -2087,12 +2106,13 @@ void LightGun::LoadDefaultLGCommands()
     qDebug() << displayOtherInitCmdsSet;
     qDebug() << displayRefreshSet;
     qDebug() << outOfAmmoCmdSet;
+    qDebug() << lifeValueCmdSet;
+    qDebug() << deathValueCmdSet;
 
     qDebug() << openComPortCmds;
     qDebug() << closeComPortCmds;
     qDebug() << damageCmds;
     qDebug() << recoilCmds;
-    qDebug() << recoilR2SCmds;
     qDebug() << recoilR2SCmds;
     qDebug() << reloadCmds;
     qDebug() << ammoValueCmds;
@@ -2110,8 +2130,10 @@ void LightGun::LoadDefaultLGCommands()
     qDebug() << displayOtherInitCmds;
     qDebug() << displayRefresh;
     qDebug() << outOfAmmoCmds;
-
+    qDebug() << lifeValueCmds;
+    qDebug() << deathValueCmds;
 */
+
 }
 
 
@@ -2124,42 +2146,64 @@ QStringList LightGun::SplitLoadedCommands(QString commandList)
     quint8 cmdCount;
     QString goodCMD;
     QString frontPart;
-    bool needFront = false;
+    bool isError = false;
+
+    commandList = commandList.trimmed ();
 
     quint16 indexOfP = commandList.indexOf('P');
 
+    //qDebug() << "String after trimmed:" << commandList << "Index of P" << indexOfP;
+
+    //Make sure P1 is at the begining of the string
     if(indexOfP != 0)
     {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         frontPart = commandList.first (indexOfP);
 #else
-        quint16 chopLength = sizeCMD - indexOfP;
+        quint16 chopLength = commandList.size() - indexOfP;
         frontPart = commandList.chopped(chopLength);
 #endif
         frontPart = frontPart.trimmed ();
         commandList = commandList.remove(0,indexOfP);
-        needFront = true;
     }
 
     cmdSplit = commandList.split ('|', Qt::SkipEmptyParts);
 
+    //Remove any empty spaces at the begining or the end
+    for(quint8 i = 0; i < cmdSplit.length(); i++)
+        cmdSplit[i] = cmdSplit[i].trimmed();
+
+    //qDebug() << "cmdSplit[0]:" << cmdSplit[0] << "cmdSplit[1]:" << cmdSplit[1];
+
     if((defaultLightGunNum == MX24 && isDipSwitchPlayerNumberSet) || defaultLightGunNum == SINDEN)
     {
-        if(dipSwitchPlayerNumber == 0 || tcpPlayer == 0)
+        if((defaultLightGunNum == MX24 && dipSwitchPlayerNumber == 0) || (tcpPlayer == 0 && defaultLightGunNum == SINDEN))
         {
             if(cmdSplit[0][1] == '1')
                 goodCMD = cmdSplit[0].remove (0,3);
             else if (cmdSplit[1][1] == '1')
                 goodCMD = cmdSplit[1].remove (0,3);
+            else
+            {
+                isError = true;
+                QString tempCrit = "Cannot find P1 in the split commands. Command String: \""+commandList+"\" Please close HOTR and fix file immediately.";
+                QMessageBox::critical (nullptr, "Loading Light Gun HOR Commands File", tempCrit, QMessageBox::Ok);
+            }
         }
-        else if(dipSwitchPlayerNumber == 1 || tcpPlayer == 1)
+        else if((defaultLightGunNum == MX24 && dipSwitchPlayerNumber == 1) || (tcpPlayer == 1 && defaultLightGunNum == SINDEN))
         {
             if(cmdSplit[0][1] == '2')
                 goodCMD = cmdSplit[0].remove (0,3);
             else if (cmdSplit[1][1] == '2')
                 goodCMD = cmdSplit[1].remove (0,3);
+            else
+            {
+                isError = true;
+                QString tempCrit = "Cannot find P2 in the split commands. Command String: \""+commandList+"\" Please close HOTR and fix file immediately.";
+                QMessageBox::critical (nullptr, "Loading Light Gun HOR Commands File", tempCrit, QMessageBox::Ok);
+            }
         }
-        else if(dipSwitchPlayerNumber == 2)
+        else if(defaultLightGunNum == MX24 && dipSwitchPlayerNumber == 2)
         {
             if(cmdSplit[0][1] == '3')
                 goodCMD = cmdSplit[0].remove (0,3);
@@ -2169,8 +2213,14 @@ QStringList LightGun::SplitLoadedCommands(QString commandList)
                 goodCMD = cmdSplit[2].remove (0,3);
             else if (cmdSplit[3][1] == '3')
                 goodCMD = cmdSplit[3].remove (0,3);
+            else
+            {
+                isError = true;
+                QString tempCrit = "Cannot find P3 in the split commands. Command String: \""+commandList+"\" Please close HOTR and fix file immediately.";
+                QMessageBox::critical (nullptr, "Loading Light Gun HOR Commands File", tempCrit, QMessageBox::Ok);
+            }
         }
-        else if(dipSwitchPlayerNumber == 3)
+        else if(defaultLightGunNum == MX24 && dipSwitchPlayerNumber == 3)
         {
             if(cmdSplit[0][1] == '4')
                 goodCMD = cmdSplit[0].remove (0,3);
@@ -2180,13 +2230,21 @@ QStringList LightGun::SplitLoadedCommands(QString commandList)
                 goodCMD = cmdSplit[2].remove (0,3);
             else if (cmdSplit[3][1] == '4')
                 goodCMD = cmdSplit[3].remove (0,3);
+            else
+            {
+                isError = true;
+                QString tempCrit = "Cannot find P4 in the split commands. Command String: \""+commandList+"\" Please close HOTR and fix file immediately.";
+                QMessageBox::critical (nullptr, "Loading Light Gun HOR Commands File", tempCrit, QMessageBox::Ok);
+            }
         }
 
-        returnList = goodCMD.split (' ', Qt::SkipEmptyParts);
+        if(!isError)
+        {
+            goodCMD = goodCMD.trimmed ();
+            //qDebug() << "goodCMD" << goodCMD;
+            returnList = goodCMD.split (' ', Qt::SkipEmptyParts);
+        }
     }
-
-    if(needFront)
-        returnList.prepend(frontPart);
 
     //qDebug() << "returnList: " << returnList;
 
@@ -2396,7 +2454,7 @@ QStringList LightGun::DisplayAmmoCommands(bool *isSet, quint16 ammoValue)
         else
             newAmmoValue = ammoValue;
 
-        if(isUSBLightGun)
+        if(defaultLightGunNum == ALIENUSB)
         {   
             //For Alien USB Light Gun Ammo Counter which is 2 Digits, so 0-99
             tempAVS = QString::number(newAmmoValue, 10).rightJustified(2, '0');
@@ -2482,7 +2540,7 @@ QStringList LightGun::DisplayLifeCommands(bool *isSet, quint16 lifeValue)
 
     if(displayLifeCmdsSet)
     {
-        if(isUSBLightGun)
+        if(defaultLightGunNum == ALIENUSB)
         {
             //If Life is bigger than 99, then make it 99
             if(lifeValue > 99)
@@ -2517,7 +2575,7 @@ QStringList LightGun::DisplayLifeCommands(bool *isSet, quint16 lifeValue)
         }
         else
         {
-            if(defaultLightGun && defaultLightGunNum == OPENFIRE)
+            if(defaultLightGunNum == OPENFIRE)
             {
                 if(displayAmmoLifeBar && lifeBarMaxLife > 0)
                     newLifeValue = (lifeValue*100)/lifeBarMaxLife;
@@ -2590,7 +2648,7 @@ QStringList LightGun::DisplayOtherCommands(bool *isSet, quint16 otherValue)
             newOtherValue = otherValue;
 
 
-        if(isUSBLightGun)
+        if(defaultLightGunNum == ALIENUSB)
         {
             //For Alien USB Light Gun Ammo Counter which is 2 Digits, so 0-99
             tempAVS = QString::number(newOtherValue, 10).rightJustified(2, '0');

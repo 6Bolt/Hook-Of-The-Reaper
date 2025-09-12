@@ -1268,7 +1268,11 @@ void ComDeviceList::LoadComDeviceList()
         return;
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     openFile = loadCDData.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+#else
+    openFile = loadCDData.open (QIODevice::ReadOnly | QIODevice::Text);
+#endif
 
     if(!openFile)
     {

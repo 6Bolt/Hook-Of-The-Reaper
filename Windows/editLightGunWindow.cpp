@@ -223,7 +223,9 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
             ui->tcpRecoilVoltComboBox->setEnabled (true);
 
             quint16 tempTCP = p_comDeviceList->p_lightGunList[0]->GetTCPPort ();
-            ui->tcpPortLineEdit->setText (QString::number (tempTCP));
+            //ui->tcpPortLineEdit->setText (QString::number (tempTCP));
+            ui->tcpPortLineEdit->setText ("0");
+            ui->tcpPortLineEdit->setText (QString::number(tempTCP));
 
             quint8 tempRecVolt = p_comDeviceList->p_lightGunList[0]->GetRecoilVoltage ();
             ui->tcpRecoilVoltComboBox->setCurrentIndex (tempRecVolt);

@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.2.0"
+#define VERSION                 "1.2.1"
 #define VERSIONMAIN             1
 #define VERSIONMID              1
 #define VERSIONLAST             3
