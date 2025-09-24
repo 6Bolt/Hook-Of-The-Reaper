@@ -3,7 +3,7 @@
 # Hook-Of-The-Reaper
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
-# ****** Out until 9/24 ******
+# ****** Be Back on 9/25 ******
 I finally got all the stuff done on my computer. It is now up and running. I changed out all the water loop connectors, and did all the new piping. Also flushed and clean the readiators. It was a huge amout of work. Also, today, 9/24, is me and my wife's 20th anniversary. So I will be finally back on 9/25.
 
 # Quick Links
