@@ -3,9 +3,8 @@
 # Hook-Of-The-Reaper
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
-# ****** Out for 9/14 to 9/19 ******
-I am taking my 3 loop water cooled computer down for maintenance, cleaning, and replacing the connectors. Also, replacing any rigid tubing that looks bad. I will have limited access, and cannot do anything for HOTR project at this time, as I don't have my computer. I will replay to messages once I get my computer back up and running. If I get done early, I will remove this notice. Since I am not that fast, I could go over the time frame. 
-
+# ****** Out until 9/24 ******
+I finally got all the stuff done on my computer. It is now up and running. I changed out all the water loop connectors, and did all the new piping. Also flushed and clean the readiators. It was a huge amout of work. Also, today, 9/24, is me and my wife's 20th anniversary. So I will be finally back on 9/25.
 
 # Quick Links
 
