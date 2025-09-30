@@ -3,8 +3,8 @@
 # Hook-Of-The-Reaper
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
-# ****** Be Back on 9/25 ******
-I finally got all the stuff done on my computer. It is now up and running. I changed out all the water loop connectors, and did all the new piping. Also flushed and clean the radiators. It was a huge amount of work. Also, today, 9/24, is me and my wife's 20th anniversary. So I will be finally back on 9/25.
+# ****** I Will be Back on 9/30 ******
+Sorry, but I will be back on 9/30. I thought I was done with the computer, but I was wrong. After getting things done, I was so tired, I slept for 2 days, which was Thursday and Friday (9/25 & 9/26). Since I was so tired, the wife and I didn't even celebrate are 20th Anniversary, so I rested all weekend, and we went out Sunday. Also, the new acrylic panels for the computer came Friday. So I installed them on Monday (9/29). This took some time, as I had to drill out 3 one inch holes in the top acrylic panel, for the 3 fill ports. This takes some time, as I had to make sure the fill tubes where straight and in the right place. Also, acrylic scratches so easy, I took my time to minimize the scratches. Now all the new acrylic panels are on and the computer is done. The fluid is good for 5 years, so I will be good for a long time.   
 
 # Quick Links
 
