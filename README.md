@@ -3,6 +3,9 @@
 # Hook-Of-The-Reaper
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
+# ****** 6Bolt.com Email Spoofed  ******
+Saw that someone has been spoofing emails from 6Bolt.com domain. I have updated my DNS records, so that these emails will now be quarantined or put into spam. If you got an email from 6Bolt.com asking for money, please ignore it. I will never ask for anything, especially money. 
+
 # ****** I am Out ******
 Sorry, but after working on the acrylic panels on Monday, I slept all Tuesday, and most of Wednesday. Instead of giving a date on when I will be back, I am just going to put “I am Out” message. When I get back, I will take it down. Then I won’t give false dates on when I will be back. Also, gives me time to rest and get back to things. When I am tired, I make many mistakes, and not good doing anything. I always think I can do more, but I need to start taken care of myself and do the need rest when after doing work. Being disabled sucks.     
 
