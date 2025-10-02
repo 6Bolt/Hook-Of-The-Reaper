@@ -3,8 +3,8 @@
 # Hook-Of-The-Reaper
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
-# ****** I Will be Back on 9/30 ******
-Sorry, but I will be back on 9/30. I thought I was done with the computer, but I was wrong. After getting things done, I was so tired, I slept for 2 days, which was Thursday and Friday (9/25 & 9/26). Since I was so tired, the wife and I didn't even celebrate are 20th Anniversary, so I rested all weekend, and we went out Sunday. Also, the new acrylic panels for the computer came Friday. So I installed them on Monday (9/29). This took some time, as I had to drill out 3 one inch holes in the top acrylic panel, for the 3 fill ports. This takes some time, as I had to make sure the fill tubes where straight and in the right place. Also, acrylic scratches so easy, I took my time to minimize the scratches. Now all the new acrylic panels are on and the computer is done. The fluid is good for 5 years, so I will be good for a long time.   
+# ****** I am Out ******
+Sorry, but after working on the acrylic panels on Monday, I slept all Tuesday, and most of Wednesday. Instead of giving a date on when I will be back, I am just going to put “I am Out” message. When I get back, I will take it down. Then I won’t give false dates on when I will be back. Also, gives me time to rest and get back to things. When I am tired, I make many mistakes, and not good doing anything. I always think I can do more, but I need to start taken care of myself and do the need rest when after doing work. Being disabled sucks.     
 
 # Quick Links
 
