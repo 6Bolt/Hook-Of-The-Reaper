@@ -3,17 +3,23 @@
 # Hook-Of-The-Reaper
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
-# ****** 6Bolt.com Email Spoofed  ******
-Saw that someone has been spoofing emails from 6Bolt.com domain. I have updated my DNS records, so that these emails will now be quarantined or put into spam. If you got an email from 6Bolt.com asking for money, please ignore it. I will never ask for anything, especially money. 
 
 # ****** I am Out ******
-Sorry, but after working on the acrylic panels on Monday, I slept all Tuesday, and most of Wednesday. Instead of giving a date on when I will be back, I am just going to put “I am Out” message. When I get back, I will take it down. Then I won’t give false dates on when I will be back. Also, gives me time to rest and get back to things. When I am tired, I make many mistakes, and not good doing anything. I always think I can do more, but I need to start taken care of myself and do the need rest when after doing work. Being disabled sucks.     
+I am currently out, due to health reasons. Best ETA, is Summer of 2026. All development of Hook of the Reaper is on hold, until my health gets better. Currently, I will only fix critical bugs and get the Xena's light gun implemented. If you find any bugs, please file them on the Hook of the Reaper's GitHub page. Then I will now about it.    
+
+
+# ****** 6Bolt.com Email Spoofed  ******
+Saw that someone has been spoofing emails from 6Bolt.com domain. I have updated my DNS records, so that these emails will now be quarantined or put into spam. If you got an email from 6Bolt.com asking for money, please ignore it. I will never ask for anything, especially money. Also, if anyone is acting like me on any platform asking for money or other things, it is a scam. Please alert the Admin, so they can remove it.
+
+
 
 # Quick Links
 
 [What Where Why How is/to/use Hook of the Reaper](https://hotr.6bolt.com/pmwiki.php/Main/HomePage) 
 
 [Tutorial: How to Setup Hook of the Reaper](https://hotr.6bolt.com/pmwiki.php/Tutorial/Tutorial) 
+
+[Technical Support](https://hotr.6bolt.com/pmwiki.php/TechnicalSupport/TechnicalSupport)
 
 [FAQ](https://hotr.6bolt.com/pmwiki.php/Tutorial/FAQ)
 
@@ -40,7 +46,7 @@ Sorry, but after working on the acrylic panels on Monday, I slept all Tuesday, a
 
 ### DO NOT EMAIL ME FOR TECH SUPPORT. First, read the FAQ (link above). If you have a real bug, go to 'Issues' and read the rules first (IE the README there). Then you can file a Bug, Enhancment or Issue. I cannot email back from this email address. All unwanted email, will be ignored and deleted. The email is for people to submit DefaultLG game files. Also, for companies to reach me. If you don't meet those two requirments, then don't email. 
 
-Email: gamefiles@hotr.6bolt.com
+Email: gamefiles@6bolt.com
 
 Best way to contact me, is emailing me at gamefiles@hotr.6bolt.com. Another way is to open a new issue, here on GitHub. It can be found at the top left of the webpage, just to the right of 'Code'. Click on the 'Issues' tab, which will bring up a new webpage, with all the current issues. Just above the issues, and to the right, is a green button called 'New Issuse'. Please click that, and create a new issue, which can be a quetion, bug, enhancment, and so on. 
 
