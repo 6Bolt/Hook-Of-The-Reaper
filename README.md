@@ -4,7 +4,7 @@
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
 
-# ****** I am Out ******
+# ****** I am Out Sick ******
 I am currently out, due to health reasons. Best ETA, is Summer of 2026. All development of Hook of the Reaper is on hold, until my health gets better. Currently, I will only fix critical bugs and get the Xena's light gun implemented. If you find any bugs, please file them on the Hook of the Reaper's GitHub page. Then I will now about it.    
 
 
@@ -28,6 +28,8 @@ Saw that someone has been spoofing emails from 6Bolt.com domain. I have updated 
 [Game File Info](https://github.com/6Bolt/Hook-Of-The-Reaper#game-file-info)
 
 [Commands](https://github.com/6Bolt/Hook-Of-The-Reaper#commands)
+
+[DefaultLG Documentation](https://hotr.6bolt.com/pmwiki.php/GameFiles/DefaultLGDocumentation)
 
 [Recoil_R2S Command](https://github.com/6Bolt/Hook-Of-The-Reaper#recoil_r2s-command)
 
