@@ -50,6 +50,8 @@ qt_add_executable(HookOfTheReaper
     data/icons/icons.qrc
     data/alienUSB.hor data/openFire.hor data/xGunner.hor
     HookerEngine/GamePlayer.h HookerEngine/GamePlayer.cpp
+    Windows/addLightGunWindowV2.h Windows/addLightGunWindowV2.cpp Windows/addLightGunWindowV2.ui
+    Windows/editLightGunWindowV2.h Windows/editLightGunWindowV2.cpp Windows/editLightGunWindowV2.ui
 
 )
 

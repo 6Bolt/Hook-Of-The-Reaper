@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QTcpSocket>
 #include <QDebug>
-
+#include <QHostAddress>
 
 #include <QByteArray>
 

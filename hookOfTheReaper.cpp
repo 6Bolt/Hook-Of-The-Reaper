@@ -379,7 +379,8 @@ void HookOfTheReaper::on_actionAdd_Light_Gun_triggered()
         }
 
         //Create New Window, and Set it to Delete when Closed
-        p_aLGW = new addLightGunWindow(p_comDeviceList, this);
+        //p_aLGW = new addLightGunWindow(p_comDeviceList, this);
+        p_aLGW = new addLightGunWindowV2(p_comDeviceList, this);
         p_aLGW->setAttribute(Qt::WA_DeleteOnClose);
         //Set the Dialog Window Signals to the Window Close Member function
         connect(p_aLGW, SIGNAL(accepted()), this, SLOT(Add_Light_Gun_Window_Closed()));
@@ -484,7 +485,7 @@ void HookOfTheReaper::on_actionEdit_Light_Gun_triggered()
                 ui->statusbar->showMessage ("Stopped");
             }
 
-            p_eLGW = new editLightGunWindow(p_comDeviceList, this);
+            p_eLGW = new editLightGunWindowV2(p_comDeviceList, this);
             p_eLGW->setAttribute(Qt::WA_DeleteOnClose);
             connect(p_eLGW, SIGNAL(accepted()), this, SLOT(Edit_Light_Gun_Window_Closed()));
             connect(p_eLGW, SIGNAL(rejected()), this, SLOT(Edit_Light_Gun_Window_Closed()));
@@ -866,11 +867,5 @@ void HookOfTheReaper::changeEvent(QEvent *event)
     }
     QMainWindow::changeEvent(event);
 }
-
-
 #endif
-
-
-
-
 

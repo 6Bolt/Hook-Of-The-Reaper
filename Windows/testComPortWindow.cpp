@@ -263,7 +263,7 @@ void testComPortWindow::on_sendDataPushButton_clicked()
         QByteArray cpBA = portData.toUtf8 ();
         qint32 byteWrite = p_testSocket->write(cpBA);
 
-        qDebug() << "TCP Write Data:" << cpBA.toStdString () << "byteWrite" << byteWrite;
+        //qDebug() << "TCP Write Data:" << cpBA.toStdString () << "byteWrite" << byteWrite;
 
         if(byteWrite == -1)
             qDebug() << "TCP Server Write Total Fail, got -1";
@@ -294,7 +294,7 @@ void testComPortWindow::TCPReadData()
     //Read the TCP Socket Data
     readData = p_testSocket->readAll ();
 
-    qDebug() << "TCP Read Data:" << readData.toStdString ();
+    //qDebug() << "TCP Read Data:" << readData.toStdString ();
 }
 
 

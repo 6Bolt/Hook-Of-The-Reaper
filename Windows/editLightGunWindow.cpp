@@ -379,8 +379,10 @@ editLightGunWindow::editLightGunWindow(ComDeviceList *cdList, QWidget *parent)
     }
 
 
-    reloadNoRumble = p_comDeviceList->p_lightGunList[0]->GetReloadNoRumble ();
-    reloadDisable = p_comDeviceList->p_lightGunList[0]->GetReloadDisabled ();
+    //reloadNoRumble = p_comDeviceList->p_lightGunList[0]->GetReloadNoRumble ();
+    //reloadDisable = p_comDeviceList->p_lightGunList[0]->GetReloadDisabled ();
+    reloadNoRumble = false;
+    reloadNoRumble = false;
 
     if(reloadDisable)
         ui->disableReloadradioButton->setChecked (true);
@@ -1080,7 +1082,7 @@ void editLightGunWindow::EditLightGun()
 
     p_comDeviceList->p_lightGunList[lightGunNum]->SetRecoilPriority (recoilOptions);
 
-    p_comDeviceList->p_lightGunList[lightGunNum]->SetReloadOptions (reloadNR, reloadDisable);
+    //p_comDeviceList->p_lightGunList[lightGunNum]->SetReloadOptions (reloadNR, reloadDisable);
 
     //Edit Serial Port Light Gun Stuff
     if(outputConnection == SERIALPORT)
@@ -1321,8 +1323,11 @@ void editLightGunWindow::LoadSavedLightGun(quint8 index)
     ui->recoilR2SComboBox->setCurrentIndex (p_recoilPriority[2]);
     ui->recoilValueComboBox->setCurrentIndex (p_recoilPriority[3]);
 
-    reloadNoRumble = p_comDeviceList->p_lightGunList[index]->GetReloadNoRumble ();
-    reloadDisable = p_comDeviceList->p_lightGunList[index]->GetReloadDisabled ();
+    //reloadNoRumble = p_comDeviceList->p_lightGunList[index]->GetReloadNoRumble ();
+    //reloadDisable = p_comDeviceList->p_lightGunList[index]->GetReloadDisabled ();
+
+    reloadNoRumble = false;
+    reloadDisable = false;
 
     if(reloadDisable)
         ui->disableReloadradioButton->setChecked (true);

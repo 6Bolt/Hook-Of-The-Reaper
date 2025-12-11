@@ -41,6 +41,9 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
 
     isUSBHIDInit = false;
 
+    //Stop Filtering TCP Data
+    stopFilterTCPData = false;
+
     commandLGList << OPENCOMPORT << CLOSECOMPORT << DAMAGECMD << RECOILCMD << RELOADCMD;
     commandLGList << AMMOVALUECMD << SHAKECMD << AUTOLEDCMD << ARATIO169CMD;
     commandLGList << ARATIO43CMD << JOYMODECMD << KANDMMODECMD << DLGNULLCMD << RECOIL_R2SCMD;
@@ -154,9 +157,23 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     //Connect the Signals & Slots for Multi-Thread Communication for TCP Socket
     connect(this, &HookerEngine::StartTCPSocket, p_hookSocket, &HookTCPSocket::Connect);
     connect(this, &HookerEngine::StopTCPSocket, p_hookSocket, &HookTCPSocket::Disconnect);
-    connect(p_hookSocket,&HookTCPSocket::DataRead, this, &HookerEngine::TCPReadyRead);
+    connect(p_hookSocket,&HookTCPSocket::DataRead, this, &HookerEngine::ProcessTCPData);
     connect(p_hookSocket,&HookTCPSocket::SocketConnectedSignal, this, &HookerEngine::TCPConnected);
     connect(p_hookSocket,&HookTCPSocket::SocketDisconnectedSignal, this, &HookerEngine::TCPDisconnected);
+
+    //For TCP Socket to know when Game has Started or Stopped
+    connect(this, &HookerEngine::TCPGameStart, p_hookSocket, &HookTCPSocket::GameStartSocket);
+    connect(this, &HookerEngine::TCPGameStop, p_hookSocket, &HookTCPSocket::GameStopSocket);
+
+    //Start Filtering
+    connect(p_hookSocket,&HookTCPSocket::StopFilteringTCPReadData, this, &HookerEngine::StopFilteringReadData);
+
+    //Window State to TCP
+    connect(this, &HookerEngine::WindowStateToTCP, p_hookSocket, &HookTCPSocket::WindowStateTCP);
+
+    //Process Filtered TCP Data
+    connect(p_hookSocket,&HookTCPSocket::FilteredTCPData, this, &HookerEngine::ProcessFilterTCPData);
+
 
     if(useMultiThreading)
     {
@@ -517,8 +534,6 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
     bool isNumber;
     bool begin = true;
     quint8 lgNumber;
-    bool isDefaultLG;
-    quint8 tempDLGNum;
     QString tempLine;
     quint8 tempPlayer;
     bool isGoodCmd;
@@ -967,12 +982,10 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                 {
                     if(line.startsWith(BLOCKSHAKEOPTION))
                     {
-                        //for(quint8 k = 0; k < numberLGPlayers; k++)
-                        //    blockShake[k] = true;
-
                         QStringList blockShakeSL = line.split (' ', Qt::SkipEmptyParts);
+                        quint8 blockShakeLength = blockShakeSL.length();
 
-                        if(blockShakeSL.length() != BLOCKSHAKELENGTH)
+                        if(blockShakeLength < BLOCKSHAKELENGTH || blockShakeLength > BLOCKSHAKESTARTLENGTH)
                         {
                             lgFile.close();
                             QString tempCrit = "Block Shake needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
@@ -981,11 +994,7 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                             return false;
                         }
 
-                        if(blockShakeSL[2] == "NE")
-                            isBlockShakeEqual = false;
-                        else if(blockShakeSL[2] == "E")
-                            isBlockShakeEqual = true;
-                        else
+                        if(blockShakeSL[2] != "NE" && blockShakeSL[2] != "E")
                         {
                             lgFile.close();
                             QString tempCrit = "Block Shake needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
@@ -994,7 +1003,7 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                             return false;
                         }
 
-                        blockShakeValue = blockShakeSL[3].toUShort(&isNumber);
+                        quint8 tempBlockShakeValue = blockShakeSL[3].toUShort(&isNumber);
 
                         if(!isNumber)
                         {
@@ -1004,15 +1013,26 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return false;
                         }
+
+                        //If the Block from Start Option is Set
+                        if(blockShakeLength == BLOCKSHAKESTARTLENGTH)
+                        {
+                            if(blockShakeSL[4] != BLOCKSTART)
+                            {
+                                lgFile.close();
+                                QString tempCrit = "Block Shake Start option is not correct.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                                if(displayMB)
+                                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                                return false;
+                            }
+                        }
                     }
                     else if(line.startsWith(BLOCKRECOIL_R2SOPTION))
                     {
-                        for(quint8 k = 0; k < numberLGPlayers; k++)
-                            blockRecoil_R2S[k] = true;
-
                         QStringList blockRecoil_R2SSL = line.split (' ', Qt::SkipEmptyParts);
+                        quint8 blockRecoil_R2SLength = blockRecoil_R2SSL.length();
 
-                        if(blockRecoil_R2SSL.length() != BLOCKRECOIL_R2SLENGTH)
+                        if(blockRecoil_R2SLength < BLOCKRECOIL_R2SLENGTH || blockRecoil_R2SLength > BLOCKRECOIL_R2STRLENGTH)
                         {
                             lgFile.close();
                             QString tempCrit = "Block Recoil_R2S needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
@@ -1021,11 +1041,7 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                             return false;
                         }
 
-                        if(blockRecoil_R2SSL[2] == "NE")
-                            isBlockRecoil_R2SEqual = false;
-                        else if(blockRecoil_R2SSL[2] == "E")
-                            isBlockRecoil_R2SEqual = true;
-                        else
+                        if(blockRecoil_R2SSL[2] != "NE" && blockRecoil_R2SSL[2] != "E")
                         {
                             lgFile.close();
                             QString tempCrit = "Block Recoil_R2S needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
@@ -1034,7 +1050,7 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                             return false;
                         }
 
-                        blockRecoil_R2SValue = blockRecoil_R2SSL[3].toUShort(&isNumber);
+                        quint8 tempBlockRecoil_R2SValue = blockRecoil_R2SSL[3].toUShort(&isNumber);
 
                         if(!isNumber)
                         {
@@ -1043,6 +1059,19 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                             if(displayMB)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return false;
+                        }
+
+                        //If the Block from Start Option is Set
+                        if(blockRecoil_R2SLength == BLOCKSHAKESTARTLENGTH)
+                        {
+                            if(blockRecoil_R2SSL[4] != BLOCKSTART)
+                            {
+                                lgFile.close();
+                                QString tempCrit = "Block Recoil_R2S Start option is not correct.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                                if(displayMB)
+                                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                                return false;
+                            }
                         }
                     }
                     else if(line.startsWith(OVERRIDERECOILVOLT))
@@ -1068,15 +1097,6 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return false;
                         }
-
-                        for(quint8 k = 0; k < numberLGPlayers; k++)
-                        {
-                            if(lgOutputConnection[k] == TCP)
-                            {
-                                if(p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->GetDefaultLightGunNumber() == SINDEN)
-                                    p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetRecoilVoltageOverride (orRecoilVolt);
-                            }
-                        }
                     }
                     else if(line.startsWith(SINDENTRIGGERRECOIL))
                     {
@@ -1101,23 +1121,18 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return false;
                         }
-
-                        for(quint8 k = 0; k < numberLGPlayers; k++)
-                        {
-                            if(lgOutputConnection[k] == TCP)
-                            {
-                                if(p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->GetDefaultLightGunNumber() == SINDEN)
-                                    p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetSindenRecoilOverride (sinTrigRec);
-                            }
-                        }
                     }
                     else if(line.startsWith(AMMOCHECKOPTION))
                     {
-                        for(quint8 k = 0; k < numberLGPlayers; k++)
-                        {
-                            if(loadedLGNumbers[k] != UNASSIGN)
-                                p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetAmmoCheck ();
-                        }
+                        //Nothing to test for on Ammo_Check
+                    }
+                    else
+                    {
+                        lgFile.close();
+                        QString tempCrit = "This Option doesn't exist in the DefaultLG protocol.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+fileNamePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return false;
                     }
 
                     //Get Next Line and Increment the Line Count
@@ -1715,6 +1730,9 @@ void HookerEngine::HOTRWindowState(bool isMin)
             p_refreshDisplayTimer->start ();
         }
     }
+
+    //Tell TCP of the Update
+    emit WindowStateToTCP(isHOTRMinimized);
 }
 
 
@@ -1734,24 +1752,26 @@ void HookerEngine::LoadUpdatePlayerAssignment()
 
 //Public Slots
 
-void HookerEngine::TCPReadyRead(const QByteArray &readBA)
+void HookerEngine::TCPReadyRead(const QStringList &readSL)
 {
+    //QString readData = readS;
+    ProcessTCPData(readSL);
     //qDebug() << "Got Data from TCP Socket";
 
-    QByteArray messageBA = readBA;
-    QString message = QString::fromStdString (messageBA.toStdString ());
+    //QByteArray messageBA = readBA;
+    //QString message = QString::fromStdString (messageBA.toStdString ());
 
     //Remove the \r at the end
-    message.chop(1);
+    //message.chop(1);
 
     //qDebug() << message;
 
     //If Multiple Data Lines, they will be seperated into lines, using \r or \n
     //If it had 2 data lines together, then \r would be at end which is chopped off, and middle
     //QRegularExpression endLines("[\r\n]");
-    QStringList tcpSocketReadData = message.split(QRegularExpression("[\r\n]"), Qt::SkipEmptyParts);
+    //QStringList tcpSocketReadData = message.split(QRegularExpression("[\r\n]"), Qt::SkipEmptyParts);
 
-    ProcessTCPData(tcpSocketReadData);
+    //ProcessTCPData(tcpSocketReadData);
 }
 
 void HookerEngine::ReadComPortSig(const quint8 &comPortNum, const QByteArray &readData)
@@ -1781,6 +1801,12 @@ void HookerEngine::WriteLGComPortSlot(quint8 cpNum, QString cpData)
 
     //Send Data to COM Port
     emit WriteComPortSig(cpNum, cpBA);
+}
+
+void HookerEngine::StopFilteringReadData()
+{
+    stopFilterTCPData = true;
+    //qDebug() << "Stop Filtering TCP Read Data from the SLOT!!!!";
 }
 
 
@@ -2093,7 +2119,7 @@ void HookerEngine::PXRecoilDelay(quint8 player)
 
 void HookerEngine::OpenSerialPortSlot(quint8 playerNum, bool noInit)
 {
-    quint8 i, lightGun, j;
+    quint8 lightGun, j;
 
     quint8 tempCPNum;
     QString tempCPName;
@@ -2152,7 +2178,7 @@ void HookerEngine::OpenSerialPortSlot(quint8 playerNum, bool noInit)
 
 void HookerEngine::CloseSerialPortSlot(quint8 playerNum, bool noInit, bool initOnly)
 {
-    quint8 i, j, lightGun;
+    quint8 j, lightGun;
     quint8 tempCPNum;
     QStringList commands;
     QByteArray cpBA;
@@ -2205,7 +2231,7 @@ void HookerEngine::WriteSerialPortSlot(quint8 cpNum, QString cpData)
 
 void HookerEngine::OpenUSBHIDSlot(quint8 playerNum, bool noInit)
 {
-    quint8 i, lightGun, j;
+    quint8 lightGun, j;
     QByteArray cpBA;
     QStringList commands;
     bool isCommands;
@@ -2244,7 +2270,7 @@ void HookerEngine::OpenUSBHIDSlot(quint8 playerNum, bool noInit)
 
 void HookerEngine::CloseUSBHIDSlot(quint8 playerNum, bool noInit, bool initOnly)
 {
-    quint8 i, j, lightGun;
+    quint8 j, lightGun;
     QStringList commands;
     bool isCommands;
     QByteArray cpBA;
@@ -2301,7 +2327,7 @@ void HookerEngine::WriteUSBHIDSlot(quint8 playerNum, QString cpData)
 
 void HookerEngine::OpenTCPServerSlot(quint8 playerNum, bool noInit)
 {
-    quint8 i, lightGun, j;
+    quint8 lightGun, j;
     QByteArray cpBA;
     QStringList commands;
     bool isCommands;
@@ -2362,7 +2388,7 @@ void HookerEngine::OpenTCPServerSlot(quint8 playerNum, bool noInit)
 
 void HookerEngine::CloseTCPServerSlot(quint8 playerNum, bool noInit, bool initOnly)
 {
-    quint8 i, j, lightGun;
+    quint8 j, lightGun;
     QStringList commands;
     bool isCommands;
     QByteArray cpBA;
@@ -2421,6 +2447,355 @@ void HookerEngine::WriteTCPServerSlot(quint8 playerNum, QString cpData)
     else
         emit WriteTCPServer1(cpBA);
 }
+
+
+//Process the Read Data from The TCP Socket. This is MAME or Demulshooter
+void HookerEngine::ProcessTCPData(const QStringList &tcpReadData)
+{
+    quint8 i, j;
+    quint16 count;
+
+
+    QStringList tcpSocketData = tcpReadData;
+
+    //How Many Lines Need Processing
+    count = tcpSocketData.count ();
+
+    //qDebug() << "Processing TCP Data, size of QStingList: " << count;
+    //qDebug() << "Processing TCP Data, String is:" << tcpReadData;
+
+    for(i = 0; i < count; i++)
+    {
+
+        //qDebug() << tcpSocketData[i];
+
+        //Check if No Game is Found
+        if(!isGameFound)
+        {
+            //Look for "mame_start = " and not "mame_start = ___empty" to find game, or look for 'game =' for flycast
+            if((tcpSocketData[i].startsWith(MAMESTART, Qt::CaseSensitive) && tcpSocketData[i] != MAMESTARTNOGAME) || tcpSocketData[i].startsWith(GAMESTART, Qt::CaseSensitive))
+            {
+                //Game Found
+                if(tcpSocketData[i][0] == 'm')
+                    gameName = tcpSocketData[i].remove(MAMESTART);
+                else
+                    gameName = tcpSocketData[i].remove(GAMESTART);
+                isGameFound = true;
+                gameHasRun = true;
+                isEmptyGame = false;
+
+                //qDebug() << "Game found, game name is:" << gameName;
+
+                //Re-Load and Update Player Assignment
+                LoadUpdatePlayerAssignment();
+
+                //qDebug() << "Game Found: " << gameName;
+
+                //Update Display with Game Name
+                //emit MameConnectedGame(gameName);
+
+                //Start Refresh Time for Display Timer
+                if(!isHOTRMinimized)
+                    p_refreshDisplayTimer->start ();
+
+                if(!firstTimeGame)
+                {
+                    //Check old stuff to make sure it is close & cleared
+
+                    signalsAndCommands.clear ();
+                    stateAndCommands.clear ();
+                    signalsNoCommands.clear ();
+                    statesNoCommands.clear ();
+                }
+                else
+                    firstTimeGame = false;
+
+
+                //Start Looking For Game Files to Load
+                GameFound();
+            }
+            //If equal to "mame_start = ___empty", MAME has No Game Loaded
+            else if(tcpSocketData[i] == MAMESTARTNOGAME)
+            {
+                //Display No Game Loaded
+                emit MameConnectedNoGame();
+                isEmptyGame = true;
+            }
+            else if(isEmptyGame)
+            {
+                QStringList tempData = tcpSocketData[i].split(" = ", Qt::SkipEmptyParts);
+                QString signal = tempData[0];
+                QString data = tempData[1];
+
+                if(signal == PAUSE || signal.startsWith (ORIENTATION))
+                {
+                    //Update Pause and Orientation to the Display
+                    if(signal == PAUSE)
+                        emit UpdatePauseFromGame(data);
+                    else
+                        emit UpdateOrientationFromGame(signal,data);
+                }
+
+                //qDebug() << "Signal: " << signal << " Data: " << data;
+            }
+        }
+        else
+        {
+            //Now in When Game Has Been Found
+            //qDebug() << tcpSocketData[i];
+
+            //Looks for "mame_stop" to Know Game has Stopped
+            if(tcpSocketData[i].startsWith(MAMESTOPFRONT, Qt::CaseInsensitive) || tcpSocketData[i].startsWith(GAMESTOP, Qt::CaseInsensitive))
+            {
+                //qDebug() << "Game Has Stopped!!!!!!!!!!!";
+
+                //Tell TCP Socket that Game Stopped
+                emit TCPGameStop();
+
+                //Stop Refresh Time for Display Timer
+                if(p_refreshDisplayTimer->isActive ())
+                    p_refreshDisplayTimer->stop ();
+
+                //Clear Refresh Display QMaps
+                addSignalDataDisplay.clear();
+                updateSignalDataDisplay.clear();
+
+                //Run the commands attached to 'mame_stop'
+                ProcessCommands(MAMESTOPFRONT, "", true);
+
+                //Game Has Stopped
+                isGameFound = false;
+                isEmptyGame = false;
+
+
+                if(newINIFileMade || newLGFileMade)
+                {
+                    //qDebug() << "newINIFileMade";
+
+                    //If New Files where Made, then Print all Signals Collected to the File
+
+                    QTextStream out(p_newFile);
+
+                    //Print out the Signals to the new file and close
+                    QMapIterator<QString, QString> x(signalsAndData);
+                    while (x.hasNext())
+                    {
+                        x.next();
+                        if(newINIFileMade)
+                            out << x.key() << "=\n";
+                        else
+                            out << ":" << x.key() << "\n";
+                    }
+
+                    //Close the File
+                    p_newFile->close ();
+                    delete p_newFile;
+                    //Make bools false, since closed now
+                    newINIFileMade = false;
+                    newLGFileMade = false;
+                }
+                else if(iniFileLoaded)
+                {
+                    //qDebug() << "Opening INI File";
+
+                    //If INI file Loaded, Must Search for Any New Signal(s) not in the File
+                    //These Signals are Appended to the INI Game File and Closed
+
+                    quint8 foundCount = 0;
+                    bool foundNewSignal = false;
+                    QStringList nemSignalList;
+
+                    //Searching the 2 QMaps for Any New Signal(s)
+
+                    QMapIterator<QString, QString> x(signalsAndData);
+                    while (x.hasNext())
+                    {
+                        x.next();
+                        //qDebug() << "Searching for: " << x.key();
+                        if(!signalsAndCommands.contains(x.key()) && !signalsNoCommands.contains(x.key()))
+                        {
+                            nemSignalList << x.key();
+                            foundCount++;
+                            foundNewSignal = true;
+                            //qDebug() << "New Signal Found for Existing INI File: " << x.key();
+                        }
+                    }
+
+                    //If Any New Signal(s) Found, then Append to the INI Game File
+                    if(foundNewSignal)
+                    {
+                        //Open INI File to Append
+                        QFile iniFileTemp(gameINIFilePath);
+                        iniFileTemp.open(QIODevice::Append | QIODevice::Text);
+                        QTextStream out(&iniFileTemp);
+
+                        for(j = 0; j < foundCount; j++)
+                            out << nemSignalList[j] << "=\n";
+
+                        iniFileTemp.close ();
+                    }
+
+                    iniFileLoaded = false;
+                }
+
+                //Reset Light guns
+                p_comDeviceList->ResetLightgun ();
+
+                //Clear out Old Games Signal & Data and States & Data
+                signalsAndData.clear ();
+                statesAndData.clear ();
+
+                //Clear out Signal & Commands QMap & Signal & No Commands QLists
+                signalsAndCommands.clear ();
+                stateAndCommands.clear ();
+                signalsNoCommands.clear ();
+                statesNoCommands.clear ();
+
+                //The other 2 File Loaded bools where checked before, so Clear the Last 2
+                lgFileLoaded = false;
+                iniFileLoaded = false;
+
+                //Stop Filtering TCP Data
+                stopFilterTCPData = false;
+
+                for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
+                {
+                    isPRecoilR2SFirstTime[i] = true;
+                    recoilR2SSkewPrec[i] = 100;
+                    isLGDisplayOnDelay[i] = false;
+                    lgDisplayDelayAmmoCMDs[i].clear();
+                    lgDisplayDelayLifeCMDs[i].clear();
+                    lgDisplayDelayOtherCMDs[i].clear();
+                    if(lgDisplayDelayTimer[i].isActive())
+                        lgDisplayDelayTimer[i].stop();
+                    didDisplayWrite[i] = false;
+                    isLGSolenoidOpen[i] = false;
+                    closeSolenoidCMDs[i].clear ();
+                    blockRecoilValue[i] = false;
+                    blockRecoil[i] = false;
+                    doRecoilDelayEnds[i] = false;
+                    skipRecoilSlowMode[i] = false;
+                    blockShake[i] = false;
+                    blockRecoil_R2S[i] = false;
+                    blockShakeActive[i] = false;
+                    blockRecoil_R2SActive[i] = false;
+                    //lgOutputConnection[i] = -1;
+                    lgTCPPort[i] = 0;
+                    lgTCPPlayer[i] = UNASSIGN;
+                }
+
+            }
+            else
+            {
+
+                //This is in a Game, and Getting States/Signals and Data
+
+                //Split the Signal and Data
+                QStringList tempData = tcpSocketData[i].split(" = ", Qt::SkipEmptyParts);
+                QString signal = tempData[0];
+                QString data = tempData[1];
+
+                //qDebug() << "0: " << signal << " 1: " << data;
+
+                //Check if it is a State, else it is a Signal
+                //if(signal == STATECHANGE || signal == PAUSE || signal == ROTATE || signal == REFRESHTIME || signal == ORIENTATION)
+                if(signal == PAUSE || signal.startsWith (ORIENTATION))
+                {
+                    //qDebug() << "State: " << signal << " Data: " << data;
+
+                    //If not In the QMap, then Add it
+                    if(statesAndData.contains(signal) == false)
+                    {
+                        statesAndData.insert(signal,data);
+                    }
+                    else
+                    {
+                        statesAndData[signal] = data;
+                    }
+
+                    //Process the Command(s) attached to the State
+                    if(stateAndCommands.contains(signal))
+                        ProcessCommands(signal, data, true);
+
+                    //Update Pause and Orientation to the Display
+                    if(signal == PAUSE)
+                        emit UpdatePauseFromGame(data);
+                    else
+                        emit UpdateOrientationFromGame(signal,data);
+
+                }
+                else
+                {
+                    //Signal Side
+                    //If not In the QMap, then Add it. Also Add it to
+                    //One of the Display QMaps, when Timer runs out.
+                    if(signalsAndData.contains(signal) == false)
+                    {
+                        signalsAndData.insert(signal,data);
+                        AddSignalForDisplay(signal, data);
+                    }
+                    else
+                    {
+                        signalsAndData[signal] = data;
+                        UpdateSignalForDisplay(signal, data);
+                    }
+
+                    //qDebug() << "Processing Signal:" << signal << "and Data:" << data;
+
+                    if(stopFilterTCPData)
+                        ProcessCommands(signal, data, false);
+                    else
+                    {
+                        if(signalsAndCommands.contains(signal))
+                        {
+                            //qDebug() << "Signal found in Commands: " << signal;
+                            ProcessCommands(signal, data, false);
+                        }
+                    }
+
+                }
+
+            } //In Game, Getting States/Signals and Data
+        } //isGameFound
+    }//for(i
+}
+
+//Process Filtered Read Data from The TCP Socket, Mostly for the Display Data when not Minimized
+void HookerEngine::ProcessFilterTCPData(const QStringList &tcpReadData)
+{
+    quint8 i;
+    QStringList tcpSocketData = tcpReadData;
+
+    if(isGameFound)
+    {
+        for(i = 0; i < tcpSocketData.count(); i++)
+        {
+            //Split the Signal and Data
+            QStringList tempData = tcpSocketData[i].split(" = ", Qt::SkipEmptyParts);
+            QString signal = tempData[0];
+            QString data = tempData[1];
+
+            //qDebug() << "Processing Signal:" << signal << "and Data:" << data;
+
+            //Signal Side
+            //If not In the QMap, then Add it. Also Add it to
+            //One of the Display QMaps, when Timer runs out.
+            if(signalsAndData.contains(signal) == false)
+            {
+                signalsAndData.insert(signal,data);
+                AddSignalForDisplay(signal, data);
+            }
+            else
+            {
+                signalsAndData[signal] = data;
+                UpdateSignalForDisplay(signal, data);
+            }
+        }
+
+    }
+}
+
+
 
 
 //Private Member Functions
@@ -2540,6 +2915,9 @@ void HookerEngine::ClearOnDisconnect()
     iniFileLoaded = false;
     lgFileLoaded = false;
 
+    //Stop Filtering TCP Data
+    stopFilterTCPData = false;
+
     for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
     {
         isPRecoilR2SFirstTime[i] = true;
@@ -2569,303 +2947,6 @@ void HookerEngine::ClearOnDisconnect()
 }
 
 
-//Process the Read Data from The TCP Socket. This is MAME or Demulshooter
-void HookerEngine::ProcessTCPData(QStringList tcpReadData)
-{
-    quint8 i, j;
-    quint16 count;
-
-
-    QStringList tcpSocketData = tcpReadData;
-
-    //How Many Lines Need Processing
-    count = tcpSocketData.count ();
-
-    //qDebug() << "Processing TCP Data, size of QStingList: " << count;
-
-    for(i = 0; i < count; i++)
-    {
-
-        //qDebug() << tcpSocketData[i];
-
-        //Check if No Game is Found
-        if(!isGameFound)
-        {
-            //Look for "mame_start = " and not "mame_start = ___empty" to find game, or look for 'game =' for flycast
-            if((tcpSocketData[i].startsWith(MAMESTART, Qt::CaseSensitive) && tcpSocketData[i] != MAMESTARTNOGAME) || tcpSocketData[i].startsWith(GAMESTART, Qt::CaseSensitive))
-            {
-                //Game Found
-                if(tcpSocketData[i][0] == 'm')
-                    gameName = tcpSocketData[i].remove(MAMESTART);
-                else
-                    gameName = tcpSocketData[i].remove(GAMESTART);
-                isGameFound = true;
-                gameHasRun = true;
-                isEmptyGame = false;
-
-                //qDebug() << "Game found, game name is:" << gameName;
-
-                //Re-Load and Update Player Assignment
-                LoadUpdatePlayerAssignment();
-
-                //qDebug() << "Game Found: " << gameName;
-
-                //Update Display with Game Name
-                //emit MameConnectedGame(gameName);
-
-                //Start Refresh Time for Display Timer
-                if(!isHOTRMinimized)
-                    p_refreshDisplayTimer->start ();
-
-                if(!firstTimeGame)
-                {
-                    //Check old stuff to make sure it is close & cleared
-
-                    signalsAndCommands.clear ();
-                    stateAndCommands.clear ();
-                    signalsNoCommands.clear ();
-                    statesNoCommands.clear ();
-                }
-                else
-                    firstTimeGame = false;
-
-
-                //Start Looking For Game Files to Load
-                GameFound();
-            }
-            //If equal to "mame_start = ___empty", MAME has No Game Loaded
-            else if(tcpSocketData[i] == MAMESTARTNOGAME)
-            {
-                //Display No Game Loaded
-                emit MameConnectedNoGame();
-                isEmptyGame = true;
-            }
-            else if(isEmptyGame)
-            {
-                QStringList tempData = tcpSocketData[i].split(" = ", Qt::SkipEmptyParts);
-                QString signal = tempData[0];
-                QString data = tempData[1];
-
-                if(signal == PAUSE || signal.startsWith (ORIENTATION))
-                {
-                    //Update Pause and Orientation to the Display
-                    if(signal == PAUSE)
-                        emit UpdatePauseFromGame(data);
-                    else
-                        emit UpdateOrientationFromGame(signal,data);
-                }
-
-                //qDebug() << "Signal: " << signal << " Data: " << data;
-            }
-        }
-        else
-        {
-            //Now in When Game Has Been Found
-            //qDebug() << tcpSocketData[i];
-
-            //Looks for "mame_stop" to Know Game has Stopped
-            if(tcpSocketData[i].startsWith(MAMESTOPFRONT, Qt::CaseInsensitive) || tcpSocketData[i].startsWith(GAMESTOP, Qt::CaseInsensitive))
-            {
-                //qDebug() << "Game Has Stopped!!!!!!!!!!!";
-
-                //Stop Refresh Time for Display Timer
-                if(p_refreshDisplayTimer->isActive ())
-                    p_refreshDisplayTimer->stop ();
-
-                //Clear Refresh Display QMaps
-                addSignalDataDisplay.clear();
-                updateSignalDataDisplay.clear();
-
-                //Run the commands attached to 'mame_stop'
-                ProcessCommands(MAMESTOPFRONT, "", true);
-
-                //Game Has Stopped
-                isGameFound = false;
-                isEmptyGame = false;
-
-
-                if(newINIFileMade || newLGFileMade)
-                {
-                    //qDebug() << "newINIFileMade";
-
-                    //If New Files where Made, then Print all Signals Collected to the File
-
-                    QTextStream out(p_newFile);
-
-                    //Print out the Signals to the new file and close
-                    QMapIterator<QString, QString> x(signalsAndData);
-                    while (x.hasNext())
-                    {
-                        x.next();
-                        if(newINIFileMade)
-                            out << x.key() << "=\n";
-                        else
-                            out << ":" << x.key() << "\n";
-                    }
-
-                    //Close the File
-                    p_newFile->close ();
-                    delete p_newFile;
-                    //Make bools false, since closed now
-                    newINIFileMade = false;
-                    newLGFileMade = false;
-                }
-                else if(iniFileLoaded)
-                {
-                    //qDebug() << "Opening INI File";
-
-                    //If INI file Loaded, Must Search for Any New Signal(s) not in the File
-                    //These Signals are Appended to the INI Game File and Closed
-
-                    quint8 foundCount = 0;
-                    bool foundNewSignal = false;
-                    QStringList nemSignalList;
-
-                    //Searching the 2 QMaps for Any New Signal(s)
-
-                    QMapIterator<QString, QString> x(signalsAndData);
-                    while (x.hasNext())
-                    {
-                        x.next();
-                        //qDebug() << "Searching for: " << x.key();
-                        if(!signalsAndCommands.contains(x.key()) && !signalsNoCommands.contains(x.key()))
-                        {
-                            nemSignalList << x.key();
-                            foundCount++;
-                            foundNewSignal = true;
-                            //qDebug() << "New Signal Found for Existing INI File: " << x.key();
-                        }
-                    }
-
-                    //If Any New Signal(s) Found, then Append to the INI Game File
-                    if(foundNewSignal)
-                    {
-                        //Open INI File to Append
-                        QFile iniFileTemp(gameINIFilePath);
-                        iniFileTemp.open(QIODevice::Append | QIODevice::Text);
-                        QTextStream out(&iniFileTemp);
-
-                        for(j = 0; j < foundCount; j++)
-                            out << nemSignalList[j] << "=\n";
-
-                        iniFileTemp.close ();
-                    }
-
-                    iniFileLoaded = false;
-                }
-
-                //Reset Light guns
-                p_comDeviceList->ResetLightgun ();
-
-                //Clear out Old Games Signal & Data and States & Data
-                signalsAndData.clear ();
-                statesAndData.clear ();
-
-                //Clear out Signal & Commands QMap & Signal & No Commands QLists
-                signalsAndCommands.clear ();
-                stateAndCommands.clear ();
-                signalsNoCommands.clear ();
-                statesNoCommands.clear ();
-
-                //The other 2 File Loaded bools where checked before, so Clear the Last 2
-                lgFileLoaded = false;
-                iniFileLoaded = false;
-
-                for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
-                {
-                    isPRecoilR2SFirstTime[i] = true;
-                    recoilR2SSkewPrec[i] = 100;
-                    isLGDisplayOnDelay[i] = false;
-                    lgDisplayDelayAmmoCMDs[i].clear();
-                    lgDisplayDelayLifeCMDs[i].clear();
-                    lgDisplayDelayOtherCMDs[i].clear();
-                    if(lgDisplayDelayTimer[i].isActive())
-                        lgDisplayDelayTimer[i].stop();
-                    didDisplayWrite[i] = false;
-                    isLGSolenoidOpen[i] = false;
-                    closeSolenoidCMDs[i].clear ();
-                    blockRecoilValue[i] = false;
-                    blockRecoil[i] = false;
-                    doRecoilDelayEnds[i] = false;
-                    skipRecoilSlowMode[i] = false;
-                    blockShake[i] = false;
-                    blockRecoil_R2S[i] = false;
-                    blockShakeActive[i] = false;
-                    blockRecoil_R2SActive[i] = false;
-                    //lgOutputConnection[i] = -1;
-                    lgTCPPort[i] = 0;
-                    lgTCPPlayer[i] = UNASSIGN;
-                }
-
-            }
-            else
-            {
-
-                //This is in a Game, and Getting States/Signals and Data
-
-                //Split the Signal and Data
-                QStringList tempData = tcpSocketData[i].split(" = ", Qt::SkipEmptyParts);
-                QString signal = tempData[0];
-                QString data = tempData[1];
-
-
-                //qDebug() << "0: " << signal << " 1: " << data;
-
-                //Check if it is a State, else it is a Signal
-                //if(signal == STATECHANGE || signal == PAUSE || signal == ROTATE || signal == REFRESHTIME || signal == ORIENTATION)
-                if(signal == PAUSE || signal.startsWith (ORIENTATION))
-                {
-                    //qDebug() << "State: " << signal << " Data: " << data;
-
-                    //If not In the QMap, then Add it
-                    if(statesAndData.contains(signal) == false)
-                    {
-                        statesAndData.insert(signal,data);
-                    }
-                    else
-                    {
-                        statesAndData[signal] = data;
-                    }
-
-                    //Process the Command(s) attached to the State
-                    if(stateAndCommands.contains(signal))
-                        ProcessCommands(signal, data, true);
-
-                    //Update Pause and Orientation to the Display
-                    if(signal == PAUSE)
-                        emit UpdatePauseFromGame(data);
-                    else
-                        emit UpdateOrientationFromGame(signal,data);
-
-                }
-                else
-                {
-                    //Signal Side
-                    //If not In the QMap, then Add it. Also Add it to
-                    //One of the Display QMaps, when Timer runs out.
-                    if(signalsAndData.contains(signal) == false)
-                    {
-                        signalsAndData.insert(signal,data);
-                        AddSignalForDisplay(signal, data);
-                    }
-                    else
-                    {
-                        signalsAndData[signal] = data;
-                        UpdateSignalForDisplay(signal, data);
-                    }
-
-                    //Process the Command(s) attached to the Signal
-                    if(signalsAndCommands.contains(signal))
-                    {
-                        //qDebug() << "Signal found in Commands: " << signal;
-                        ProcessCommands(signal, data, false);
-                    }
-                }
-
-            } //In Game, Getting States/Signals and Data
-        } //isGameFound
-    }//for(i
-}
 
 
 void HookerEngine::GameFound()
@@ -3039,6 +3120,9 @@ void HookerEngine::LoadINIFile()
     iniFileLoadFail = false;
     openComPortCheck.clear();
 
+    //Clear Out TCP Output Signal List
+    outputSignalsStates.clear();
+
     //Close Any Old USB HIDs from INI Side
     CloseINIUSBHID();
     hidPlayerMap.clear ();
@@ -3141,6 +3225,7 @@ void HookerEngine::LoadINIFile()
                 else
                     stateAndCommands.insert(signal, tempSplit);
 
+                outputSignalsStates << signal;
             }
             else
             {
@@ -3165,6 +3250,16 @@ void HookerEngine::LoadINIFile()
     //Close File
     iniFile.close();
     iniFileLoaded = true;
+
+    //Add mame_stop and States to outputSignalsStates
+    outputSignalsStates << PAUSE << ORIENTATION;
+
+    //qDebug() << "MH - Output Signals & Commands QMap:" << signalsAndCommands;
+
+    //qDebug() << "MH - Output Signals & States String List:" << outputSignalsStates;
+
+    //Tell TCP Socket a Game has Started
+    emit TCPGameStart(outputSignalsStates);
 
     //Bypass the COM Port Connection Fail Warning Pop-up, as MH does
     emit SetBypassComPortConnectFailWarning(true);
@@ -3777,9 +3872,6 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
     INIPortStruct portTemp;
     QStringList temp1, temp2;
     QStringList commands;
-    bool foundCommand;
-    bool foundNoCommand;
-
 
     if(isState)
         commands = stateAndCommands[signalName];
@@ -4145,8 +4237,6 @@ void HookerEngine::LoadLGFile()
     bool isNumber;
     bool begin = true;
     quint8 lgNumber;
-    bool isDefaultLG;
-    quint8 tempDLGNum;
     QString tempLine;
     quint8 tempPlayer;
     qint16 playerForCMD;
@@ -4174,6 +4264,8 @@ void HookerEngine::LoadLGFile()
     isMultipleTCPPorts = false;
     firstTCPPort = 0;
     secondTCPPort = 0;
+
+    outputSignalsStates.clear();
 
 
     for(quint8 x = 0; x < MAXGAMEPLAYERS; x++)
@@ -4736,12 +4828,13 @@ void HookerEngine::LoadLGFile()
                             blockShake[k] = true;
 
                         QStringList blockShakeSL = line.split (' ', Qt::SkipEmptyParts);
+                        quint8 blockShakeLength = blockShakeSL.length();
 
-                        if(blockShakeSL.length() != BLOCKSHAKELENGTH)
+                        if(blockShakeLength < BLOCKSHAKELENGTH || blockShakeLength > BLOCKSHAKESTARTLENGTH)
                         {
                             lgFileLoadFail = true;
                             lgFile.close();
-                            QString tempCrit = "Block Shake needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                            QString tempCrit = "Block Shake has too many or too few elements.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                             if(displayMB)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return;
@@ -4772,6 +4865,25 @@ void HookerEngine::LoadLGFile()
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return;
                         }
+
+                        //If the Block from Start Option is Set
+                        if(blockShakeLength == BLOCKSHAKESTARTLENGTH)
+                        {
+                            if(blockShakeSL[4] != BLOCKSTART)
+                            {
+                                lgFileLoadFail = true;
+                                lgFile.close();
+                                QString tempCrit = "Block Shake Start option is not correct.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                                if(displayMB)
+                                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                                return;
+                            }
+                            else
+                            {
+                                for(quint8 k = 0; k < numberLGPlayers; k++)
+                                    blockShakeActive[k] = true;
+                            }
+                        }
                     }
                     else if(line.startsWith(BLOCKRECOIL_R2SOPTION))
                     {
@@ -4779,12 +4891,13 @@ void HookerEngine::LoadLGFile()
                             blockRecoil_R2S[k] = true;
 
                         QStringList blockRecoil_R2SSL = line.split (' ', Qt::SkipEmptyParts);
+                        quint8 blockRecoil_R2SLength = blockRecoil_R2SSL.length();
 
-                        if(blockRecoil_R2SSL.length() != BLOCKRECOIL_R2SLENGTH)
+                        if(blockRecoil_R2SLength < BLOCKRECOIL_R2SLENGTH || blockRecoil_R2SLength > BLOCKRECOIL_R2STRLENGTH)
                         {
                             lgFileLoadFail = true;
                             lgFile.close();
-                            QString tempCrit = "Block Recoil_R2S needs E or NE next, and then the value.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                            QString tempCrit = "Block Recoil_R2S has too many or too few elements.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
                             if(displayMB)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return;
@@ -4814,6 +4927,25 @@ void HookerEngine::LoadLGFile()
                             if(displayMB)
                                 QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
                             return;
+                        }
+
+                        //If the Block from Start Option is Set
+                        if(blockRecoil_R2SLength == BLOCKSHAKESTARTLENGTH)
+                        {
+                            if(blockRecoil_R2SSL[4] != BLOCKSTART)
+                            {
+                                lgFileLoadFail = true;
+                                lgFile.close();
+                                QString tempCrit = "Block Recoil_R2S Start option is not correct.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                                if(displayMB)
+                                    QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                                return;
+                            }
+                            else
+                            {
+                                for(quint8 k = 0; k < numberLGPlayers; k++)
+                                    blockRecoil_R2SActive[k] = true;
+                            }
                         }
                     }
                     else if(line.startsWith(OVERRIDERECOILVOLT))
@@ -4894,6 +5026,15 @@ void HookerEngine::LoadLGFile()
                                 p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetAmmoCheck ();
                         }
                     }
+                    else
+                    {
+                        lgFileLoadFail = true;
+                        lgFile.close();
+                        QString tempCrit = "This Option doesn't exists in the DefaultLG protocol.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                        if(displayMB)
+                            QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                        return;
+                    }
 
                     //Get Next Line and Increment the Line Count
                     line = in.readLine();
@@ -4923,6 +5064,8 @@ void HookerEngine::LoadLGFile()
                     //qDebug() << "Signal: " << signal << " Commands: " << commands;
 
                     signalsAndCommands.insert(signal, commands);
+
+                    outputSignalsStates << signal;
 
                     if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
                         signalsAndCommandsCountTest++;
@@ -5182,6 +5325,8 @@ void HookerEngine::LoadLGFile()
                         commands << line;
                         signalsAndCommands.insert(signal, commands);
 
+                        outputSignalsStates << signal;
+
                         if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
                             signalsAndCommandsCountTest++;
 
@@ -5357,6 +5502,8 @@ void HookerEngine::LoadLGFile()
                             commands << tmpCMD;
                             signalsAndCommands.insert(signal, commands);
 
+                            outputSignalsStates << signal;
+
                             if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
                                 signalsAndCommandsCountTest++;
                         }
@@ -5409,6 +5556,8 @@ void HookerEngine::LoadLGFile()
 
             signalsAndCommands.insert(signal, commands);
 
+            outputSignalsStates << signal;
+
             if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
                 signalsAndCommandsCountTest++;
         }
@@ -5438,6 +5587,14 @@ void HookerEngine::LoadLGFile()
     lgFile.close();
     lgFileLoaded = true;
 
+    //Add mame_stop and States to outputSignalsStates
+    outputSignalsStates << PAUSE << ORIENTATION;
+
+    //qDebug() << "Output Signals & States String List:" << outputSignalsStates;
+
+    //Tell TCP Socket a Game has Started
+    emit TCPGameStart(outputSignalsStates);
+
     //Don't Bypass the COM Port Connection Fail Warning Pop-up, for the DefaultLG Side
     emit SetBypassComPortConnectFailWarning(true);
 
@@ -5459,11 +5616,10 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
     quint8 cmdCount;
     bool allPlayers;
     quint8 playerNum = 69;
-    quint8 i, j, k, tempCPNum;
+    quint8 i, j, k;
     quint8 howManyPlayers;
     quint8 player, lightGun;
     bool dlgCMDFound;
-    bool findDLGCMDs;
     quint8 charToNumber;
 
     //qDebug() << "Signal: " << signalName << " Value: " << value;

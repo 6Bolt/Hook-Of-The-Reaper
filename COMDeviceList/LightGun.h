@@ -27,21 +27,21 @@ public:
     //Constructors
 
     //RS3 Reaper
-    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
-    //Normal Light Gun & Fusion & Blamcon
-    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber, SupportedRecoils lgRecoils, LightGunSettings lgSet);
+    //Normal Light Gun & Fusion & Blamcon & X-Gunner & Xena
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet);
     //Copy Light Gun
     explicit LightGun(LightGun const &lgMember);
     //MX24
-    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber, SupportedRecoils lgRecoils);
     //JB Gun4IR & OpenFire
-    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength, SupportedRecoils lgRecoils, LightGunSettings lgSet);
     //For Alien USB Light Gun
-    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool n2DDisplay);
     //For Ultimarc AimTrak USB Light Gun
-    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils);
     //For Sinden Light Gun
-    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint16 port, quint8 player, quint8 recVolt, SupportedRecoils lgRecoils, bool reloadNR,bool reloadDis);
+    explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint16 port, quint8 player, quint8 recVolt, SupportedRecoils lgRecoils, LightGunSettings lgSet);
 
     ~LightGun();
 
@@ -70,7 +70,7 @@ public:
     void SetDisplayOtherPriority(bool other);
     void SetDisplayAmmoAndLife(bool displayAAL, bool displayLG, bool displayLB, bool displayLN);
     void SetRecoilPriority(SupportedRecoils lgRecoils);
-    void SetReloadOptions(bool reloadNR, bool reloadDis);
+    void SetLightGunSettings(LightGunSettings lgSettings);
     void SetReaperAmmo0Delay(bool isAmmo0DelayEnabled, quint8 delayTime, quint16 reaperHST);
     void SetTCPPort(quint16 port);
     void SetTCPPlayer(quint8 player);
@@ -78,6 +78,7 @@ public:
     void SetRecoilVoltageOverride(quint8 recVoltOvr);
     void SetSindenRecoilOverride(quint8 recOVRDE);
     void SetAmmoCheck();
+    void SetAlienNo2DigitDisplay(bool n2DDisplay);
 
 
     //Get Functions that Gets the Stated Variable
@@ -114,13 +115,13 @@ public:
     bool GetDisplayOtherPriority();
     bool GetDisplayAmmoAndLife(bool *displayLG, bool *displayLB, bool *displayLN);
     quint16 GetDisplayRefresh(bool *isRDS);
-    bool GetReloadNoRumble();
-    bool GetReloadDisabled();
+    LightGunSettings GetLightGunSettings();
     quint8 GetReaperAmmo0Delay(bool *isAmmo0DelayEnabled, quint16 *reaperHST);
     qint8 GetOutputConnection();
     quint16 GetTCPPort();
     quint8 GetTCPPlayer();
     quint8 GetRecoilVoltage();
+    bool GetAlienNo2DigitDisplay();
 
 
     //If a Default Light Gun, is Needed Varibles Set
@@ -246,13 +247,17 @@ private:
     bool                isReaperTimerRunning;
     bool                isReaperSlideHeldBack;
     quint16             reaperHoldSlideTime;
+    bool                reaperLoadedReload;
+
     //MX24
     quint8              dipSwitchPlayerNumber;
     bool                isDipSwitchPlayerNumberSet;
     quint8              hubComPortNumber;
+
     //JB Gun4IR & OpenFire
     quint8              analogStrength;
     bool                isAnalogStrengthSet;
+
     //Sinden
     quint8              recoilVoltage;
     QString             recoilVoltageCMD;
@@ -269,6 +274,9 @@ private:
     bool                displayAmmoLifeNumber;
     quint16             lifeBarMaxLife;
 
+    //Alien Light Gun
+    bool                no2DigitDisplay;
+
     //Light Gun Name & Number
     quint8              lightGunNum;
     QString             lightGunName;
@@ -280,6 +288,19 @@ private:
     //Reload Options
     bool                reloadNoRumble;
     bool                reloadDisable;
+
+    quint8              reloadSetting;
+    quint8              damageSetting;
+    quint8              deathSetting;
+    bool                shakeEnalbe;
+
+    bool                loadReloadShake;
+    bool                loadReloadLED;
+    bool                loadDamageShake;
+    bool                loadDamageLED;
+    bool                loadDeathShake;
+    bool                loadDeathLED;
+
 
     //Ammo Check Value
     quint8              ammoCheckValue;

@@ -297,23 +297,28 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 //Time for the TCP Socket Timer (msec)
 #define TCPTIMERTIME            12200
 #define TCPSLEEPTIME            500    // In ms
+#define TCPTESTPORT             8582
 
 
 //File & Dir Data
 
 #define ENDOFFILE               "END_OF_FILE"
 #define DEFAULTFILE             "default"
+#define FILELOCKTIME            300
+
 
 //Saved Light Gun & COM Devices Files & Dir
 #define DATAFILEDIR             "data"
 #define LIGHTGUNSAVEFILE        "lightguns.hor"
 #define COMDEVICESAVEFILE       "comdevices.hor"
 #define STARTLIGHTGUNSAVEFILE   "Light Gun Data File"
+#define STARTLIGHTGUNSAVEFILEV2 "Light Gun Data File V2"
 #define PLAYERSASSIGNMENTS      "Player Assignments"
 #define STARTCOMDEVICESAVEFILE  "COM Device Data File"
 #define LIGHTGUNNUMBERFILE      "Light Gun #"
 #define COMDEVICENUMBERFILE     "COM Device #"
 #define PASAVEFILE              "playersAss.hor"
+#define ENDGENERALSETTINGS      "END_GENERAL_SETTINGS"
 
 //INI Game & Default Files
 #define INIFILEDIR              "ini"
@@ -452,6 +457,9 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define BLOCKRECOIL_R2SOPTION   "Block Recoil_R2S"
 #define BLOCKSHAKELENGTH        4
 #define BLOCKRECOIL_R2SLENGTH   4
+#define BLOCKSHAKESTARTLENGTH   5
+#define BLOCKRECOIL_R2STRLENGTH 5
+#define BLOCKSTART              "Start"
 #define OVERRIDERECOILVOLT      "Override_Recoil_Voltage"
 #define OVERRIDERECOILLENGTH    2
 #define OVERRIDERECOILVOLTNUM   1
@@ -534,9 +542,10 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define OPENCOMPORTONLY         "Open_COM"
 #define CLOSECOMPORTONLY        "Close_COM"
 #define DAMAGECMDONLY           "Damage"
+#define DAMAGELEDCMDONLY        "Damage_LED"
 #define RECOILCMDONLY           "Recoil"
 #define RELOADCMDONLY           "Reload"
-#define RELOADNORMBLCMDONLY     "Reload_No_Rumble"
+#define RELOADLEDCMDONLY        "Reload_LED"
 #define AMMOCMDONLY             "Ammo"
 #define AMMOVALUECMDONLY        "Ammo_Value"
 #define SHAKECMDONLY            "Shake"
@@ -566,7 +575,9 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define OFFSCREENLEFTCORNERONLY "Offscreen_Left_Corner"
 #define OFFSCREENDISABLECMDONLY "Offscreen_Disable"
 #define LIFEVALUECMDONLY        "Life_Value"
+#define LIFEVALUELEDCMDONLY     "Life_Value_LED"
 #define DEATHVALUECMDONLY       "Death_Value"
+#define DEATHVALUELEDCMDONLY    "Death_Value_LED"
 
 //Max Damage Percentage
 #define MAXDAMAGEPERCENTAGE     0.35f
@@ -676,7 +687,13 @@ struct SupportedRecoils
 };
 
 
-
+struct LightGunSettings
+{
+    quint8 reload;
+    quint8 damage;
+    quint8 death;
+    bool shake;
+};
 
 
 #endif // GLOBAL_H

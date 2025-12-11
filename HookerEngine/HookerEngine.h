@@ -73,7 +73,9 @@ public:
 public slots:
 
     //Read Data from the TCP Socket (different thread)
-    void TCPReadyRead(const QByteArray &readBA);
+    //void TCPReadyRead(const QByteArray &readBA);
+    void TCPReadyRead(const QStringList &readSL);
+
 
     //Read Data From The Serial Com Port (different thread)
     void ReadComPortSig(const quint8 &comPortNum, const QByteArray &readData);
@@ -84,7 +86,8 @@ public slots:
     //Write to COM Port Based on DefaultLG
     void WriteLGComPortSlot(quint8 cpNum, QString cpData);
 
-
+    //Stop Filtering TCP Read Data
+    void StopFilteringReadData();
 
 signals:
 
@@ -132,6 +135,15 @@ signals:
     void WriteTCPServer(const QByteArray &writeData);
 
     void WriteTCPServer1(const QByteArray &writeData);
+
+    //Tells TCP Socket when a Game Starts and what Output Signals to watch for
+    void TCPGameStart(const QStringList &outputSignals);
+
+    //Tells TCP Socket that the Game has Stopped, and not to filter data
+    void TCPGameStop();
+
+    //Send Window State to TCP
+    void WindowStateToTCP(const bool &isMin);
 
 private slots:
 
@@ -187,6 +199,11 @@ private slots:
     void CloseTCPServerSlot(quint8 playerNum, bool noInit, bool initOnly);
     void WriteTCPServerSlot(quint8 playerNum, QString cpData);
 
+    //Processes the TCP Socket Data
+    void ProcessTCPData(const QStringList &tcpReadData);
+
+    //Process Filtered TCP Data when not Minimized
+    void ProcessFilterTCPData(const QStringList &tcpReadData);
 
 
 private:
@@ -194,9 +211,6 @@ private:
 
     //Clears Things out on a TCP Diconnect, if a Game has Run
     void ClearOnDisconnect();
-
-    //Processes the TCP Socket Data
-    void ProcessTCPData(QStringList tcpReadData);
 
     //Game Found, Starts things Off
     void GameFound();
@@ -386,6 +400,7 @@ private:
     //Signal Have Commands
     QMap<QString,QStringList>       signalsAndCommands;
     QStringList                     signalsNoCommands;
+    QStringList                     outputSignalsStates;
 
 
     //Also there will be States and Commands. States are a Pause,
@@ -471,7 +486,8 @@ private:
     //Is Block Shake Active for Player
     bool                            blockRecoil_R2SActive[MAXGAMEPLAYERS];
 
-
+    //Stop Filtering TCP Data
+    bool                            stopFilterTCPData;
 
 
 

@@ -736,7 +736,7 @@ void addLightGunWindow::AddLightGun()
         quint16 reloadValue = REAPERRELOADNUM;
 
         //Create a New Reaper Light Gun Class
-        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, maxAmmo, reloadValue, recoilOptions, reloadNR, reloadDisable);
+        //p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, maxAmmo, reloadValue, recoilOptions, reloadNR, reloadDisable);
     }
     else if(defaultLightGun && defaultLightGunNum == MX24)
     {
@@ -747,7 +747,7 @@ void addLightGunWindow::AddLightGun()
         usedDipPlayers[tempDS] = true;
 
         //Create a New MX24 Light Gun Class
-        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, true, tempDS, tempHub, recoilOptions, reloadNR, reloadDisable);
+        //p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, true, tempDS, tempHub, recoilOptions, reloadNR, reloadDisable);
     }
     else if(defaultLightGun && (defaultLightGunNum == JBGUN4IR || defaultLightGunNum == OPENFIRE))
     {
@@ -755,7 +755,7 @@ void addLightGunWindow::AddLightGun()
         quint8 analStrength = analString.toUInt ();
 
         //Create a New Gun4IR Light Gun Class
-        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, analStrength, recoilOptions, reloadNR, reloadDisable);
+        //p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, analStrength, recoilOptions, reloadNR, reloadDisable);
     }
     else if(defaultLightGun && (defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK))
     {
@@ -764,11 +764,11 @@ void addLightGunWindow::AddLightGun()
         if(defaultLightGunNum == ALIENUSB)
         {
             //Create a New Alien USB or Ultimarc Aimtrak Light Gun
-            p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, hidInfoList[usbIndex], recoilOptions, reloadNR, reloadDisable);
+            //p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, hidInfoList[usbIndex], recoilOptions, reloadNR, reloadDisable);
         }
         else if(defaultLightGunNum == AIMTRAK)
         {
-            p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, hidInfoList[usbIndex], AIMTRAKDELAYDFLT, recoilOptions, reloadNR, reloadDisable);
+            //p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, hidInfoList[usbIndex], AIMTRAKDELAYDFLT, recoilOptions, reloadNR, reloadDisable);
         }
 
         FillUSBDevicesComboBox();
@@ -781,14 +781,14 @@ void addLightGunWindow::AddLightGun()
         quint8 tcpPlayer = ui->tcpPlayerComboBox->currentIndex ();
         quint8 recVolt = ui->tcpRecoilVoltComboBox->currentIndex ();
 
-        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, tcpPort, tcpPlayer, recVolt, recoilOptions, reloadNR, reloadDisable);
+        //p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, tcpPort, tcpPlayer, recVolt, recoilOptions, reloadNR, reloadDisable);
 
         on_tcpPortLineEdit_textChanged(tcpPortS);
     }
     else
     {
         //Create a New Light Gun Class
-        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, recoilOptions, reloadNR, reloadDisable);
+        //p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, recoilOptions, reloadNR, reloadDisable);
     }
 
     addLightGunSound.play();

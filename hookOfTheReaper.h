@@ -17,9 +17,12 @@
 #include <QAction>
 #include <QRect>
 
-#include "Windows/addLightGunWindow.h"
+#include "Windows/addLightGunWindowV2.h"
+#include "Windows/editLightGunWindowV2.h"
+
+//#include "Windows/addLightGunWindow.h"
 #include "Windows/addComDeviceWindow.h"
-#include "Windows/editLightGunWindow.h"
+//#include "Windows/editLightGunWindow.h"
 #include "Windows/editComDeviceWindow.h"
 #include "Windows/playerAssignWindow.h"
 #include "Windows/settingsWindow.h"
@@ -130,6 +133,7 @@ private slots:
 
     void on_actionTest_INI_Game_File_triggered();
 
+
 signals:
 
     //Starts the Hooker Engine
@@ -176,13 +180,13 @@ private:
     Ui::HookOfTheReaper             *ui;
 
     //Add Light Gun Window QPointer
-    QPointer<addLightGunWindow>     p_aLGW;
+    QPointer<addLightGunWindowV2>   p_aLGW;
 
     //Add COM Port Device Window QPointer
     QPointer<addComDeviceWindow>    p_aCDW;
 
     //Edit Light Gun Window QPointer
-    QPointer<editLightGunWindow>    p_eLGW;
+    QPointer<editLightGunWindowV2>  p_eLGW;
 
     //Edit COM Port Device Window QPointer
     QPointer<editComDeviceWindow>   p_eCDW;
@@ -223,7 +227,6 @@ private:
 
     //No Game Found
     bool                            noGameFileFound;
-
 
 #ifdef Q_OS_WIN
 

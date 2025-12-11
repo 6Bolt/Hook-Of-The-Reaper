@@ -6,7 +6,7 @@
 //Constructors
 
 //For RS3 Reaper Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint16 maNumber, quint16 rvNumber, SupportedRecoils lgRecoils, LightGunSettings lgSet)
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -87,8 +87,29 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     lgRecoilPriority[2] = lgRecoils.recoilR2S;
     lgRecoilPriority[3] = lgRecoils.recoilValue;
 
-    reloadNoRumble = reloadNR;
-    reloadDisable = reloadDis;
+    reloadSetting = lgSet.reload;
+    damageSetting = lgSet.damage;
+    deathSetting = lgSet.death;
+    shakeEnalbe = lgSet.shake;
+
+    if(reloadSetting == 1)
+        loadReloadShake = true;
+    else
+        loadReloadShake = false;
+
+    if(damageSetting == 1)
+        loadDamageShake = true;
+    else
+        loadDamageShake = false;
+
+    if(deathSetting == 1)
+        loadDeathShake = true;
+    else
+        loadDeathShake = false;
+
+    loadReloadLED = false;
+    loadDamageLED = false;
+    loadDeathLED = false;
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
@@ -98,6 +119,9 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reaperHoldSlideTime = REAPERHOLDSLIDETIME;
     isReaperTimerRunning = false;
     isReaperSlideHeldBack = false;
+    reaperLoadedReload = false;
+
+    no2DigitDisplay = false;
 
     FillSerialPortInfo();
 
@@ -109,7 +133,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 }
 
 //For Normal Serial Port Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet)
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -205,8 +229,99 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     lgRecoilPriority[2] = lgRecoils.recoilR2S;
     lgRecoilPriority[3] = lgRecoils.recoilValue;
 
-    reloadNoRumble = reloadNR;
-    reloadDisable = reloadDis;
+    //Settings for Reload, Damage, Death & Shake Feature
+    reloadSetting = lgSet.reload;
+    damageSetting = lgSet.damage;
+    deathSetting = lgSet.death;
+    shakeEnalbe = lgSet.shake;
+
+    if(defaultLightGunNum == XGUNNER)
+    {
+        if(reloadSetting == 1)
+            loadReloadShake = true;
+        else
+            loadReloadShake = false;
+
+        if(damageSetting == 1)
+            loadDamageShake = true;
+        else
+            loadDamageShake = false;
+
+        if(deathSetting == 1)
+            loadDeathShake = true;
+        else
+            loadDeathShake = false;
+
+        loadReloadLED = false;
+        loadDamageLED = false;
+        loadDeathLED = false;
+    }
+    else    // For Fusion and Xena
+    {
+        if(reloadSetting == 1)
+        {
+            loadReloadShake = true;
+            loadReloadLED = true;
+        }
+        else if(reloadSetting == 2)
+        {
+            loadReloadShake = true;
+            loadReloadLED = false;
+        }
+        else if(reloadSetting == 3)
+        {
+            loadReloadShake = false;
+            loadReloadLED = true;
+        }
+        else
+        {
+            loadReloadShake = false;
+            loadReloadLED = false;
+        }
+
+        if(damageSetting == 1)
+        {
+            loadDamageShake = true;
+            loadDamageLED = true;
+        }
+        else if(damageSetting == 2)
+        {
+            loadDamageShake = true;
+            loadDamageLED = false;
+        }
+        else if(damageSetting == 3)
+        {
+            loadDamageShake = false;
+            loadDamageLED = true;
+        }
+        else
+        {
+            loadDamageShake = false;
+            loadDamageLED = false;
+        }
+
+        if(deathSetting == 1)
+        {
+            loadDeathShake = true;
+            loadDeathLED = true;
+        }
+        else if(deathSetting == 2)
+        {
+            loadDeathShake = true;
+            loadDeathLED = false;
+        }
+        else if(deathSetting == 3)
+        {
+            loadDeathShake = false;
+            loadDeathLED = true;
+        }
+        else
+        {
+            loadDeathShake = false;
+            loadDeathLED = false;
+        }
+    }
+
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
@@ -216,6 +331,9 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reaperHoldSlideTime = REAPERHOLDSLIDETIME;
     isReaperTimerRunning = false;
     isReaperSlideHeldBack = false;
+    reaperLoadedReload = false;
+
+    no2DigitDisplay = false;
 
     FillSerialPortInfo();
 
@@ -366,14 +484,24 @@ LightGun::LightGun(LightGun const &lgMember)
     lgRecoilPriority[2] = lgMember.lgRecoilPriority[2];
     lgRecoilPriority[3] = lgMember.lgRecoilPriority[3];
 
-    reloadNoRumble = lgMember.reloadNoRumble;
-    reloadDisable = lgMember.reloadDisable;
+    reloadSetting = lgMember.reloadSetting;
+    damageSetting = lgMember.damageSetting;
+    deathSetting = lgMember.deathSetting;
+    shakeEnalbe = lgMember.shakeEnalbe;
+
+    loadReloadShake = lgMember.loadReloadShake;
+    loadReloadLED = lgMember.loadReloadLED;
+    loadDamageShake = lgMember.loadDamageShake;
+    loadDamageLED = lgMember.loadDamageLED;
+    loadDeathShake = lgMember.loadDeathShake;
+    loadDeathLED = lgMember.loadDeathLED;
 
     reaperLargeAmmo = lgMember.reaperLargeAmmo;
     isReaper5LEDsInited = lgMember.isReaper5LEDsInited;
     enableReaperAmmo0Delay = lgMember.enableReaperAmmo0Delay;
     repearAmmo0Delay = lgMember.repearAmmo0Delay;
     isReaperAmmo0TimerInited = false;
+    reaperLoadedReload = false;
 
     if(lgMember.isReaperAmmo0TimerInited)
         InitReaperAmmo0Timer();
@@ -383,12 +511,14 @@ LightGun::LightGun(LightGun const &lgMember)
     isReaperTimerRunning = lgMember.isReaperTimerRunning;
     isReaperSlideHeldBack = lgMember.isReaperSlideHeldBack;
 
+    no2DigitDisplay = lgMember.no2DigitDisplay;
+
     LoadDefaultLGCommands();
 
 }
 
 //For MX24 Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber, SupportedRecoils lgRecoils)
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -483,8 +613,17 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     lgRecoilPriority[2] = lgRecoils.recoilR2S;
     lgRecoilPriority[3] = lgRecoils.recoilValue;
 
-    reloadNoRumble = reloadNR;
-    reloadDisable = reloadDis;
+    reloadSetting = 0;
+    damageSetting = 0;
+    deathSetting = 0;
+    shakeEnalbe = false;
+
+    loadReloadShake = false;
+    loadReloadLED = false;
+    loadDamageShake = false;
+    loadDamageLED = false;
+    loadDeathShake = false;
+    loadDeathLED = false;
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
@@ -494,6 +633,9 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reaperHoldSlideTime = REAPERHOLDSLIDETIME;
     isReaperTimerRunning = false;
     isReaperSlideHeldBack = false;
+    reaperLoadedReload = false;
+
+    no2DigitDisplay = false;
 
     FillSerialPortInfo();
 
@@ -504,7 +646,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 }
 
 //For JB Gun4IR & OpenFire
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, quint8 analStrength, SupportedRecoils lgRecoils, LightGunSettings lgSet)
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -601,8 +743,73 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     lgRecoilPriority[2] = lgRecoils.recoilR2S;
     lgRecoilPriority[3] = lgRecoils.recoilValue;
 
-    reloadNoRumble = reloadNR;
-    reloadDisable = reloadDis;
+    reloadSetting = lgSet.reload;
+    damageSetting = lgSet.damage;
+    deathSetting = lgSet.death;
+    shakeEnalbe = lgSet.shake;
+
+    if(reloadSetting == 1)
+    {
+        loadReloadShake = true;
+        loadReloadLED = true;
+    }
+    else if(reloadSetting == 2)
+    {
+        loadReloadShake = true;
+        loadReloadLED = false;
+    }
+    else if(reloadSetting == 3)
+    {
+        loadReloadShake = false;
+        loadReloadLED = true;
+    }
+    else
+    {
+        loadReloadShake = false;
+        loadReloadLED = false;
+    }
+
+    if(damageSetting == 1)
+    {
+        loadDamageShake = true;
+        loadDamageLED = true;
+    }
+    else if(damageSetting == 2)
+    {
+        loadDamageShake = true;
+        loadDamageLED = false;
+    }
+    else if(damageSetting == 3)
+    {
+        loadDamageShake = false;
+        loadDamageLED = true;
+    }
+    else
+    {
+        loadDamageShake = false;
+        loadDamageLED = false;
+    }
+
+    if(deathSetting == 1)
+    {
+        loadDeathShake = true;
+        loadDeathLED = true;
+    }
+    else if(deathSetting == 2)
+    {
+        loadDeathShake = true;
+        loadDeathLED = false;
+    }
+    else if(deathSetting == 3)
+    {
+        loadDeathShake = false;
+        loadDeathLED = true;
+    }
+    else
+    {
+        loadDeathShake = false;
+        loadDeathLED = false;
+    }
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
@@ -612,6 +819,9 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reaperHoldSlideTime = REAPERHOLDSLIDETIME;
     isReaperTimerRunning = false;
     isReaperSlideHeldBack = false;
+    reaperLoadedReload = false;
+
+    no2DigitDisplay = false;
 
     FillSerialPortInfo();
 
@@ -622,7 +832,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 }
 
 //Alien USB Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool n2DDisplay)
 {
     defaultLightGun = lgDefault;
     defaultLightGunNum = dlgNum;
@@ -692,8 +902,18 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     lgRecoilPriority[2] = lgRecoils.recoilR2S;
     lgRecoilPriority[3] = lgRecoils.recoilValue;
 
-    reloadNoRumble = reloadNR;
-    reloadDisable = reloadDis;
+    // No Shake Motor, so no reload, damage, death, or shake feature
+    reloadSetting = 0;
+    damageSetting = 0;
+    deathSetting = 0;
+    shakeEnalbe = false;
+
+    loadReloadShake = false;
+    loadReloadLED = false;
+    loadDamageShake = false;
+    loadDamageLED = false;
+    loadDeathShake = false;
+    loadDeathLED = false;
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
@@ -703,6 +923,9 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reaperHoldSlideTime = REAPERHOLDSLIDETIME;
     isReaperTimerRunning = false;
     isReaperSlideHeldBack = false;
+    reaperLoadedReload = false;
+
+    no2DigitDisplay = n2DDisplay;
 
     LoadDefaultLGCommands();
 
@@ -711,7 +934,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 }
 
 //AimTrak
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils)
 {
     defaultLightGun = lgDefault;
     defaultLightGunNum = dlgNum;
@@ -785,8 +1008,18 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     lgRecoilPriority[2] = lgRecoils.recoilR2S;
     lgRecoilPriority[3] = lgRecoils.recoilValue;
 
-    reloadNoRumble = reloadNR;
-    reloadDisable = reloadDis;
+    // No Shake Motor, so no reload, damage, death, or shake feature
+    reloadSetting = 0;
+    damageSetting = 0;
+    deathSetting = 0;
+    shakeEnalbe = false;
+
+    loadReloadShake = false;
+    loadReloadLED = false;
+    loadDamageShake = false;
+    loadDamageLED = false;
+    loadDeathShake = false;
+    loadDeathLED = false;
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
@@ -796,6 +1029,9 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reaperHoldSlideTime = REAPERHOLDSLIDETIME;
     isReaperTimerRunning = false;
     isReaperSlideHeldBack = false;
+    reaperLoadedReload = false;
+
+    no2DigitDisplay = false;
 
     LoadDefaultLGCommands();
 
@@ -804,7 +1040,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 }
 
 //Sinden
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint16 port, quint8 player, quint8 recVolt, SupportedRecoils lgRecoils, bool reloadNR, bool reloadDis)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint16 port, quint8 player, quint8 recVolt, SupportedRecoils lgRecoils, LightGunSettings lgSet)
 {
     defaultLightGun = lgDefault;
     defaultLightGunNum = dlgNum;
@@ -879,8 +1115,29 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     lgRecoilPriority[2] = lgRecoils.recoilR2S;
     lgRecoilPriority[3] = lgRecoils.recoilValue;
 
-    reloadNoRumble = reloadNR;
-    reloadDisable = reloadDis;
+    reloadSetting = lgSet.reload;
+    damageSetting = lgSet.damage;
+    deathSetting = lgSet.death;
+    shakeEnalbe = lgSet.shake;
+
+    if(reloadSetting == 1)
+        loadReloadShake = true;
+    else
+        loadReloadShake = false;
+
+    if(damageSetting == 1)
+        loadDamageShake = true;
+    else
+        loadDamageShake = false;
+
+    if(deathSetting == 1)
+        loadDeathShake = true;
+    else
+        loadDeathShake = false;
+
+    loadReloadLED = false;
+    loadDamageLED = false;
+    loadDeathLED = false;
 
     reaperLargeAmmo = false;
     isReaper5LEDsInited = false;
@@ -890,6 +1147,9 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     reaperHoldSlideTime = REAPERHOLDSLIDETIME;
     isReaperTimerRunning = false;
     isReaperSlideHeldBack = false;
+    reaperLoadedReload = false;
+
+    no2DigitDisplay = false;
 
     LoadDefaultLGCommands();
 
@@ -1069,10 +1329,79 @@ void LightGun::SetRecoilPriority(SupportedRecoils lgRecoils)
     lgRecoilPriority[3] = lgRecoils.recoilValue;
 }
 
-void LightGun::SetReloadOptions(bool reloadNR, bool reloadDis)
+void LightGun::SetLightGunSettings(LightGunSettings lgSettings)
 {
-    reloadNoRumble = reloadNR;
-    reloadDisable = reloadDis;
+    reloadSetting = lgSettings.reload;
+    damageSetting = lgSettings.damage;
+    deathSetting = lgSettings.death;
+    shakeEnalbe = lgSettings.shake;
+
+    //Reload Loadings
+    if(reloadSetting == 1)
+    {
+        loadReloadShake = true;
+        loadReloadLED = true;
+    }
+    else if(reloadSetting == 2)
+    {
+        loadReloadShake = true;
+        loadReloadLED = false;
+    }
+    else if(reloadSetting == 3)
+    {
+        loadReloadShake = false;
+        loadReloadLED = true;
+    }
+    else
+    {
+        loadReloadShake = false;
+        loadReloadLED = false;
+    }
+
+    //Damage Loadings
+    if(damageSetting == 1)
+    {
+        loadDamageShake = true;
+        loadDamageLED = true;
+    }
+    else if(damageSetting == 2)
+    {
+        loadDamageShake = true;
+        loadDamageLED = false;
+    }
+    else if(damageSetting == 3)
+    {
+        loadDamageShake = false;
+        loadDamageLED = true;
+    }
+    else
+    {
+        loadDamageShake = false;
+        loadDamageLED = false;
+    }
+
+    //Death Loadings
+    if(deathSetting == 1)
+    {
+        loadDeathShake = true;
+        loadDeathLED = true;
+    }
+    else if(deathSetting == 2)
+    {
+        loadDeathShake = true;
+        loadDeathLED = false;
+    }
+    else if(deathSetting == 3)
+    {
+        loadDeathShake = false;
+        loadDeathLED = true;
+    }
+    else
+    {
+        loadDeathShake = false;
+        loadDeathLED = false;
+    }
+
 
     LoadDefaultLGCommands();
 }
@@ -1157,7 +1486,14 @@ void LightGun::SetSindenRecoilOverride(quint8 recOVRDE)
 
 void LightGun::SetAmmoCheck()
 {
-    doAmmoCheck = true;
+    if(defaultLightGunNum != AIMTRAK)
+        doAmmoCheck = true;
+}
+
+void LightGun::SetAlienNo2DigitDisplay(bool n2DDisplay)
+{
+    if(defaultLightGunNum == ALIENUSB)
+        no2DigitDisplay = n2DDisplay;
 }
 
 
@@ -1387,15 +1723,18 @@ quint16 LightGun::GetDisplayRefresh(bool *isRDS)
     return displayRefresh;
 }
 
-bool LightGun::GetReloadNoRumble()
+LightGunSettings LightGun::GetLightGunSettings()
 {
-    return reloadNoRumble;
+    LightGunSettings lgSet;
+
+    lgSet.reload = reloadSetting;
+    lgSet.damage = damageSetting;
+    lgSet.death = deathSetting;
+    lgSet.shake = shakeEnalbe;
+
+    return lgSet;
 }
 
-bool LightGun::GetReloadDisabled()
-{
-    return reloadDisable;
-}
 
 quint8 LightGun::GetReaperAmmo0Delay(bool *isAmmo0DelayEnabled, quint16 *reaperHST)
 {
@@ -1424,6 +1763,10 @@ quint8 LightGun::GetRecoilVoltage()
     return recoilVoltage;
 }
 
+bool LightGun::GetAlienNo2DigitDisplay()
+{
+    return no2DigitDisplay;
+}
 
 void LightGun::CopyLightGun(LightGun const &lgMember)
 {
@@ -1567,11 +1910,24 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
     reloadNoRumble = lgMember.reloadNoRumble;
     reloadDisable = lgMember.reloadDisable;
 
+    reloadSetting = lgMember.reloadSetting;
+    damageSetting = lgMember.damageSetting;
+    deathSetting = lgMember.deathSetting;
+    shakeEnalbe = lgMember.shakeEnalbe;
+
+    loadReloadShake = lgMember.loadReloadShake;
+    loadReloadLED = lgMember.loadReloadLED;
+    loadDamageShake = lgMember.loadDamageShake;
+    loadDamageLED = lgMember.loadDamageLED;
+    loadDeathShake = lgMember.loadDeathShake;
+    loadDeathLED = lgMember.loadDeathLED;
+
     reaperLargeAmmo = lgMember.reaperLargeAmmo;
     isReaper5LEDsInited = lgMember.isReaper5LEDsInited;
     enableReaperAmmo0Delay = lgMember.enableReaperAmmo0Delay;
     repearAmmo0Delay = lgMember.repearAmmo0Delay;
     isReaperAmmo0TimerInited = false;
+    reaperLoadedReload = false;
 
     if(lgMember.isReaperAmmo0TimerInited)
         InitReaperAmmo0Timer();
@@ -1579,6 +1935,8 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
     reaperHoldSlideTime = lgMember.reaperHoldSlideTime;
     isReaperTimerRunning = lgMember.isReaperTimerRunning;
     isReaperSlideHeldBack = lgMember.isReaperSlideHeldBack;
+
+    no2DigitDisplay = lgMember.no2DigitDisplay;
 
     LoadDefaultLGCommands();
 
@@ -1622,6 +1980,7 @@ void LightGun::LoadDefaultLGCommands()
     lifeValueCmdSet = false;
     deathValueCmdSet = false;
 
+    reaperLoadedReload = false;
 
     openComPortCmds.clear();
     closeComPortCmds.clear();
@@ -1749,7 +2108,16 @@ void LightGun::LoadDefaultLGCommands()
                         }
                         closeComPortCmdsSet = true;
                     }
-                    else if(splitLines[0] == DAMAGECMDONLY)
+                    else if(splitLines[0] == DAMAGECMDONLY && loadDamageShake)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            damageCmds << commands[i];
+                        }
+                        damageCmdsSet = true;
+                    }
+                    else if(splitLines[0] == DAMAGELEDCMDONLY && loadDamageLED)
                     {
                         for(i = 0; i < numberCommands; i++)
                         {
@@ -1786,8 +2154,14 @@ void LightGun::LoadDefaultLGCommands()
                         }
                         recoilValueCmdsSet = true;
                     }
-                    else if(splitLines[0] == RELOADCMDONLY && !reloadNoRumble && !reloadDisable)
+                    else if(splitLines[0] == RELOADCMDONLY && loadReloadShake)
                     {
+                        if(defaultLightGunNum == RS3_REAPER && !reaperLoadedReload)
+                        {
+                            reloadCmds << REAPERRELOADCOMMAND;
+                            reaperLoadedReload = true;
+                        }
+
                         for(i = 0; i < numberCommands; i++)
                         {
                             commands[i] = commands[i].trimmed ();
@@ -1795,17 +2169,14 @@ void LightGun::LoadDefaultLGCommands()
                         }
                         reloadCmdsSet = true;
                     }
-                    else if(splitLines[0] == RELOADNORMBLCMDONLY && reloadNoRumble && !reloadDisable)
+                    else if(splitLines[0] == RELOADLEDCMDONLY && loadReloadLED)
                     {
-                        for(i = 0; i < numberCommands; i++)
+                        if(defaultLightGunNum == RS3_REAPER && !reaperLoadedReload)
                         {
-                            commands[i] = commands[i].trimmed ();
-                            reloadCmds << commands[i];
+                            reloadCmds << REAPERRELOADCOMMAND;
+                            reaperLoadedReload = true;
                         }
-                        reloadCmdsSet = true;
-                    }
-                    else if(splitLines[0] == RELOADNORMBLCMDONLY && !reloadNoRumble && reloadDisable && defaultLightGunNum == RS3_REAPER)
-                    {
+
                         for(i = 0; i < numberCommands; i++)
                         {
                             commands[i] = commands[i].trimmed ();
@@ -1822,7 +2193,7 @@ void LightGun::LoadDefaultLGCommands()
                         }
                         ammoValueCmdsSet = true;
                     }
-                    else if(splitLines[0] == SHAKECMDONLY)
+                    else if(splitLines[0] == SHAKECMDONLY &&  shakeEnalbe)
                     {
                         for(i = 0; i < numberCommands; i++)
                         {
@@ -1876,7 +2247,7 @@ void LightGun::LoadDefaultLGCommands()
                         }
                         keyMouseCmdsSet = true;
                     }
-                    else if(splitLines[0] == DISPLAYAMMOONLY)
+                    else if(splitLines[0] == DISPLAYAMMOONLY && !no2DigitDisplay)
                     {
                         for(i = 0; i < numberCommands; i++)
                         {
@@ -1906,7 +2277,7 @@ void LightGun::LoadDefaultLGCommands()
                         }
                         displayAmmoInitCmdsSet = true;
                     }
-                    else if(splitLines[0] == DISPLAYLIFEONLY)
+                    else if(splitLines[0] == DISPLAYLIFEONLY && !no2DigitDisplay)
                     {
                         for(i = 0; i < numberCommands; i++)
                         {
@@ -1948,7 +2319,7 @@ void LightGun::LoadDefaultLGCommands()
                         }
                         displayLifeInitCmdsSet = true;
                     }
-                    else if(splitLines[0] == DISPLAYOTHERONLY)
+                    else if(splitLines[0] == DISPLAYOTHERONLY && !no2DigitDisplay)
                     {
                         for(i = 0; i < numberCommands; i++)
                         {
@@ -2025,7 +2396,7 @@ void LightGun::LoadDefaultLGCommands()
                         }
                         outOfAmmoCmdSet = true;
                     }
-                    else if(splitLines[0] == LIFEVALUECMDONLY)
+                    else if(splitLines[0] == LIFEVALUECMDONLY && loadDeathShake)
                     {
                         for(i = 0; i < numberCommands; i++)
                         {
@@ -2034,7 +2405,25 @@ void LightGun::LoadDefaultLGCommands()
                         }
                         lifeValueCmdSet = true;
                     }
-                    else if(splitLines[0] == DEATHVALUECMDONLY)
+                    else if(splitLines[0] == LIFEVALUELEDCMDONLY && loadDeathLED)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            lifeValueCmds << commands[i];
+                        }
+                        lifeValueCmdSet = true;
+                    }
+                    else if(splitLines[0] == DEATHVALUECMDONLY && loadDeathShake)
+                    {
+                        for(i = 0; i < numberCommands; i++)
+                        {
+                            commands[i] = commands[i].trimmed ();
+                            deathValueCmds << commands[i];
+                        }
+                        deathValueCmdSet = true;
+                    }
+                    else if(splitLines[0] == DEATHVALUELEDCMDONLY && loadDeathLED)
                     {
                         for(i = 0; i < numberCommands; i++)
                         {
@@ -2053,6 +2442,15 @@ void LightGun::LoadDefaultLGCommands()
 
         //Close the File
         defaultLGCmdFile.close ();
+
+        //Make Sure Reload Command Z6 gets loaded into Reaper LG
+        if(defaultLightGunNum == RS3_REAPER && !reaperLoadedReload)
+        {
+            reloadCmds << REAPERRELOADCOMMAND;
+            reaperLoadedReload = true;
+            reloadCmdsSet = true;
+        }
+
 
     } //if(defaultLightGunNum != AIMTRAK)
     else
@@ -2084,6 +2482,8 @@ void LightGun::LoadDefaultLGCommands()
     }
 
 /*
+    qDebug() << "No 2 Digit Display:" << no2DigitDisplay;
+
     qDebug() << openComPortCmdsSet;
     qDebug() << closeComPortCmdsSet;
     qDebug() << damageCmdsSet;
