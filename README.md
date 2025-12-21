@@ -4,12 +4,10 @@
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
 
-# ****** I am Out Sick ******
-I am currently out, due to health reasons. Best ETA, is Summer of 2026. All development of Hook of the Reaper is on hold, until my health gets better. Currently, I will only fix critical bugs and get the Xena's light gun implemented. If you find any bugs, please file them on the Hook of the Reaper's GitHub page. Then I will now about it.    
+# ****** I am Going to be In and Out ******
+Until July of 2026, I will be in and out, due to health reasons. I cannot respond quickly to problems. If there is a bug, please file it in the HOTR GitHub Issues.
 
 
-# ****** 6Bolt.com Email Spoofed  ******
-Saw that someone has been spoofing emails from 6Bolt.com domain. I have updated my DNS records, so that these emails will now be quarantined or put into spam. If you got an email from 6Bolt.com asking for money, please ignore it. I will never ask for anything, especially money. Also, if anyone is acting like me on any platform asking for money or other things, it is a scam. Please alert the Admin, so they can remove it.
 
 
 
