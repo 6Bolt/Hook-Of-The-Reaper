@@ -93,7 +93,7 @@ addLightGunWindowV2::addLightGunWindowV2(ComDeviceList *cdList, QWidget *parent)
         if(usedDipPlayers[comPortIndx])
             tempQS = "";
         else
-            tempQS = "P"+QString::number(comPortIndx+1);
+            tempQS = "P"+QString::number(comPortIndx+1) + " USB";
         ui->dipSwitchComboBox->insertItem(comPortIndx,tempQS);
     }
 
@@ -133,6 +133,22 @@ addLightGunWindowV2::addLightGunWindowV2(ComDeviceList *cdList, QWidget *parent)
     //ui->productIDUSBLineEdit->setEnabled(false);
     //ui->displayPathUSBLineEdit->setEnabled(false);
     ui->usbDevicesComboBox->setEnabled(false);
+
+    //Make the Reaper Large Ammo only accept 3 numbers
+    ui->reaperLargeAmmoLineEdit->setInputMask (REAPERAMMO0DELAYMASK);
+
+    //Make the Reaper Ammo 0 Delay only accepted 3 Numbers
+    ui->reaperDelayTimeLineEdit->setInputMask (REAPERAMMO0DELAYMASK);
+
+    //Make the Reaper Hold Slide Time only accepted Numbers (0.0 to 9.9)
+    ui->reaperSlideHoldTimeLineEdit->setInputMask (REAPERHOLDSLIDEMASK);
+
+
+
+    ui->reaperDelayTimeLineEdit->setText(DEFAULTAMMODELAYS);
+    ui->reaperSlideHoldTimeLineEdit->setText(DEFAULTHOLDTIMES);
+
+    ui->reaperLargeAmmoLineEdit->setText(LARGEAMMOVALUEDEFAULTS);
 
     //Fill out Serial Port 0 Info
     FillSerialPortInfo(0);
@@ -190,6 +206,7 @@ addLightGunWindowV2::addLightGunWindowV2(ComDeviceList *cdList, QWidget *parent)
 
     ui->tcpRecoilVoltComboBox->setCurrentIndex (RECOILVOLTDEFAULT);
     ui->tcpRecoilVoltComboBox->setEnabled (false);
+
 }
 
 //Deconstructor
@@ -232,15 +249,20 @@ void addLightGunWindowV2::on_defaultLightGunComboBox_currentIndexChanged(int ind
 
             FillSerialPortInfo(hubIndex);
         }
-        else
+        else if(index != ALIENUSB && index != AIMTRAK && index != SINDEN)
         {
             ui->dipSwitchComboBox->setEnabled(false);
             ui->hubComComboBox->setEnabled(false);
             ui->comPortComboBox->setEnabled(true);
 
             quint8 comPortIndex = ui->comPortComboBox->currentIndex ();
-
             FillSerialPortInfo(comPortIndex);
+        }
+        else
+        {
+            ui->dipSwitchComboBox->setEnabled(false);
+            ui->hubComComboBox->setEnabled(false);
+            ui->comPortComboBox->setEnabled(false);
         }
 
         //if(index == JBGUN4IR || index == OPENFIRE)
@@ -255,7 +277,7 @@ void addLightGunWindowV2::on_defaultLightGunComboBox_currentIndexChanged(int ind
         if(index == ALIENUSB || index == AIMTRAK)
         {
             //Turn Off COM Port Combo Box
-            ui->comPortComboBox->setEnabled(false);
+            //ui->comPortComboBox->setEnabled(false);
 
             //Turn On USB Combo Box
             ui->usbDevicesComboBox->setEnabled(true);
@@ -401,7 +423,7 @@ void addLightGunWindowV2::on_defaultLightGunComboBox_currentIndexChanged(int ind
             ui->tcpPortLineEdit->setEnabled (true);
             ui->tcpPlayerComboBox->setEnabled (true);
             ui->tcpRecoilVoltComboBox->setEnabled (true);
-            ui->comPortComboBox->setEnabled(false);
+            //ui->comPortComboBox->setEnabled(false);
         }
         else
         {
@@ -499,7 +521,7 @@ void addLightGunWindowV2::on_addPushButton_clicked()
             if(usedDipPlayers[comPortIndx])
                 tempQS = "";
             else
-                tempQS = "P"+QString::number(comPortIndx+1);
+                tempQS = "P"+QString::number(comPortIndx+1) + " USB";
             ui->dipSwitchComboBox->setItemText(comPortIndx,tempQS);
         }
     }
@@ -546,7 +568,7 @@ void addLightGunWindowV2::on_hubComComboBox_currentIndexChanged(int index)
         if(usedDipPlayers[comPortIndx])
             tempQS = "";
         else
-            tempQS = "P"+QString::number(comPortIndx+1);
+            tempQS = "P"+QString::number(comPortIndx+1) + " USB";
         ui->dipSwitchComboBox->setItemText(comPortIndx,tempQS);
     }
 
@@ -571,8 +593,8 @@ void addLightGunWindowV2::on_usbDevicesComboBox_currentIndexChanged(int index)
 
 
         //Turn On The 2 USB Info Line Edits
-        ui->usageLineEdit->setEnabled (true);
-        ui->releaseNumLineEdit->setEnabled (true);
+        //ui->usageLineEdit->setEnabled (true);
+        //ui->releaseNumLineEdit->setEnabled (true);
 
         //Fill in New Data
         ui->locationLlineEdit->insert(hidInfoList[index].path);
@@ -678,6 +700,9 @@ bool addLightGunWindowV2::IsValidData()
     bool recoilCheck = false;
     bool badTCPPort = false;
     bool badTCPPlayer = false;
+    bool reaperDelayTime = false;
+    bool reaperHoldTime = false;
+    bool reaperLargeAmmo = false;
     quint8 numLightGuns = p_comDeviceList->GetNumberLightGuns();
     quint8 i;
     quint8 defaultLGIndex = ui->defaultLightGunComboBox->currentIndex ();
@@ -768,13 +793,41 @@ bool addLightGunWindowV2::IsValidData()
 
     }
 
-
     if(CheckRecoilComboBoxes() == false)
         recoilCheck = true;
 
+    //Check Reaper Hold Slide Settings
+    if(defaultLGIndex == RS3_REAPER)
+    {
+        //Large Ammo
+        QString largeAmmo = ui->reaperLargeAmmoLineEdit->text ();
+        quint16 largeAmmoNum = largeAmmo.toUInt();
+
+        if(largeAmmoNum > 255 || largeAmmoNum < 10)
+            reaperLargeAmmo = true;
+
+        if(!ui->reaperDisableSlideCheckBox->isChecked() && ui->reaperEnableSlideDelayCheckBox->isChecked())
+        {
+            //Get delay time
+            QString delayTime = ui->reaperDelayTimeLineEdit->text ();
+            quint16 delayTimeNum = delayTime.toUInt();
+
+            //Get Hold Time
+            QString tempRHSBT = ui->reaperSlideHoldTimeLineEdit->text ();
+            qfloat16 reaperHoldSlideTimeSec = tempRHSBT.toFloat ();
+
+            if(delayTimeNum > 255 || delayTimeNum == 0)
+                reaperDelayTime = true;
+
+            if(reaperHoldSlideTimeSec < 1.0f || reaperHoldSlideTimeSec > 9.0f)
+                reaperHoldTime = true;            
+        }
+    }
+
+
     //Check All the bools, If They are false, data is good and return true.
     //If false, then make a Warning string, and Pop Up a Warning Message Box on What is Wrong and return false
-    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubComLG == false && usbDisPMatch == false && recoilCheck == false && badTCPPort == false && badTCPPlayer == false)
+    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubComLG == false && usbDisPMatch == false && recoilCheck == false && badTCPPort == false && badTCPPlayer == false && reaperDelayTime == false && reaperHoldTime == false && reaperLargeAmmo == false)
     {
         return true;
     }
@@ -802,6 +855,12 @@ bool addLightGunWindowV2::IsValidData()
             message.append ("TCP Port number is not a number or not in range of 1-65,535. Port cannot be 0 or larger than 65,535.");
         if(badTCPPlayer == true)
             message.append ("TCP Port number has that player assigned already. Try different player number, or you have to delete light gun");
+        if(reaperDelayTime == true)
+            message.append ("Reaper delay needs to be in the range of 1ms to 255ms.");
+        if(reaperHoldTime == true)
+            message.append ("Reaper hold time needs to be in the range of 1.0s to 9.0s.");
+        if(reaperLargeAmmo == true)
+            message.append ("Reaper large ammo needs to be in the range of 10 to 255.");
 
         QMessageBox::warning (this, "Can Not Add Light Gun", message);
 
@@ -946,11 +1005,48 @@ void addLightGunWindowV2::AddLightGun()
     //Set Player Dip Switch for MX24 Light Gun, since it is needed for commands
     if(defaultLightGun && defaultLightGunNum == RS3_REAPER)
     {
-        quint16 maxAmmo = REAPERMAXAMMONUM;
-        quint16 reloadValue = REAPERRELOADNUM;
+        bool disableLEDs;
+        quint8 largeAmmoNum;
+        ReaperSlideData slideData;
+
+        if(ui->reaperDisableLEDsCheckBox->isChecked ())
+            disableLEDs = true;
+        else
+            disableLEDs = false;
+
+        QString largeAmmo = ui->reaperLargeAmmoLineEdit->text ();
+        largeAmmoNum = largeAmmo.toUInt();
+
+        if(ui->reaperDisableSlideCheckBox->isChecked())
+            slideData.disableHoldBack = true;
+        else
+            slideData.disableHoldBack = false;
+
+        if(ui->reaperEnableSlideDelayCheckBox->isChecked())
+            slideData.enableHoldDelay = true;
+        else
+            slideData.enableHoldDelay = false;
+
+        if(!slideData.disableHoldBack && slideData.enableHoldDelay)
+        {
+            //Get delay time
+            QString delayTime = ui->reaperDelayTimeLineEdit->text ();
+            slideData.holdDelay = delayTime.toUInt();
+
+            //Get Hold Time
+            QString tempRHSBT = ui->reaperSlideHoldTimeLineEdit->text ();
+            float reaperHoldSlideTimeSec = tempRHSBT.toFloat ();
+            slideData.slideHoldTime = static_cast<quint16>(reaperHoldSlideTimeSec*1000.0f);
+
+        }
+        else
+        {
+            slideData.holdDelay = DEFAULTAMMO0DELAY;
+            slideData.slideHoldTime = REAPERHOLDSLIDETIME;
+        }
 
         //Create a New Reaper Light Gun Class
-        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, maxAmmo, reloadValue, recoilOptions, lgSet);
+        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, recoilOptions, lgSet, disableLEDs, largeAmmoNum, slideData);
     }
     else if(defaultLightGun && defaultLightGunNum == MX24)
     {
@@ -963,13 +1059,67 @@ void addLightGunWindowV2::AddLightGun()
         //Create a New MX24 Light Gun Class
         p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, true, tempDS, tempHub, recoilOptions);
     }
-    else if(defaultLightGun && (defaultLightGunNum == JBGUN4IR || defaultLightGunNum == OPENFIRE))
+    else if(defaultLightGun && defaultLightGunNum == OPENFIRE)
     {
-        //QString analString = ui->analogLineEdit->text();
-        quint8 analStrength = DEFAULTANALOGSTRENGTH;   //analString.toUInt ();
+        bool noDisplay;
+        DisplayPriority displayPri;
+        DisplayOpenFire displayOF;
 
-        //Create a New Gun4IR Light Gun Class
-        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, analStrength, recoilOptions, lgSet);
+        if(ui->ammoRadioButton->isChecked ())
+        {
+            displayPri.ammo = true;
+            displayPri.life = false;
+        }
+        else
+        {
+            displayPri.ammo = false;
+            displayPri.life = true;
+        }
+
+        if(ui->displayOtherCheckBox->isChecked ())
+            displayPri.other = true;
+        else
+            displayPri.other = false;
+
+        noDisplay = ui->openFireNoDisplayCheckBox->isChecked ();
+
+        if(noDisplay)
+        {
+            displayOF.ammoAndLifeDisplay = false;
+            displayOF.lifeGlyphs = true;
+            displayOF.lifeBar = false;
+            displayOF.lifeNumber = false;
+        }
+        else
+        {
+
+            if(ui->openFireBothCheckBox->isChecked ())
+                displayOF.ammoAndLifeDisplay = true;
+            else
+                displayOF.ammoAndLifeDisplay = false;
+
+            if(ui->openFireGlyphRadioButton->isChecked ())
+            {
+                displayOF.lifeGlyphs = true;
+                displayOF.lifeBar = false;
+                displayOF.lifeNumber = false;
+            }
+            else if(ui->openFireBarRadioButton->isChecked ())
+            {
+                displayOF.lifeGlyphs = false;
+                displayOF.lifeBar = true;
+                displayOF.lifeNumber = false;
+            }
+            else
+            {
+                displayOF.lifeGlyphs = false;
+                displayOF.lifeBar = false;
+                displayOF.lifeNumber = true;
+            }
+        }
+
+        //Create a New OpenFire Light Gun Class
+        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, recoilOptions, lgSet, noDisplay, displayPri, displayOF);
     }
     else if(defaultLightGun && (defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK))
     {
@@ -978,14 +1128,32 @@ void addLightGunWindowV2::AddLightGun()
         if(defaultLightGunNum == ALIENUSB)
         {
             bool n2DDisplay;
+            DisplayPriority displayPri;
 
             if(ui->no2DigitCheckBox->isChecked ())
                 n2DDisplay = true;
             else
                 n2DDisplay = false;
 
+            if(ui->ammoRadioButton->isChecked ())
+            {
+                displayPri.ammo = true;
+                displayPri.life = false;
+            }
+            else
+            {
+                displayPri.ammo = false;
+                displayPri.life = true;
+            }
+
+            if(ui->displayOtherCheckBox->isChecked ())
+                displayPri.other = true;
+            else
+                displayPri.other = false;
+
+
             //Create a New Alien USB or Ultimarc Aimtrak Light Gun
-            p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, hidInfoList[usbIndex], recoilOptions, n2DDisplay);
+            p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, hidInfoList[usbIndex], recoilOptions, n2DDisplay, displayPri);
         }
         else if(defaultLightGunNum == AIMTRAK)
         {
@@ -1005,6 +1173,35 @@ void addLightGunWindowV2::AddLightGun()
         p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, tcpPort, tcpPlayer, recVolt, recoilOptions, lgSet);
 
         on_tcpPortLineEdit_textChanged(tcpPortS);
+    }
+    else if(defaultLightGun && defaultLightGunNum == BLAMCON)
+    {
+        bool has2DigitDisply;
+        DisplayPriority displayPri;
+
+        if(ui->blamconDisplayCheckBox->isChecked ())
+            has2DigitDisply = true;
+        else
+            has2DigitDisply = false;
+
+        if(ui->ammoRadioButton->isChecked ())
+        {
+            displayPri.ammo = true;
+            displayPri.life = false;
+        }
+        else
+        {
+            displayPri.ammo = false;
+            displayPri.life = true;
+        }
+
+        if(ui->displayOtherCheckBox->isChecked ())
+            displayPri.other = true;
+        else
+            displayPri.other = false;
+
+        //Create a New Blamcon Light Gun Class
+        p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, recoilOptions, lgSet, has2DigitDisply, displayPri);
     }
     else
     {
@@ -1089,8 +1286,8 @@ void addLightGunWindowV2::FillSerialPortInfo(quint8 index)
     ui->releaseNumLineEdit->clear ();
 
     //Turn Off The 2 USB Info Line Edits
-    ui->usageLineEdit->setEnabled (false);
-    ui->releaseNumLineEdit->setEnabled (false);
+    //ui->usageLineEdit->setEnabled (false);
+    //ui->releaseNumLineEdit->setEnabled (false);
 
     //Fill in New Data
     ui->locationLlineEdit->insert(p_comPortInfo->systemLocation());
@@ -1302,6 +1499,8 @@ void addLightGunWindowV2::ChangeLabels(int index)
     ui->ammoLabel->setStyleSheet("QLabel { color: red; }");
     ui->r2sLabel->setStyleSheet("QLabel { color: red; }");
 
+    //Serial Port Info
+    //For Unsupported Serial Port Light Gun
     if(index == 0 || index == -1)
     {
         ui->comLabel->setStyleSheet("QLabel { color: red; }");
@@ -1310,44 +1509,8 @@ void addLightGunWindowV2::ChangeLabels(int index)
         ui->parityLabel->setStyleSheet("QLabel { color: red; }");
         ui->stopLabel->setStyleSheet("QLabel { color: red; }");
         ui->flowLabel->setStyleSheet("QLabel { color: red; }");
-
-        ui->dipLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->hubLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        //ui->analogLabel->setStyleSheet("QLabel { color: black; }");
-
-        ui->usbLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->allHIDDevicesCheckBox->setEnabled (false);
-        ui->no2DigitCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
-        ui->no2DigitCheckBox->setEnabled (false);
-        ui->usageLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->releaseNumLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-
-        ui->valueLabel->setStyleSheet("QLabel { color: red; }");
-
-        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->reloadJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->reloadJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->damageRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->damageJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->damageJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableDamageradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->deathRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->deathJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->deathJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableDeathradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->shakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableShakeradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-
-        ui->tcpPortLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
     }
-    else if(index == RS3_REAPER || index == XGUNNER)
+    else if((index >= 1 && index <= 6) || index == XGUNNER || index == XENAS)  //All Supported Serial Port Light Guns
     {
         ui->comLabel->setStyleSheet("QLabel { color: red; }");
         ui->baudLabel->setStyleSheet("QLabel { color: black; }");
@@ -1355,43 +1518,8 @@ void addLightGunWindowV2::ChangeLabels(int index)
         ui->parityLabel->setStyleSheet("QLabel { color: black; }");
         ui->stopLabel->setStyleSheet("QLabel { color: black; }");
         ui->flowLabel->setStyleSheet("QLabel { color: black; }");
-
-        ui->dipLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->hubLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        //ui->analogLabel->setStyleSheet("QLabel { color: black; }");
-
-        ui->usbLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->allHIDDevicesCheckBox->setEnabled (false);
-        ui->no2DigitCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
-        ui->no2DigitCheckBox->setEnabled (false);
-        ui->usageLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->releaseNumLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-
-        ui->valueLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-
-        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->reloadJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->reloadJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->damageRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->damageJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->damageJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->disableDamageradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->deathRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->deathJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->deathJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->disableDeathradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->shakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableShakeradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->tcpPortLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
     }
-    else if(index == MX24)
+    else
     {
         ui->comLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
         ui->baudLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
@@ -1399,253 +1527,91 @@ void addLightGunWindowV2::ChangeLabels(int index)
         ui->parityLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
         ui->stopLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
         ui->flowLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+    }
 
+    //For MX24 Hub Player USB (DipSwitch) & Hub COM Port
+    if(index == MX24)
+    {
         ui->dipLabel->setStyleSheet("QLabel { color: red; }");
         ui->hubLabel->setStyleSheet("QLabel { color: red; }");
-        //ui->analogLabel->setStyleSheet("QLabel { color: black; }");
 
-        ui->usbLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->allHIDDevicesCheckBox->setEnabled (false);
-        ui->no2DigitCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
-        ui->no2DigitCheckBox->setEnabled (false);
-        ui->usageLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->releaseNumLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-
-        ui->valueLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-
-        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->reloadJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->reloadJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-
-        ui->damageRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->damageJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->damageJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->disableDamageradioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-
-        ui->deathRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->deathJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->deathJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->disableDeathradioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-
-        ui->shakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->disableShakeradioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-
-
-        ui->tcpPortLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-    }
-    else if(index == JBGUN4IR || index == OPENFIRE)
-    {
-        ui->comLabel->setStyleSheet("QLabel { color: red; }");
-        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
-        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
-        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
-        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
-        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
-
-        ui->dipLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->hubLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        //ui->analogLabel->setStyleSheet("QLabel { color: red; }");
-
-        ui->usbLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->allHIDDevicesCheckBox->setEnabled (false);
-        ui->no2DigitCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
-        ui->no2DigitCheckBox->setEnabled (false);
-        ui->usageLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->releaseNumLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-
-        ui->valueLabel->setStyleSheet("QLabel { color: red; }");
-
-        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->reloadJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->reloadJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->damageRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->damageJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->damageJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableDamageradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->deathRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->deathJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->deathJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableDeathradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->shakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableShakeradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->tcpPortLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-    }
-    else if(index == FUSION)
-    {
-        ui->comLabel->setStyleSheet("QLabel { color: red; }");
-        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
-        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
-        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
-        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
-        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
-
-        ui->dipLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->hubLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        //ui->analogLabel->setStyleSheet("QLabel { color: black; }");
-
-        ui->usbLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->allHIDDevicesCheckBox->setEnabled (false);
-        ui->no2DigitCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
-        ui->no2DigitCheckBox->setEnabled (false);
-        ui->usageLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->releaseNumLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-
-        ui->valueLabel->setStyleSheet("QLabel { color: red; }");
-
-        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->reloadJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->reloadJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->damageRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->damageJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->damageJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableDamageradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->deathRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->deathJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->deathJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableDeathradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->shakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableShakeradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->tcpPortLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-    }
-    else if(index == BLAMCON || index == XENAS)
-    {
-        ui->comLabel->setStyleSheet("QLabel { color: red; }");
-        ui->baudLabel->setStyleSheet("QLabel { color: black; }");
-        ui->dataLabel->setStyleSheet("QLabel { color: black; }");
-        ui->parityLabel->setStyleSheet("QLabel { color: black; }");
-        ui->stopLabel->setStyleSheet("QLabel { color: black; }");
-        ui->flowLabel->setStyleSheet("QLabel { color: black; }");
-
-        ui->dipLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->hubLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        //ui->analogLabel->setStyleSheet("QLabel { color: black; }");
-
-        ui->usbLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->allHIDDevicesCheckBox->setEnabled (false);
-        ui->no2DigitCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
-        ui->no2DigitCheckBox->setEnabled (false);
-        ui->usageLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->releaseNumLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-
-        ui->valueLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-
-        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->reloadJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->reloadJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->damageRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->damageJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->damageJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableDamageradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->deathRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->deathJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->deathJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableDeathradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->shakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
-        ui->disableShakeradioButton->setStyleSheet("QRadioButton { color: red; }");
-
-        ui->tcpPortLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-    }
-    else if(index == ALIENUSB || index == AIMTRAK)
-    {
+        //Regular COM Port
         ui->comLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->baudLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->dataLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->parityLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->stopLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->flowLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-
+    }
+    else
+    {
         ui->dipLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
         ui->hubLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        //ui->analogLabel->setStyleSheet("QLabel { color: black; }");
+    }
 
+    //For the USB HID Light Guns
+    if(index == ALIENUSB || index == AIMTRAK)
+    {
         ui->usbLabel->setStyleSheet("QLabel { color: red; }");
 
         if(index == AIMTRAK)
-        {
             ui->allHIDDevicesCheckBox->setEnabled (false);
-            ui->no2DigitCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
-            ui->no2DigitCheckBox->setEnabled (false);
-        }
         else
-        {
             ui->allHIDDevicesCheckBox->setEnabled (true);
-            ui->no2DigitCheckBox->setEnabled (true);
-            ui->no2DigitCheckBox->setStyleSheet("QCheckBox { color: red; }");
-        }
 
         ui->usageLabel->setStyleSheet("QLabel { color: black }");
         ui->releaseNumLabel->setStyleSheet("QLabel { color: black; }");
 
-
-        ui->valueLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-
-        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->reloadJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->reloadJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-
-        ui->damageRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->damageJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->damageJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->disableDamageradioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-
-        ui->deathRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->deathJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->deathJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->disableDeathradioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-
-        ui->shakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-        ui->disableShakeradioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
-
-        ui->tcpPortLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+        //Turn On The 2 USB Info Line Edits
+        ui->usageLineEdit->setEnabled (true);
+        ui->releaseNumLineEdit->setEnabled (true);
     }
-    else if(index == SINDEN)
+    else
     {
-        ui->comLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->baudLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->dataLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->parityLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->stopLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->flowLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-
-        ui->dipLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        ui->hubLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
-        //ui->analogLabel->setStyleSheet("QLabel { color: black; }");
-
         ui->usbLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
         ui->allHIDDevicesCheckBox->setEnabled (false);
         ui->no2DigitCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
         ui->no2DigitCheckBox->setEnabled (false);
+
         ui->usageLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
         ui->releaseNumLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
 
-        ui->valueLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+        //Turn On The 2 USB Info Line Edits
+        ui->usageLineEdit->setEnabled (false);
+        ui->releaseNumLineEdit->setEnabled (false);
+    }
 
+    //For Recoil Value
+    if(index == JBGUN4IR || index == FUSION || index == OPENFIRE)
+    {
+        ui->valueLabel->setStyleSheet("QLabel { color: red; }");
+    }
+    else
+    {
+        ui->valueLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+    }
+
+
+    //For Reload, Damage, Death, and Shake
+    if(index < 1 || (index >= 3 && index <= 6) || index == XENAS || index == XENASBTLE)
+    {
+        //Everything On Rumble Motor and LED
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->reloadJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: red; }");
+
+        ui->damageRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->damageJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->damageJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->disableDamageradioButton->setStyleSheet("QRadioButton { color: red; }");
+
+        ui->deathRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->deathJustLEDRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->deathJustShakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->disableDeathradioButton->setStyleSheet("QRadioButton { color: red; }");
+
+        ui->shakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->disableShakeradioButton->setStyleSheet("QRadioButton { color: red; }");
+    }
+    else if(index == RS3_REAPER || index == XGUNNER || index == SINDEN)
+    {
+        //Just Rumble
         ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
         ui->reloadJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
         ui->reloadJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
@@ -1663,26 +1629,275 @@ void addLightGunWindowV2::ChangeLabels(int index)
 
         ui->shakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
         ui->disableShakeradioButton->setStyleSheet("QRadioButton { color: red; }");
+    }
+    else
+    {
+        ui->reloadRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->reloadJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->reloadJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->disableReloadradioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
 
+        ui->damageRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->damageJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->damageJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->disableDamageradioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
 
+        ui->deathRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->deathJustLEDRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->deathJustShakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->disableDeathradioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+
+        ui->shakeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->disableShakeradioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+    }
+
+    //TCP Server Interface
+    if(index == SINDEN)
+    {
         ui->tcpPortLabel->setStyleSheet("QLabel { color: red; }");
         ui->tcpPlayerLabel->setStyleSheet("QLabel { color: red; }");
         ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: red; }");
-
+    }
+    else
+    {
+        ui->tcpPortLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+        ui->tcpPlayerLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
     }
 
+    //For Reaper LED, and Slide Hold Control
+    if(index == RS3_REAPER)
+    {
+        //RS3 Reaper Settings
+        ui->reaperDisableLEDsCheckBox->setEnabled (true);
+        ui->reaperDisableLEDsCheckBox->setStyleSheet("QCheckBox { color: red; }");
+        ui->reaperLargeAmmoLineEdit->setEnabled (true);
+        //ui->reaperLargeAmmoLineEdit->setStyleSheet("QLabel { color: red; }");
+        ui->reaperLargeAmmoLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->reaperDisableSlideCheckBox->setEnabled (true);
+        ui->reaperDisableSlideCheckBox->setStyleSheet("QCheckBox { color: red; }");
+
+        if(ui->reaperDisableSlideCheckBox->isChecked ())
+        {
+            ui->reaperEnableSlideDelayCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+            ui->reaperEnableSlideDelayCheckBox->setEnabled (false);
+
+            ui->reaperDelayTimeLineEdit->setEnabled (false);
+            ui->reaperDelayLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+
+            ui->reaperSlideHoldTimeLineEdit->setEnabled (false);
+            ui->reaperHoldTimeLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+        }
+        else
+        {
+            ui->reaperEnableSlideDelayCheckBox->setEnabled (true);
+            ui->reaperEnableSlideDelayCheckBox->setStyleSheet("QCheckBox { color: red; }");
+
+            ui->reaperDelayTimeLineEdit->setEnabled (true);
+            ui->reaperDelayLabel->setStyleSheet("QLabel { color: red; }");
+
+            ui->reaperSlideHoldTimeLineEdit->setEnabled (true);
+            ui->reaperHoldTimeLabel->setStyleSheet("QLabel { color: red; }");
+        }
+    }
+    else
+    {
+        ui->reaperDisableLEDsCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+        ui->reaperDisableLEDsCheckBox->setEnabled (false);
+        ui->reaperLargeAmmoLineEdit->setEnabled (false);
+        //ui->reaperLargeAmmoLineEdit->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+        ui->reaperDisableSlideCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+        ui->reaperLargeAmmoLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+        ui->reaperDisableSlideCheckBox->setEnabled (false);
+        ui->reaperEnableSlideDelayCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+        ui->reaperEnableSlideDelayCheckBox->setEnabled (false);
+
+        ui->reaperDelayTimeLineEdit->setEnabled (false);
+        ui->reaperDelayLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+
+        ui->reaperSlideHoldTimeLineEdit->setEnabled (false);
+        ui->reaperHoldTimeLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+    }
+
+    //Display Priority
+    if(index < 1 || index == ALIENUSB || index == OPENFIRE || index == BLAMCON || index == XENAS || index == XENASBTLE)
+    {
+        //Display Settings
+        ui->ammoRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->lifeRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->displayPriorityLabel->setStyleSheet("QLabel { color: black; }");
+
+        ui->displayOtherCheckBox->setEnabled (true);
+        ui->displayOtherCheckBox->setStyleSheet("QCheckBox { color: red; }");
+
+        if(index == ALIENUSB)
+        {
+            ui->no2DigitCheckBox->setEnabled (true);
+            ui->no2DigitCheckBox->setStyleSheet("QCheckBox { color: red; }");
+        }
+        else
+        {
+            ui->no2DigitCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+            ui->no2DigitCheckBox->setEnabled (false);
+        }
+
+        if(index == OPENFIRE)
+        {
+            //Display Settings - OpenFire
+            ui->openFireNoDisplayCheckBox->setStyleSheet("QCheckBox { color: red; }");
+            ui->openFireNoDisplayCheckBox->setEnabled (true);
+
+            if(ui->openFireNoDisplayCheckBox->isChecked ())
+            {
+                ui->openFireBothCheckBox->setEnabled (false);
+                ui->openFireBothCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+
+                ui->openFireDisplayLifeLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+                ui->openFireGlyphRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+                ui->openFireBarRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+                ui->openFireNumberRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+            }
+            else
+            {
+                ui->openFireBothCheckBox->setEnabled (true);
+                ui->openFireBothCheckBox->setStyleSheet("QCheckBox { color: red; }");
+
+                ui->openFireDisplayLifeLabel->setStyleSheet("QLabel { color:black; }");
+                ui->openFireGlyphRadioButton->setStyleSheet("QRadioButton { color: red; }");
+                ui->openFireBarRadioButton->setStyleSheet("QRadioButton { color: red; }");
+                ui->openFireNumberRadioButton->setStyleSheet("QRadioButton { color: red; }");
+            }
+        }
+        else
+        {
+            //Display Settings - OpenFire
+            ui->openFireNoDisplayCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+            ui->openFireNoDisplayCheckBox->setEnabled (false);
+
+            ui->openFireBothCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+            ui->openFireBothCheckBox->setEnabled (false);
+
+            ui->openFireDisplayLifeLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+            ui->openFireGlyphRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+            ui->openFireBarRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+            ui->openFireNumberRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        }
+
+
+        if(index == BLAMCON)
+        {
+            //Display Settings - Blamocon
+            ui->blamconDisplayCheckBox->setEnabled (true);
+            ui->blamconDisplayCheckBox->setStyleSheet("QCheckBox { color: red; }");
+        }
+        else
+        {
+            ui->blamconDisplayCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+            ui->blamconDisplayCheckBox->setEnabled (false);
+        }
+    }
+    else
+    {
+        ui->ammoRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->lifeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->displayPriorityLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+
+        ui->displayOtherCheckBox->setEnabled (false);
+        ui->displayOtherCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+    }
 }
 
 
 
 
+void addLightGunWindowV2::on_reaperDisableSlideCheckBox_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if(arg1 == Qt::Checked)
+    {
+        //ui->reaperEnableSlideDelayCheckBox->setChecked (false);
+        ui->reaperEnableSlideDelayCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+        ui->reaperEnableSlideDelayCheckBox->setEnabled (false);
+        ui->reaperEnableSlideDelayCheckBox->setChecked (false);
+
+        ui->reaperDelayTimeLineEdit->setEnabled (false);
+        ui->reaperDelayLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+
+        ui->reaperSlideHoldTimeLineEdit->setEnabled (false);
+        ui->reaperHoldTimeLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+    }
+    else
+    {
+        ui->reaperEnableSlideDelayCheckBox->setStyleSheet("QCheckBox { color: red; }");
+        ui->reaperEnableSlideDelayCheckBox->setEnabled (true);
+        ui->reaperEnableSlideDelayCheckBox->setChecked (true);
+    }
+}
+
+void addLightGunWindowV2::on_openFireBothCheckBox_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if(arg1 == Qt::Checked)
+    {
+        if(ui->openFireNumberRadioButton->isChecked ())
+            ui->openFireGlyphRadioButton->setChecked (true);
+
+        ui->openFireNumberRadioButton->setEnabled (false);
+        ui->openFireNumberRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+
+    }
+    else
+    {
+        ui->openFireNumberRadioButton->setEnabled (true);
+        ui->openFireNumberRadioButton->setStyleSheet("QRadioButton { color: red; }");
+    }
+}
 
 
+void addLightGunWindowV2::on_reaperEnableSlideDelayCheckBox_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if(arg1 == Qt::Checked)
+    {
+        ui->reaperDelayTimeLineEdit->setEnabled (true);
+        ui->reaperDelayLabel->setStyleSheet("QLabel { color: red; }");
+
+        ui->reaperSlideHoldTimeLineEdit->setEnabled (true);
+        ui->reaperHoldTimeLabel->setStyleSheet("QLabel { color: red; }");
+    }
+    else
+    {
+        ui->reaperDelayTimeLineEdit->setEnabled (false);
+        ui->reaperDelayLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+
+        ui->reaperSlideHoldTimeLineEdit->setEnabled (false);
+        ui->reaperHoldTimeLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+    }
+}
 
 
+void addLightGunWindowV2::on_openFireNoDisplayCheckBox_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if(arg1 == Qt::Checked)
+    {
+        ui->openFireBothCheckBox->setChecked (false);
+        ui->openFireGlyphRadioButton->setChecked (true);
 
+        ui->openFireBothCheckBox->setEnabled (false);
+        ui->openFireBothCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
 
+        ui->openFireDisplayLifeLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+        ui->openFireGlyphRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->openFireBarRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->openFireNumberRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+    }
+    else
+    {
+        ui->openFireBothCheckBox->setEnabled (true);
+        ui->openFireBothCheckBox->setStyleSheet("QCheckBox { color: red; }");
 
-
-
+        ui->openFireDisplayLifeLabel->setStyleSheet("QLabel { color: red; }");
+        ui->openFireGlyphRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->openFireBarRadioButton->setStyleSheet("QRadioButton { color: red; }");
+        ui->openFireNumberRadioButton->setStyleSheet("QRadioButton { color: red; }");
+    }
+}
 

@@ -5,6 +5,7 @@
 #include <QTcpSocket>
 #include <QHostAddress>
 #include <QRegularExpression>
+#include <QTimer>
 
 #include <QByteArray>
 #include <QDebug>
@@ -53,11 +54,15 @@ public slots:
     //Tells TCP Socket if HOTR is Minimized
     void WindowStateTCP(const bool &isMin);
 
+    //When Timer Runs Out
+    void TCPConnectionTimeOut();
+
 signals:
 
     //Signal Sent to Hooker Engine with Read Data
     //void DataRead(const QByteArray &readBA);
-    void DataRead(const QStringList &readSL);
+    //void DataRead(const QStringList &readSL);
+    void DataRead(const QString &signal, const QString &data);
 
     //Signal Sent to Hooker Engine to tell it is connected
     void SocketConnectedSignal();
@@ -65,16 +70,31 @@ signals:
     //Signal Sent to Hooker Engine to tell it is disconnected
     void SocketDisconnectedSignal();
 
-    //Tells Hooker Engine that it can Stop Filtering Data
-    void StopFilteringTCPReadData();
-
     //Send out No Used Data
-    void FilteredTCPData(const QStringList &readSL);
+    //void FilteredTCPData(const QStringList &readSL);
+    void FilteredTCPData(const QString &signal, const QString &data);
+
+    //When Game Has Begon (got mame_start or game)
+    void GameHasStarted(const QString &data);
+
+    //When an Empty Game has Started
+    void EmptyGameHasStarted();
+
+    //When Game Has Stopped (got mame_stop or game_stop)
+    void GameHasStopped();
+
+    //Filtered Output Signals with their Data Value, Sent to ProcessLGCommands or ProcessINIComands
+    void FilteredOutputSignals(const QString &signal, const QString &data);
 
 private:
 
 
     ///////////////////////////////////////////////////////////////////////////
+
+    //Timer
+    QTimer *p_waitingForConnection;
+
+    bool isConnected;
 
     //read Data
     QByteArray readData;
@@ -85,11 +105,12 @@ private:
     //If a Game is going on or not
     bool inGame;
 
-    //Send Stop Filtering String
-    bool sentStopFiltering;
-
     //HOTR is Minimized, so Don't Send Unused Data
     bool isMinimized;
+
+    //Stop Connecting to TCP Server
+    bool stopConnecting;
+
 
 };
 

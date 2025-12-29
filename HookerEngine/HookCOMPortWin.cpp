@@ -52,6 +52,10 @@ HookCOMPortWin::HookCOMPortWin(QObject *parent)
 //Deconstructor
 HookCOMPortWin::~HookCOMPortWin()
 {
+    //Disconnect all Interfaces
+    DisconnectAll();
+
+    /*
     //Close and Delete Serial COM Ports
     for(quint8 i = 0; i < MAXCOMPORTS; i++)
     {
@@ -68,6 +72,7 @@ HookCOMPortWin::~HookCOMPortWin()
             hidOpen[i] = false;
         }
     }
+    */
 
     //Exit the USB HID
     hid_exit ();
@@ -107,7 +112,7 @@ quint16 HookCOMPortWin::TCPPortNumber()
 
 //public slots
 
- void HookCOMPortWin::Connect(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const QString &comPortPath, const bool &isWriteOnly)
+ void HookCOMPortWin::Connect(const quint8 &playerNum, const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const QString &comPortPath, const bool &isWriteOnly)
 {
     //Check if it is Already Open, if so, do nothing
     if(comPortOpen[comPortNum] == false)
@@ -376,7 +381,7 @@ quint16 HookCOMPortWin::TCPPortNumber()
             numPortOpen++;
             isPortOpen = true;
 
-
+            emit LightGunConnected(playerNum);
         }
     }
 
@@ -384,7 +389,7 @@ quint16 HookCOMPortWin::TCPPortNumber()
 
 
 
-void HookCOMPortWin::Disconnect(const quint8 &comPortNum)
+void HookCOMPortWin::Disconnect(const quint8 &playerNum, const quint8 &comPortNum)
 {
     //Check if Port is Open
     if(comPortOpen[comPortNum] == true)
@@ -397,6 +402,8 @@ void HookCOMPortWin::Disconnect(const quint8 &comPortNum)
 
         if(numPortOpen == 0)
             isPortOpen = false;
+
+        emit LightGunDisconnected(playerNum);
     }
 }
 
@@ -509,6 +516,9 @@ void HookCOMPortWin::DisconnectAll()
             hidOpen[i] = false;
         }
     }
+
+    //Close the TCP Servers for Sinden
+    DisconnectTCP();
 }
 
 
@@ -543,6 +553,7 @@ void HookCOMPortWin::ConnectHID(const quint8 &playerNum, const HIDInfo &lgHIDInf
         {
             //Connection Made, Ready to Go
             hidOpen[playerNum] = true;
+            emit LightGunConnected(playerNum);
         }
     }
 }
@@ -555,6 +566,7 @@ void HookCOMPortWin::DisconnectHID(const quint8 &playerNum)
     {
         hid_close(p_hidConnection[playerNum]);
         hidOpen[playerNum] = false;
+        emit LightGunDisconnected(playerNum);
     }
 }
 
@@ -616,7 +628,7 @@ void HookCOMPortWin::ConnectTCP(const quint16 &port)
         isTCPConnecting = true;
 
         //Wait for Connection
-        p_tcpServer->waitForConnected (TIMETOWAIT);
+        p_tcpServer->waitForConnected (TIMETOWAITTCPSERVER);
 
         if(!isTCPConnected)
         {
@@ -632,7 +644,7 @@ void HookCOMPortWin::ConnectTCP(const quint16 &port)
             p_tcpServer1->connectToHost (QHostAddress("127.0.0.1"), connectedTCPPort1);
             isTCPConnecting1 = true;
 
-            p_tcpServer1->waitForConnected (TIMETOWAIT);
+            p_tcpServer1->waitForConnected (TIMETOWAITTCPSERVER);
 
             if(!isTCPConnected1)
             {

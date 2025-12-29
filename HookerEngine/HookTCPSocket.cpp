@@ -12,6 +12,12 @@ HookTCPSocket::HookTCPSocket(QObject *parent)
     //HOTR Starts out Minimized
     isMinimized = true;
 
+    //Is the TCP Socket Connected
+    isConnected = false;
+
+    //Stop Connecting to TCP Server
+    stopConnecting = false;
+
     //Create the New TCP Socket
     p_hookSocket = new QTcpSocket(this);
 
@@ -20,16 +26,22 @@ HookTCPSocket::HookTCPSocket(QObject *parent)
     connect(p_hookSocket,SIGNAL(connected()), this, SLOT(SocketConnected()));
     connect(p_hookSocket,SIGNAL(disconnected()), this, SLOT(SocketDisconnected()));
 
+    //Timer Set-up
+    p_waitingForConnection = new QTimer(this);
+    p_waitingForConnection->setInterval (TCPTIMERTIME);
+    p_waitingForConnection->setSingleShot (true);
+    connect(p_waitingForConnection, SIGNAL(timeout()), this, SLOT(TCPConnectionTimeOut()));
+
 }
 
 void HookTCPSocket::TCPReadData()
 {
     quint8 i;
-    QStringList readDataSL, filterData;
 
     //Read the TCP Socket Data
     readData = p_hookSocket->readAll ();
 
+    //Convert to Byte Array to String
     QString message = QString::fromStdString (readData.toStdString ());
 
     //Remove the \r at the end
@@ -44,86 +56,131 @@ void HookTCPSocket::TCPReadData()
 
     for(i = 0; i < tcpSocketReadData.count(); i++)
     {
-        //qDebug() << "Socket Read:" << tcpSocketReadData[i];
+        //Get the Output Signal Name
+        QStringList splitData = tcpSocketReadData[i].split(" = ", Qt::SkipEmptyParts);
+
+        //qDebug() << "Socket Read, signal:" << splitData[0] << "data:" << splitData[1];
 
         if(inGame)
         {
-            if(!sentStopFiltering)
-            {
-                emit StopFilteringTCPReadData();
-                sentStopFiltering = true;
-            }
-
-            //Get the Output Signal Name
-            QStringList splitData = tcpSocketReadData[i].split(" = ", Qt::SkipEmptyParts);
-
-            //qDebug() << "Socket Read Signal:" << splitData[0];
+            //qDebug() << "Socket Read After Game, signal:" << splitData[0] << "data:" << splitData[1];
 
             //Search for Output Signal
             if(outputSignalsFilter.contains(splitData[0]))
-                readDataSL << tcpSocketReadData[i];
+            {
+                if(splitData[0].size() == 9)
+                {
+                    if(splitData[0][5] == 's' && splitData[0][8] == 'p')
+                    {
+                        emit GameHasStopped();
+                        inGame = false;
+                        //qDebug() << "Socket Read After Game, Game Has Stopped";
+                    }
+                    else
+                        emit FilteredOutputSignals(splitData[0], splitData[1]);
+                }
+                else
+                    emit FilteredOutputSignals(splitData[0], splitData[1]);
+            }
             else if(!isMinimized)
-                filterData << tcpSocketReadData[i];
+                emit FilteredTCPData(splitData[0], splitData[1]);
         }
         else
         {
-            //None Filter Data
-            readDataSL << tcpSocketReadData[i];
+            //qDebug() << "Socket Read Before Game, signal:" << splitData[0] << "data:" << splitData[1];
+
+            //Check for Game Starting
+            if(splitData[0] == MAMESTART)
+            {
+                if(splitData[1] == MAMEEMPTY)
+                    emit EmptyGameHasStarted();
+                else
+                    emit GameHasStarted(splitData[1]);
+            }
+            else if(splitData[0] == GAMESTART)
+                emit GameHasStarted(splitData[1]);
+            else
+            {
+                if(splitData[0][0] == 'M' && splitData[0][1] == 'a' && splitData[0][2] == 'm')
+                {
+                    if(splitData[0][4] == 'P' && splitData[0].size() == 9)
+                        splitData[0] = PAUSE;
+                    else if(splitData[0][4] == 'O' && splitData[0].size() == 15)
+                        splitData[0].replace(MAMEORIENTATION, ORIENTATION);
+                }
+
+                emit DataRead(splitData[0], splitData[1]);
+            }
         }
 
     }
-
-    //Send Data to Hooker Engine
-    emit DataRead(readDataSL);
-
-    //Sent No Used Data Out, if Not Minimized
-    if(!isMinimized)
-        emit FilteredTCPData(filterData);
 }
 
 
 void HookTCPSocket::Connect()
 {
-    //qDebug() << "Waiting for a TCP Connection - Connect";
+    stopConnecting = false;
+    if(!isConnected)
+    {
+        //qDebug() << "Waiting for a TCP Connection - Connect";
 
-    //Set the Address for the TCP Socket
-    //p_hookSocket->connectToHost (TCPHOSTNAME, TCPHOSTPORT);
-    //p_hookSocket->connectToHost (QHostAddress::SpecialAddress::LocalHost, TCPHOSTPORT);
-    p_hookSocket->connectToHost (QHostAddress("127.0.0.1"), TCPHOSTPORT);
+        //Set the Address for the TCP Socket
+        //p_hookSocket->connectToHost (TCPHOSTNAME, TCPHOSTPORT);
+        //p_hookSocket->connectToHost (QHostAddress::SpecialAddress::LocalHost, TCPHOSTPORT);
+        p_hookSocket->connectToHost (QHostAddress("127.0.0.1"), TCPHOSTPORT);
+        //p_hookSocket->connectToHost ("localhost", TCPHOSTPORT);
 
-    //Wait for Connection
-    p_hookSocket->waitForConnected (TIMETOWAIT);
+        //Start Timer for Connection
+        p_waitingForConnection->start ();
 
+        //Wait for Connection
+        p_hookSocket->waitForConnected (TIMETOWAIT);
+    }
 }
 
 
 void HookTCPSocket::Disconnect()
 {
-    //qDebug() << "Closed TCP Connection - Disconnect";
+    stopConnecting = true;
+
+    p_waitingForConnection->stop();
 
     //Close TCP Socket
     p_hookSocket->close ();
 
+    isConnected = false;
+
     //TCP Socket Closed, so game has Stopped
     inGame = false;
-    sentStopFiltering = false;
 }
 
 //Used for MultiThreading
 void HookTCPSocket::SocketConnected()
 {
+    isConnected = true;
+
+    p_waitingForConnection->stop();
+
     emit SocketConnectedSignal();
 }
 
 void HookTCPSocket::SocketDisconnected()
 {
+    isConnected = false;
+    inGame = false;
+
     emit SocketDisconnectedSignal();
+
+    if(!stopConnecting)
+        Connect();
 }
 
 
 void HookTCPSocket::GameStartSocket(const QStringList &outputSignals)
 {
     outputSignalsFilter = outputSignals;
+
+    //qDebug() << "Stop Filtering Data: Sent Signal to Hooker Engine";
 
     inGame = true;
 }
@@ -132,6 +189,7 @@ void HookTCPSocket::GameStartSocket(const QStringList &outputSignals)
 void HookTCPSocket::GameStopSocket()
 {
     inGame = false;
+    //qDebug() << "HE told TCP Game Has Stopped";
 }
 
 void HookTCPSocket::WindowStateTCP(const bool &isMin)
@@ -139,6 +197,17 @@ void HookTCPSocket::WindowStateTCP(const bool &isMin)
     isMinimized = isMin;
 }
 
+void HookTCPSocket::TCPConnectionTimeOut()
+{
+    if(!isConnected && !stopConnecting)
+    {
+        p_hookSocket->connectToHost (QHostAddress("127.0.0.1"), TCPHOSTPORT);
 
+        p_waitingForConnection->start ();
+
+        //Wait for Connection
+        p_hookSocket->waitForConnected (TIMETOWAIT);
+    }
+}
 
 

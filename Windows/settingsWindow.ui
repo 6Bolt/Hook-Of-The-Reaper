@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>485</width>
-    <height>761</height>
+    <height>355</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>220</x>
-     <y>730</y>
+     <x>210</x>
+     <y>320</y>
      <width>262</width>
      <height>26</height>
     </rect>
@@ -102,7 +102,7 @@
     <rect>
      <x>11</x>
      <y>38</y>
-     <width>320</width>
+     <width>271</width>
      <height>27</height>
     </rect>
    </property>
@@ -112,7 +112,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Use Default Light Gun Files Before INI Files</string>
+    <string>Use DefaultLG Files Before INI Files</string>
    </property>
   </widget>
   <widget class="QCheckBox" name="useMultiThreadCheckBox">
@@ -189,7 +189,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>630</y>
+     <y>230</y>
      <width>56</width>
      <height>21</height>
     </rect>
@@ -208,7 +208,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>660</y>
+     <y>260</y>
      <width>251</width>
      <height>22</height>
     </rect>
@@ -220,228 +220,6 @@
    </property>
    <property name="text">
     <string>Bypass Serial Port Write Checks</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_4">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>350</y>
-     <width>91</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>RS3 Reaper</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="reaperLEDCheckBox">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>380</y>
-     <width>351</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Disable Reaper Ammo_Value Control of 5 LEDs</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="ammoRadioButton">
-   <property name="geometry">
-    <rect>
-     <x>130</x>
-     <y>270</y>
-     <width>71</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Ammo</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="lifeRadioButton">
-   <property name="geometry">
-    <rect>
-     <x>220</x>
-     <y>270</y>
-     <width>51</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Life</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_5">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>270</y>
-     <width>121</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Display Priority:</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_6">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>240</y>
-     <width>211</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>Light Gun Display Settings</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="displayOtherCheckBox">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>300</y>
-     <width>131</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Display Other</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_7">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>520</y>
-     <width>81</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>OpenFire</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="ammoLifeCheckBox">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>580</y>
-     <width>181</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Display Ammo and Life</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="glyphsRadioButton">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>550</y>
-     <width>111</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Life Glyphs</string>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="lifeBarRadioButton">
-   <property name="geometry">
-    <rect>
-     <x>120</x>
-     <y>550</y>
-     <width>151</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string> Life Bar (0-100%)</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="lifeNumRadioButton">
-   <property name="geometry">
-    <rect>
-     <x>280</x>
-     <y>550</y>
-     <width>111</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Life Number</string>
    </property>
   </widget>
   <widget class="QCheckBox" name="enableNewGFCheckBox">
@@ -460,92 +238,6 @@
    </property>
    <property name="text">
     <string>Enable New Game File Creation, if Name or Default Not Found</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="ammo0CheckBox">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>410</y>
-     <width>441</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Enable Reaper Ammo 0 Delay</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="ammo0DelayLineEdit">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>440</y>
-     <width>41</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Default is 145ms</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignmentFlag::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_8">
-   <property name="geometry">
-    <rect>
-     <x>60</x>
-     <y>440</y>
-     <width>251</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Reaper Ammo 0 Delay (1-255ms)</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="holdSlideLineEdit">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>470</y>
-     <width>31</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Default is 5.0s</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignmentFlag::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_9">
-   <property name="geometry">
-    <rect>
-     <x>60</x>
-     <y>470</y>
-     <width>221</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Hold Slide Back Time (1.0-9.0s)</string>
    </property>
   </widget>
  </widget>

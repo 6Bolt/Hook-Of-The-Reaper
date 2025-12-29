@@ -3,9 +3,9 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.2.1"
+#define VERSION                 "1.2.3"
 #define VERSIONMAIN             1
-#define VERSIONMID              1
+#define VERSIONMID              2
 #define VERSIONLAST             3
 
 //Global Settings
@@ -80,17 +80,22 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define DISABLEREAPERLEDSOPEN   "ZS"
 #define DISABLEREAPERLEDSCLOSE  "ZX"
 
-#define MAXRELOADVALUE          14
+#define MAXRELOADVALUE          15
+#define LARGEAMMOVALUEDEFAULT   15
+#define LARGEAMMOVALUEDEFAULTS  "15"
 #define REAPERMAXAMMOF          5.0f
 #define REAPERRECOIL            "Z5"
 #define REAPERINITLEDS          "ZS"
 #define REAPERHOLDBACKSLIDE     "Z0"
 #define REAPERRELOADCOMMAND     "Z6"
+#define REPEARDISABLESLIDECMD   "Z1"
 #define DEFAULTAMMO0DELAY       145
 #define REAPERHOLDSLIDETIME     5000
 #define REAPERHOLDSLIDETIMEF    5.0f
 #define REAPERHOLDSLIDEMIN      1000
 #define REAPERHOLDSLIDEMAX      9000
+#define DEFAULTAMMODELAYS       "145"
+#define DEFAULTHOLDTIMES        "5.0"
 
 //Second Default Light Gun
 //Retro Shooter: MX24
@@ -293,11 +298,11 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define TCPHOSTNAME             "localhost"
 #define TCPHOSTPORT             8000
 //Time to Wait for TCP Socket Connection (msec)
-#define TIMETOWAIT              12000
+#define TIMETOWAIT              1000
 //Time for the TCP Socket Timer (msec)
-#define TCPTIMERTIME            12200
+#define TCPTIMERTIME            1007
 #define TCPSLEEPTIME            500    // In ms
-#define TCPTESTPORT             8582
+#define TIMETOWAITTCPSERVER     3000
 
 
 //File & Dir Data
@@ -311,8 +316,8 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define DATAFILEDIR             "data"
 #define LIGHTGUNSAVEFILE        "lightguns.hor"
 #define COMDEVICESAVEFILE       "comdevices.hor"
-#define STARTLIGHTGUNSAVEFILE   "Light Gun Data File"
 #define STARTLIGHTGUNSAVEFILEV2 "Light Gun Data File V2"
+#define STARTLIGHTGUNSAVEFILEV3 "Light Gun Data File V3"
 #define PLAYERSASSIGNMENTS      "Player Assignments"
 #define STARTCOMDEVICESAVEFILE  "COM Device Data File"
 #define LIGHTGUNNUMBERFILE      "Light Gun #"
@@ -333,11 +338,19 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define ENDOFLGFILE             ".txt"
 #define LGDEFAULTFILE           "lgDefault.hor"
 
+#define DISPLAYCMDFRONT         ">Display_"
+#define RELOADCMDFRONT          ">Reload"
+#define DAMAGECMDFRONT          ">Damage"
+#define DEATHCMDFRONT           ">Death_"
+#define LIFECMDFRONT            ">Life_"
+#define SHAKECMDFRONT           ">Shake"
+
 
 
 //Settings
 #define SETTINGSSAVEFILE        "settings.hor"
 #define STARTSETTINGSFILE       "Settings"
+#define STARTSETTINGSFILEV2     "Settings V2"
 #define DEFAULTREFRESHDISPLAY   400
 
 
@@ -350,7 +363,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define ANALOGSTRENGTHMASK      "000"
 //Input Mask for Reaper Ammo 0 Delay 1-255
 #define REAPERAMMO0DELAYMASK    "000"
-//Input Mask for Reaper Hold Slide Back Timing 1-9 seconds
+//Input Mask for Reaper Hold Slide Back Timing 1.0-9.0 seconds
 #define REAPERHOLDSLIDEMASK     "9.9"
 
 #define USBDEVICEMASK           "000"
@@ -396,18 +409,23 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Process TCP Socket Data
-#define MAMESTART               "mame_start = "
+//#define MAMESTART               "mame_start = "
+#define MAMESTART               "mame_start"
 #define MAMESTARTNOGAME         "mame_start = ___empty"
 #define MAMESTOPFRONT           "mame_stop"
+#define MAMEEMPTY               "___empty"
 //Used In TCPReadReady
 #define MAMEENDLINE             "\r"
 #define FLYCASTENDLINE          "\n"
 #define STATECHANGE             "statechange"
 #define PAUSE                   "pause"
+#define MAMEPAUSE               "MamePause"
 #define ROTATE                  "rotate"
 #define REFRESHTIME             "refreshtime"
 #define ORIENTATION             "Orientation"
-#define GAMESTART               "game = "
+#define MAMEORIENTATION         "MameOrientation"
+//#define GAMESTART               "game = "
+#define GAMESTART               "game"
 #define GAMESTOP                "game_stop"
 
 
@@ -695,5 +713,27 @@ struct LightGunSettings
     bool shake;
 };
 
+struct ReaperSlideData
+{
+    bool disableHoldBack;
+    bool enableHoldDelay;
+    quint8 holdDelay;
+    quint16 slideHoldTime;
+};
+
+struct DisplayPriority
+{
+    bool ammo;
+    bool life;
+    bool other;
+};
+
+struct DisplayOpenFire
+{
+    bool ammoAndLifeDisplay;
+    bool lifeGlyphs;
+    bool lifeBar;
+    bool lifeNumber;
+};
 
 #endif // GLOBAL_H

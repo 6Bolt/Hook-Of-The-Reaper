@@ -35,10 +35,10 @@ public:
 public slots:
 
     //Connect to COM Port
-    void Connect(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const QString &comPortPath, const bool &isWriteOnly);
+    void Connect(const quint8 &playerNum, const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const QString &comPortPath, const bool &isWriteOnly);
 
     //Disconnect to COM Port
-    void Disconnect(const quint8 &comPortNum);
+    void Disconnect(const quint8 &playerNum, const quint8 &comPortNum);
 
     //Write Data to COM Port
     void WriteData(const quint8 &comPortNum, const QByteArray &writeData);
@@ -85,6 +85,11 @@ signals:
     //Signal Used to Display Error Message from COM Port
     void ErrorMessage(const QString &title, const QString &errorMsg);
 
+    //When a Light Gun Connects to Output Interface
+    void LightGunConnected(quint8 lgNum);
+
+    //When a Light Gun Disconnects from a Output Interface
+    void LightGunDisconnected(quint8 lgNum);
 
 private:
 

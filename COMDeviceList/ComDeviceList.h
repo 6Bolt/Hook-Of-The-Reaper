@@ -32,19 +32,21 @@ public:
     //Copy Light Gun
     void            AddLightGun(LightGun const &lgMember);
     //For RS3 Reaper
-    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint16 maNumber, quint16 rvNumber, SupportedRecoils lgRecoils, LightGunSettings lgSet);
-    //Normal Light Gun & Fusion & Blamcon & Xena & X-Gunner
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool disableLEDs,  quint8 largeAmmo, ReaperSlideData slideData);
+    //Normal Light Gun & Fusion & Xena & X-Gunner & JB Gun4IR
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet);
     //For MX24 Light Gun
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hcpNum, SupportedRecoils lgRecoils);
-    //For JB Gun4IR & OpenFire Light Gun
-    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, quint8 analStrength, SupportedRecoils lgRecoils, LightGunSettings lgSet);
+    //For OpenFire Light Gun
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool noDis, DisplayPriority displayP, DisplayOpenFire displayOF);
     //For Alien USB Light Gun
-    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool n2DDisplay);
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool n2DDisplay, DisplayPriority displayP);
     //For AimTrak USB Light Gun
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils);
     // For Sinden Light Gun
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint16 port, quint8 player, quint8 recVolt, SupportedRecoils lgRecoils, LightGunSettings lgSet);
+    //For Blamcon
+    void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool has2DigitDiplay, DisplayPriority displayP);
 
     //Adds a COM Device in the List
     void            AddComPortDevice(ComPortDevice const &cpdMember);
@@ -76,10 +78,11 @@ public:
     //Save or Load Light Guns to/from a File
     void            SaveLightGunList();
     void            LoadLightGunList();
-    //Load V1 Light Gun Saved Data
-    void            LoadLightGunListV1();
+
     //Load V2 Light Gun Saved Data
     void            LoadLightGunListV2();
+    //Load V3 Light Gun Saved Data
+    void            LoadLightGunListV3();
 
 
     //Save or Load Players Assignment to/from File
@@ -93,6 +96,9 @@ public:
     //Save or Load Settings to/from a File
     void            SaveSettings();
     void            LoadSettings();
+
+    void            LoadSettingsV1();
+    void            LoadSettingsV2();
 
     //Settings Get & Set Functions
     //Use Default Light Gun Files before INI Files
@@ -119,29 +125,13 @@ public:
     bool            GetSerialPortWriteCheckBypass();
     void            SetSerialPortWriteCheckBypass(bool spwCB);
 
-    //Reaper - Disable Reaper's 5 LEDs
-    bool            GetDisableReaperLEDs();
-    void            SetDisableReaperLEDs(bool drLED);
-
-    //Normal Display Priority
-    void            GetDisplayPriority(bool *ammo, bool *life);
-    void            SetDisplayPriority(bool ammo, bool life);
-
-    //Other Display Priority
-    bool            GetDisplayOtherPriority();
-    void            SetDisplayOtherPriority(bool other);
-
-    //OpenFire - Enable OpenFire Display Ammo & Life
-    bool            GetDisplayAmmoAndLife(bool *displayLG, bool *displayLB, bool *displayLN);
-    void            SetDisplayAmmoAndLife(bool displayAAL, bool displayLG, bool displayLB, bool displayLN);
-
     //Enable New Game File Creation
     bool            GetEnableNewGameFileCreation();
     void            SetEnableNewGameFileCreation(bool enableNGFC);
 
     //Enable and Delay for Reamper Ammo 0 Delay
-    quint8          GetReaperAmmo0Delay(bool *isAmmo0DelayEnabled, quint16 *reaperHST);
-    void            SetReaperAmmo0Delay(bool isAmmo0DelayEnabled, quint8 delayTime, quint16 reaperHST);
+    //quint8          GetReaperAmmo0Delay(bool *isAmmo0DelayEnabled, quint16 *reaperHST);
+    //void            SetReaperAmmo0Delay(bool isAmmo0DelayEnabled, quint8 delayTime, quint16 reaperHST);
 
     //Get TCP Port Player Info
     qint8           GetTCPPortPlayerInfo(quint16 portNumber);
@@ -149,8 +139,10 @@ public:
     bool            CheckTCPPortPlayer(quint16 portNumber, quint8 playerInfo);
     void            RemoveTCPPortPlayer(quint16 portNumber, quint8 playerInfo);
 
-    //Update Light Gun Settings
+    //Update Light Gun Settings New and Old
     void            UpdateLightGunWithSettings();
+    void            UpdateLightGunWithSettingsOld();
+
 
     //Copies Used Dip Players Array
     void            CopyUsedDipPlayersArray(bool *targetArray, quint8 size, quint8 hubComPort);
@@ -239,6 +231,8 @@ private:
     bool                displayAmmoLifeGlyphs;
     bool                displayAmmoLifeBar;
     bool                displayAmmoLifeNumber;
+
+    bool                saveLGAfterSettings;
 
     //TCP Server Port and Players
     //0 - Both P1 and P2 Taken, 1 - P1 Taken, 2 - P2 Taken

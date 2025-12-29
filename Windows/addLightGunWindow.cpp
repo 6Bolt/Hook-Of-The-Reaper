@@ -1207,7 +1207,7 @@ void addLightGunWindow::ChangeLabels(int index)
 
         ui->tcpPortLabel->setStyleSheet("QLabel { color: black; }");
         ui->tcpPlayerLabel->setStyleSheet("QLabel { color: black; }");
-        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: black; }");
+        ui->tcpRecoilVoltLabel->setStyleSheet("QLabel { color: black; }"); 
     }
     else if(index == RS3_REAPER || index == XGUNNER)
     {

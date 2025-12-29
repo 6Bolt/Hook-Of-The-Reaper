@@ -26,6 +26,8 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     lgFileLoaded = false;
     iniFileLoadFail = false;
     lgFileLoadFail = false;
+    isDefaultLGGame = false;
+    isINIGame = false;
 
     //New INI or Default LG Game File Made
     newINIFileMade = false;
@@ -40,9 +42,6 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     bufferNum = 0;
 
     isUSBHIDInit = false;
-
-    //Stop Filtering TCP Data
-    stopFilterTCPData = false;
 
     commandLGList << OPENCOMPORT << CLOSECOMPORT << DAMAGECMD << RECOILCMD << RELOADCMD;
     commandLGList << AMMOVALUECMD << SHAKECMD << AUTOLEDCMD << ARATIO169CMD;
@@ -133,19 +132,6 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     //Set Up the TCP Socket
     p_hookSocket = new HookTCPSocket();
 
-    //Set Up the TCP Socket Connection Timer
-    p_waitingForConnection = new QTimer(this);
-
-    //Set Interval a little more the the TCP Socket Wait for Connection
-    p_waitingForConnection->setInterval (TCPTIMERTIME);
-
-    //Turn on signal shot, so timer not running when connected
-    p_waitingForConnection->setSingleShot (true);
-
-    //Set Up the Signal and Slots for the timer
-    connect(p_waitingForConnection, SIGNAL(timeout()), this, SLOT(TCPConnectionTimeOut()));
-
-
     if(useMultiThreading)
     {
         //Move TCP Socket onto Different Thread
@@ -161,18 +147,22 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     connect(p_hookSocket,&HookTCPSocket::SocketConnectedSignal, this, &HookerEngine::TCPConnected);
     connect(p_hookSocket,&HookTCPSocket::SocketDisconnectedSignal, this, &HookerEngine::TCPDisconnected);
 
-    //For TCP Socket to know when Game has Started or Stopped
+    //For TCP Socket to know when Game has Started or Stoppeds
     connect(this, &HookerEngine::TCPGameStart, p_hookSocket, &HookTCPSocket::GameStartSocket);
     connect(this, &HookerEngine::TCPGameStop, p_hookSocket, &HookTCPSocket::GameStopSocket);
-
-    //Start Filtering
-    connect(p_hookSocket,&HookTCPSocket::StopFilteringTCPReadData, this, &HookerEngine::StopFilteringReadData);
 
     //Window State to TCP
     connect(this, &HookerEngine::WindowStateToTCP, p_hookSocket, &HookTCPSocket::WindowStateTCP);
 
     //Process Filtered TCP Data
     connect(p_hookSocket,&HookTCPSocket::FilteredTCPData, this, &HookerEngine::ProcessFilterTCPData);
+
+    //When Game Has Started or an Empty Game has Started
+    connect(p_hookSocket,&HookTCPSocket::GameHasStarted, this, &HookerEngine::GameStart);
+    connect(p_hookSocket,&HookTCPSocket::EmptyGameHasStarted, this, &HookerEngine::GameStartEmpty);
+
+    //When Game Has Stopped
+    connect(p_hookSocket,&HookTCPSocket::GameHasStopped, this, &HookerEngine::GameStopped);
 
 
     if(useMultiThreading)
@@ -214,6 +204,10 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
 
     connect(this, &HookerEngine::StopAllConnections, p_hookComPortWin, &HookCOMPortWin::DisconnectAll);
     connect(p_hookComPortWin, &HookCOMPortWin::ErrorMessage, this, &HookerEngine::ErrorMessageCom);
+
+    //Light Gun has Connected or Disconnected from it's Interface
+    connect(p_hookComPortWin, &HookCOMPortWin::LightGunConnected, this, &HookerEngine::ConnectedLightGun);
+    connect(p_hookComPortWin, &HookCOMPortWin::LightGunDisconnected, this, &HookerEngine::DisconnectedLightGun);
 
 #else
     p_hookComPort = new HookCOMPort();
@@ -304,6 +298,7 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
         lgOutputConnection[i] = -1;
         lgTCPPort[i] = 0;
         lgTCPPlayer[i] = UNASSIGN;
+        isLGConnected[i] = false;
     }
 
     //Status of the LG TCP Server
@@ -311,8 +306,6 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     isTCPConnecting = false;
     lgTCPConnections = 0;
 
-    //Set-up Light Guns with HookerEngine. Currently only for Reaper Ammo 0 (Z0) delay buffer
-    SetUpLightGuns();
 }
 
 //Deconstructor
@@ -350,27 +343,19 @@ HookerEngine::~HookerEngine()
 
 void HookerEngine::HookerEngine::Start()
 {
-    isEngineStarted = true;
+    //Display TCP Connection
+    emit TCPStatus(isTCPSocketConnected);
 
     //Load Player's Light Gun Assignments, In Case Something Changed
-    for(quint8 i = 0; i < MAXPLAYERLIGHTGUNS; i++)
-    {
-        playersLGAssignment[i] = p_comDeviceList->GetPlayerLightGunAssignment(i);
-    }
+    LoadUpdatePlayerAssignment();
 
-    //Load Settings Values, In Case Something Changed. Multi-Thread Needs Restart
-    useDefaultLGFirst = p_comDeviceList->GetUseDefaultLGFirst ();
-    quint32 newRefreshTimeDisplay = p_comDeviceList->GetRefreshTimeDisplay ();
+    //Load Settings
+    LoadSettingsFromList();
 
-    if(newRefreshTimeDisplay != refreshTimeDisplay)
-    {
-        //Set Interval to the Setting of refresh Time Display
-        p_refreshDisplayTimer->setInterval (newRefreshTimeDisplay);
-        refreshTimeDisplay = newRefreshTimeDisplay;
+    //Set-Up Reapers if they are Holding Slide Back
+    SetUpLightGuns();
 
-    }
-
-    p_waitingForConnection->start ();
+    isEngineStarted = true;
 
     //Start the TCP Connection
     emit StartTCPSocket();
@@ -379,10 +364,6 @@ void HookerEngine::HookerEngine::Start()
 void HookerEngine::HookerEngine::Stop()
 {
     isEngineStarted = false;
-
-    //Stop the 2 timers
-    if(p_waitingForConnection->isActive ())
-        p_waitingForConnection->stop ();
 
     if(p_refreshDisplayTimer->isActive ())
         p_refreshDisplayTimer->stop ();
@@ -699,7 +680,8 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
                     else
                     {
                         //Check if Serial Port or USB HID. If Serial Port, get Serial Port Number
-                        if(p_comDeviceList->p_lightGunList[lgNumber]->IsLightGunUSB ())
+                        //if(p_comDeviceList->p_lightGunList[lgNumber]->IsLightGunUSB ())
+                        if(p_comDeviceList->p_lightGunList[lgNumber]->GetOutputConnection() == USBHID)
                         {
                             testIsLoadedLGUSB[i] = true;
                             testLoadedLGComPortNumber[i] = UNASSIGN;
@@ -1643,64 +1625,65 @@ bool HookerEngine::LoadLGFileTest(QString fileNamePath)
 }
 
 
-void HookerEngine::CloseAllLightGunConnections()
-{
-    emit StopAllConnections();
-}
-
 void HookerEngine::LoadSettingsFromList()
 {
     bool timerRunning = false;
 
     //Settings Values
     useDefaultLGFirst = p_comDeviceList->GetUseDefaultLGFirst ();
-    useMultiThreading = p_comDeviceList->GetUseMultiThreading ();
-    refreshTimeDisplay = p_comDeviceList->GetRefreshTimeDisplay ();
+    //Don't Get Multi-Threading, as it needs reset
+    //useMultiThreading = p_comDeviceList->GetUseMultiThreading ();
+    quint32 newRefreshTimeDisplay = p_comDeviceList->GetRefreshTimeDisplay ();
     closeComPortGameExit = p_comDeviceList->GetCloseComPortGameExit ();
     ignoreUselessDLGGF = p_comDeviceList->GetIgnoreUselessDFLGGF ();
     bypassSerialWriteChecks = p_comDeviceList->GetSerialPortWriteCheckBypass ();
     enableNewGameFileCreation = p_comDeviceList->GetEnableNewGameFileCreation ();
-    ammo0DelayTime = p_comDeviceList->GetReaperAmmo0Delay(&isAmmo0DelayEnabled, &holdSlideBackTime);
 
-    if(p_refreshDisplayTimer->isActive ())
+    if(newRefreshTimeDisplay != refreshTimeDisplay)
     {
-        p_refreshDisplayTimer->stop ();
-        timerRunning = true;
+        if(p_refreshDisplayTimer->isActive ())
+        {
+            p_refreshDisplayTimer->stop ();
+            timerRunning = true;
+        }
+
+        //Set Interval to the Setting of refresh Time Display
+        p_refreshDisplayTimer->setInterval (refreshTimeDisplay);
     }
 
     emit SetComPortBypassWriteChecks(bypassSerialWriteChecks);
 
-    //Set Interval to the Setting of refresh Time Display
-    p_refreshDisplayTimer->setInterval (refreshTimeDisplay);
-
     if(timerRunning)
-        p_refreshDisplayTimer->start ();
+        p_refreshDisplayTimer->start (); 
 }
 
 void HookerEngine::SetUpLightGuns()
 {
-    if(isAmmo0DelayEnabled)
+    quint8 numberLG = p_comDeviceList->GetNumberLightGuns();
+    bool isLGDefaultLG;
+    quint8 defaultLGNumber, i;
+    ReaperSlideData slideData;
+
+    //Disconnect old connections, if any
+    if(!connectedReaperLG.isEmpty())
     {
-        quint8 numberLG = p_comDeviceList->GetNumberLightGuns();
-        bool isLGDefaultLG;
-        quint8 defaultLGNumber, i;
+        for(i = 0; i < connectedReaperLG.size (); i++)
+            disconnect(p_comDeviceList->p_lightGunList[connectedReaperLG[i]], &LightGun::WriteCOMPort, this, &HookerEngine::WriteLGComPortSlot);
 
-        //Disconnect old connections, if any
-        if(!connectedReaperLG.isEmpty())
+        connectedReaperLG.clear ();
+    }
+
+    //Connect new connections
+    for(i = 0; i < numberLG; i++)
+    {
+        isLGDefaultLG = p_comDeviceList->p_lightGunList[i]->GetDefaultLightGun();
+        defaultLGNumber = p_comDeviceList->p_lightGunList[i]->GetDefaultLightGunNumber();
+
+        if(isLGDefaultLG && defaultLGNumber == RS3_REAPER)
         {
-            for(i = 0; i < connectedReaperLG.size (); i++)
-                disconnect(p_comDeviceList->p_lightGunList[connectedReaperLG[i]], &LightGun::WriteCOMPort, this, &HookerEngine::WriteLGComPortSlot);
+            slideData = p_comDeviceList->p_lightGunList[i]->GetReaperSlideData ();
 
-            connectedReaperLG.clear ();
-        }
-
-        //Connect new connections
-        for(i = 0; i < numberLG; i++)
-        {
-            isLGDefaultLG = p_comDeviceList->p_lightGunList[i]->GetDefaultLightGun();
-            defaultLGNumber = p_comDeviceList->p_lightGunList[i]->GetDefaultLightGunNumber();
-
-            if(isLGDefaultLG && defaultLGNumber == RS3_REAPER)
+            if(!slideData.disableHoldBack && slideData.enableHoldDelay)
             {
                 connect(p_comDeviceList->p_lightGunList[i], &LightGun::WriteCOMPort, this, &HookerEngine::WriteLGComPortSlot);
                 connectedReaperLG << i;
@@ -1752,28 +1735,6 @@ void HookerEngine::LoadUpdatePlayerAssignment()
 
 //Public Slots
 
-void HookerEngine::TCPReadyRead(const QStringList &readSL)
-{
-    //QString readData = readS;
-    ProcessTCPData(readSL);
-    //qDebug() << "Got Data from TCP Socket";
-
-    //QByteArray messageBA = readBA;
-    //QString message = QString::fromStdString (messageBA.toStdString ());
-
-    //Remove the \r at the end
-    //message.chop(1);
-
-    //qDebug() << message;
-
-    //If Multiple Data Lines, they will be seperated into lines, using \r or \n
-    //If it had 2 data lines together, then \r would be at end which is chopped off, and middle
-    //QRegularExpression endLines("[\r\n]");
-    //QStringList tcpSocketReadData = message.split(QRegularExpression("[\r\n]"), Qt::SkipEmptyParts);
-
-    //ProcessTCPData(tcpSocketReadData);
-}
-
 void HookerEngine::ReadComPortSig(const quint8 &comPortNum, const QByteArray &readData)
 {
     //It is Here, but not Implamented Yet
@@ -1803,30 +1764,9 @@ void HookerEngine::WriteLGComPortSlot(quint8 cpNum, QString cpData)
     emit WriteComPortSig(cpNum, cpBA);
 }
 
-void HookerEngine::StopFilteringReadData()
-{
-    stopFilterTCPData = true;
-    //qDebug() << "Stop Filtering TCP Read Data from the SLOT!!!!";
-}
-
 
 
 //Private Slots
-
-void HookerEngine::TCPConnectionTimeOut()
-{
-    //No TCP Socket Connection in time Interval
-    //Restart TCP Socket & timer, if TCP Socket is Not Connected
-
-    if(!isTCPSocketConnected)
-    {
-        //Timer Start  - Interval Already Set
-        p_waitingForConnection->start ();
-
-        //Start the TCP Connection
-        emit StartTCPSocket();
-    }
-}
 
 void HookerEngine::TCPConnected()
 {
@@ -1835,31 +1775,19 @@ void HookerEngine::TCPConnected()
     isTCPSocketConnected = true;
 
     emit TCPStatus(isTCPSocketConnected);
-
-    //Stop Timer
-    p_waitingForConnection->stop();
 }
 
 void HookerEngine::TCPDisconnected()
 {
-    if(isEngineStarted)
-    {
-        //qDebug() << "TCP Socket is Disconnected - Hooker Engine TCP Disconnected. Trying to Reconnect";
+    //qDebug() << "TCP Socket is Disconnected - Hooker Engine TCP Disconnected. Trying to Reconnect";
 
-        isTCPSocketConnected = false;
+    isTCPSocketConnected = false;
 
-        emit TCPStatus(isTCPSocketConnected);
+    emit TCPStatus(isTCPSocketConnected);
 
-        //If in Game Mode & TCP Socket Diconnects, then Clear Things Out
-        if(isGameFound)
-            ClearOnDisconnect();
-
-        //Timer Start  - Interval Already Set
-        p_waitingForConnection->start ();
-
-        //Start the TCP Connection
-        emit StartTCPSocket();
-    }
+    //If in Game Mode & TCP Socket Diconnects, then Clear Things Out
+    if(isGameFound)
+        ClearOnDisconnect();
 }
 
 
@@ -1924,21 +1852,6 @@ void HookerEngine::PXRecoilR2S(quint8 player)
         for(quint8 k = 0; k < dlgCommands.count(); k++)
             lgGamePlayers[player].Write (dlgCommands[k]);
 
-        /*
-        if(!isLoadedLGUSB[player])
-        {
-            for(quint8 k = 0; k < dlgCommands.count(); k++)
-                WriteLGComPort(loadedLGComPortNumber[player], dlgCommands[k]);
-
-            //qDebug() << "Recoil_R2S Timer - Writting to Port: " << loadedLGComPortNumber[3] << " with Commands: " << dlgCommands[k];
-        }
-        else
-        {
-            for(quint8 k = 0; k < dlgCommands.count(); k++)
-                WriteLGUSBHID(player, dlgCommands[k]);
-        }
-        */
-
         if(isRecoilDelaySet[player])
         {
             blockRecoil[player] = true;
@@ -1984,11 +1897,13 @@ void HookerEngine::PXLGDisplayDelay(quint8 player)
         }
         else if(!lgDisplayDelayAmmoCMDs[player].isEmpty())
         {
+            //qDebug() << "Ammo Player" << player << lgDisplayDelayAmmoCMDs[player];
             WriteDisplayDelayCMD(player, lgDisplayDelayAmmoCMDs[player]);
             lgDisplayDelayAmmoCMDs[player].clear();
         }
         else if(!lgDisplayDelayLifeCMDs[player].isEmpty())
         {
+            //qDebug() << "Life Player" << player << lgDisplayDelayLifeCMDs[player];
             WriteDisplayDelayCMD(player, lgDisplayDelayLifeCMDs[player]);
             lgDisplayDelayLifeCMDs[player].clear();
         }
@@ -2005,11 +1920,6 @@ void HookerEngine::PXLGDisplayDelay(quint8 player)
 void HookerEngine::WriteDisplayDelayCMD(quint8 player, QString command)
 {
     lgGamePlayers[player].Write (command);
-
-    //if(!isLoadedLGUSB[player])
-    //    WriteLGComPort(loadedLGComPortNumber[player], command);
-    //else
-    //    WriteLGUSBHID(player, command);
 }
 
 
@@ -2064,14 +1974,7 @@ void HookerEngine::PXCloseSolenoid(quint8 player)
 
 
     for(quint8 i = 0; i < closeSolenoidCMDs[player].length(); i++)
-    {
         lgGamePlayers[player].Write (closeSolenoidCMDs[player][i]);
-
-        //if(!isLoadedLGUSB[player])
-        //    WriteLGComPort(loadedLGComPortNumber[player], closeSolenoidCMDs[player][i]);
-        //else
-        //    WriteLGUSBHID(player, closeSolenoidCMDs[player][i]);
-    }
 
     isLGSolenoidOpen[player] = false;
     blockRecoilValue[player] = true;
@@ -2136,42 +2039,39 @@ void HookerEngine::OpenSerialPortSlot(quint8 playerNum, bool noInit)
     //Get Light Gun Number
     lightGun = loadedLGNumbers[playerNum];
 
-    //Check if Light Gun is not Unassign
-    if(lightGun != UNASSIGN)
+
+    //Gets COM Port Settings
+    tempCPNum = loadedLGComPortNumber[playerNum];
+    tempCPName = p_comDeviceList->p_lightGunList[lightGun]->GetComPortString();
+    tempBaud = p_comDeviceList->p_lightGunList[lightGun]->GetComPortBaud();
+    tempData = p_comDeviceList->p_lightGunList[lightGun]->GetComPortDataBits();
+    tempParity = p_comDeviceList->p_lightGunList[lightGun]->GetComPortParity();
+    tempStop = p_comDeviceList->p_lightGunList[lightGun]->GetComPortStopBits();
+    tempFlow = p_comDeviceList->p_lightGunList[lightGun]->GetComPortFlow();
+    tempPath = p_comDeviceList->p_lightGunList[lightGun]->GetComPortPath();
+
+    //Opens the COM Port
+    emit StartComPort(playerNum, tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, tempPath, true);
+
+    lgConnectionClosed[playerNum] = false;
+
+    if(!noInit)
     {
-        //Gets COM Port Settings
-        tempCPNum = loadedLGComPortNumber[playerNum];
-        tempCPName = p_comDeviceList->p_lightGunList[lightGun]->GetComPortString();
-        tempBaud = p_comDeviceList->p_lightGunList[lightGun]->GetComPortBaud();
-        tempData = p_comDeviceList->p_lightGunList[lightGun]->GetComPortDataBits();
-        tempParity = p_comDeviceList->p_lightGunList[lightGun]->GetComPortParity();
-        tempStop = p_comDeviceList->p_lightGunList[lightGun]->GetComPortStopBits();
-        tempFlow = p_comDeviceList->p_lightGunList[lightGun]->GetComPortFlow();
-        tempPath = p_comDeviceList->p_lightGunList[lightGun]->GetComPortPath();
+        //Get the Commnds for Open COM Port
+        commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
 
-        //Opens the COM Port
-        emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, tempPath, true);
+        //qDebug() << "Command Count: " << cmdCount << " Commands: " << commands;
 
-        lgConnectionClosed[playerNum] = false;
-
-        if(!noInit)
+        //Write Commands to the COM Port
+        if(isCommands)
         {
-            //Get the Commnds for Open COM Port
-            commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
-
-            //qDebug() << "Command Count: " << cmdCount << " Commands: " << commands;
-
-            //Write Commands to the COM Port
-            if(isCommands)
+            for(j = 0; j < commands.count(); j++)
             {
-                for(j = 0; j < commands.count(); j++)
-                {
-                    cpBA = commands[j].toUtf8 ();
-                    emit WriteComPortSig(tempCPNum, cpBA);
-                }
+                cpBA = commands[j].toUtf8 ();
+                emit WriteComPortSig(tempCPNum, cpBA);
             }
         }
-    } //if(lightGun != UNASSIGN)
+    }
 
 }
 
@@ -2187,35 +2087,30 @@ void HookerEngine::CloseSerialPortSlot(quint8 playerNum, bool noInit, bool initO
     //Get Light Gun Number
     lightGun = loadedLGNumbers[playerNum];
 
-    //Check if Light Gun is not Unassign
-    if(lightGun != UNASSIGN)
+    //Get COM Port For Light Gun
+    tempCPNum = loadedLGComPortNumber[playerNum];
+
+    if(!noInit || initOnly)
     {
-        //Get COM Port For Light Gun
-        tempCPNum = loadedLGComPortNumber[playerNum];
+        //Get Close COM Port Commands for Light Gun
+        commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
 
-        if(!noInit || initOnly)
+        //Write Commnds to COM Port
+        if(isCommands)
         {
-            //Get Close COM Port Commands for Light Gun
-            commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
-
-            //Write Commnds to COM Port
-            if(isCommands)
+            for(j = 0; j < commands.count(); j++)
             {
-                for(j = 0; j < commands.count(); j++)
-                {
-                    cpBA = commands[j].toUtf8 ();
-                    emit WriteComPortSig(tempCPNum, cpBA);
-                }
+                cpBA = commands[j].toUtf8 ();
+                emit WriteComPortSig(tempCPNum, cpBA);
             }
         }
-
-        //Closes The COM Port
-        if(closeComPortGameExit && !initOnly)
-            emit StopComPort(tempCPNum);
-
-        lgConnectionClosed[playerNum] = true;
     }
 
+    //Closes The COM Port
+    if(closeComPortGameExit && !initOnly)
+        emit StopComPort(playerNum, tempCPNum);
+
+    lgConnectionClosed[playerNum] = true;
 }
 
 void HookerEngine::WriteSerialPortSlot(quint8 cpNum, QString cpData)
@@ -2239,33 +2134,29 @@ void HookerEngine::OpenUSBHIDSlot(quint8 playerNum, bool noInit)
     //Get Light Gun Number
     lightGun = loadedLGNumbers[playerNum];
 
-    //Check if Light Gun is not Unassign
-    if(lightGun != UNASSIGN)
+    //For USB HID Connection
+    HIDInfo lgHIDInfo = p_comDeviceList->p_lightGunList[lightGun]->GetUSBHIDInfo ();
+    emit StartUSBHID(playerNum, lgHIDInfo);
+
+    lgConnectionClosed[playerNum] = false;
+
+    if(!noInit)
     {
-        //For USB HID Connection
-        HIDInfo lgHIDInfo = p_comDeviceList->p_lightGunList[lightGun]->GetUSBHIDInfo ();
-        emit StartUSBHID(playerNum, lgHIDInfo);
+        //Get the Commnds for Open USB HID
+        commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
 
-        lgConnectionClosed[playerNum] = false;
+        //qDebug() << "Command Count: " << cmdCount << " Commands: " << commands;
 
-        if(!noInit)
+        //Write Commands to the USB HID
+        if(isCommands)
         {
-            //Get the Commnds for Open USB HID
-            commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
-
-            //qDebug() << "Command Count: " << cmdCount << " Commands: " << commands;
-
-            //Write Commands to the USB HID
-            if(isCommands)
+            for(j = 0; j < commands.count(); j++)
             {
-                for(j = 0; j < commands.count(); j++)
-                {
-                    cpBA = QByteArray::fromHex(commands[j].toUtf8 ());
-                    emit WriteUSBHID(playerNum, cpBA);
-                }
+                cpBA = QByteArray::fromHex(commands[j].toUtf8 ());
+                emit WriteUSBHID(playerNum, cpBA);
             }
         }
-    } //if(lightGun != UNASSIGN)
+    }
 }
 
 void HookerEngine::CloseUSBHIDSlot(quint8 playerNum, bool noInit, bool initOnly)
@@ -2278,35 +2169,32 @@ void HookerEngine::CloseUSBHIDSlot(quint8 playerNum, bool noInit, bool initOnly)
     //Get Light Gun Number
     lightGun = loadedLGNumbers[playerNum];
 
-    //Check if Light Gun is not Unassign
-    if(lightGun != UNASSIGN)
+    if(!noInit || initOnly)
     {
-        if(!noInit || initOnly)
-        {
-            //Get Close USB HID Commands for Light Gun
-            commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
+        //Get Close USB HID Commands for Light Gun
+        commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
 
-            //Write Commnds to USB HID
-            if(isCommands)
+        //Write Commnds to USB HID
+        if(isCommands)
+        {
+            for(j = 0; j < commands.count(); j++)
             {
-                for(j = 0; j < commands.count(); j++)
-                {
-                    cpBA = QByteArray::fromHex(commands[j].toUtf8 ());
-                    emit WriteUSBHID(playerNum, cpBA);
-                }
+                cpBA = QByteArray::fromHex(commands[j].toUtf8 ());
+                emit WriteUSBHID(playerNum, cpBA);
             }
         }
-
-        //Closes The USB HID
-        if(closeComPortGameExit && !initOnly)
-            emit StopUSBHID(playerNum);
-
-        lgConnectionClosed[playerNum] = true;
     }
+
+    //Closes The USB HID
+    if(closeComPortGameExit && !initOnly)
+        emit StopUSBHID(playerNum);
+
+    lgConnectionClosed[playerNum] = true;
 }
 
 void HookerEngine::WriteUSBHIDSlot(quint8 playerNum, QString cpData)
 {
+    /*
     //Check to make Sure Even Number of Hex Values as 2 Hex Values = 1 Byte
     if (cpData.length() % 2 != 0)
     {
@@ -2316,6 +2204,7 @@ void HookerEngine::WriteUSBHIDSlot(quint8 playerNum, QString cpData)
             QMessageBox::warning (p_guiConnect, "USB HID Data Not Correct", tempCrit, QMessageBox::Ok);
         return;
     }
+    */
 
     //Convert String to Hex QByteArray
     QByteArray cpBA = QByteArray::fromHex(cpData.toUtf8 ());
@@ -2335,55 +2224,52 @@ void HookerEngine::OpenTCPServerSlot(quint8 playerNum, bool noInit)
     //Get Light Gun Number
     lightGun = loadedLGNumbers[playerNum];
 
-    //Check if Light Gun is not Unassign
-    if(lightGun != UNASSIGN)
+    isTCPConnected = p_hookComPortWin->IsTCPConnected (lgTCPPort[playerNum]);
+    isTCPConnecting = p_hookComPortWin->IsTCPConnecting (lgTCPPort[playerNum]);
+
+    if(!isTCPConnected && !isTCPConnecting)
     {
+        //Connect to TCP Server
+        emit ConnectTCPServer(lgTCPPort[playerNum]);
+    }
+
+    isTCPConnected = p_hookComPortWin->IsTCPConnected (lgTCPPort[playerNum]);
+
+    //Wait until connected, can take 3-4 seconds. Connecting started when loading DefaultLG game file
+    while(!isTCPConnected)
+    {
+        QThread::msleep(TCPSLEEPTIME);
         isTCPConnected = p_hookComPortWin->IsTCPConnected (lgTCPPort[playerNum]);
-        isTCPConnecting = p_hookComPortWin->IsTCPConnecting (lgTCPPort[playerNum]);
+        //qDebug() << "Waiting for TCP Server connected" << isTCPConnected;
+    }
 
-        if(!isTCPConnected && !isTCPConnecting)
+    ConnectedLightGun(playerNum);
+
+    if(!noInit)
+    {
+        //Get the Commnds for Open COM Port
+        commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
+
+        //qDebug() << "Command Count: " << commands.count() << " Commands: " << commands;
+
+        //Write Commands to the TCP
+        if(isCommands)
         {
-            //Connect to TCP Server
-            emit ConnectTCPServer(lgTCPPort[playerNum]);
-        }
-
-        isTCPConnected = p_hookComPortWin->IsTCPConnected (lgTCPPort[playerNum]);
-
-        //Wait until connected, can take 3-4 seconds. Connecting started when loading DefaultLG game file
-        while(!isTCPConnected)
-        {
-            QThread::msleep(TCPSLEEPTIME);
-            isTCPConnected = p_hookComPortWin->IsTCPConnected (lgTCPPort[playerNum]);
-            //qDebug() << "Waiting for TCP Server connected" << isTCPConnected;
-        }
-
-        if(!noInit)
-        {
-            //Get the Commnds for Open COM Port
-            commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
-
-            //qDebug() << "Command Count: " << commands.count() << " Commands: " << commands;
-
-            //Write Commands to the TCP
-            if(isCommands)
+            for(j = 0; j < commands.count(); j++)
             {
-                for(j = 0; j < commands.count(); j++)
-                {
-                    QString tempCMD = commands[j] + '\n';
-                    cpBA = tempCMD.toUtf8 ();
-                    if(firstTCPPort == lgTCPPort[playerNum])
-                        emit WriteTCPServer(cpBA);
-                    else
-                        emit WriteTCPServer1(cpBA);
-                }
+                QString tempCMD = commands[j] + '\n';
+                cpBA = tempCMD.toUtf8 ();
+                if(firstTCPPort == lgTCPPort[playerNum])
+                    emit WriteTCPServer(cpBA);
+                else
+                    emit WriteTCPServer1(cpBA);
             }
         }
+    }
 
-        //Says LG Has Open and Init
-        lgConnectionClosed[playerNum] = false;
-        lgTCPConnections++;
-
-    } //if(lightGun != UNASSIGN)
+    //Says LG Has Open and Init
+    lgConnectionClosed[playerNum] = false;
+    lgTCPConnections++;
 }
 
 void HookerEngine::CloseTCPServerSlot(quint8 playerNum, bool noInit, bool initOnly)
@@ -2396,42 +2282,37 @@ void HookerEngine::CloseTCPServerSlot(quint8 playerNum, bool noInit, bool initOn
     //Get Light Gun Number
     lightGun = loadedLGNumbers[playerNum];
 
-    //Check if Light Gun is not Unassign
-    if(lightGun != UNASSIGN)
+    if(!noInit || initOnly)
     {
-        if(!noInit || initOnly)
-        {
-            //Get Close TCP Commands for Light Gun
-            commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
+        //Get Close TCP Commands for Light Gun
+        commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
 
-            //Write Commnds to TCP
-            if(isCommands)
+        //Write Commnds to TCP
+        if(isCommands)
+        {
+            for(j = 0; j < commands.count(); j++)
             {
-                for(j = 0; j < commands.count(); j++)
-                {
-                    QString tempCMD = commands[j] + '\n';
-                    cpBA = tempCMD.toUtf8 ();
-                    if(firstTCPPort == lgTCPPort[playerNum])
-                        emit WriteTCPServer(cpBA);
-                    else
-                        emit WriteTCPServer1(cpBA);
-                }
+                QString tempCMD = commands[j] + '\n';
+                cpBA = tempCMD.toUtf8 ();
+                if(firstTCPPort == lgTCPPort[playerNum])
+                    emit WriteTCPServer(cpBA);
+                else
+                    emit WriteTCPServer1(cpBA);
             }
         }
-
-        //isTCPConnected = p_hookComPortWin->IsTCPConnected (firstTCPPort);
-        lgTCPConnections--;
-
-        if(closeComPortGameExit && !initOnly)
-        {
-            if(lgTCPConnections == 0)
-                emit DisconnectTCPServer();
-        }
-
-        //Says LG is Init & Closed if closeComPortGameExit is true
-        lgConnectionClosed[playerNum] = true;
-
     }
+
+    lgTCPConnections--;
+    DisconnectedLightGun(playerNum);
+
+    if(closeComPortGameExit && !initOnly)
+    {
+        if(lgTCPConnections == 0)
+            emit DisconnectTCPServer();
+    }
+
+    //Says LG is Init & Closed if closeComPortGameExit is true
+    lgConnectionClosed[playerNum] = true;
 }
 
 void HookerEngine::WriteTCPServerSlot(quint8 playerNum, QString cpData)
@@ -2450,353 +2331,310 @@ void HookerEngine::WriteTCPServerSlot(quint8 playerNum, QString cpData)
 
 
 //Process the Read Data from The TCP Socket. This is MAME or Demulshooter
-void HookerEngine::ProcessTCPData(const QStringList &tcpReadData)
+void HookerEngine::ProcessTCPData(const QString &signal, const QString &data)
 {
-    quint8 i, j;
-    quint16 count;
-
-
-    QStringList tcpSocketData = tcpReadData;
-
-    //How Many Lines Need Processing
-    count = tcpSocketData.count ();
-
-    //qDebug() << "Processing TCP Data, size of QStingList: " << count;
+    //qDebug() << "Processing TCP Data, signal:" << signal << "data:" << data;
     //qDebug() << "Processing TCP Data, String is:" << tcpReadData;
 
-    for(i = 0; i < count; i++)
-    {
 
         //qDebug() << tcpSocketData[i];
 
-        //Check if No Game is Found
-        if(!isGameFound)
+    //Check if No Game is Found
+    if(!isGameFound)
+    {
+        if(isEmptyGame)
         {
-            //Look for "mame_start = " and not "mame_start = ___empty" to find game, or look for 'game =' for flycast
-            if((tcpSocketData[i].startsWith(MAMESTART, Qt::CaseSensitive) && tcpSocketData[i] != MAMESTARTNOGAME) || tcpSocketData[i].startsWith(GAMESTART, Qt::CaseSensitive))
+            if(signal == PAUSE)
+                emit UpdatePauseFromGame(data);
+            else if(signal.startsWith (ORIENTATION))
+                emit UpdateOrientationFromGame(signal,data);
+        }
+    }
+    else
+    {
+        //qDebug() << "0: " << signal << " 1: " << data;
+
+        //Check if it is a State, else it is a Signal
+        if(signal == PAUSE || signal.startsWith (ORIENTATION))
+        {
+            //qDebug() << "State: " << signal << " Data: " << data;
+
+            //Process the Command(s) attached to the State, only on MH INI Side
+            if(isINIGame)
             {
-                //Game Found
-                if(tcpSocketData[i][0] == 'm')
-                    gameName = tcpSocketData[i].remove(MAMESTART);
-                else
-                    gameName = tcpSocketData[i].remove(GAMESTART);
-                isGameFound = true;
-                gameHasRun = true;
-                isEmptyGame = false;
-
-                //qDebug() << "Game found, game name is:" << gameName;
-
-                //Re-Load and Update Player Assignment
-                LoadUpdatePlayerAssignment();
-
-                //qDebug() << "Game Found: " << gameName;
-
-                //Update Display with Game Name
-                //emit MameConnectedGame(gameName);
-
-                //Start Refresh Time for Display Timer
-                if(!isHOTRMinimized)
-                    p_refreshDisplayTimer->start ();
-
-                if(!firstTimeGame)
-                {
-                    //Check old stuff to make sure it is close & cleared
-
-                    signalsAndCommands.clear ();
-                    stateAndCommands.clear ();
-                    signalsNoCommands.clear ();
-                    statesNoCommands.clear ();
-                }
-                else
-                    firstTimeGame = false;
-
-
-                //Start Looking For Game Files to Load
-                GameFound();
+                if(stateAndCommands.contains(signal))
+                    ProcessINICommands(signal, data, true);
             }
-            //If equal to "mame_start = ___empty", MAME has No Game Loaded
-            else if(tcpSocketData[i] == MAMESTARTNOGAME)
-            {
-                //Display No Game Loaded
-                emit MameConnectedNoGame();
-                isEmptyGame = true;
-            }
-            else if(isEmptyGame)
-            {
-                QStringList tempData = tcpSocketData[i].split(" = ", Qt::SkipEmptyParts);
-                QString signal = tempData[0];
-                QString data = tempData[1];
 
-                if(signal == PAUSE || signal.startsWith (ORIENTATION))
-                {
-                    //Update Pause and Orientation to the Display
-                    if(signal == PAUSE)
-                        emit UpdatePauseFromGame(data);
-                    else
-                        emit UpdateOrientationFromGame(signal,data);
-                }
+            //Update Pause and Orientation to the Display
+            if(signal == PAUSE)
+                emit UpdatePauseFromGame(data);
+            else
+                emit UpdateOrientationFromGame(signal,data);
 
-                //qDebug() << "Signal: " << signal << " Data: " << data;
-            }
         }
         else
         {
-            //Now in When Game Has Been Found
-            //qDebug() << tcpSocketData[i];
-
-            //Looks for "mame_stop" to Know Game has Stopped
-            if(tcpSocketData[i].startsWith(MAMESTOPFRONT, Qt::CaseInsensitive) || tcpSocketData[i].startsWith(GAMESTOP, Qt::CaseInsensitive))
-            {
-                //qDebug() << "Game Has Stopped!!!!!!!!!!!";
-
-                //Tell TCP Socket that Game Stopped
-                emit TCPGameStop();
-
-                //Stop Refresh Time for Display Timer
-                if(p_refreshDisplayTimer->isActive ())
-                    p_refreshDisplayTimer->stop ();
-
-                //Clear Refresh Display QMaps
-                addSignalDataDisplay.clear();
-                updateSignalDataDisplay.clear();
-
-                //Run the commands attached to 'mame_stop'
-                ProcessCommands(MAMESTOPFRONT, "", true);
-
-                //Game Has Stopped
-                isGameFound = false;
-                isEmptyGame = false;
-
-
-                if(newINIFileMade || newLGFileMade)
-                {
-                    //qDebug() << "newINIFileMade";
-
-                    //If New Files where Made, then Print all Signals Collected to the File
-
-                    QTextStream out(p_newFile);
-
-                    //Print out the Signals to the new file and close
-                    QMapIterator<QString, QString> x(signalsAndData);
-                    while (x.hasNext())
-                    {
-                        x.next();
-                        if(newINIFileMade)
-                            out << x.key() << "=\n";
-                        else
-                            out << ":" << x.key() << "\n";
-                    }
-
-                    //Close the File
-                    p_newFile->close ();
-                    delete p_newFile;
-                    //Make bools false, since closed now
-                    newINIFileMade = false;
-                    newLGFileMade = false;
-                }
-                else if(iniFileLoaded)
-                {
-                    //qDebug() << "Opening INI File";
-
-                    //If INI file Loaded, Must Search for Any New Signal(s) not in the File
-                    //These Signals are Appended to the INI Game File and Closed
-
-                    quint8 foundCount = 0;
-                    bool foundNewSignal = false;
-                    QStringList nemSignalList;
-
-                    //Searching the 2 QMaps for Any New Signal(s)
-
-                    QMapIterator<QString, QString> x(signalsAndData);
-                    while (x.hasNext())
-                    {
-                        x.next();
-                        //qDebug() << "Searching for: " << x.key();
-                        if(!signalsAndCommands.contains(x.key()) && !signalsNoCommands.contains(x.key()))
-                        {
-                            nemSignalList << x.key();
-                            foundCount++;
-                            foundNewSignal = true;
-                            //qDebug() << "New Signal Found for Existing INI File: " << x.key();
-                        }
-                    }
-
-                    //If Any New Signal(s) Found, then Append to the INI Game File
-                    if(foundNewSignal)
-                    {
-                        //Open INI File to Append
-                        QFile iniFileTemp(gameINIFilePath);
-                        iniFileTemp.open(QIODevice::Append | QIODevice::Text);
-                        QTextStream out(&iniFileTemp);
-
-                        for(j = 0; j < foundCount; j++)
-                            out << nemSignalList[j] << "=\n";
-
-                        iniFileTemp.close ();
-                    }
-
-                    iniFileLoaded = false;
-                }
-
-                //Reset Light guns
-                p_comDeviceList->ResetLightgun ();
-
-                //Clear out Old Games Signal & Data and States & Data
-                signalsAndData.clear ();
-                statesAndData.clear ();
-
-                //Clear out Signal & Commands QMap & Signal & No Commands QLists
-                signalsAndCommands.clear ();
-                stateAndCommands.clear ();
-                signalsNoCommands.clear ();
-                statesNoCommands.clear ();
-
-                //The other 2 File Loaded bools where checked before, so Clear the Last 2
-                lgFileLoaded = false;
-                iniFileLoaded = false;
-
-                //Stop Filtering TCP Data
-                stopFilterTCPData = false;
-
-                for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
-                {
-                    isPRecoilR2SFirstTime[i] = true;
-                    recoilR2SSkewPrec[i] = 100;
-                    isLGDisplayOnDelay[i] = false;
-                    lgDisplayDelayAmmoCMDs[i].clear();
-                    lgDisplayDelayLifeCMDs[i].clear();
-                    lgDisplayDelayOtherCMDs[i].clear();
-                    if(lgDisplayDelayTimer[i].isActive())
-                        lgDisplayDelayTimer[i].stop();
-                    didDisplayWrite[i] = false;
-                    isLGSolenoidOpen[i] = false;
-                    closeSolenoidCMDs[i].clear ();
-                    blockRecoilValue[i] = false;
-                    blockRecoil[i] = false;
-                    doRecoilDelayEnds[i] = false;
-                    skipRecoilSlowMode[i] = false;
-                    blockShake[i] = false;
-                    blockRecoil_R2S[i] = false;
-                    blockShakeActive[i] = false;
-                    blockRecoil_R2SActive[i] = false;
-                    //lgOutputConnection[i] = -1;
-                    lgTCPPort[i] = 0;
-                    lgTCPPlayer[i] = UNASSIGN;
-                }
-
-            }
-            else
-            {
-
-                //This is in a Game, and Getting States/Signals and Data
-
-                //Split the Signal and Data
-                QStringList tempData = tcpSocketData[i].split(" = ", Qt::SkipEmptyParts);
-                QString signal = tempData[0];
-                QString data = tempData[1];
-
-                //qDebug() << "0: " << signal << " 1: " << data;
-
-                //Check if it is a State, else it is a Signal
-                //if(signal == STATECHANGE || signal == PAUSE || signal == ROTATE || signal == REFRESHTIME || signal == ORIENTATION)
-                if(signal == PAUSE || signal.startsWith (ORIENTATION))
-                {
-                    //qDebug() << "State: " << signal << " Data: " << data;
-
-                    //If not In the QMap, then Add it
-                    if(statesAndData.contains(signal) == false)
-                    {
-                        statesAndData.insert(signal,data);
-                    }
-                    else
-                    {
-                        statesAndData[signal] = data;
-                    }
-
-                    //Process the Command(s) attached to the State
-                    if(stateAndCommands.contains(signal))
-                        ProcessCommands(signal, data, true);
-
-                    //Update Pause and Orientation to the Display
-                    if(signal == PAUSE)
-                        emit UpdatePauseFromGame(data);
-                    else
-                        emit UpdateOrientationFromGame(signal,data);
-
-                }
-                else
-                {
-                    //Signal Side
-                    //If not In the QMap, then Add it. Also Add it to
-                    //One of the Display QMaps, when Timer runs out.
-                    if(signalsAndData.contains(signal) == false)
-                    {
-                        signalsAndData.insert(signal,data);
-                        AddSignalForDisplay(signal, data);
-                    }
-                    else
-                    {
-                        signalsAndData[signal] = data;
-                        UpdateSignalForDisplay(signal, data);
-                    }
-
-                    //qDebug() << "Processing Signal:" << signal << "and Data:" << data;
-
-                    if(stopFilterTCPData)
-                        ProcessCommands(signal, data, false);
-                    else
-                    {
-                        if(signalsAndCommands.contains(signal))
-                        {
-                            //qDebug() << "Signal found in Commands: " << signal;
-                            ProcessCommands(signal, data, false);
-                        }
-                    }
-
-                }
-
-            } //In Game, Getting States/Signals and Data
-        } //isGameFound
-    }//for(i
-}
-
-//Process Filtered Read Data from The TCP Socket, Mostly for the Display Data when not Minimized
-void HookerEngine::ProcessFilterTCPData(const QStringList &tcpReadData)
-{
-    quint8 i;
-    QStringList tcpSocketData = tcpReadData;
-
-    if(isGameFound)
-    {
-        for(i = 0; i < tcpSocketData.count(); i++)
-        {
-            //Split the Signal and Data
-            QStringList tempData = tcpSocketData[i].split(" = ", Qt::SkipEmptyParts);
-            QString signal = tempData[0];
-            QString data = tempData[1];
-
-            //qDebug() << "Processing Signal:" << signal << "and Data:" << data;
-
             //Signal Side
             //If not In the QMap, then Add it. Also Add it to
             //One of the Display QMaps, when Timer runs out.
-            if(signalsAndData.contains(signal) == false)
+            if(!isHOTRMinimized)
             {
-                signalsAndData.insert(signal,data);
-                AddSignalForDisplay(signal, data);
+                if(signalsAndData.contains(signal) == false)
+                {
+                    signalsAndData.insert(signal,data);
+                    AddSignalForDisplay(signal, data);
+                }
+                else
+                {
+                    signalsAndData[signal] = data;
+                    UpdateSignalForDisplay(signal, data);
+                }
             }
-            else
+
+            //qDebug() << "Processing Signal:" << signal << "and Data:" << data;
+
+            if(signalsAndCommands.contains(signal))
             {
-                signalsAndData[signal] = data;
-                UpdateSignalForDisplay(signal, data);
+                if(lgFileLoaded)
+                    ProcessLGCommands(signal, data);
+                else if(iniFileLoaded)
+                    ProcessINICommands(signal, data, false);
             }
         }
+    } //isGameFound
+}
 
+//Process Filtered Read Data from The TCP Socket, Mostly for the Display Data when not Minimized
+void HookerEngine::ProcessFilterTCPData(const QString &signal, const QString &data)
+{
+
+    if(isGameFound && !isHOTRMinimized)
+    {
+        if(signal == PAUSE)
+            emit UpdatePauseFromGame(data);
+        else if(signal.startsWith (ORIENTATION))
+            emit UpdateOrientationFromGame(signal,data);
+        //Signal Side
+        //If not In the QMap, then Add it. Also Add it to
+        //One of the Display QMaps, when Timer runs out.
+        else if(signalsAndData.contains(signal) == false)
+        {
+            signalsAndData.insert(signal,data);
+            AddSignalForDisplay(signal, data);
+        }
+        else
+        {
+            signalsAndData[signal] = data;
+            UpdateSignalForDisplay(signal, data);
+        }
     }
 }
 
 
+//qDebug() << "Processing Signal:" << signal << "and Data:" << data;
 
+
+void HookerEngine::GameStart(const QString &data)
+{
+    gameName = data;
+
+    isGameFound = true;
+    gameHasRun = true;
+    isEmptyGame = false;
+
+    //Re-Load and Update Player Assignment
+    LoadUpdatePlayerAssignment();
+
+    //Start Refresh Time for Display Timer
+    if(!isHOTRMinimized)
+        p_refreshDisplayTimer->start ();
+
+    //if(isDefaultLGGame)
+    //    connect(p_hookSocket,&HookTCPSocket::FilteredOutputSignals, this, &HookerEngine::ProcessLGCommands);
+    //else if(isINIGame)
+    //    connect(p_hookSocket,&HookTCPSocket::FilteredOutputSignals, this, &HookerEngine::PreINICommandProcess);
+
+    //Start Looking For Game Files to Load
+    GameFound();
+}
+
+
+void HookerEngine::GameStartEmpty()
+{
+    emit MameConnectedNoGame();
+    isEmptyGame = true;
+}
+
+
+
+void HookerEngine::GameStopped()
+{
+    //qDebug() << "GameStopped in Hooker Engine";
+
+    quint8 j;
+
+    if(isDefaultLGGame)
+        disconnect(p_hookSocket,&HookTCPSocket::FilteredOutputSignals, this, &HookerEngine::ProcessLGCommands);
+    else if(isINIGame)
+        disconnect(p_hookSocket,&HookTCPSocket::FilteredOutputSignals, this, &HookerEngine::PreINICommandProcess);
+
+    //Game Has Stopped
+    isGameFound = false;
+    isEmptyGame = false;
+
+    //qDebug() << "Game Has Stopped!!!!!!!!!!!";
+
+    //Tell TCP Socket that Game Stopped
+    emit TCPGameStop();
+
+    //Stop Refresh Time for Display Timer
+    if(p_refreshDisplayTimer->isActive ())
+        p_refreshDisplayTimer->stop ();
+
+    //Clear Refresh Display QMaps
+    addSignalDataDisplay.clear();
+    updateSignalDataDisplay.clear();
+
+    //Run the commands attached to 'mame_stop'
+    if(lgFileLoaded)
+        ProcessLGCommands(MAMESTOPFRONT, "");
+    else if(iniFileLoaded)
+        ProcessINICommands(MAMESTOPFRONT, "", false);
+
+    if(newINIFileMade || newLGFileMade)
+    {
+        //qDebug() << "newINIFileMade";
+
+        //If New Files where Made, then Print all Signals Collected to the File
+
+        QTextStream out(p_newFile);
+
+        //Print out the Signals to the new file and close
+        QMapIterator<QString, QString> x(signalsAndData);
+        while (x.hasNext())
+        {
+            x.next();
+            if(newINIFileMade)
+                out << x.key() << "=\n";
+            else
+                out << ":" << x.key() << "\n";
+        }
+
+        //Close the File
+        p_newFile->close ();
+        delete p_newFile;
+        //Make bools false, since closed now
+        newINIFileMade = false;
+        newLGFileMade = false;
+    }
+    else if(iniFileLoaded)
+    {
+        //qDebug() << "Opening INI File";
+
+        //If INI file Loaded, Must Search for Any New Signal(s) not in the File
+        //These Signals are Appended to the INI Game File and Closed
+
+        quint8 foundCount = 0;
+        bool foundNewSignal = false;
+        QStringList nemSignalList;
+
+        //Searching the 2 QMaps for Any New Signal(s)
+
+        QMapIterator<QString, QString> x(signalsAndData);
+        while (x.hasNext())
+        {
+            x.next();
+            //qDebug() << "Searching for: " << x.key();
+            if(!signalsAndCommands.contains(x.key()) && !signalsNoCommands.contains(x.key()))
+            {
+                nemSignalList << x.key();
+                foundCount++;
+                foundNewSignal = true;
+                //qDebug() << "New Signal Found for Existing INI File: " << x.key();
+            }
+        }
+
+        //If Any New Signal(s) Found, then Append to the INI Game File
+        if(foundNewSignal)
+        {
+            //Open INI File to Append
+            QFile iniFileTemp(gameINIFilePath);
+            iniFileTemp.open(QIODevice::Append | QIODevice::Text);
+            QTextStream out(&iniFileTemp);
+
+            for(j = 0; j < foundCount; j++)
+                out << nemSignalList[j] << "=\n";
+
+            iniFileTemp.close ();
+        }
+
+        iniFileLoaded = false;
+    }
+
+    //Reset Light guns
+    p_comDeviceList->ResetLightgun ();
+
+    //Clear out Old Games Signal & Data and States & Data
+    signalsAndData.clear ();
+    statesAndData.clear ();
+
+    //Clear out Signal & Commands QMap & Signal & No Commands QLists
+    signalsAndCommands.clear ();
+    stateAndCommands.clear ();
+    signalsNoCommands.clear ();
+    statesNoCommands.clear ();
+
+    //The other 2 File Loaded bools where checked before, so Clear the Last 2
+    lgFileLoaded = false;
+    iniFileLoaded = false;
+
+
+    for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
+    {
+        isPRecoilR2SFirstTime[i] = true;
+        recoilR2SSkewPrec[i] = 100;
+        isLGDisplayOnDelay[i] = false;
+        lgDisplayDelayAmmoCMDs[i].clear();
+        lgDisplayDelayLifeCMDs[i].clear();
+        lgDisplayDelayOtherCMDs[i].clear();
+        if(lgDisplayDelayTimer[i].isActive())
+            lgDisplayDelayTimer[i].stop();
+        didDisplayWrite[i] = false;
+        isLGSolenoidOpen[i] = false;
+        closeSolenoidCMDs[i].clear ();
+        blockRecoilValue[i] = false;
+        blockRecoil[i] = false;
+        doRecoilDelayEnds[i] = false;
+        skipRecoilSlowMode[i] = false;
+        blockShake[i] = false;
+        blockRecoil_R2S[i] = false;
+        blockShakeActive[i] = false;
+        blockRecoil_R2SActive[i] = false;
+        //lgOutputConnection[i] = -1;
+        lgTCPPort[i] = 0;
+        lgTCPPlayer[i] = UNASSIGN;
+    }
+}
+
+
+void HookerEngine::PreINICommandProcess(const QString &signal, const QString &data)
+{
+    ProcessINICommands(signal, data, stateAndCommands.contains(signal));
+}
+
+
+void HookerEngine::ConnectedLightGun(const quint8 lgNum)
+{
+    isLGConnected[lgNum] = true;
+    //qDebug() << "Light Gun:" << lgNum << "Has been Connected";
+}
+
+void HookerEngine::DisconnectedLightGun(const quint8 lgNum)
+{
+    isLGConnected[lgNum] = false;
+    //qDebug() << "Light Gun:" << lgNum << "Has been Disconnected";
+}
 
 //Private Member Functions
 
@@ -2817,7 +2655,12 @@ void HookerEngine::ClearOnDisconnect()
 
     //If Connections are not closed, then Run mame_stop command
     if(stillOpen)
-        ProcessCommands(MAMESTOPFRONT, "", true);
+    {
+        if(lgFileLoaded)
+            ProcessLGCommands(MAMESTOPFRONT, "");
+        else if(iniFileLoaded)
+            ProcessINICommands(MAMESTOPFRONT, "", false);
+    }
 
     //Output Says No Game
     emit MameConnectedNoGame();
@@ -2915,8 +2758,6 @@ void HookerEngine::ClearOnDisconnect()
     iniFileLoaded = false;
     lgFileLoaded = false;
 
-    //Stop Filtering TCP Data
-    stopFilterTCPData = false;
 
     for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
     {
@@ -2951,41 +2792,40 @@ void HookerEngine::ClearOnDisconnect()
 
 void HookerEngine::GameFound()
 {
-    bool lgFileFound;
-    bool iniFileFound;
-
-
     //If Using Default LG Files First
     if(useDefaultLGFirst)
     {
         //Check if File Exists
-        lgFileFound = IsDefaultLGFile();
+        isDefaultLGGame = IsDefaultLGFile();
 
-        if(lgFileFound)
+        if(isDefaultLGGame)
         {
             emit MameConnectedGame(gameName, false, false);
+            connect(p_hookSocket,&HookTCPSocket::FilteredOutputSignals, this, &HookerEngine::ProcessLGCommands);
             LoadLGFile();
         }
         else
         {
             //Check if there is an INI file when no Default LG Game File
-            iniFileFound = IsINIFile();
+            isINIGame = IsINIFile();
 
-            if(iniFileFound)
+            if(isINIGame)
             {
                 emit MameConnectedGame(gameName, true, false);
+                connect(p_hookSocket,&HookTCPSocket::FilteredOutputSignals, this, &HookerEngine::PreINICommandProcess);
                 //Load and Process the INI File
                 LoadINIFile();
             }
             else
             {
                 //Checks if a Default File Exists
-                bool defaultFileFound = IsDefaultDefaultLGFile();
+                isDefaultLGGame = IsDefaultDefaultLGFile();
 
                 //If there is a Default File, then Load it
-                if(defaultFileFound)
+                if(isDefaultLGGame)
                 {
                     emit MameConnectedGame("default", false, false);
+                    connect(p_hookSocket,&HookTCPSocket::FilteredOutputSignals, this, &HookerEngine::ProcessLGCommands);
                     LoadLGFile();
                 }
                 else
@@ -3009,33 +2849,36 @@ void HookerEngine::GameFound()
     else
     {
         //Check if there is an INI file
-        iniFileFound = IsINIFile();
+        isINIGame = IsINIFile();
 
-        if(iniFileFound)
+        if(isINIGame)
         {
             emit MameConnectedGame(gameName, true, false);
+            connect(p_hookSocket,&HookTCPSocket::FilteredOutputSignals, this, &HookerEngine::PreINICommandProcess);
             //Load and Process the INI File
             LoadINIFile();
         }
         else
         {
             //Check is a Default LG File
-            lgFileFound = IsDefaultLGFile();
+            isDefaultLGGame = IsDefaultLGFile();
 
-            if(lgFileFound)
+            if(isDefaultLGGame)
             {
                 emit MameConnectedGame(gameName, false, false);
+                connect(p_hookSocket,&HookTCPSocket::FilteredOutputSignals, this, &HookerEngine::ProcessLGCommands);
                 LoadLGFile();
             }
             else
             {
                 //Checks if a Default File Exists
-                bool defaultFileFound = IsDefaultINIFile();
+                isINIGame = IsDefaultINIFile();
 
                 //If there is a Default File, then Load it
-                if(defaultFileFound)
+                if(isINIGame)
                 {
                     emit MameConnectedGame("default", true, false);
+                    connect(p_hookSocket,&HookTCPSocket::FilteredOutputSignals, this, &HookerEngine::PreINICommandProcess);
                     LoadINIFile();
                 }
                 else
@@ -3252,7 +3095,7 @@ void HookerEngine::LoadINIFile()
     iniFileLoaded = true;
 
     //Add mame_stop and States to outputSignalsStates
-    outputSignalsStates << PAUSE << ORIENTATION;
+    //outputSignalsStates << PAUSE << ORIENTATION;
 
     //qDebug() << "MH - Output Signals & Commands QMap:" << signalsAndCommands;
 
@@ -4125,13 +3968,13 @@ void HookerEngine::OpenINIComPort(quint8 cpNum)
 
     //qDebug() << "OpenINIComPort with name: " << cpName << " Emitting StartComPort";
 
-    emit StartComPort(cpNum, cpName, iniPortMap[cpNum].baud, iniPortMap[cpNum].data, iniPortMap[cpNum].parity, iniPortMap[cpNum].stop, 0, cpPath, true);
+    emit StartComPort(0, cpNum, cpName, iniPortMap[cpNum].baud, iniPortMap[cpNum].data, iniPortMap[cpNum].parity, iniPortMap[cpNum].stop, 0, cpPath, true);
 }
 
 void HookerEngine::CloseINIComPort(quint8 cpNum)
 {
     if(closeComPortGameExit)
-        emit StopComPort(cpNum);
+        emit StopComPort(0, cpNum);
 }
 
 void HookerEngine::ReadINIComPort(quint8 cpNum, QByteArray readData, quint8 bfNum, quint16 lengthNum)
@@ -4474,31 +4317,6 @@ void HookerEngine::LoadLGFile()
                             //Get TCP LG Port and Player Number
                             lgTCPPort[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetTCPPort ();
                             lgTCPPlayer[i] = p_comDeviceList->p_lightGunList[lgNumber]->GetTCPPlayer ();
-
-                            //isTCPConnected = p_hookComPortWin->IsTCPConnected ();
-                            //isTCPConnecting = p_hookComPortWin->IsTCPConnecting ();
-
-                            /*
-                            //Since it takes 3-4 seconds to connect to TCP, connect when game loads and stay connected
-                            //unless the TCP Port is different, then disconnect and connect to new port number
-                            if(!isTCPConnected && !isTCPConnecting)
-                                ConnectLGTCP(lgTCPPort[i]);
-                            else
-                            {
-                                if(tcpServerPort != lgTCPPort[i] && tcpServerPort != 0)
-                                {
-                                    DisconnectLGTCP();
-                                    //Wait for disconnection
-                                    while(isTCPConnected || isTCPConnecting)
-                                    {
-                                        QThread::msleep (50);
-                                        isTCPConnected = p_hookComPortWin->IsTCPConnected ();
-                                        isTCPConnecting = p_hookComPortWin->IsTCPConnecting ();
-                                    }
-                                    ConnectLGTCP(lgTCPPort[i]);
-                                }
-                            }
-                            */
 
                             //Makes Sure that the Players TCP Port number is the same
                             if(tcpServerCount == 0)
@@ -5063,12 +4881,30 @@ void HookerEngine::LoadLGFile()
                 {
                     //qDebug() << "Signal: " << signal << " Commands: " << commands;
 
-                    signalsAndCommands.insert(signal, commands);
+                    quint8 i;
+                    bool goodCMD;
+                    QStringList goodCommands;
+                    //Get the Player 9IE All or P1 or P3)
+                    goodCommands << commands[0];
 
-                    outputSignalsStates << signal;
+                    for(i = 1; i < commands.count(); i++)
+                    {
+                        goodCMD = CheckCommandsWithLightGun(playerForCMD, commands[i]);
 
-                    if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
-                        signalsAndCommandsCountTest++;
+                        if(goodCMD)
+                            goodCommands << commands[i];
+                    }
+
+
+                    if(goodCommands.count() > 1)
+                    {
+                        signalsAndCommands.insert(signal, goodCommands);
+
+                        outputSignalsStates << signal;
+
+                        if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && goodCommands.count() > 2))
+                            signalsAndCommandsCountTest++;
+                    }
                 }
 
                 gotPlayer = false;
@@ -5322,13 +5158,32 @@ void HookerEngine::LoadLGFile()
 
                     if(isGoodLG)
                     {
+                        quint8 i;
+                        bool goodCMD;
+                        QStringList goodCommands;
+
                         commands << line;
-                        signalsAndCommands.insert(signal, commands);
 
-                        outputSignalsStates << signal;
+                        //Get the Player 9IE All or P1 or P3)
+                        goodCommands << commands[0];
 
-                        if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
-                            signalsAndCommandsCountTest++;
+                        for(i = 1; i < commands.count(); i++)
+                        {
+                            goodCMD = CheckCommandsWithLightGun(playerForCMD, commands[i]);
+
+                            if(goodCMD)
+                                goodCommands << commands[i];
+                        }
+
+                        if(goodCommands.count() > 1)
+                        {
+                            signalsAndCommands.insert(signal, goodCommands);
+
+                            outputSignalsStates << signal;
+
+                            if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && goodCommands.count() > 2))
+                                signalsAndCommandsCountTest++;
+                        }
 
                         //At Last Line of the File
                         //qDebug() << "Last1 Signal: " << signal << " Commands: " << commands;
@@ -5498,14 +5353,32 @@ void HookerEngine::LoadLGFile()
 
                         if(isGoodLG)
                         {
-                            //If at End of Game File, then Add Signal & Commands to QMap
+                            quint8 i;
+                            bool goodCMD;
+                            QStringList goodCommands;
+
                             commands << tmpCMD;
-                            signalsAndCommands.insert(signal, commands);
 
-                            outputSignalsStates << signal;
+                            //Get the Player 9IE All or P1 or P3)
+                            goodCommands << commands[0];
 
-                            if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
-                                signalsAndCommandsCountTest++;
+                            for(i = 1; i < commands.count(); i++)
+                            {
+                                goodCMD = CheckCommandsWithLightGun(playerForCMD, commands[i]);
+
+                                if(goodCMD)
+                                    goodCommands << commands[i];
+                            }
+
+                            if(goodCommands.count() > 1)
+                            {
+                                signalsAndCommands.insert(signal, goodCommands);
+
+                                outputSignalsStates << signal;
+
+                                if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && goodCommands.count() > 2))
+                                    signalsAndCommandsCountTest++;
+                            }
                         }
 
                         gotPlayer = false;
@@ -5554,12 +5427,30 @@ void HookerEngine::LoadLGFile()
         {
             //qDebug() << "Last2 Signal: " << signal << " Commands: " << commands;
 
-            signalsAndCommands.insert(signal, commands);
+            quint8 i;
+            bool goodCMD;
+            QStringList goodCommands;
 
-            outputSignalsStates << signal;
+            //Get the Player 9IE All or P1 or P3)
+            goodCommands << commands[0];
 
-            if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && commands.count() > 2))
-                signalsAndCommandsCountTest++;
+            for(i = 1; i < commands.count(); i++)
+            {
+                goodCMD = CheckCommandsWithLightGun(playerForCMD, commands[i]);
+
+                if(goodCMD)
+                    goodCommands << commands[i];
+            }
+
+            if(goodCommands.count() > 1)
+            {
+                signalsAndCommands.insert(signal, goodCommands);
+
+                outputSignalsStates << signal;
+
+                if(!signal.startsWith (MAMESTAFTER) || (signal.startsWith (MAMESTAFTER) && goodCommands.count() > 2))
+                    signalsAndCommandsCountTest++;
+            }
         }
     }
     else if(gotSignal && !gotPlayer && !gotCommands)
@@ -5588,7 +5479,7 @@ void HookerEngine::LoadLGFile()
     lgFileLoaded = true;
 
     //Add mame_stop and States to outputSignalsStates
-    outputSignalsStates << PAUSE << ORIENTATION;
+    //outputSignalsStates << PAUSE << ORIENTATION;
 
     //qDebug() << "Output Signals & States String List:" << outputSignalsStates;
 
@@ -5601,6 +5492,158 @@ void HookerEngine::LoadLGFile()
     //Process the mame_start Command
     ProcessLGCommands(MAMESTARTAFTER, gameName);
 }
+
+
+bool HookerEngine::CheckCommandsWithLightGun(qint8 player, QString command)
+{
+    quint8 i = 0;
+    quint8 count = 0;
+    bool hasDisplay, hasReload, hasDamage, hasDeath, hasShake;
+    bool allPlayers = false;
+
+    if(player == -1)
+        allPlayers = true;
+    else
+        i = player;
+
+
+    if(command.startsWith(DISPLAYCMDFRONT))
+    {
+        if(allPlayers)
+        {
+            for(i = 0; i < numberLGPlayers; i++)
+            {
+                //Check if Any Light Gun are Not Unassigned
+                if(loadedLGNumbers[i] != UNASSIGN)
+                {
+                    hasDisplay = p_comDeviceList->p_lightGunList[loadedLGNumbers[i]]->HasDisplay ();
+
+                    if(hasDisplay)
+                        count++;
+                }
+            }
+
+            if(count > 0)
+                return true;
+            else
+                return false;
+        }
+        else
+        {   //Don't need to Check for Unassign as it was Check Before Calling Function
+            hasDisplay = p_comDeviceList->p_lightGunList[loadedLGNumbers[i]]->HasDisplay ();
+            return hasDisplay;
+        }
+    }
+    else if(command.startsWith(RELOADCMDFRONT))
+    {
+        if(allPlayers)
+        {
+            for(i = 0; i < numberLGPlayers; i++)
+            {
+                if(loadedLGNumbers[i] != UNASSIGN)
+                {
+                    hasReload = p_comDeviceList->p_lightGunList[loadedLGNumbers[i]]->HasReload ();
+
+                    if(hasReload)
+                        count++;
+                }
+            }
+
+            if(count > 0)
+                return true;
+            else
+                return false;
+        }
+        else
+        {
+            hasReload = p_comDeviceList->p_lightGunList[loadedLGNumbers[i]]->HasReload ();
+            return hasReload;
+        }
+    }
+    else if(command.startsWith(DAMAGECMDFRONT))
+    {
+        if(allPlayers)
+        {
+            for(i = 0; i < numberLGPlayers; i++)
+            {
+                if(loadedLGNumbers[i] != UNASSIGN)
+                {
+                    hasDamage = p_comDeviceList->p_lightGunList[loadedLGNumbers[i]]->HasDamage ();
+
+                    if(hasDamage)
+                        count++;
+                }
+            }
+
+            if(count > 0)
+                return true;
+            else
+                return false;
+        }
+        else
+        {
+                hasDamage = p_comDeviceList->p_lightGunList[loadedLGNumbers[i]]->HasDamage ();
+                return hasDamage;
+        }
+    }
+    else if(command.startsWith(DEATHCMDFRONT) || command.startsWith(LIFECMDFRONT))
+    {
+        if(allPlayers)
+        {
+            for(i = 0; i < numberLGPlayers; i++)
+            {
+                if(loadedLGNumbers[i] != UNASSIGN)
+                {
+                    hasDeath = p_comDeviceList->p_lightGunList[loadedLGNumbers[i]]->HasDeath ();
+
+                    if(hasDeath)
+                        count++;
+                }
+            }
+
+            if(count > 0)
+                return true;
+            else
+                return false;
+        }
+        else
+        {
+                hasDeath = p_comDeviceList->p_lightGunList[loadedLGNumbers[i]]->HasDeath ();
+                return hasDeath;
+        }
+    }
+    else if(command.startsWith(SHAKECMDFRONT))
+    {
+        if(allPlayers)
+        {
+            for(i = 0; i < numberLGPlayers; i++)
+            {
+                if(loadedLGNumbers[i] != UNASSIGN)
+                {
+                    hasShake = p_comDeviceList->p_lightGunList[loadedLGNumbers[i]]->HasShake ();
+
+                    if(hasShake)
+                        count++;
+                }
+            }
+
+            if(count > 0)
+                return true;
+            else
+                return false;
+        }
+        else
+        {
+            hasShake = p_comDeviceList->p_lightGunList[loadedLGNumbers[i]]->HasShake ();
+            return hasShake;
+        }
+    }
+
+
+    return true;
+}
+
+
 
 bool HookerEngine::CheckLGCommand(QString commndNotChk)
 {
@@ -5685,23 +5728,23 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
         {
             bool noInitOpen;
             if(commands[i].length () > OPENCOMPORTLENGTH)
-            {
-                //OpenLGComPort(allPlayers, playerNum, true);
                 noInitOpen = true;
-            }
             else
-            {
-                //OpenLGComPort(allPlayers, playerNum, false);
                 noInitOpen = false;
-            }
 
             if(allPlayers)
             {
                 for(quint8 p = 0; p < numberLGPlayers; p++)
-                    lgGamePlayers[p].Connect (noInitOpen);
+                {
+                    if(loadedLGNumbers[p] != UNASSIGN)
+                        lgGamePlayers[p].Connect (noInitOpen);
+                }
             }
             else
-                lgGamePlayers[playerNum].Connect (noInitOpen);
+            {
+                if(loadedLGNumbers[playerNum] != UNASSIGN)
+                    lgGamePlayers[playerNum].Connect (noInitOpen);
+            }
         }
         else if(commands[i][1] == CLOSECOMPORT2CHAR)
         {
@@ -5711,31 +5754,29 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
             if(commands[i].length () > CLOSECOMPORTLENGTH)
             {
                 if(commands[i][CLOSECOMPORTINITCHK] == CLOSECOMPORTNOINIT11)
-                {
-                    //CloseLGComPort(allPlayers, playerNum, true, false);   // NoInit
                     noInitClose = true;
-                }
                 else
-                {
-                    //CloseLGComPort(allPlayers, playerNum, false, true);   // InitOnly
                     initOnlyClose = true;
-                }
             }
-            //else
-                //CloseLGComPort(allPlayers, playerNum, false, false);      // Regular
 
             if(allPlayers)
             {
                 for(quint8 p = 0; p < numberLGPlayers; p++)
-                    lgGamePlayers[p].Disconnect (noInitClose, initOnlyClose);
+                {
+                    if(loadedLGNumbers[p] != UNASSIGN)
+                        lgGamePlayers[p].Disconnect (noInitClose, initOnlyClose);
+                }
             }
             else
-                lgGamePlayers[playerNum].Disconnect (noInitClose, initOnlyClose);
+            {
+                if(loadedLGNumbers[playerNum] != UNASSIGN)
+                    lgGamePlayers[playerNum].Disconnect (noInitClose, initOnlyClose);
+            }
         }
         else if(commands[i][0] == CMDSIGNAL)
         {
 
-            //qDebug() << "Is a CMDSIGNAL: " << commands[i];
+            //qDebug() << "Processing CMDSIGNAL:" << commands[i] << "Value:" << value << "for Player:" << playerNum << "All Players" <<allPlayers;
 
             if(allPlayers)
                 howManyPlayers = numberLGPlayers;
@@ -5753,8 +5794,11 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                 lightGun = loadedLGNumbers[player];
 
                 //Check if light gun has an assign value, if not then don't run
-                if(lightGun != UNASSIGN)
+                //if(lightGun != UNASSIGN)
+                if(isLGConnected[player])
                 {
+                    //qDebug() << "Processing Command";
+
                     //Get COM Port Number
                     //tempCPNum = loadedLGComPortNumber[player];
 
@@ -5994,10 +6038,6 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
                                                 }
                                                 //qDebug() << "Delay for P" << QString::number(player+1) << " is " << delay;
 
-                                                //Set Timer Interval and Type to PreciseTimer
-                                                //if(delay >= 30)
-                                                //    pRecoilR2STimer[player].setTimerType (Qt::PreciseTimer);
-                                                //else
                                                 pRecoilR2STimer[player].setTimerType (Qt::CoarseTimer);
 
                                                 pRecoilR2STimer[player].setInterval(delay);
@@ -6224,195 +6264,6 @@ void HookerEngine::ProcessLGCommands(QString signalName, QString value)
 
     }//for(i = 1; i < cmdCount; i++) Main Command Loop
 }
-
-void HookerEngine::OpenLGComPort(bool allPlayers, quint8 playerNum, bool noInit)
-{
-    quint8 howManyPlayers, i, player, lightGun, j;
-
-    quint8 tempCPNum;
-    QString tempCPName;
-    qint32 tempBaud;
-    quint8 tempData;
-    quint8 tempParity;
-    quint8 tempStop;
-    quint8 tempFlow;
-    QString tempPath;
-    QStringList commands;
-    quint8 cmdCount;
-    bool isCommands;
-
-    if(allPlayers)
-        howManyPlayers = numberLGPlayers;
-    else
-        howManyPlayers = 1;
-
-    for(i = 0; i < howManyPlayers; i++)
-    {
-        if(allPlayers)
-            player = i;
-        else
-            player = playerNum;
-
-
-        //Get Light Gun Number
-        lightGun = loadedLGNumbers[player];
-
-        //Check if Light Gun is not Unassign
-        if(lightGun != UNASSIGN)
-        {
-            if(!isLoadedLGUSB[player])
-            {
-                //For Serial Port Connection
-
-                //qDebug() << "Player Number: " << player << " Light Gun Number: " << lightGun;
-
-                //Gets COM Port Settings
-                //tempCPNum = p_comDeviceList->p_lightGunList[lightGun]->GetComPortNumber();
-                tempCPNum = loadedLGComPortNumber[player];
-                tempCPName = p_comDeviceList->p_lightGunList[lightGun]->GetComPortString();
-                tempBaud = p_comDeviceList->p_lightGunList[lightGun]->GetComPortBaud();
-                tempData = p_comDeviceList->p_lightGunList[lightGun]->GetComPortDataBits();
-                tempParity = p_comDeviceList->p_lightGunList[lightGun]->GetComPortParity();
-                tempStop = p_comDeviceList->p_lightGunList[lightGun]->GetComPortStopBits();
-                tempFlow = p_comDeviceList->p_lightGunList[lightGun]->GetComPortFlow();
-                tempPath = p_comDeviceList->p_lightGunList[lightGun]->GetComPortPath();
-
-                //Opens the COM Port
-                emit StartComPort(tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, tempPath, true);
-
-                lgConnectionClosed[player] = false;
-            }
-            else
-            {
-                //For USB HID Connection
-                tempCPNum = UNASSIGN;
-                HIDInfo lgHIDInfo = p_comDeviceList->p_lightGunList[lightGun]->GetUSBHIDInfo ();
-                emit StartUSBHID(player, lgHIDInfo);
-
-                lgConnectionClosed[player] = false;
-            }
-
-            if(!noInit)
-            {
-
-                //Get the Commnds for Open COM Port
-                commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
-                cmdCount = commands.count();
-
-                //qDebug() << "Command Count: " << cmdCount << " Commands: " << commands;
-
-                //Write Commands to the COM Port
-                if(isCommands)
-                {
-                    for(j = 0; j < cmdCount; j++)
-                    {
-                        if(isLoadedLGUSB[player])
-                            WriteLGUSBHID(player, commands[j]);
-                        else
-                            WriteLGComPort(tempCPNum, commands[j]);
-                    }
-                }
-            }
-        } //if(lightGun != UNASSIGN)
-    } //for(i = 0; i < howManyPlayers; i++)
-}
-
-void HookerEngine::CloseLGComPort(bool allPlayers, quint8 playerNum, bool noInit, bool initOnly)
-{
-    quint8 howManyPlayers, i, j, player, lightGun;
-    quint8 tempCPNum;
-    QStringList commands;
-    quint8 cmdCount;
-    bool isCommands;
-
-    if(allPlayers)
-        howManyPlayers = numberLGPlayers;
-    else
-        howManyPlayers = 1;
-
-    for(i = 0; i < howManyPlayers; i++)
-    {
-        if(allPlayers)
-            player = i;
-        else
-            player = playerNum;
-
-        //Get Light Gun Number
-        lightGun = loadedLGNumbers[player];
-
-        //Check if Light Gun is not Unassign
-        if(lightGun != UNASSIGN)
-        {
-            if(!isLoadedLGUSB[player])
-            {
-                //Get COM Port For Light Gun
-                tempCPNum = loadedLGComPortNumber[player];
-            }
-
-            if(!noInit || initOnly)
-            {
-
-                //Get Close COM Port Commands for Light Gun
-                commands = p_comDeviceList->p_lightGunList[lightGun]->CloseComPortCommands(&isCommands);
-                cmdCount = commands.count();
-
-                //Write Commnds to COM Port
-                if(isCommands)
-                {
-                    for(j = 0; j < cmdCount; j++)
-                    {
-                        //qDebug() << "Closing COM Port: " << tempCPNum << " Command: " << commands[j];
-                        if(isLoadedLGUSB[player])
-                            WriteLGUSBHID(player, commands[j]);
-                        else
-                            WriteLGComPort(tempCPNum, commands[j]);
-                    }
-                }
-            }
-
-            //Closes The COM Port
-            if(closeComPortGameExit && !initOnly)
-            {
-                if(isLoadedLGUSB[player])
-                    emit StopUSBHID(player);
-                else
-                    emit StopComPort(tempCPNum);
-
-                lgConnectionClosed[player] = true;
-            }
-        }
-    }
-}
-
-void HookerEngine::WriteLGComPort(quint8 cpNum, QString cpData)
-{
-    QByteArray cpBA = cpData.toUtf8 ();
-
-    //qDebug() << "COM Port: " << cpNum << " Data: " << cpData;
-
-    //Send Data to COM Port
-    emit WriteComPortSig(cpNum, cpBA);
-}
-
-void HookerEngine::WriteLGUSBHID(quint8 playerNum, QString cpData)
-{
-    //Check to make Sure Even Number of Hex Values as 2 Hex Values = 1 Byte
-    if (cpData.length() % 2 != 0)
-    {
-        //cpData.prepend ('0');
-        QString tempCrit = "The USB HID data needs to have even number of hex values. As two hex values is one byte. Cannot transfer a half of a byte. Please correct the data";
-        if(displayMB)
-            QMessageBox::warning (p_guiConnect, "USB HID Data Not Correct", tempCrit, QMessageBox::Ok);
-        return;
-    }
-
-    //Convert String to Hex QByteArray
-    QByteArray cpBA = QByteArray::fromHex(cpData.toUtf8 ());
-
-    //Send Data to USB HID
-    emit WriteUSBHID(playerNum, cpBA);
-}
-
 
 
 void HookerEngine::AddSignalForDisplay(QString sig, QString dat)

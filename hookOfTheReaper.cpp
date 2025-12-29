@@ -403,9 +403,6 @@ void HookOfTheReaper::Add_Light_Gun_Window_Closed()
 
         //To be safe, reload settings to Light guns
         p_comDeviceList->UpdateLightGunWithSettings ();
-
-        //Run SetUpLightGun, to make new connections for new light guns
-        p_hookEngine->SetUpLightGuns();
     }
 
     numberComDevices = p_comDeviceList->GetNumberComPortDevices();
@@ -504,9 +501,6 @@ void HookOfTheReaper::Edit_Light_Gun_Window_Closed()
 
     //To be safe, reload settings to Light guns
     p_comDeviceList->UpdateLightGunWithSettings ();
-
-    //If Light Gun change, try connections.
-    p_hookEngine->SetUpLightGuns();
 
     p_hookEngine->Start ();
     engineRunning = true;
@@ -626,9 +620,6 @@ void HookOfTheReaper::SettingsWindowClosed()
     //Re-Load Settings in Hooker Engine
     p_hookEngine->LoadSettingsFromList();
 
-    //Since settings can affect the connections, re-run it
-    p_hookEngine->SetUpLightGuns();
-
     p_hookEngine->Start ();
     engineRunning = true;
     ui->statusbar->showMessage ("Running");
@@ -714,6 +705,11 @@ void HookOfTheReaper::on_actionTest_defaultLG_Game_File_triggered()
 
     if(!fileNames.isEmpty ())
     {
+        //Stop Hooker Engine
+        p_hookEngine->Stop ();
+        engineRunning = false;
+        ui->statusbar->showMessage ("Stopped");
+
         bool isGoodFile;
         quint8 fileCount = fileNames.length ();
 
@@ -736,6 +732,10 @@ void HookOfTheReaper::on_actionTest_defaultLG_Game_File_triggered()
             if(isGoodFile)
                 QMessageBox::information (this, "DefaultLG Game File: "+fName, "The DefaultLG game file, "+fName+" passed the checks.\nFile: "+fileNames[i]);
         }
+        //Start Hooker Engine
+        p_hookEngine->Start ();
+        engineRunning = true;
+        ui->statusbar->showMessage ("Running");
     }
     else
     {
@@ -757,6 +757,11 @@ void HookOfTheReaper::on_actionTest_INI_Game_File_triggered()
         bool isGoodFile;
         quint8 fileCount = fileNames.length ();
 
+        //Stop Hooker Engine
+        p_hookEngine->Stop ();
+        engineRunning = false;
+        ui->statusbar->showMessage ("Stopped");
+
         for(quint8 i = 0; i < fileCount; i++)
         {
             //qDebug() << "INI Game File: " << fileNames[i];
@@ -776,6 +781,10 @@ void HookOfTheReaper::on_actionTest_INI_Game_File_triggered()
             if(isGoodFile)
                 QMessageBox::information (this, "INI Game File: "+fName, "The INI game file, "+fName+" passed the checks.\nFile: "+fileNames[i]);
         }
+        //Start Hooker Engine
+        p_hookEngine->Start ();
+        engineRunning = true;
+        ui->statusbar->showMessage ("Running");
     }
     else
     {

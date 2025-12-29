@@ -56,7 +56,7 @@ public:
     bool LoadLGFileTest(QString fileNamePath);
 
     //Closes All COM Port & USB HID Light Gun Connections
-    void CloseAllLightGunConnections();
+    void CloseAllLightGunConnections() { emit StopAllConnections(); }
 
     //Load Settings From COMDeviceList
     void LoadSettingsFromList();
@@ -72,11 +72,6 @@ public:
 
 public slots:
 
-    //Read Data from the TCP Socket (different thread)
-    //void TCPReadyRead(const QByteArray &readBA);
-    void TCPReadyRead(const QStringList &readSL);
-
-
     //Read Data From The Serial Com Port (different thread)
     void ReadComPortSig(const quint8 &comPortNum, const QByteArray &readData);
 
@@ -86,8 +81,6 @@ public slots:
     //Write to COM Port Based on DefaultLG
     void WriteLGComPortSlot(quint8 cpNum, QString cpData);
 
-    //Stop Filtering TCP Read Data
-    void StopFilteringReadData();
 
 signals:
 
@@ -98,8 +91,8 @@ signals:
     void TCPStatus(bool tcpConStatus);
 
     //Connects & Disconnects a Certain Serial COM Port (different thread)
-    void StartComPort(const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const QString &comPortPath, const bool &isWriteOnly);
-    void StopComPort(const quint8 &comPortNum);
+    void StartComPort(const quint8 &playerNum, const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const QString &comPortPath, const bool &isWriteOnly);
+    void StopComPort(const quint8 &playerNum, const quint8 &comPortNum);
 
     //Write Data on a Certain Serail COM Port (different thread)
     void WriteComPortSig(const quint8 &comPortNum, const QByteArray &writeData);
@@ -152,7 +145,6 @@ private slots:
     //Up the GUI Window. Like the Boost thread Better, but Stuck
     //with Qt, to make compiling easier for others. Used a Timer
     //To Know When to restart the Waiting
-    void TCPConnectionTimeOut();
     void TCPConnected();
     void TCPDisconnected();
 
@@ -200,11 +192,30 @@ private slots:
     void WriteTCPServerSlot(quint8 playerNum, QString cpData);
 
     //Processes the TCP Socket Data
-    void ProcessTCPData(const QStringList &tcpReadData);
+    //void ProcessTCPData(const QStringList &tcpReadData);
+    void ProcessTCPData(const QString &signal, const QString &data);
 
     //Process Filtered TCP Data when not Minimized
-    void ProcessFilterTCPData(const QStringList &tcpReadData);
+    //void ProcessFilterTCPData(const QStringList &tcpReadData);
+    void ProcessFilterTCPData(const QString &signal, const QString &data);
 
+    //When Game has Started
+    void GameStart(const QString &data);
+
+    //When Game is an Empty Start
+    void GameStartEmpty();
+
+    //When the Game Stops
+    void GameStopped();
+
+    //Check is State or Signal
+    void PreINICommandProcess(const QString &signal, const QString &data);
+
+    //Light Gun has Connected to it's Output Interface
+    void ConnectedLightGun(const quint8 lgNum);
+
+    //Light Gun has Disconnected from it's Output Interface
+    void DisconnectedLightGun(const quint8 lgNum);
 
 private:
 
@@ -274,26 +285,21 @@ private:
     //Loads DefaultLG file for Game
     void LoadLGFile();
 
+    //Checks Commands with the Light Gun
+    bool CheckCommandsWithLightGun(qint8 player, QString command);
+
     //Check if Loaded Command is Good or Not
     bool CheckLGCommand(QString commndNotChk);
 
     //If No Game File Exists for INI & DefaultLG, then make New DefaultLG File with all Signals
     void NewLGFile();
 
+ private slots:
+
     //Gets the Signal and its Value, then Process it Based on DefaultLG file
     void ProcessLGCommands(QString signalName, QString value);
 
-    //Open COM Port or USB HID Based on DefaultLG
-    void OpenLGComPort(bool allPlayers, quint8 playerNum, bool noInit);
-
-    //Close COM Port or USB HID Based on DefaultLG
-    void CloseLGComPort(bool allPlayers, quint8 playerNum, bool noInit, bool initOnly);
-
-    //Write to COM Port Based on DefaultLG
-    void WriteLGComPort(quint8 playerNum, QString cpData);
-
-    //Write to USB HID
-    void WriteLGUSBHID(quint8 playerNum, QString cpData);
+private:
 
     ///////////////////////////////////////////////////////////////////////////
     //Saves Signal and Data, Until the Display Timer Runs Out
@@ -385,6 +391,8 @@ private:
     //If Failed Loading the File
     bool                            iniFileLoadFail;
     bool                            lgFileLoadFail;
+    bool                            isDefaultLGGame;
+    bool                            isINIGame;
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -486,9 +494,8 @@ private:
     //Is Block Shake Active for Player
     bool                            blockRecoil_R2SActive[MAXGAMEPLAYERS];
 
-    //Stop Filtering TCP Data
-    bool                            stopFilterTCPData;
-
+    //Is Light Guns Connected to it's Output Interface
+    bool                            isLGConnected[MAXGAMEPLAYERS];
 
 
     ///////////////////////////////////////////////////////////////////////////

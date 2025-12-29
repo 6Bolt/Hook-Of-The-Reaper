@@ -53,6 +53,14 @@ private slots:
 
     void on_tcpPortLineEdit_textChanged(const QString &arg1);
 
+    void on_reaperDisableSlideCheckBox_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_openFireBothCheckBox_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_reaperEnableSlideDelayCheckBox_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_openFireNoDisplayCheckBox_checkStateChanged(const Qt::CheckState &arg1);
+
 private:
 
     //Checks if Data is Valid for a LightGun

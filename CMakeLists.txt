@@ -30,9 +30,9 @@ qt_add_executable(HookOfTheReaper
     COMDeviceList/ComDeviceList.cpp COMDeviceList/ComDeviceList.h COMDeviceList/ComPortDevice.cpp COMDeviceList/ComPortDevice.h COMDeviceList/LightGun.cpp COMDeviceList/LightGun.h
     HookerEngine/HookCOMPort.cpp HookerEngine/HookCOMPort.h HookerEngine/HookerEngine.cpp HookerEngine/HookerEngine.h HookerEngine/HookTCPSocket.cpp HookerEngine/HookTCPSocket.h
     Windows/addComDeviceWindow.cpp Windows/addComDeviceWindow.h Windows/addComDeviceWindow.ui
-    Windows/addLightGunWindow.cpp Windows/addLightGunWindow.h Windows/addLightGunWindow.ui
+
     Windows/editComDeviceWindow.cpp Windows/editComDeviceWindow.h Windows/editComDeviceWindow.ui
-    Windows/editLightGunWindow.cpp Windows/editLightGunWindow.h Windows/editLightGunWindow.ui
+
     Windows/playerAssignWindow.cpp Windows/playerAssignWindow.h Windows/playerAssignWindow.ui
     Windows/settingsWindow.cpp Windows/settingsWindow.h Windows/settingsWindow.ui
     Windows/aboutWindow.cpp Windows/aboutWindow.h Windows/aboutWindow.ui

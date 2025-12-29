@@ -8,7 +8,8 @@
 Until July of 2026, I will be in and out, due to health reasons. I cannot respond quickly to problems. If there is a bug, please file it in the HOTR GitHub Issues.
 
 
-
+# Back Up Website
+[Back Up Site](http://hotr.dr-doom.com)
 
 
 # Quick Links
