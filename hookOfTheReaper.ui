@@ -47,6 +47,7 @@
      <string>File</string>
     </property>
     <addaction name="actionAdd_Light_Gun"/>
+    <addaction name="actionAdd_Light_Controller"/>
     <addaction name="actionAdd_Device"/>
     <addaction name="separator"/>
     <addaction name="actionPlayer_Assignment"/>
@@ -131,6 +132,11 @@
   <action name="actionTest_INI_Game_File">
    <property name="text">
     <string>Test INI Game File</string>
+   </property>
+  </action>
+  <action name="actionAdd_Light_Controller">
+   <property name="text">
+    <string>Add Light Controller</string>
    </property>
   </action>
  </widget>

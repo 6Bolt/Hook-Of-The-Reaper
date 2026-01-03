@@ -15,6 +15,9 @@ HookTCPSocket::HookTCPSocket(QObject *parent)
     //Is the TCP Socket Connected
     isConnected = false;
 
+    //Is TCP Socket trying to Connect
+    isConnecting = false;
+
     //Stop Connecting to TCP Server
     stopConnecting = false;
 
@@ -120,7 +123,7 @@ void HookTCPSocket::TCPReadData()
 void HookTCPSocket::Connect()
 {
     stopConnecting = false;
-    if(!isConnected)
+    if(!isConnected && !isConnecting)
     {
         //qDebug() << "Waiting for a TCP Connection - Connect";
 
@@ -133,6 +136,9 @@ void HookTCPSocket::Connect()
         //Start Timer for Connection
         p_waitingForConnection->start ();
 
+        //Set the Is Connecting Bool
+        isConnecting = true;
+
         //Wait for Connection
         p_hookSocket->waitForConnected (TIMETOWAIT);
     }
@@ -141,6 +147,7 @@ void HookTCPSocket::Connect()
 
 void HookTCPSocket::Disconnect()
 {
+    //Set to stop TCP Socket from trying to Connect again
     stopConnecting = true;
 
     p_waitingForConnection->stop();
@@ -149,6 +156,7 @@ void HookTCPSocket::Disconnect()
     p_hookSocket->close ();
 
     isConnected = false;
+    isConnecting = false;
 
     //TCP Socket Closed, so game has Stopped
     inGame = false;
@@ -158,21 +166,27 @@ void HookTCPSocket::Disconnect()
 void HookTCPSocket::SocketConnected()
 {
     isConnected = true;
+    isConnecting = false;
 
     p_waitingForConnection->stop();
 
     emit SocketConnectedSignal();
+
+    //qDebug() << "TCP Socket Connected";
 }
 
 void HookTCPSocket::SocketDisconnected()
 {
     isConnected = false;
+    isConnecting = false;
     inGame = false;
 
     emit SocketDisconnectedSignal();
 
-    if(!stopConnecting)
-        Connect();
+    //qDebug() << "TCP Socket Disconnected";
+
+    //if(!stopConnecting)
+    //    Connect();
 }
 
 
@@ -199,14 +213,17 @@ void HookTCPSocket::WindowStateTCP(const bool &isMin)
 
 void HookTCPSocket::TCPConnectionTimeOut()
 {
-    if(!isConnected && !stopConnecting)
+    if(!isConnected && !stopConnecting && isConnecting)
     {
-        p_hookSocket->connectToHost (QHostAddress("127.0.0.1"), TCPHOSTPORT);
+        if(p_hookSocket->state() != QAbstractSocket::ConnectedState)
+        {
+            p_hookSocket->connectToHost (QHostAddress("127.0.0.1"), TCPHOSTPORT);
 
-        p_waitingForConnection->start ();
+            p_waitingForConnection->start ();
 
-        //Wait for Connection
-        p_hookSocket->waitForConnected (TIMETOWAIT);
+            //Wait for Connection
+            p_hookSocket->waitForConnected (TIMETOWAIT);
+        }
     }
 }
 

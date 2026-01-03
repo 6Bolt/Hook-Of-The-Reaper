@@ -94,7 +94,7 @@ private:
     //Timer
     QTimer *p_waitingForConnection;
 
-    bool isConnected;
+
 
     //read Data
     QByteArray readData;
@@ -111,7 +111,13 @@ private:
     //Stop Connecting to TCP Server
     bool stopConnecting;
 
+public:
 
+    //Is TCP Socket Connected
+    bool isConnected;
+
+    //Is TCP Socket Trying to Connect
+    bool isConnecting;
 };
 
 #endif // HOOKTCPSOCKET_H

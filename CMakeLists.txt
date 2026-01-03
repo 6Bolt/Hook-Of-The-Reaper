@@ -66,10 +66,12 @@ target_include_directories(HookOfTheReaper
     ${Qt6Multimedia_INCLUDE_DIRS}
     ${Qt6Bluetooth_INCLUDE_DIRS}
     D:/QtProjects/HookOfTheReaperGit/HIDAPI/include
+    D:/QtProjects/HookOfTheReaperGit/UltimarcSDK
 )
 target_link_directories(HookOfTheReaper
     PRIVATE
     D:/QtProjects/HookOfTheReaperGit/HIDAPI/x64
+    D:/QtProjects/HookOfTheReaperGit/UltimarcSDK
 )
 
 target_link_libraries(HookOfTheReaper
@@ -81,6 +83,7 @@ target_link_libraries(HookOfTheReaper
         Qt6::Multimedia
         Qt6::Bluetooth
         hidapi
+        PacDrive64
 )
 target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
 

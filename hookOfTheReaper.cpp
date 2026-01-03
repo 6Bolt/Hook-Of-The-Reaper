@@ -405,13 +405,19 @@ void HookOfTheReaper::Add_Light_Gun_Window_Closed()
         p_comDeviceList->UpdateLightGunWithSettings ();
     }
 
-    numberComDevices = p_comDeviceList->GetNumberComPortDevices();
-
     p_hookEngine->Start ();
     engineRunning = true;
     ui->statusbar->showMessage ("Running");
 
 }
+
+void HookOfTheReaper::on_actionAdd_Light_Controller_triggered()
+{
+
+}
+
+
+
 
 
 void HookOfTheReaper::on_actionAdd_Device_triggered()
@@ -877,4 +883,7 @@ void HookOfTheReaper::changeEvent(QEvent *event)
     QMainWindow::changeEvent(event);
 }
 #endif
+
+
+
 

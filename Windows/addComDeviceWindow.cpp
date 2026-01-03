@@ -65,6 +65,117 @@ addComDeviceWindow::addComDeviceWindow(ComDeviceList *cdList, QWidget *parent)
         ui->flowControlComboBox->insertItem(comPortIndx,FLOWNAME_ARRAY[comPortIndx]);
     }
 
+    /*
+    //Init Ultimarc Light Controllers
+    PacInitialize();
+
+    //bool setIntensity = Pac64SetLEDIntensity(0, 0, 0x0f);
+
+    //qDebug() << "setIntensity" << setIntensity;
+
+
+    bool setState = Pac64SetLEDState(0, 0, 0, true);
+
+    qDebug() << "setState" << setState;
+
+    setState = Pac64SetLEDState(0, 0, 1, true);
+
+    qDebug() << "setState" << setState;
+
+    setState = Pac64SetLEDState(0, 0, 2, true);
+
+    qDebug() << "setState" << setState;
+    */
+
+    //bool setIntensity = Pac64SetLEDIntensity(0, 0, 0x0f);
+
+    //qDebug() << "setIntensity" << setIntensity;
+
+    //setIntensity = Pac64SetLEDIntensity(0, 1, 0x0f);
+
+    //qDebug() << "setIntensity" << setIntensity;
+
+    //bool setIntensity = Pac64SetLEDIntensity(0, 0, 0x0f);
+
+    //qDebug() << "setIntensity" << setIntensity;
+
+
+    //bool setStates = Pac64SetLEDStates(0, 0, 0x05);
+
+    //qDebug() << "setStates" << setStates;
+
+    //Pac64SetLEDIntensity(0, 2, 128);
+
+    /*
+
+    wchar_t buffer[256];
+
+    PWCHAR ledString = buffer;
+
+    PWCHAR ledString2 = new wchar_t[256];
+
+    bool isNumber;
+
+    int type = PacGetDeviceType(0);
+    qDebug() << "Type" << type;
+
+    int vendorID = PacGetVendorId(0);
+    int productID = PacGetProductId(0);
+
+    QString formattedHexVendor = QString("0x%1").arg(vendorID, 4, 16, QChar('0')).toUpper(); // "Value: 0x00FF"
+    QString formattedHexProduct = QString("0x%1").arg(productID, 4, 16, QChar('0')).toUpper();
+
+    qDebug() << "VendorID:" << formattedHexVendor;
+    qDebug() << "ProductID:" << formattedHexProduct;
+    qDebug() << "VersionNumber:" << PacGetVersionNumber(0);
+
+    PacGetVendorName(0, ledString2);
+    qDebug() << "VendorName:" << QString::fromWCharArray(ledString2);
+
+    PacGetProductName(0, ledString);
+    qDebug() << "ProductName:" << QString::fromWCharArray(ledString);
+
+    PacGetSerialNumber(0, ledString);
+    qDebug() << "SerialNumber:" << QString::fromWCharArray(ledString);
+
+    PacGetDevicePath(0, ledString);
+    qDebug() << "DevicePath:" << QString::fromWCharArray(ledString);
+
+
+
+    std::array<std::uint8_t, 64> modernArray;
+    std::uint8_t* pModernData = modernArray.data();
+
+    // Initialize (e.g., set all bytes to 0xFF)
+    std::fill(modernArray.begin(), modernArray.end(), 0x0F);
+
+    bool intensites = Pac64SetLEDIntensities(0, pModernData);
+    qDebug() << "intensites" << intensites;
+
+    quint8 i, j, count;
+    //j = 1;
+    count = 1;
+
+    for(i = 0; i < 32; i++)
+    {
+        j = (1 << count);
+
+        Pac64SetLEDStates(0, 2, j);
+
+        qDebug() << "data" << j;
+
+        QThread::msleep(1000);
+
+        count++;
+        if(count > 3)
+        {
+            //j = 1;
+            count = 1;
+        }
+    }
+
+    */
+
 }
 
 //Deconstructor
@@ -78,6 +189,17 @@ addComDeviceWindow::~addComDeviceWindow()
     //Delete temp ComPortDevice pointer
     if(p_comPortInfo != nullptr)
         delete p_comPortInfo;
+
+    //bool setState = Pac64SetLEDState(0, 0, 1, false);
+
+    //qDebug() << "setState" << setState;
+
+    //bool setStates = Pac64SetLEDStates(0, 0, 0x00);
+
+    //qDebug() << "setStates" << setStates;
+
+    //Shut Down Ultimarc Light Controllers
+    //PacShutdown();
 }
 
 //private slots

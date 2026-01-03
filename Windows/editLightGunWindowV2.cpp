@@ -1292,7 +1292,7 @@ bool editLightGunWindowV2::IsValidData()
 
             //Get Hold Time
             QString tempRHSBT = ui->reaperSlideHoldTimeLineEdit->text ();
-            qfloat16 reaperHoldSlideTimeSec = tempRHSBT.toFloat ();
+            float reaperHoldSlideTimeSec = tempRHSBT.toFloat ();
 
             if(delayTimeNum > 255 || delayTimeNum == 0)
                 reaperDelayTime = true;

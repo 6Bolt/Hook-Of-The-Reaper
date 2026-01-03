@@ -84,6 +84,9 @@ private slots:
     //On Close of Add Light Gun Window
     void Add_Light_Gun_Window_Closed();
 
+    //Open Add Light Controller Window
+    void on_actionAdd_Light_Controller_triggered();
+
     //Open Add COM Device Window
     void on_actionAdd_Device_triggered();
 
@@ -132,6 +135,8 @@ private slots:
     void on_actionTest_defaultLG_Game_File_triggered();
 
     void on_actionTest_INI_Game_File_triggered();
+
+
 
 
 signals:

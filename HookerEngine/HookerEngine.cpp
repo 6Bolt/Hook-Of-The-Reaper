@@ -1788,6 +1788,9 @@ void HookerEngine::TCPDisconnected()
     //If in Game Mode & TCP Socket Diconnects, then Clear Things Out
     if(isGameFound)
         ClearOnDisconnect();
+
+    if(!p_hookSocket->isConnected && !p_hookSocket->isConnecting)
+        emit StartTCPSocket();
 }
 
 

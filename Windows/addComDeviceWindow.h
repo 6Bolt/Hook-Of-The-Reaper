@@ -7,10 +7,15 @@
 #include <QString>
 #include <QMessageBox>
 #include <QSerialPortInfo>
-
+#include <QThread>
 
 #include "../COMDeviceList/ComPortDevice.h"
 #include "../COMDeviceList/ComDeviceList.h"
+
+//#include "StdAfx.h"
+//#include "Windows.h"
+//#include "PacDrive.h"
+
 
 namespace Ui {
 class addComDeviceWindow;
