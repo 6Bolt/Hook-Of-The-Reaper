@@ -8,9 +8,6 @@
 Until July of 2026, I will be in and out, due to health reasons. I cannot respond quickly to problems. If there is a bug, please file it in the HOTR GitHub Issues.
 
 
-# Back Up Website
-[Back Up Site](http://hotr.dr-doom.com)
-
 
 # Quick Links
 
@@ -45,11 +42,11 @@ Until July of 2026, I will be in and out, due to health reasons. I cannot respon
 
 # Contact 
 
-### DO NOT EMAIL ME FOR TECH SUPPORT. First, read the FAQ (link above). If you have a real bug, go to 'Issues' and read the rules first (IE the README there). Then you can file a Bug, Enhancment or Issue. I cannot email back from this email address. All unwanted email, will be ignored and deleted. The email is for people to submit DefaultLG game files. Also, for companies to reach me. If you don't meet those two requirments, then don't email. 
+### DO NOT EMAIL ME FOR TECH SUPPORT. First, read the Technical Support (link above). If you have a real bug, go to 'Issues' and read the rules first (IE the README there). Then you can file a Bug, Enhancment or Issue. I cannot email back from this email address. All unwanted email, will be ignored and deleted. The email is for people to submit DefaultLG game files. Also, for companies to reach me. If you don't meet those two requirments, then don't email. 
 
 Email: gamefiles@6bolt.com
 
-Best way to contact me, is emailing me at gamefiles@hotr.6bolt.com. Another way is to open a new issue, here on GitHub. It can be found at the top left of the webpage, just to the right of 'Code'. Click on the 'Issues' tab, which will bring up a new webpage, with all the current issues. Just above the issues, and to the right, is a green button called 'New Issuse'. Please click that, and create a new issue, which can be a quetion, bug, enhancment, and so on. 
+Best way to contact me, is emailing me at gamefiles@6bolt.com. Another way is to open a new issue, here on GitHub. It can be found at the top left of the webpage, just to the right of 'Code'. Click on the 'Issues' tab, which will bring up a new webpage, with all the current issues. Just above the issues, and to the right, is a green button called 'New Issuse'. Please click that, and create a new issue, which can be a quetion, bug, enhancment, and so on. 
 
 Also, I can be found on Discord from time to time. I totally suck at Discord, and have not used it much. Actually, I only have it, to play Fortnight with my daughter. Yeah, I am old. I was first of my friends to get DSL intenet at a blazing fast 256KBaud, and was always hosting games like GTA II.  
 >Discord Username: 6bolt_77860
