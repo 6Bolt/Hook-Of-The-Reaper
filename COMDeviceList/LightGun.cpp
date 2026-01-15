@@ -6,7 +6,8 @@
 //Constructors
 
 //For RS3 Reaper Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool disableLEDs, quint8 largeAmmo, ReaperSlideData slideData)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool disableLEDs, quint8 largeAmmo, ReaperSlideData slideData, QObject *parent)
+    : QObject{parent}
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -164,7 +165,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 }
 
 //For Normal Serial Port Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, QObject *parent)
+    : QObject{parent}
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -394,7 +396,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 }
 
 //For Copy Light Gun
-LightGun::LightGun(LightGun const &lgMember)
+LightGun::LightGun(LightGun const &lgMember, QObject *parent)
+    : QObject{parent}
 {
     //*this = lgMember;
 
@@ -576,7 +579,8 @@ LightGun::LightGun(LightGun const &lgMember)
 }
 
 //For MX24 Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber, SupportedRecoils lgRecoils)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hubcpNumber, SupportedRecoils lgRecoils, QObject *parent)
+    : QObject{parent}
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -716,7 +720,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
 
 //For OpenFire
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool noDis, DisplayPriority displayP, DisplayOpenFire displayOF)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool noDis, DisplayPriority displayP, DisplayOpenFire displayOF, QObject *parent)
+    : QObject{parent}
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -914,7 +919,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
 
 //Alien USB Light Gun
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool n2DDisplay, DisplayPriority displayP)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, bool n2DDisplay, DisplayPriority displayP, QObject *parent)
+    : QObject{parent}
 {
     defaultLightGun = lgDefault;
     defaultLightGunNum = dlgNum;
@@ -1027,7 +1033,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 }
 
 //AimTrak
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils, QObject *parent)
+    : QObject{parent}
 {
     defaultLightGun = lgDefault;
     defaultLightGunNum = dlgNum;
@@ -1144,7 +1151,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 }
 
 //Sinden
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint16 port, quint8 player, quint8 recVolt, SupportedRecoils lgRecoils, LightGunSettings lgSet)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint16 port, quint8 player, quint8 recVolt, SupportedRecoils lgRecoils, LightGunSettings lgSet, QObject *parent)
+    : QObject{parent}
 {
     defaultLightGun = lgDefault;
     defaultLightGunNum = dlgNum;
@@ -1273,7 +1281,8 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 }
 
 //For Blamcon
-LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool has2DigitDiplay, DisplayPriority displayP)
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool has2DigitDiplay, DisplayPriority displayP, QObject *parent)
+    : QObject{parent}
 {
     defaultLightGun = lgDefault;
     if(defaultLightGun)
@@ -3100,6 +3109,7 @@ QStringList LightGun::DeathValueCommands(bool *isSet, quint8 deathValue)
         {
             //Try to catch skip cut scene stuff
             quint8 damage = lastDeathValue - deathValue;
+
             if(damage <= maxDamage)
             {
                 //Check Death, as Death Value only Check for Death, and not Damage

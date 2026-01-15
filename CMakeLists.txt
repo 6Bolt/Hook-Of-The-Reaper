@@ -7,6 +7,9 @@ find_package(Qt6 REQUIRED COMPONENTS Network)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt6 REQUIRED COMPONENTS Bluetooth)
 find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
 
 qt_standard_project_setup()
 
@@ -52,6 +55,12 @@ qt_add_executable(HookOfTheReaper
     HookerEngine/GamePlayer.h HookerEngine/GamePlayer.cpp
     Windows/addLightGunWindowV2.h Windows/addLightGunWindowV2.cpp Windows/addLightGunWindowV2.ui
     Windows/editLightGunWindowV2.h Windows/editLightGunWindowV2.cpp Windows/editLightGunWindowV2.ui
+    Windows/addLightControllerWindow.h Windows/addLightControllerWindow.cpp Windows/addLightControllerWindow.ui
+    COMDeviceList/LightController.h COMDeviceList/LightController.cpp
+    Windows/editLightControllerWindow.h Windows/editLightControllerWindow.cpp Windows/editLightControllerWindow.ui
+    COMDeviceList/PacDriveControl.h COMDeviceList/PacDriveControl.cpp
+    HookerEngine/HookLight.h HookerEngine/HookLight.cpp
+    HookerEngine/LightCommand.h HookerEngine/LightCommand.cpp
 
 )
 
@@ -85,6 +94,9 @@ target_link_libraries(HookOfTheReaper
         hidapi
         PacDrive64
 )
+target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
+target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
+target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
 target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
 
 

@@ -20,14 +20,17 @@
 #include "Windows/addLightGunWindowV2.h"
 #include "Windows/editLightGunWindowV2.h"
 
-//#include "Windows/addLightGunWindow.h"
+#include "Windows/addLightControllerWindow.h"
+#include "Windows/editLightControllerWindow.h"
+
 #include "Windows/addComDeviceWindow.h"
-//#include "Windows/editLightGunWindow.h"
 #include "Windows/editComDeviceWindow.h"
+
 #include "Windows/playerAssignWindow.h"
 #include "Windows/settingsWindow.h"
 #include "Windows/aboutWindow.h"
 #include "Windows/testComPortWindow.h"
+
 
 #include "COMDeviceList/ComDeviceList.h"
 
@@ -75,6 +78,9 @@ public slots:
     //Update TCP Connection
     void UpdateTCPConnectionStatus(bool tcpConStatus);
 
+    //Handle Error Message Box from a different Thread
+    void ErrorMessage(const QString &title, const QString &message);
+
 
 private slots:
 
@@ -86,6 +92,9 @@ private slots:
 
     //Open Add Light Controller Window
     void on_actionAdd_Light_Controller_triggered();
+
+    //On Close of Add Light Controller Window
+    void Add_Light_Controller_Window_Closed();
 
     //Open Add COM Device Window
     void on_actionAdd_Device_triggered();
@@ -101,6 +110,12 @@ private slots:
 
     //On Close of Edit Light Gun Window
     void Edit_Light_Gun_Window_Closed();
+
+    //Open Edit Light Controller Window
+    void on_actionEdit_Light_Controller_triggered();
+
+    //On Close of Edit Light Controller Window
+    void Edit_Light_Controller_Window_Closed();
 
     //Open Edit COM Device Window
     void on_actionEdit_Device_triggered();
@@ -135,6 +150,8 @@ private slots:
     void on_actionTest_defaultLG_Game_File_triggered();
 
     void on_actionTest_INI_Game_File_triggered();
+
+
 
 
 
@@ -208,11 +225,18 @@ private:
     //Test COM Port Window QPointer
     QPointer<testComPortWindow>     p_tcpW;
 
+    //Add Light Controller Window QPointer
+    QPointer<addLightControllerWindow>  p_aLCW;
+
+    //Add Light Controller Window QPointer
+    QPointer<editLightControllerWindow>  p_eLCW;
+
     //When a Child Window is Open, stop the Engine. Then when Closed, Update and Restart Hooker Engine
     bool                            engineRunning;
 
     //Number of Saved Light Guns & Other COM Devices Max is 255 (2^8)
     quint8                          numberLightGuns;
+    quint8                          numberLightCntrls;
     quint8                          numberComDevices;
 
     //Used to Display Text on the Text Browser

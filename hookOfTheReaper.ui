@@ -48,7 +48,6 @@
     </property>
     <addaction name="actionAdd_Light_Gun"/>
     <addaction name="actionAdd_Light_Controller"/>
-    <addaction name="actionAdd_Device"/>
     <addaction name="separator"/>
     <addaction name="actionPlayer_Assignment"/>
     <addaction name="separator"/>
@@ -62,7 +61,7 @@
      <string>Edit</string>
     </property>
     <addaction name="actionEdit_Light_Gun"/>
-    <addaction name="actionEdit_Device"/>
+    <addaction name="actionEdit_Light_Controller"/>
     <addaction name="separator"/>
     <addaction name="actionTest_COM_Port"/>
     <addaction name="separator"/>
@@ -137,6 +136,11 @@
   <action name="actionAdd_Light_Controller">
    <property name="text">
     <string>Add Light Controller</string>
+   </property>
+  </action>
+  <action name="actionEdit_Light_Controller">
+   <property name="text">
+    <string>Edit Light Controller</string>
    </property>
   </action>
  </widget>

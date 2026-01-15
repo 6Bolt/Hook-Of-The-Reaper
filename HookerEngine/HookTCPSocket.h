@@ -20,6 +20,8 @@ class HookTCPSocket : public QObject
 public:
     explicit HookTCPSocket(QObject *parent = nullptr);
 
+    ~HookTCPSocket();
+
     ///////////////////////////////////////////////////////////////////////////
 
     //TCP Socket Class
@@ -48,8 +50,11 @@ public slots:
     //When a Game Starts, get String List of Output Signals, then filter output to those Signals
     void GameStartSocket(const QStringList &outputSignals);
 
+    //When a Game Starts, get String List of Output Signals, then filter output to those Signals
+    void GameStartLight(const QStringList &outputSignals);
+
     //When a Game has Stopped and Stop Filtering the Output Data
-    void GameStopSocket();
+    //void GameStopSocket();
 
     //Tells TCP Socket if HOTR is Minimized
     void WindowStateTCP(const bool &isMin);
@@ -86,7 +91,14 @@ signals:
     //Filtered Output Signals with their Data Value, Sent to ProcessLGCommands or ProcessINIComands
     void FilteredOutputSignals(const QString &signal, const QString &data);
 
+    void FilteredOutputSignalsBoth(const QString &signal, const QString &data);
+
+    void FilteredOutputSignalsLight(const QString &signal, const QString &data);
+
 private:
+
+    //Combine the 2 Output Signals String Lists
+    void CombineOutputSignals();
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -101,6 +113,21 @@ private:
 
     //Output Signal that Hooker Engine is Looking for
     QStringList outputSignalsFilter;
+
+    //Output Signals that Hook Light is Looking for
+    QStringList outputSignalsLight;
+
+    //Output Signals that Hooker Engine and Hook Light Looking For
+    QStringList outputSignalsBoth;
+
+    //Got Output Signals for Hooker Engine
+    bool lgOutputSig;
+
+    //Got Output Signals for Hook Light
+    bool lcOutputSig;
+
+    //There Are Output Signals for Both
+    bool bothOutputSig;
 
     //If a Game is going on or not
     bool inGame;

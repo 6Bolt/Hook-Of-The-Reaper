@@ -1,6 +1,8 @@
 #include "hookOfTheReaper.h"
 #include "ui_hookOfTheReaper.h"
 
+#include "Global.h"
+
 //Default Light Gun Array/List
 S_DEFAULTLG DEFAULTLG_ARRAY[NUM_DEFAULTLG];
 
@@ -21,6 +23,14 @@ QString FLOWNAME_ARRAY[FLOW_NUMBER] = {"No Flow Control", "RTS/CTS Hardware", "X
 quint8  FLOWDATA_ARRAY[FLOW_NUMBER] = {0, 1, 2};
 
 QString DEFAULTLGFILENAMES_ARRAY[NUM_DEFAULTLG] = {"nonDefaultLG.hor","rs3Reaper.hor","mx24.hor","jbgun4ir.hor","fusion.hor","blamcon.hor","openFire.hor","alienUSB.hor", "xGunner.hor", "", "xenas.hor", "xenasBTLE.hor", "sinden.hor"};
+
+QString ULTIMARCTYPENAME[ULTIMARCTYPES] = {"Unkown", PACDRIVENAME, UHIDNAME, BLUEHIDNAME, NANOLEDNAME, PACLED64NAME, IPACULTIMATEIONAME};
+
+quint8 ULTIMARCTYPELEDCOUNT[ULTIMARCTYPES] = {0, 16, 16, 16, 60, 64, 96};
+
+quint8 ULTIMARCTYPERGBLEDCOUNT[ULTIMARCTYPES] = {0, 5, 5, 5, 20, 21, 32};
+
+quint8 ULTIMARCTYPEBRIGHTNESS[ULTIMARCTYPES] = {0, 1, 1, 1, 255, 255, 255};
 
 //Constructor
 HookOfTheReaper::HookOfTheReaper(QWidget *parent)
@@ -178,7 +188,8 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
     //Creates the Hooker Engine and Gives Pointer Address of COM Device List
     p_hookEngine = new HookerEngine(p_comDeviceList, true, this);
 
-
+    //Connect Error Message From List to Here. so it Shows in Main Thread
+    connect(p_comDeviceList,&ComDeviceList::ShowErrorMessage, this, &HookOfTheReaper::ErrorMessage);
 
 #ifdef Q_OS_WIN
 
@@ -359,6 +370,11 @@ void HookOfTheReaper::UpdateTCPConnectionStatus(bool tcpConStatus)
     DisplayText();
 }
 
+void HookOfTheReaper::ErrorMessage(const QString &title, const QString &message)
+{
+    QMessageBox::critical (this, title, message, QMessageBox::Ok);
+}
+
 
 //Private Slots
 
@@ -413,10 +429,47 @@ void HookOfTheReaper::Add_Light_Gun_Window_Closed()
 
 void HookOfTheReaper::on_actionAdd_Light_Controller_triggered()
 {
+    //Checks if Window is Already Open with a QPointer
+    if (!p_aLCW)
+    {
+        numberLightCntrls = p_comDeviceList->GetNumberLightControllers();
 
+        //Stop the Hooker Engine
+        if(engineRunning)
+        {
+            //Stop the Hooker Engine
+            p_hookEngine->Stop ();
+            engineRunning = false;
+            ui->statusbar->showMessage ("Stopped");
+        }
+
+        //Create New Window, and Set it to Delete when Closed
+        p_aLCW = new addLightControllerWindow(p_comDeviceList, this);
+        p_aLCW->setAttribute(Qt::WA_DeleteOnClose);
+        //Set the Dialog Window Signals to the Window Close Member function
+        connect(p_aLCW, SIGNAL(accepted()), this, SLOT(Add_Light_Controller_Window_Closed()));
+        connect(p_aLCW, SIGNAL(rejected()), this, SLOT(Add_Light_Controller_Window_Closed()));
+    }
+    //Execute and/or Show Window at Front
+    p_aLCW->exec ();
 }
 
+void HookOfTheReaper::Add_Light_Controller_Window_Closed()
+{
+    quint8 newNumberLightCntlrs = p_comDeviceList->GetNumberLightControllers();
 
+    //If a Light Controller was Added, then Save Light Gun data
+    if(newNumberLightCntlrs > numberLightCntrls)
+    {
+        p_comDeviceList->SaveLightControllersList();
+        numberLightCntrls = newNumberLightCntlrs;
+    }
+
+    //Re-Start the Hooker Engine
+    p_hookEngine->Start ();
+    engineRunning = true;
+    ui->statusbar->showMessage ("Running");
+}
 
 
 
@@ -502,7 +555,8 @@ void HookOfTheReaper::Edit_Light_Gun_Window_Closed()
     //Always save light gun data after the edit window closes
     p_comDeviceList->SaveLightGunList();
 
-    numberComDevices = p_comDeviceList->GetNumberComPortDevices();
+    //numberComDevices = p_comDeviceList->GetNumberComPortDevices();
+    numberComDevices = 0;
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();
 
     //To be safe, reload settings to Light guns
@@ -512,6 +566,52 @@ void HookOfTheReaper::Edit_Light_Gun_Window_Closed()
     engineRunning = true;
     ui->statusbar->showMessage ("Running");
 }
+
+void HookOfTheReaper::on_actionEdit_Light_Controller_triggered()
+{
+    numberLightCntrls = p_comDeviceList->GetNumberLightControllers();
+
+    //If No Light Guns, then Cannot Edit Them. No Need to Open New window. Display Warning Message
+    if(numberLightCntrls == 0)
+    {
+        QMessageBox::warning (this, "No Saved Light Controllers", "There are no saved Light Controllers to edit. Please add a Light Controller first.");
+    }
+    else
+    {
+        if (!p_eLCW)
+        {
+            if(engineRunning)
+            {
+                //Stop the Hooker Engine
+                p_hookEngine->Stop ();
+                engineRunning = false;
+                ui->statusbar->showMessage ("Stopped");
+            }
+
+            p_eLCW = new editLightControllerWindow(p_comDeviceList, this);
+            p_eLCW->setAttribute(Qt::WA_DeleteOnClose);
+            connect(p_eLCW, SIGNAL(accepted()), this, SLOT(Edit_Light_Controller_Window_Closed()));
+            connect(p_eLCW, SIGNAL(rejected()), this, SLOT(Edit_Light_Controller_Window_Closed()));
+        }
+        p_eLCW->exec ();
+    }
+}
+
+
+void HookOfTheReaper::Edit_Light_Controller_Window_Closed()
+{
+    //Get Number of Light Controllers in the List
+    numberLightCntrls = p_comDeviceList->GetNumberLightControllers();
+
+    //Save Light Controllers
+    p_comDeviceList->SaveLightControllersList();
+
+    //Restart the Hooker Engine
+    p_hookEngine->Start ();
+    engineRunning = true;
+    ui->statusbar->showMessage ("Running");
+}
+
 
 void HookOfTheReaper::on_actionEdit_Device_triggered()
 {
@@ -883,6 +983,9 @@ void HookOfTheReaper::changeEvent(QEvent *event)
     QMainWindow::changeEvent(event);
 }
 #endif
+
+
+
 
 
 

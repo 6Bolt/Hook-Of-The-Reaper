@@ -1,13 +1,14 @@
 #ifndef COMDEVICELIST_H
 #define COMDEVICELIST_H
 
-#include "../Global.h"
 
+
+#include <QObject>
 #include <QDir>
 #include <QMessageBox>
 #include <QApplication>
 
-#include <QObject>
+
 #include <QFile>
 #include <QTextStream>
 #include <QString>
@@ -16,16 +17,24 @@
 #include <QMap>
 #include <QlockFile>
 
+#include "../Global.h"
 
+#include "Windows.h"
 
 #include "LightGun.h"
+#include "LightController.h"
 #include "ComPortDevice.h"
+#include "PacDriveControl.h"
 
-class ComDeviceList
+class ComDeviceList : public QObject
 {
+    Q_OBJECT
 
 public:
-    ComDeviceList();
+
+    explicit ComDeviceList(QObject *parent = nullptr);
+
+
     ~ComDeviceList();
 
     //Adds a Light Gun In the List
@@ -48,6 +57,10 @@ public:
     //For Blamcon
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool has2DigitDiplay, DisplayPriority displayP);
 
+    //Adds a Light Controller
+    void            AddLightController(LightController const &other);
+    void            AddLightController(UltimarcData dataU);
+
     //Adds a COM Device in the List
     void            AddComPortDevice(ComPortDevice const &cpdMember);
     void            AddComPortDevice(QString cpdString, quint8 cpdNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow);
@@ -57,6 +70,7 @@ public:
 
     //Get the Number of Certain Devices
     quint8          GetNumberLightGuns();
+    quint8          GetNumberLightControllers();
     quint8          GetNumberComPortDevices();
 
     //Switch COM Ports, Used in Edit Window
@@ -65,8 +79,9 @@ public:
     //Enable/Disable A COM Port in the availableCOMPorts Array
     void            ModifyComPortArray(quint8 index, bool valueBool);
 
-    //Delete a Light Gun or COM device
+    //Delete a Light Gun, Light Controller, or COM device
     void            DeleteLightGun(quint8 lgNumber);
+    void            DeleteLightController(quint8 lcNumber);
     void            DeleteComDevice(quint8 cdNumber);
 
     //Player's Light Gun Assignment, Deassignment, or Get Assignment
@@ -99,6 +114,10 @@ public:
 
     void            LoadSettingsV1();
     void            LoadSettingsV2();
+
+    //Save or Load Light Controllers
+    void            SaveLightControllersList();
+    void            LoadLightControllersList();
 
     //Settings Get & Set Functions
     //Use Default Light Gun Files before INI Files
@@ -157,6 +176,23 @@ public:
     bool            CheckUSBPath(QString lgPath);
     bool            CheckUSBPath(QString lgPath, quint8 lgNumbeer);
 
+
+public slots:
+
+    //Handle Error Message Box from a different Thread
+    void ErrorMessage(const QString &title, const QString &message);
+
+
+
+signals:
+
+    //Show Error Message Box in Main Thread, from LightCommand
+    void ShowErrorMessage(const QString &title, const QString &message);
+
+
+public:
+
+
     QList<HIDInfo>  GetLightGunHIDInfo();
 
     //Processes usage & usagePage from USB HID Data
@@ -165,17 +201,29 @@ public:
     //Get Recoil Priority
     quint8*         GetRecoilPriority();
 
+    //Get Light Controller Thread
+    QThread*        GetLightCntlrThread() { return p_threadForLight; }
+
     ///////////////////////////////////////////////////////////////////////////
 
 
     //Light Guns List
     LightGun*           p_lightGunList[MAXCOMPORTS];
+
+    //Light Controllers List
+    LightController*    p_lightCntlrList[MAXLIGHTCONTROLLERS];
+
     //COM Devices List
     ComPortDevice*      p_comPortDeviceList[MAXCOMPORTS];
+
+    //PacDrive Controller
+    PacDriveControl*    p_pacDrive;
 
     //Available Dip Switch Players for MX24
     QMap<quint8,QList<bool>>    usedHubComDipPlayers;
 
+    //Thread for Light Controller
+    QThread*            p_threadForLight;
 
 private:
 
@@ -188,6 +236,7 @@ private:
 
     //Number of Light Guns & COM Devices
     quint8              numberLightGuns;
+    quint8              numberLightCntrls;
     quint8              numberComPortDevices;
 
     //Player's Light Gun Assignment
@@ -206,6 +255,7 @@ private:
     QString             lightGunsSaveFile;
     QString             comDevicesSaveFile;
     QString             playersAssSaveFile;
+    QString             lightCntlrsSaveFile;
 
 
     //Settings

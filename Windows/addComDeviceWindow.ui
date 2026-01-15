@@ -357,7 +357,7 @@
     <string>Manufacturer:</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_17">
+  <widget class="QLabel" name="vendorIDLabel">
    <property name="geometry">
     <rect>
      <x>320</x>
@@ -375,7 +375,7 @@
     <string>Vender ID:</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_18">
+  <widget class="QLabel" name="productIDLabel">
    <property name="geometry">
     <rect>
      <x>320</x>

@@ -1,13 +1,15 @@
 #include "ComDeviceList.h"
 
 //Constructor
-ComDeviceList::ComDeviceList()
+ComDeviceList::ComDeviceList(QObject *parent)
+    : QObject{parent}
 {
     quint8 i;
     bool canMKDIR = true;
 
     //Set Defaults
     numberLightGuns = 0;
+    numberLightCntrls = 0;
     numberComPortDevices = 0;
     useDefaultLGFirst = true;
 
@@ -35,11 +37,18 @@ ComDeviceList::ComDeviceList()
         p_comPortDeviceList[comPortIndx] = nullptr;
     }
 
+    for(i = 0; i < MAXLIGHTCONTROLLERS; i++)
+        p_lightCntlrList[i] = nullptr;
+
     //More Set Defaults
     for(i = 0; i < MAXPLAYERLIGHTGUNS; i++)
     {
         playersLightGun[i] = UNASSIGN;
     }
+
+    //Ultimarc PacDrive
+    p_pacDrive = new PacDriveControl();
+
 
     //Get Current Path
     //currentPath = QDir::currentPath();
@@ -65,6 +74,7 @@ ComDeviceList::ComDeviceList()
     comDevicesSaveFile = dataPath + "/" + COMDEVICESAVEFILE;
     settingsSaveFile = dataPath + "/" + SETTINGSSAVEFILE;
     playersAssSaveFile = dataPath + "/" + PASAVEFILE;
+    lightCntlrsSaveFile = dataPath + "/" + LIGHTCNTLRSSAVEFILE;
 
     //Checks For INI Directory
     iniDirExists = currentPathDir.exists (INIFILEDIR);
@@ -97,14 +107,31 @@ ComDeviceList::ComDeviceList()
     //Set Dir back to Current Path
     currentPathDir.setPath (currentPath);
 
-    //Load Light Gun Data
-    LoadLightGunList();
-
-    //Load COM Device Data
-    LoadComDeviceList();
-
     //Load Seetings
     LoadSettings();
+
+    if(useMultiThreading)
+    {
+        //Thread for Light Controllers
+        p_threadForLight = new QThread();
+
+        //Move PacController to new thread
+        p_pacDrive->moveToThread (p_threadForLight);
+        connect(p_threadForLight, &QThread::finished, p_pacDrive, &QObject::deleteLater);
+        p_threadForLight->start(QThread::HighPriority);
+    }
+
+
+    //Load Light Gun List Data
+    LoadLightGunList();
+
+    //Load Light Controller List
+    LoadLightControllersList();
+
+    //Load COM Device Data
+    //LoadComDeviceList();
+
+
 
 }
 
@@ -118,6 +145,18 @@ ComDeviceList::~ComDeviceList()
             delete p_lightGunList[deleteIndx];
         if(p_comPortDeviceList[deleteIndx] != nullptr)
             delete p_comPortDeviceList[deleteIndx];
+    }
+
+    for(quint8 deleteIndx=0;deleteIndx<MAXLIGHTCONTROLLERS;deleteIndx++)
+    {
+        if(p_lightCntlrList[deleteIndx] != nullptr)
+            delete p_lightCntlrList[deleteIndx];
+    }
+
+    if(useMultiThreading)
+    {
+        p_threadForLight->quit();
+        p_threadForLight->wait();
     }
 }
 
@@ -258,7 +297,37 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
     numberLightGuns++;
 }
 
+//Adds Copy Light Controller
+void ComDeviceList::AddLightController(LightController const &other)
+{
+    p_lightCntlrList[numberLightCntrls] = new LightController(numberLightCntrls, other);
 
+    numberLightCntrls++;
+}
+
+//Adds Ultimarc Light Controller
+void ComDeviceList::AddLightController(UltimarcData dataU)
+{
+    p_lightCntlrList[numberLightCntrls] = new LightController(numberLightCntrls, dataU);
+
+    //The Connect the Signal and Slots for the PacDrive
+    connect(p_lightCntlrList[numberLightCntrls],&LightController::SetLightIntensity, p_pacDrive, &PacDriveControl::SetLightIntensity);
+    connect(p_lightCntlrList[numberLightCntrls],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
+
+    //Connect Light Controller to Error Message Box
+    connect(p_lightCntlrList[numberLightCntrls],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
+
+    //Move to Thread if using MultiThread
+    if(useMultiThreading)
+    {
+        p_lightCntlrList[numberLightCntrls]->moveToThread (p_threadForLight);
+        connect(p_threadForLight, &QThread::finished, p_lightCntlrList[numberLightCntrls], &QObject::deleteLater);
+    }
+
+
+    numberLightCntrls++;
+
+}
 
 
 //Add COM Devices to the List
@@ -299,6 +368,13 @@ quint8 ComDeviceList::GetNumberLightGuns()
 {
     return numberLightGuns;
 }
+
+
+quint8 ComDeviceList::GetNumberLightControllers()
+{
+    return numberLightCntrls;
+}
+
 
 quint8 ComDeviceList::GetNumberComPortDevices()
 {
@@ -423,6 +499,48 @@ void ComDeviceList::DeleteLightGun(quint8 lgNumber)
     }
 
 }
+
+void ComDeviceList::DeleteLightController(quint8 lcNumber)
+{
+    //Only One Light Controller In the List
+    if(numberLightCntrls == 1 && lcNumber == 0)
+    {
+        // Disconnect Light Controller to Error Message Box
+        disconnect(p_lightCntlrList[lcNumber],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
+
+        delete p_lightCntlrList[lcNumber];
+        numberLightCntrls--;
+        p_lightCntlrList[numberLightCntrls] = nullptr;
+    }
+    else if((lcNumber+1) == numberLightCntrls)
+    {
+        // Disconnect Light Controller to Error Message Box
+        disconnect(p_lightCntlrList[lcNumber],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
+
+        //Targeted Light Controller is the Last in the List. So Don't have to Move Light guns Around
+        delete p_lightCntlrList[lcNumber];
+        numberLightCntrls--;
+        p_lightCntlrList[numberLightCntrls] = nullptr;
+    }
+    else if(lcNumber < numberLightCntrls)
+    {
+        //Move Higher Light Controllers Down, After the Deleted Targeted Light Gun
+        quint8 index;
+        for(index = lcNumber; index < (numberLightCntrls-1); index++)
+        {
+            p_lightCntlrList[index]->CopyLightController (*p_lightCntlrList[(index+1)]);
+        }
+
+        numberLightCntrls--;
+
+        // Disconnect Light Controller to Error Message Box
+        disconnect(p_lightCntlrList[numberLightCntrls],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
+
+        delete p_lightGunList[numberLightCntrls];
+        p_lightGunList[numberLightCntrls] = nullptr;
+    }
+}
+
 
 //Delete a Certain COM Device in the List
 void ComDeviceList::DeleteComDevice(quint8 cdNumber)
@@ -2735,8 +2853,222 @@ void ComDeviceList::LoadSettingsV2()
 }
 
 
+//Save and Load Light Controllers
+
+void ComDeviceList::SaveLightControllersList()
+{
+    bool removedFile = true;
+    bool openFile;
+    quint8 i;
+    QFile saveLCData(lightCntlrsSaveFile);
+
+    //If Light Controller Number is Zero, then Erase Old Save File & Done
+    if(numberLightCntrls == 0)
+    {
+        if(saveLCData.exists ())
+            removedFile = saveLCData.remove ();
+
+        if(!removedFile)
+        {
+            QMessageBox::critical (nullptr, "File Error", "Can not remove old light controller save data file. Failed to remove. Please close program and solve file problem. Might be open or permissions changed.", QMessageBox::Ok);
+            return;
+        }
+
+        return;
+    }
+
+    //Erase Old Save File, if it exisits
+    if(saveLCData.exists ())
+        removedFile = saveLCData.remove ();
+
+    if(!removedFile)
+    {
+        QMessageBox::critical (nullptr, "File Error", "Can not remove old light controller save data file. Failed to remove. Please close program and solve file problem. Might be open or permissions changed.", QMessageBox::Ok);
+        return;
+    }
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    openFile = saveLCData.open(QIODeviceBase::WriteOnly | QIODevice::Text);
+#else
+    openFile = saveLCData.open(QIODevice::WriteOnly | QIODevice::Text);
+#endif
 
 
+    if(!openFile)
+    {
+        QMessageBox::critical (nullptr, "File Error", "Can not create light controller save data file. Please close program and solve file problem. Might be permissions problem.", QMessageBox::Ok);
+        return;
+    }
+
+    //Create a Text Stream, to Stream in the Data Easier
+    QTextStream out(&saveLCData);
+
+    out << STARTLIGHTCNTLRSSAVE << "\n";
+    out << numberLightCntrls << "\n";
+
+    for(i = 0; i < numberLightCntrls; i++)
+    {
+
+        out << LIGHTCNTLRNUMBERFILE << i << "\n";
+
+        //Light Controller Number
+        out << p_lightCntlrList[i]->GetLightCntlrNumber()<< "\n";
+
+        UltimarcData dataU = p_lightCntlrList[i]->GetUltimarcData ();
+
+        //Controller ID
+        out << dataU.id << "\n";
+
+        //Ultimarc Type and Controller Name
+        out << dataU.type << "\n";
+        out << dataU.typeName << "\n";
+
+        //VendorID Number and Display
+        out << dataU.vendorID << "\n";
+        out << dataU.vendorIDS << "\n";
+
+        //ProductID Number and Display
+        out << dataU.productID << "\n";
+        out << dataU.productIDS << "\n";
+
+        //Version
+        out << dataU.versionS << "\n";
+
+        //Controller Info
+        out << dataU.vendorName << "\n";
+        out << dataU.productName << "\n";
+        out << dataU.serialNumber << "\n";
+        out << dataU.devicePath << "\n";
+
+        //Group File Name and Path
+        out << dataU.groupFile << "\n";
+    }
+
+    out << ENDOFFILE;
+
+    //Close File
+    saveLCData.close ();
+}
+
+
+void ComDeviceList::LoadLightControllersList()
+{
+    bool fileExists;
+    bool openFile;
+    quint8 i;
+    UltimarcData dataU;
+    QString line, cmpLine;
+    quint8 tempNumLightCntlrs, tempLightCntlrNum, lightCntlrNumTest;
+
+
+    QFile loadLCData(lightCntlrsSaveFile);
+
+    //Check if the File Exists, as it might not be created yet. If no File, then exit out of member function
+    if(loadLCData.exists() == false)
+    {
+        //QMessageBox::critical (nullptr, "File Error", "Can not open light gun save data file. It does not exists. Please close program and solve file problem. Might be permissions problem.", QMessageBox::Ok);
+        return;
+    }
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    openFile = loadLCData.open (QIODeviceBase::ReadOnly | QIODevice::Text);
+#else
+    openFile = loadLCData.open (QIODevice::ReadOnly | QIODevice::Text);
+#endif
+
+    if(!openFile)
+    {
+        QMessageBox::critical (nullptr, "File Error", "Can not open light controller save data file to read. Please close program and solve file problem. Might be permissions problem.", QMessageBox::Ok);
+        return;
+    }
+
+    //Create a Text Stream, to Stream in the Data Easier
+    QTextStream in(&loadLCData);
+
+    //Check First Line for title
+    line = in.readLine();
+
+
+    if(line != STARTLIGHTCNTLRSSAVE)
+    {
+        //qDebug() << line;
+        QMessageBox::critical (nullptr, "File Error", "Light controller save data file is corrupted. Please try to reload file, or re-enter the light guns again.", QMessageBox::Ok);
+    }
+
+    //Next Line is Number of Light Guns
+    line = in.readLine();
+    tempNumLightCntlrs = line.toUInt ();
+
+    for(i = 0; i < tempNumLightCntlrs; i++)
+    {
+        //First Light Controller Line
+        line = in.readLine();
+
+        //Line Should be "Light Controller #i"
+        cmpLine = LIGHTCNTLRNUMBERFILE + QString::number (i);
+
+        if(line != cmpLine)
+        {
+            //qDebug() << line;
+            QMessageBox::critical (nullptr, "File Error", "Light controller save data file is corrupted. Please try to reload file, or re-enter the light guns again.", QMessageBox::Ok);
+        }
+
+        //Next Line is the Light Controller Number
+        line = in.readLine();
+        tempLightCntlrNum = line.toUInt ();
+
+        //Next Line is Light Controller ID
+        line = in.readLine();
+        dataU.id = line.toUInt ();
+
+        //Start Getting the UltimarcData Struct Data
+        //type
+        line = in.readLine();
+        dataU.type = line.toUInt ();
+
+        //typeName
+        dataU.typeName = in.readLine();
+
+        //vendorID
+        line = in.readLine();
+        dataU.vendorID = line.toUInt ();
+        dataU.vendorIDS = in.readLine();
+
+        //productID
+        line = in.readLine();
+        dataU.productID = line.toUInt ();
+        dataU.productIDS = in.readLine();
+
+        //Version
+        dataU.versionS = in.readLine();
+        dataU.version = dataU.versionS.toUInt ();
+
+        //Controller Info
+        dataU.vendorName = in.readLine();
+        dataU.productName = in.readLine();
+        dataU.serialNumber = in.readLine();
+        dataU.devicePath = in.readLine();
+
+        //Group File and Location
+        dataU.groupFile = in.readLine();
+
+        AddLightController(dataU);
+
+        lightCntlrNumTest = p_lightCntlrList[i]->GetLightCntlrNumber();
+
+        if(lightCntlrNumTest != tempLightCntlrNum)
+            QMessageBox::critical (nullptr, "File Error", "Light controller save data file is corrupted. Please try to reload file, or re-enter the light guns again.", QMessageBox::Ok);
+    }
+
+    //Read Last Line of File
+    line = in.readLine();
+
+    if(line != ENDOFFILE)
+        QMessageBox::critical (nullptr, "File Error", "Light controller save data file is corrupted. The file did not end correctly. Please try to reload file, or re-enter the light guns again.", QMessageBox::Ok);
+
+    //Close the File
+    loadLCData.close();
+}
 
 
 //Get & Set of the Settings
@@ -3041,6 +3373,7 @@ bool ComDeviceList::CheckUSBPath(QString lgPath, quint8 lgNumber)
     return foundMatch;
 }
 
+
 QList<HIDInfo> ComDeviceList::GetLightGunHIDInfo()
 {
     QList<HIDInfo> lgHIDInfo;
@@ -3170,7 +3503,14 @@ quint8* ComDeviceList::GetRecoilPriority()
 }
 
 
+//Public Slots
 
+
+void ComDeviceList::ErrorMessage(const QString &title, const QString &message)
+{
+    //Forward Error Message to Main Thread
+    emit ShowErrorMessage(title, message);
+}
 
 
 

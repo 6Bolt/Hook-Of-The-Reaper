@@ -37,6 +37,13 @@ HookTCPSocket::HookTCPSocket(QObject *parent)
 
 }
 
+HookTCPSocket::~HookTCPSocket()
+{
+    p_waitingForConnection->stop();
+    delete p_waitingForConnection;
+}
+
+
 void HookTCPSocket::TCPReadData()
 {
     quint8 i;
@@ -64,28 +71,43 @@ void HookTCPSocket::TCPReadData()
 
         //qDebug() << "Socket Read, signal:" << splitData[0] << "data:" << splitData[1];
 
+        //Check if Game Has Stopped
+        if(splitData[0].size() == 9 && inGame)
+        {
+            if(splitData[0][5] == 's' && splitData[0][6] == 't' && splitData[0][8] == 'p')
+            {
+                emit GameHasStopped();
+                inGame = false;
+            }
+        }
+
+
         if(inGame)
         {
             //qDebug() << "Socket Read After Game, signal:" << splitData[0] << "data:" << splitData[1];
 
-            //Search for Output Signal
-            if(outputSignalsFilter.contains(splitData[0]))
+            //Check if Light Guns and Light Controllers using Output Signal
+            if(bothOutputSig)
             {
-                if(splitData[0].size() == 9)
-                {
-                    if(splitData[0][5] == 's' && splitData[0][8] == 'p')
-                    {
-                        emit GameHasStopped();
-                        inGame = false;
-                        //qDebug() << "Socket Read After Game, Game Has Stopped";
-                    }
-                    else
-                        emit FilteredOutputSignals(splitData[0], splitData[1]);
-                }
-                else
+                if(outputSignalsBoth.contains(splitData[0]))
+                    emit FilteredOutputSignalsBoth(splitData[0], splitData[1]);
+            }
+
+            //Check if Light Guns using Output Signal
+            if(lgOutputSig)
+            {
+                if(outputSignalsFilter.contains(splitData[0]))
                     emit FilteredOutputSignals(splitData[0], splitData[1]);
             }
-            else if(!isMinimized)
+
+            //Check if Light Controllers using Output Signal
+            if(lcOutputSig)
+            {
+                if(outputSignalsLight.contains(splitData[0]))
+                    emit FilteredOutputSignalsLight(splitData[0], splitData[1]);
+            }
+
+            if(!isMinimized)
                 emit FilteredTCPData(splitData[0], splitData[1]);
         }
         else
@@ -160,6 +182,9 @@ void HookTCPSocket::Disconnect()
 
     //TCP Socket Closed, so game has Stopped
     inGame = false;
+    lgOutputSig = false;
+    lcOutputSig = false;
+    bothOutputSig = false;
 }
 
 //Used for MultiThreading
@@ -180,6 +205,9 @@ void HookTCPSocket::SocketDisconnected()
     isConnected = false;
     isConnecting = false;
     inGame = false;
+    lgOutputSig = false;
+    lcOutputSig = false;
+    bothOutputSig = false;
 
     emit SocketDisconnectedSignal();
 
@@ -197,14 +225,32 @@ void HookTCPSocket::GameStartSocket(const QStringList &outputSignals)
     //qDebug() << "Stop Filtering Data: Sent Signal to Hooker Engine";
 
     inGame = true;
+    lgOutputSig = true;
+
+    if(lcOutputSig)
+        CombineOutputSignals();
 }
 
 
+void HookTCPSocket::GameStartLight(const QStringList &outputSignals)
+{
+    outputSignalsLight = outputSignals;
+
+    inGame = true;
+    lcOutputSig = true;
+
+    if(lgOutputSig)
+        CombineOutputSignals();
+}
+
+
+/*
 void HookTCPSocket::GameStopSocket()
 {
     inGame = false;
     //qDebug() << "HE told TCP Game Has Stopped";
 }
+*/
 
 void HookTCPSocket::WindowStateTCP(const bool &isMin)
 {
@@ -227,4 +273,71 @@ void HookTCPSocket::TCPConnectionTimeOut()
     }
 }
 
+
+void HookTCPSocket::CombineOutputSignals()
+{
+    quint8 i;
+    quint8 lgCount = outputSignalsFilter.count();
+    quint8 lcCount = outputSignalsLight.count();
+    quint8 count = 0;
+    QStringList tempSignals;
+
+    //Check if LG List is Bigger
+    if(lgCount > lcCount)
+    {
+        for(i = 0; i < lgCount; i++)
+        {
+            if(outputSignalsLight.contains(outputSignalsFilter[i]))
+            {
+                //Found in Both String List. Move to New List and Remove from Old 2 Lists
+                outputSignalsBoth << outputSignalsFilter[i];
+                //QString tempS = outputSignalsFilter[i];
+                //outputSignalsFilter.removeOne(tempS);
+                //outputSignalsLight.removeOne(tempS);
+                count++;
+            }
+            else
+                tempSignals << outputSignalsFilter[i];
+        }
+
+        //Make New Light Gun List to Regular List, Which has Both Signals Removed
+        outputSignalsFilter = tempSignals;
+
+        //Remove Both Signals from Light Controller Signals List
+        for(i = 0; i < outputSignalsBoth.count(); i++)
+            outputSignalsLight.removeOne(outputSignalsBoth[i]);
+    }
+    else
+    {
+        for(i = 0; i < lcCount; i++)
+        {
+            if(outputSignalsFilter.contains(outputSignalsLight[i]))
+            {
+                //Found in Both String List. Move to New List and Remove from Old 2 Lists
+                outputSignalsBoth << outputSignalsLight[i];
+                count++;
+            }
+            else
+                tempSignals << outputSignalsLight[i];
+        }
+
+        //Make New Light Controller List to Regular List, Which has Both Signals Removed
+        outputSignalsLight = tempSignals;
+
+        //Remove Both Signals from Light Controller Signals List
+        for(i = 0; i < outputSignalsBoth.count(); i++)
+            outputSignalsFilter.removeOne(outputSignalsBoth[i]);
+    }
+
+    if(count > 0)
+    {
+        bothOutputSig = true;
+        //qDebug() << "Both" << outputSignalsBoth;
+        //qDebug() << "Light Gun" << outputSignalsFilter;
+        //qDebug() << "Light Controller" << outputSignalsLight;
+    }
+    else
+        bothOutputSig = false;
+
+}
 

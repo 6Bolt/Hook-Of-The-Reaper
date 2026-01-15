@@ -3,10 +3,10 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.2.3B"
+#define VERSION                 "1.2.4"
 #define VERSIONMAIN             1
 #define VERSIONMID              2
-#define VERSIONLAST             3
+#define VERSIONLAST             4
 
 //Global Settings
 #define MAXPLAYERLIGHTGUNS      8
@@ -304,6 +304,9 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define TCPSLEEPTIME            500    // In ms
 #define TIMETOWAITTCPSERVER     3000
 
+
+//Light Gun Connection Wait Time
+#define LGWAITTIME              50  //In ms
 
 //File & Dir Data
 
@@ -622,6 +625,116 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 
+////////////////////////
+/// Light Controllers
+////////////////////////
+
+//Light Controllers Save File
+#define LIGHTCNTLRSSAVEFILE     "lightControllers.hor"
+#define STARTLIGHTCNTLRSSAVE    "Light Controllers Data File V0"
+#define LIGHTCNTLRNUMBERFILE    "Light Controller #"
+
+//Light Controller Game Files
+#define LIGHTGAMEFILESDIR       "lightFiles"
+#define ENDOFLIGHTFILE          ".txt"
+#define DEFAULTLIGHTFILE        "default.txt"
+
+
+// Light Controller Group File Stuff
+#define REGULARGROUP            "GRP"
+#define RGBGROUP                "GRP_RGB"
+#define RGBFASTGROUP            "GRP_RGB_FAST"
+#define RGBCOLOR                "Color"
+#define COLORSIZE               5
+
+
+
+//Max Light Controllers Supported
+#define MAXLIGHTCONTROLLERS     32
+
+
+//Light Controller Makers
+#define ULTIMARC                0
+
+
+//PacDrive, U-HID, and Blue-HID: 16 LED Channels with No Brightness (0 - Off and 1 - On)
+//Nano-LED: 60 LED Channels with 256 Brightness Levels (20 RGB LEDs)
+//PacLED64: 64 LED Channels with 256 Brightness Levels (21 RGB LEDs)
+//I-Pac Ultimate I/O: 96 LED Channels with 256 Brightness Levels (32 RGB LEDs)
+
+//Ultimarc
+#define PACDRIVE                1
+#define UHID                    2
+#define BLUEHID                 3
+#define NANOLED                 4
+#define PACLED64                5
+#define IPACULTIMATEIO          6
+
+#define ULTIMARCTYPES           7
+
+#define UHID_LOW                5377
+#define NANOLED_LOW             5249
+#define PACLED64_LOW            5121
+#define IPACULTIMATEIO_LOW      1040
+
+#define SIMPLEPACHID            16
+#define NANOLEDPINS             60
+#define PACLED64PINS            64
+#define PACULTIMATEPINS         96
+
+
+#define PACDRIVENAME            "PacDrive"
+#define UHIDNAME                "U-HID"
+#define BLUEHIDNAME             "Blue-HID"
+#define NANOLEDNAME             "Nano-LED"
+#define PACLED64NAME            "PacLED64"
+#define IPACULTIMATEIONAME      "I-Pac Ultimate I/O"
+
+extern QString ULTIMARCTYPENAME[];
+extern quint8 ULTIMARCTYPELEDCOUNT[];
+extern quint8 ULTIMARCTYPERGBLEDCOUNT[];
+extern quint8 ULTIMARCTYPEBRIGHTNESS[];
+
+
+#define ULTIMARCMAXDEVICES      24
+#define DEFAULTBRIGHTNESS       160
+
+//Light Controller Commands
+
+//Kinds of Commands
+#define UNKNOWNCOMMAND          0
+#define FLASHCOMMAND            1
+#define SEQUENCECOMMAND         2
+
+//Flashes
+#define FLASHRGB                "Flash_RGB"
+#define FLASHRGBARGS            4
+#define FLASHRGBCMD             1
+#define RELOADFLASHRGB          "Reload_Flash_RGB"
+#define RELOADFLASHRGBARGS      5
+#define RELOADFLASHRGBCMD       2
+#define DEATHFLASHRGB           "Death_Flash_RGB"
+#define DEATHFLASHRGBARGS       5
+#define DEATHFLASHRGBCMD        3
+#define RANDOMFLASHRGB          "Random_Flash_RGB"
+#define RANDOMFLASHRGBARGS      4
+#define RANDOMFLASHRGBCMD       4
+#define RANDOMFLASHRGB2C        "Random_Flash_2C_RGB"
+#define RANDOMFLASHRGB2CARGS    5
+#define RANDOMFLASHRGB2CCMD     5
+
+
+//Sequence
+#define SEQUENCERGB             "Sequence_RGB"
+#define SEQUENCERGBARGS         2
+#define SEQUENCERGBCMD          6
+#define RELOADSEQUENCERGB       "Reload_Sequence_RGB"
+#define RELOADSEQUENCERGBARGS   3
+#define RELOADSEQUENCERGBCMD    7
+
+
+
+
 //Not Used Yet, But Needed for Future
 //#define DEFAULTCDDIR            "defaultCD"
 
@@ -734,6 +847,60 @@ struct DisplayOpenFire
     bool lifeGlyphs;
     bool lifeBar;
     bool lifeNumber;
+};
+
+struct UltimarcData
+{
+    qint8 type;
+    QString typeName;
+    quint16 vendorID;
+    QString vendorIDS;
+    quint16 productID;
+    QString productIDS;
+    quint8 id;
+    quint16 version;
+    QString versionS;
+    QString vendorName;
+    QString productName;
+    QString serialNumber;
+    QString devicePath;
+    QString groupFile;
+
+    bool operator==(const UltimarcData& other) const
+    {
+        return (type == other.type) && (typeName == other.typeName) && (vendorID == other.vendorID) && (vendorIDS == other.vendorIDS) && (productID == other.productID)
+        && (productIDS == other.productIDS) && (version == other.version) && (vendorName == other.vendorName) && (productName == other.productName)
+               && (serialNumber == other.serialNumber)  && (devicePath == other.devicePath) && (versionS == other.versionS)  && (id == other.id);
+    }
+};
+
+
+struct LightControllerTop
+{
+    quint8 groupNumber;
+    quint8 defaultBrightness;
+    bool isDataSet;
+};
+
+struct LCPinData
+{
+    QList<quint8> pinData;
+    quint8 numberPins;
+    bool isDataSet;
+};
+
+struct RGBColor
+{
+    quint8 r;
+    quint8 g;
+    quint8 b;
+};
+
+struct RGBPins
+{
+    quint8 r;
+    quint8 g;
+    quint8 b;
 };
 
 #endif // GLOBAL_H

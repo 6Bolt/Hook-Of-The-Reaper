@@ -20,6 +20,7 @@
 
 #include "HookTCPSocket.h"
 #include "GamePlayer.h"
+#include "HookLight.h"
 
 #ifdef Q_OS_WIN
 #include "HookCOMPortWin.h"
@@ -36,9 +37,11 @@
 class HookerEngine : public QObject
 {
     Q_OBJECT
+
     //Threads for Multi-Threads
     QThread threadForTCPSocket;
     QThread threadForCOMPort;
+    QThread* p_threadForLight;
 
 public:
     explicit HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiConnect, QObject *parent = nullptr);
@@ -81,6 +84,8 @@ public slots:
     //Write to COM Port Based on DefaultLG
     void WriteLGComPortSlot(quint8 cpNum, QString cpData);
 
+    //Handle Error Message Box from a different Thread
+    void ErrorMessage(const QString &title, const QString &message);
 
 signals:
 
@@ -133,10 +138,11 @@ signals:
     void TCPGameStart(const QStringList &outputSignals);
 
     //Tells TCP Socket that the Game has Stopped, and not to filter data
-    void TCPGameStop();
+    //void TCPGameStop();
 
     //Send Window State to TCP
     void WindowStateToTCP(const bool &isMin);
+
 
 private slots:
 
@@ -216,6 +222,8 @@ private slots:
 
     //Light Gun has Disconnected from it's Output Interface
     void DisconnectedLightGun(const quint8 lgNum);
+
+
 
 private:
 
@@ -297,7 +305,7 @@ private:
  private slots:
 
     //Gets the Signal and its Value, then Process it Based on DefaultLG file
-    void ProcessLGCommands(QString signalName, QString value);
+    void ProcessLGCommands(const QString &signalName, const QString &value);
 
 private:
 
@@ -339,8 +347,20 @@ private:
 
  #endif
 
+    //Load Light Game Files and Processes Light Commands
+    HookLight                       *p_hookLight;
+
+
     //Needed to Display QMessages Boxes for Warnings & Errors
     QWidget                         *p_guiConnect;
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    //Is there Light Controllers
+    bool                            isLightCntlrs;
+
+    //Number of Saved Light Controllers
+    quint8                          numberLightCntlrs;
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -496,6 +516,8 @@ private:
 
     //Is Light Guns Connected to it's Output Interface
     bool                            isLGConnected[MAXGAMEPLAYERS];
+
+    bool                            isFilteredConnected;
 
 
     ///////////////////////////////////////////////////////////////////////////
