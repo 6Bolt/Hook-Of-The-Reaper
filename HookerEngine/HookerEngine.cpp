@@ -2112,15 +2112,7 @@ void HookerEngine::OpenSerialPortSlot(quint8 playerNum, bool noInit)
 
     lgConnectionClosed[playerNum] = false;
 
-    //Wait Until Hook COM Port Tells Hooker Engine Light Gun is Connected, Before Sending Commands
-    while(!isLGConnected[playerNum] && count < LGWAITTIME)
-    {
-        QThread::msleep(1);  //Wait 10ms Total 1 * 50 = 50ms or 0.05s
-        count++;
-    }
-
-
-    if(!noInit && isLGConnected[playerNum])
+    if(!noInit)
     {
         //Get the Commnds for Open COM Port
         commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
@@ -2137,7 +2129,6 @@ void HookerEngine::OpenSerialPortSlot(quint8 playerNum, bool noInit)
             }
         }
     }
-
 }
 
 
@@ -2206,14 +2197,7 @@ void HookerEngine::OpenUSBHIDSlot(quint8 playerNum, bool noInit)
 
     lgConnectionClosed[playerNum] = false;
 
-    //Wait Until Hook COM Port Tells Hooker Engine Light Gun is Connected, Before Sending Commands
-    while(!isLGConnected[playerNum] && count < LGWAITTIME)
-    {
-        QThread::msleep(1);  //Wait 10ms Total 1 * 50 = 50ms or 0.05s
-        count++;
-    }
-
-    if(!noInit && isLGConnected[playerNum])
+    if(!noInit)
     {
         //Get the Commnds for Open USB HID
         commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
@@ -5906,6 +5890,7 @@ void HookerEngine::ProcessLGCommands(const QString &signalName, const QString &v
 
             //qDebug() << "Processing CMDSIGNAL:" << commands[i] << "Value:" << value << "for Player:" << playerNum << "All Players" <<allPlayers;
 
+
             if(allPlayers)
                 howManyPlayers = numberLGPlayers;
             else
@@ -5921,9 +5906,11 @@ void HookerEngine::ProcessLGCommands(const QString &signalName, const QString &v
 
                 lightGun = loadedLGNumbers[player];
 
+                //qDebug() << "isLGConnected[player]" << isLGConnected[player] << "player" << player << "lightGun" << lightGun;
+
                 //Check if light gun has an assign value, if not then don't run
-                //if(lightGun != UNASSIGN)
-                if(isLGConnected[player])
+                //if(isLGConnected[player])
+                if(lightGun != UNASSIGN)
                 {
                     //qDebug() << "Processing Command";
 

@@ -31,7 +31,18 @@ LightCommand::LightCommand(QString outputSig, QString cmd, QStringList cmdArgs, 
 
     numberCntlrs = cntlrsGroup.count ();
 
-    listCntlrs = cntlrsGroup.keys();
+    QMapIterator<quint8, QList<quint8>> x(cntlrsGrps);
+    while (x.hasNext())
+    {
+        x.next();
+        listCntlrs << x.key();
+    }
+
+    //quint8 i;
+    //for(i = 0; i < listCntlrs.count(); i++)
+    //    qDebug() << "i" << i << "listCntlrs" << listCntlrs[i];
+
+    //listCntlrs = cntlrsGroup.keys();
 
     kindOfCommand = 0;
 

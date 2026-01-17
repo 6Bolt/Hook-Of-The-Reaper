@@ -315,8 +315,8 @@ bool HookLight::LoadLightFile()
     {
         QString failMeg = "File failed to load, as it ended with with a controller and groups.\nFailing Line: "+fileData[cntlrLine];
         emit ShowErrorMessage(title, failMeg);
+        return false;
     }
-
 
 }
 
@@ -388,7 +388,6 @@ void HookLight::GameStopped()
 {
     //Game Has Stopped
     isFileLoaded = false;
-
 
 }
 
