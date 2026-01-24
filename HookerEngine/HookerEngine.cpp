@@ -2093,6 +2093,7 @@ void HookerEngine::OpenSerialPortSlot(quint8 playerNum, bool noInit)
     bool isCommands;
     quint8 count = 0;
 
+
     //Get Light Gun Number
     lightGun = loadedLGNumbers[playerNum];
 
@@ -2112,7 +2113,15 @@ void HookerEngine::OpenSerialPortSlot(quint8 playerNum, bool noInit)
 
     lgConnectionClosed[playerNum] = false;
 
-    if(!noInit)
+    //Wait Until Light Gun Connects
+    do
+    {
+        QThread::msleep(1);
+        isLGConnected[playerNum] = p_hookComPortWin->IsCOMConnected(tempCPNum);
+        count++;
+    } while(!isLGConnected[playerNum] && count < LGWAITTIME);
+
+    if(!noInit && isLGConnected[playerNum])
     {
         //Get the Commnds for Open COM Port
         commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
@@ -2197,7 +2206,15 @@ void HookerEngine::OpenUSBHIDSlot(quint8 playerNum, bool noInit)
 
     lgConnectionClosed[playerNum] = false;
 
-    if(!noInit)
+    //Wait Until Light Gun Connects
+    do
+    {
+        QThread::msleep(1);
+        isLGConnected[playerNum] = p_hookComPortWin->IsUSBHIDConnected(playerNum);
+        count++;
+    } while(!isLGConnected[playerNum] && count < LGWAITTIME);
+
+    if(!noInit && isLGConnected[playerNum])
     {
         //Get the Commnds for Open USB HID
         commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
@@ -5909,8 +5926,8 @@ void HookerEngine::ProcessLGCommands(const QString &signalName, const QString &v
                 //qDebug() << "isLGConnected[player]" << isLGConnected[player] << "player" << player << "lightGun" << lightGun;
 
                 //Check if light gun has an assign value, if not then don't run
-                //if(isLGConnected[player])
-                if(lightGun != UNASSIGN)
+                //if(lightGun != UNASSIGN)
+                if(isLGConnected[player])
                 {
                     //qDebug() << "Processing Command";
 

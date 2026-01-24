@@ -24,8 +24,11 @@ addLightControllerWindow::addLightControllerWindow(ComDeviceList *cdList, QWidge
     //Varibles
     quint8 i;
 
+    ultimarcArrayNumber = 0;
+
     //Set Line Edits to Read Only
     ui->deviceLineEdit->setReadOnly(true);
+    ui->deviceIDLineEdit->setReadOnly(true);
     ui->vendorIDLineEdit->setReadOnly(true);
     ui->productIDLineEdit->setReadOnly(true);
     ui->vendorNameLineEdit->setReadOnly(true);
@@ -35,37 +38,31 @@ addLightControllerWindow::addLightControllerWindow(ComDeviceList *cdList, QWidge
     ui->serialNumberLineEdit->setReadOnly(true);
     ui->devicePathLineEdit->setReadOnly(true);
 
-    //Init Ultimarc Light Controllers and Find How Many They Are
+    //Get Ultimarc Light Controllers Count & Number of Devices in the
     numberUltimarcDevices = p_comDeviceList->p_pacDrive->GetNumberUltimarcDevices ();
+    devicesInList = p_comDeviceList->p_pacDrive->GetNumberDevicesInList();
 
-    if(numberUltimarcDevices > 0)
+    if(numberUltimarcDevices > devicesInList)
     {
-        CollectUltimarcData();
         noControllers = false;
-
-        if(numberSaveLightCntlrs > 0)
-        {
-            //Check Saved Light Controller(s) Against Found Light Controller
-            //If they Match, don't list them
-            CheckSaveLightCntlrsWithNew();
-        }
+        CollectUltimarcData();
 
         if(!noControllers)
         {
-            DisplayUltimarcData(0);
-
-            for(i = 0; i < numberUltimarcDevices; i++)
+            for(i = 0; i < ultimarcArrayNumber; i++)
             {
-                QString controllerInfo = QString::number(i) + " - " + dataUltimarc[i].vendorName + " " + dataUltimarc[i].typeName + " ID: " + QString::number(dataUltimarc[i].id);
+                QString controllerInfo = "ID: "+QString::number(dataUltimarc[i].id)+ " - " + dataUltimarc[i].vendorName + " " + dataUltimarc[i].typeName;
 
                 ui->controllerComboBox->insertItem(i, controllerInfo);
             }
+
+            ui->controllerComboBox->setCurrentIndex (0);
         }
         else
-        {
             ui->controllerComboBox->insertItem(0, "No Light Controllers Found");
-        }
     }
+    else
+        ui->controllerComboBox->insertItem(0, "No Light Controllers Found");
 
 }
 
@@ -79,22 +76,17 @@ addLightControllerWindow::~addLightControllerWindow()
 
 void addLightControllerWindow::on_pushButton_clicked()
 {
-    qint8 index = ui->controllerComboBox->currentIndex ();
-
     //Open File Dialog
     QString fileAndPath = QFileDialog::getOpenFileName(
         this, "Light Controller Group File", "lightCntlr", "Light Controller Group Files (*.txt)");
 
 
     ui->groupFileLineEdit->insert(fileAndPath);
-
-    if(index >= 0)
-        dataUltimarc[index].groupFile = fileAndPath;
 }
 
 void addLightControllerWindow::on_controllerComboBox_currentIndexChanged(int index)
 {
-    if(numberUltimarcDevices > 0 && index < numberUltimarcDevices)
+    if(ultimarcArrayNumber > 0 && index < ultimarcArrayNumber)
     {
         DisplayUltimarcData(index);
     }
@@ -103,80 +95,17 @@ void addLightControllerWindow::on_controllerComboBox_currentIndexChanged(int ind
 
 void addLightControllerWindow::on_addPushButton_clicked()
 {
-    //If No New Controller, then Do Nothing
-    if(noControllers)
-    {
-        QMessageBox::critical (nullptr, "Add Light Controller Error", "Couldn't add light controller as there is no light controller to add", QMessageBox::Ok);
-        return;
-    }
-
-    //Check if Group File Exists
-    QString fileAndPath = ui->groupFileLineEdit->text ();
-    QFile groupData(fileAndPath);
-    qint8 index = ui->controllerComboBox->currentIndex ();
-
-    if(groupData.exists() && (index >= 0 && index < ULTIMARCMAXDEVICES))
-    {
-        dataUltimarc[index].groupFile = fileAndPath;
-
-        //Add Light Controller to Light Controller List
-        //qDebug() << "Adding Light Controller with Group File:" << fileAndPath;
-
-        p_comDeviceList->AddLightController(dataUltimarc[index]);
-
-        //Remove Light Controller Data that was Added to the List
-        RemoveUltimarcData(index);
-
-        //Remove the ComboBox Display Name
-        RemoveComboBoxDisplay(index);
-
-        DisplayUltimarcData(0);
-
-        ui->groupFileLineEdit->clear ();
-    }
-    else
-    {
-        QMessageBox::critical (nullptr, "Add Light Controller Error", "Couldn't add light controller to the list. Something wrong with light controller or group file", QMessageBox::Ok);
-    }
-
+    AddLightController();
 }
 
 void addLightControllerWindow::on_addClosePushButton_clicked()
 {
-    //If No New Controller, then Do Nothing and
-    if(noControllers)
-    {
-        QMessageBox::critical (nullptr, "Add Light Controller Error", "Couldn't add light controller as there is no light controller to add", QMessageBox::Ok);
-        return;
-    }
+    bool goodAdd = AddLightController();
 
-    //Check if Group File Exists
-    QString fileAndPath = ui->groupFileLineEdit->text ();
-    QFile groupData(fileAndPath);
-    qint8 index = ui->controllerComboBox->currentIndex ();
-
-    if(groupData.exists() && (index >= 0 && index < ULTIMARCMAXDEVICES))
-    {
-        dataUltimarc[index].groupFile = fileAndPath;
-
-        //Add Light Controller to Light Controller List
-        //qDebug() << "Adding Light Controller with Group File:" << fileAndPath;
-
-        p_comDeviceList->AddLightController(dataUltimarc[index]);
-
-        //Remove Light Controller Data that was Added to the List
-        RemoveUltimarcData(index);
-
-        //Remove the ComboBox Display Name
-        RemoveComboBoxDisplay(index);
-
-        //Close and Destroy the Window
+    //If Light Controller was Added, then Close Window
+    if(goodAdd)
         accept ();
-    }
-    else
-    {
-        QMessageBox::critical (nullptr, "Add Light Controller Error", "Couldn't add light controller to the list. Something wrong with light controller or group file", QMessageBox::Ok);
-    }
+
 }
 
 
@@ -194,17 +123,28 @@ void addLightControllerWindow::CollectUltimarcData()
     if(numberUltimarcDevices > 0)
     {
         quint8 i;
+        UltimarcData tempData;
 
         for(i = 0; i < numberUltimarcDevices; i++)
         {
-            dataUltimarc[i] = p_comDeviceList->p_pacDrive->GetUltimarcData (i);
+            tempData = p_comDeviceList->p_pacDrive->GetUltimarcData (i);
+
+            if(!tempData.inList && tempData.valid)
+            {
+                dataUltimarc[ultimarcArrayNumber] = tempData;
+                ultimarcArrayNumber++;
+            }
         }
+
+        if(ultimarcArrayNumber == 0)
+            noControllers = true;
     }
 }
 
 void addLightControllerWindow::DisplayUltimarcData(quint8 index)
 {
     ui->deviceLineEdit->clear();
+    ui->deviceIDLineEdit->clear();
     ui->vendorIDLineEdit->clear();
     ui->productIDLineEdit->clear();
     ui->vendorNameLineEdit->clear();
@@ -213,9 +153,10 @@ void addLightControllerWindow::DisplayUltimarcData(quint8 index)
     ui->serialNumberLineEdit->clear();
     ui->devicePathLineEdit->clear();
 
-    if(numberUltimarcDevices > index)
+    if(index < ultimarcArrayNumber)
     {
         ui->deviceLineEdit->insert(dataUltimarc[index].typeName);
+        ui->deviceIDLineEdit->insert(QString::number(dataUltimarc[index].deviceID));
         ui->vendorIDLineEdit->insert(dataUltimarc[index].vendorIDS);
         ui->productIDLineEdit->insert(dataUltimarc[index].productIDS);
         ui->vendorNameLineEdit->insert(dataUltimarc[index].vendorName);
@@ -227,63 +168,41 @@ void addLightControllerWindow::DisplayUltimarcData(quint8 index)
     }
 }
 
-void addLightControllerWindow::CheckSaveLightCntlrsWithNew()
-{
-    quint8 i, j;
-    QList<quint8> removeUltimarcDevices;
-    qint8 newNumberUltimarcDevices = numberUltimarcDevices;
-    UltimarcData savedData;
 
-    for(i = 0; i < numberSaveLightCntlrs; i++)
-    {
-        savedData = p_comDeviceList->p_lightCntlrList[i]->GetUltimarcData ();
-
-        for(j = 0; j < numberUltimarcDevices; j++)
-        {
-            if(savedData == dataUltimarc[j] && newNumberUltimarcDevices > 0)
-            {
-                //Saved Light Controller Match Found
-                removeUltimarcDevices << j;
-                newNumberUltimarcDevices--;
-            }
-        }
-    }
-
-    //Remove the Found Ultimarc Devices
-    for(i = 0; i < removeUltimarcDevices.length(); i++)
-        RemoveUltimarcData(removeUltimarcDevices[i]);
-
-}
 
 void addLightControllerWindow::RemoveUltimarcData(quint8 index)
 {
-    UltimarcData tempData;
+    if(ultimarcArrayNumber > 0)
+    {
 
-    //If only 1 Ultimarc Device in Data, then Remove it
-    if(numberUltimarcDevices == 1 && index == 0)
-    {
-        dataUltimarc[index] = tempData;
-        noControllers = true;
-    }
-    else if(numberUltimarcDevices > 1 && index == (numberUltimarcDevices-1))
-    {
-        //Device is the last in the List
-        dataUltimarc[index] = tempData;
-    }
-    else
-    {
-        //Device is First or Somewhere in the Middle, and have to Move things Around
-        quint8 i;
-        for(i = index; i < numberUltimarcDevices; i++)
+        UltimarcData tempData;
+
+        //If only 1 Ultimarc Device in Data, then Remove it
+        if(ultimarcArrayNumber == 1 && index == 0)
         {
-            if(i != (numberUltimarcDevices-1))
-                dataUltimarc[i] = dataUltimarc[i+1];
-            else
-                dataUltimarc[i] = tempData;
+            dataUltimarc[index] = tempData;
+            noControllers = true;
         }
-    }
+        else if(ultimarcArrayNumber > 1 && index == (ultimarcArrayNumber-1))
+        {
+            //Device is the last in the List
+            dataUltimarc[index] = tempData;
+        }
+        else
+        {
+            //Device is First or Somewhere in the Middle, and have to Move things Around
+            quint8 i;
+            for(i = index; i < ultimarcArrayNumber; i++)
+            {
+                if(i != (ultimarcArrayNumber-1))
+                    dataUltimarc[i] = dataUltimarc[i+1];
+                else
+                    dataUltimarc[i] = tempData;
+            }
+        }
 
-    numberUltimarcDevices--;
+        ultimarcArrayNumber--;
+    }
 }
 
 void addLightControllerWindow::RemoveComboBoxDisplay(quint8 index)
@@ -303,18 +222,90 @@ void addLightControllerWindow::RemoveComboBoxDisplay(quint8 index)
     else
     {
         //Display is First or Somewhere in the Middle
+        //Rebuild Text in Combo Box
         quint8 i;
         for(i = index; i < count; i++)
         {
             if(i != (count-1))
             {
-                QString controllerInfo = QString::number(i) + " - " + dataUltimarc[i].vendorName + " " + dataUltimarc[i].typeName + " ID: " + QString::number(dataUltimarc[i].id);
+                QString controllerInfo = "ID: "+QString::number(dataUltimarc[i].id)+ " - " + dataUltimarc[i].vendorName + " " + dataUltimarc[i].typeName;
                 ui->controllerComboBox->setItemText(i, controllerInfo);
             }
             else
                 ui->controllerComboBox->removeItem (i);
         }
     }
+}
+
+
+bool addLightControllerWindow::AddLightController()
+{
+    //If No New Controller, then Do Nothing
+    if(noControllers)
+    {
+        QMessageBox::critical (nullptr, "Add Light Controller Error", "Couldn't add light controller as there is no light controller to add", QMessageBox::Ok);
+        return false;
+    }
+
+    //Check if Group File Exists
+    QString fileAndPath = ui->groupFileLineEdit->text ();
+    QFile groupData(fileAndPath);
+    qint8 index = ui->controllerComboBox->currentIndex ();
+
+    if(groupData.exists() && index >= 0 && ultimarcArrayNumber > 0)
+    {
+        //Group File Exists, Now Trail Load it
+        LightController tempLC(0, dataUltimarc[index]);
+
+        connect(&tempLC,&LightController::ShowErrorMessage, this, &addLightControllerWindow::ErrorMessage);
+
+        tempLC.SetGroupFile(fileAndPath);
+
+        bool didFileLoad = tempLC.DidGroupFileLoad();
+
+        disconnect(&tempLC,&LightController::ShowErrorMessage, this, &addLightControllerWindow::ErrorMessage);
+
+        //Add Light Controller to Light Controller List
+        //qDebug() << "Adding Light Controller with Group File:" << fileAndPath;
+
+        if(didFileLoad)
+        {
+            dataUltimarc[index].groupFile = fileAndPath;
+
+            p_comDeviceList->AddLightController(dataUltimarc[index]);
+
+            //Remove Light Controller Data that was Added to the List
+            RemoveUltimarcData(index);
+
+            //Remove the ComboBox Display Name
+            RemoveComboBoxDisplay(index);
+
+            ui->controllerComboBox->setCurrentIndex (0);
+
+            DisplayUltimarcData(0);
+
+            ui->groupFileLineEdit->clear ();
+
+            return true;
+        }
+        else
+            QMessageBox::critical (nullptr, "Group File Error", "Couldn't add light controller to the list,because the group file failed to load", QMessageBox::Ok);
+    }
+    else
+    {
+        QMessageBox::critical (nullptr, "Add Light Controller Error", "Couldn't add light controller to the list. Something is wrong with the group file", QMessageBox::Ok);
+    }
+
+    return false;
+}
+
+
+
+//Public Slots
+
+void addLightControllerWindow::ErrorMessage(const QString &title, const QString &message)
+{
+    QMessageBox::critical (this, title, message, QMessageBox::Ok);
 }
 
 

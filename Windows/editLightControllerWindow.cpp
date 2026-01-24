@@ -18,6 +18,7 @@ editLightControllerWindow::editLightControllerWindow(ComDeviceList *cdList, QWid
 
     //Set Line Edits to Read Only
     ui->deviceLineEdit->setReadOnly(true);
+    ui->deviceIDLineEdit->setReadOnly(true);
     ui->vendorIDLineEdit->setReadOnly(true);
     ui->productIDLineEdit->setReadOnly(true);
     ui->vendorNameLineEdit->setReadOnly(true);
@@ -34,7 +35,7 @@ editLightControllerWindow::editLightControllerWindow(ComDeviceList *cdList, QWid
         quint8 templightCntlrNumber = p_comDeviceList->p_lightCntlrList[i]->GetLightCntlrNumber();
         dataUltimarc[i] = p_comDeviceList->p_lightCntlrList[i]->GetUltimarcData();
 
-        QString controllerInfo = QString::number(templightCntlrNumber) + " - " + dataUltimarc[i].vendorName + " " + dataUltimarc[i].typeName + " ID: " + QString::number(dataUltimarc[i].id);
+        QString controllerInfo = QString::number(templightCntlrNumber) + " - " + "ID: "+QString::number(dataUltimarc[i].id)+ " " + dataUltimarc[i].vendorName + " " + dataUltimarc[i].typeName;
 
         ui->controllerComboBox->insertItem(i, controllerInfo);
     }
@@ -64,10 +65,9 @@ void editLightControllerWindow::on_grpFilePushButton_clicked()
 
 void editLightControllerWindow::on_controllerComboBox_currentIndexChanged(int index)
 {
-    //if(numberSaveLightCntlrs > 0 && index < numberSaveLightCntlrs)
-    //{
-        DisplayUltimarcData(index);
-    //}
+
+    DisplayUltimarcData(index);
+
 }
 
 //Delete the Light Controller
@@ -144,6 +144,7 @@ void editLightControllerWindow::on_closePushButton_clicked()
 void editLightControllerWindow::DisplayUltimarcData(quint8 index)
 {
     ui->deviceLineEdit->clear();
+    ui->deviceIDLineEdit->clear();
     ui->vendorIDLineEdit->clear();
     ui->productIDLineEdit->clear();
     ui->vendorNameLineEdit->clear();
@@ -156,6 +157,7 @@ void editLightControllerWindow::DisplayUltimarcData(quint8 index)
     if(numberSaveLightCntlrs > index)
     {
         ui->deviceLineEdit->insert(dataUltimarc[index].typeName);
+        ui->deviceIDLineEdit->insert(QString::number(dataUltimarc[index].deviceID));
         ui->vendorIDLineEdit->insert(dataUltimarc[index].vendorIDS);
         ui->productIDLineEdit->insert(dataUltimarc[index].productIDS);
         ui->vendorNameLineEdit->insert(dataUltimarc[index].vendorName);
@@ -224,7 +226,7 @@ void editLightControllerWindow::RemoveComboBoxDisplay(quint8 index)
             if(i != (count-1))
             {
                 quint8 templightCntlrNumber = p_comDeviceList->p_lightCntlrList[i]->GetLightCntlrNumber();
-                QString controllerInfo = QString::number(templightCntlrNumber) + " - " + dataUltimarc[i].vendorName + " " + dataUltimarc[i].typeName + " ID: " + QString::number(dataUltimarc[i].id);
+                QString controllerInfo = QString::number(templightCntlrNumber) + " - " + "ID: "+QString::number(dataUltimarc[i].id)+ " " + dataUltimarc[i].vendorName + " " + dataUltimarc[i].typeName;
                 ui->controllerComboBox->setItemText(i, controllerInfo);
             }
             else

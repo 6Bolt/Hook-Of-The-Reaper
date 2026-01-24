@@ -55,7 +55,11 @@ public:
 
     bool DidGroupFileLoad() { return didGroupFileLoad; }
 
+    quint8 GetID() { return id; }
+
     //Loading Group File Functions
+
+
 
     //Load Group File
     void LoadGroupFile();
@@ -80,6 +84,7 @@ public:
 
 
 
+
     //Light Displays Functions
 
     //Flash Regular Lights
@@ -97,11 +102,20 @@ public:
     //Sequence RGB Lights, Light Up Lights One by One
     void SequenceRGBLights(QList<quint8> grpNumList, quint16 delay, QString color);
 
+    //Follower RGB Lights, Light up if data is > 0
+    void FollowerRGBLights(QList<quint8> grpNumList, QString color, quint16 data);
+
+    //Follower Random RGB Lights, Light up if data is > 0
+    void FollowerRandomRGBLights(QList<quint8> grpNumList, quint16 data);
+
     //Turn on RGB Groups with a RGB Color
     void ShowRGBColor(QList<quint8> grpNumList, RGBColor color);
 
     //Turn on 0ne RGB set, in each Group
     void ShowRGBColorOne(QList<quint8> grpNumList, RGBColor color, quint8 index);
+
+    //Turn State for a Group
+    void TurnRGBState(QList<quint8> grpNumList, bool state);
 
     //Check Group Number for Regular
     bool CheckRegularGroupNumber(quint8 grpNum);
@@ -109,6 +123,11 @@ public:
     //Check Group Number for RGB
     bool CheckRGBGroupNumber(quint8 grpNum);
 
+    //Reset Light Controller when Game Ends
+    void ResetLightController();
+
+    //Set the Do Reset Flag to Reset after Command
+    void DoReset() { doReset = true; }
 
 signals:
 
@@ -118,8 +137,11 @@ signals:
     //Set RGB Lights Intensity
     void SetRGBLightIntensity(const quint8 &id, const RGBPins &pins, const RGBColor &color);
 
+    void SetPinState(quint8 id, quint8 pin, bool state);
+
     //Show Error Message Box in Main Thread
     void ShowErrorMessage(const QString &title, const QString &message);
+
 
 private slots:
 
@@ -196,6 +218,12 @@ private:
     //Used Pins List
     QList<quint8>                   usedPinsList;
 
+    //String List of Colors
+    QStringList                     colorNameList;
+
+    //Number of Colors Stored
+    quint16                         numberColors;
+
     //If RGB Fast Mode is Enabled
     bool                            rgbFastMode;
 
@@ -218,6 +246,9 @@ private:
     //Error Title
     QString                         title;
 
+    //Tells Light Controller to Reset when Command Finishes
+    bool                            doReset;
+
     //Flash RGB Group List
     //RGB LED Group List
     QList<quint8>                   rgbFlashGroupList;
@@ -234,10 +265,17 @@ private:
 
 
     //Sequence RGB
+    QList<quint8>                   rgbSequenceGroupList;
     quint16                         sequenceDelay;
     quint8                          sequenceCount;
     quint8                          sequenceMaxCount;
     bool                            sequenceMaxCountSet;
+    RGBColor                        rgbSequenceColor;
+
+    //Follower RGB
+    //QList<quint8>                   rgbFollowerGroupList;
+    RGBColor                        rgbFollowerColor;
+    bool                            rgbFollowerFirstTime;
 };
 
 #endif // LIGHTCONTROLLER_H

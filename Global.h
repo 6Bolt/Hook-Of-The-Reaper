@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.2.4C"
+#define VERSION                 "1.2.5"
 #define VERSIONMAIN             1
 #define VERSIONMID              2
 #define VERSIONLAST             4
@@ -645,6 +645,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define RGBGROUP                "GRP_RGB"
 #define RGBFASTGROUP            "GRP_RGB_FAST"
 #define RGBCOLOR                "Color"
+#define ENDGROUP                "END_GRP"
 #define COLORSIZE               5
 
 
@@ -682,6 +683,8 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define PACLED64PINS            64
 #define PACULTIMATEPINS         96
 
+#define ULTIMATEGRPS            12
+#define OTHERGRPS               8
 
 #define PACDRIVENAME            "PacDrive"
 #define UHIDNAME                "U-HID"
@@ -705,34 +708,42 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 #define UNKNOWNCOMMAND          0
 #define FLASHCOMMAND            1
 #define SEQUENCECOMMAND         2
+#define FOLLOWERCOMMAND         3
 
 //Flashes
 #define FLASHRGB                "Flash_RGB"
 #define FLASHRGBARGS            4
-#define FLASHRGBCMD             1
+#define FLASHRGBCMD             0
 #define RELOADFLASHRGB          "Reload_Flash_RGB"
 #define RELOADFLASHRGBARGS      5
-#define RELOADFLASHRGBCMD       2
+#define RELOADFLASHRGBCMD       1
 #define DEATHFLASHRGB           "Death_Flash_RGB"
 #define DEATHFLASHRGBARGS       5
-#define DEATHFLASHRGBCMD        3
+#define DEATHFLASHRGBCMD        2
 #define RANDOMFLASHRGB          "Random_Flash_RGB"
 #define RANDOMFLASHRGBARGS      4
-#define RANDOMFLASHRGBCMD       4
+#define RANDOMFLASHRGBCMD       3
 #define RANDOMFLASHRGB2C        "Random_Flash_2C_RGB"
 #define RANDOMFLASHRGB2CARGS    5
-#define RANDOMFLASHRGB2CCMD     5
+#define RANDOMFLASHRGB2CCMD     4
 
 
 //Sequence
 #define SEQUENCERGB             "Sequence_RGB"
 #define SEQUENCERGBARGS         2
-#define SEQUENCERGBCMD          6
+#define SEQUENCERGBCMD          0
 #define RELOADSEQUENCERGB       "Reload_Sequence_RGB"
 #define RELOADSEQUENCERGBARGS   3
-#define RELOADSEQUENCERGBCMD    7
+#define RELOADSEQUENCERGBCMD    1
 
 
+//Follower Commands
+#define FOLLOWERRGB             "Follower_RGB"
+#define FOLLOWERRGBARGS         1
+#define FOLLOWERRGBCMD          0
+#define FOLLOWERRANDOMRGB       "Follower_Random_RGB"
+#define FOLLOWERRANDOMRGBARGS   0
+#define FOLLOWERRANDOMRGBCMD    1
 
 
 //Not Used Yet, But Needed for Future
@@ -864,13 +875,16 @@ struct UltimarcData
     QString productName;
     QString serialNumber;
     QString devicePath;
-    QString groupFile;
+    QString groupFile = "";
+    bool valid = false;
+    bool inList = false;
+    quint8 deviceID;
 
     bool operator==(const UltimarcData& other) const
     {
         return (type == other.type) && (typeName == other.typeName) && (vendorID == other.vendorID) && (vendorIDS == other.vendorIDS) && (productID == other.productID)
         && (productIDS == other.productIDS) && (version == other.version) && (vendorName == other.vendorName) && (productName == other.productName)
-               && (serialNumber == other.serialNumber)  && (devicePath == other.devicePath) && (versionS == other.versionS)  && (id == other.id);
+               && (serialNumber == other.serialNumber)  && (devicePath == other.devicePath) && (versionS == other.versionS)  && (id == other.id) && (deviceID == other.deviceID);
     }
 };
 

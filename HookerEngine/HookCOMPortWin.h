@@ -32,6 +32,10 @@ public:
     //Send the TCP Port Number
     quint16 TCPPortNumber();
 
+    bool IsCOMConnected(quint8 comPortNum);
+
+    bool IsUSBHIDConnected(quint8 playerNum);
+
 public slots:
 
     //Connect to COM Port

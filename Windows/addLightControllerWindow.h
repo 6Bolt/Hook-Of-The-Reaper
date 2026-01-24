@@ -38,26 +38,36 @@ private:
     //Displays Ultimarc Device Data
     void DisplayUltimarcData(quint8 index);
 
-    void CheckSaveLightCntlrsWithNew();
-
     void RemoveUltimarcData(quint8 index);
 
     void RemoveComboBoxDisplay(quint8 index);
 
+    bool AddLightController();
+
+public slots:
+
+    //Handle Error Message Box from a different Thread
+    void ErrorMessage(const QString &title, const QString &message);
+
+private:
 
     Ui::addLightControllerWindow *ui;
 
     //ComDeviceList to Add the Light Gun Too. Do Not Delete!
     ComDeviceList           *p_comDeviceList;
 
-    //Number of Saved Light Controillers
+    //Number of Saved Light Controillers in List
     quint8                  numberSaveLightCntlrs;
 
     //Number of Ultrimarc Devices
     qint8                   numberUltimarcDevices;
 
+    //Number of Ultimarc Devices in PacDrive
+    quint8                  devicesInList;
+
     //Ultimarc Device Data
     UltimarcData            dataUltimarc[ULTIMARCMAXDEVICES];
+    quint8                  ultimarcArrayNumber;
 
     bool                    noControllers;
 

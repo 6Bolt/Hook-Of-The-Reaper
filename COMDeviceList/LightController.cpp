@@ -18,7 +18,7 @@ LightController::LightController(quint8 cntlrNum, LightController const &other, 
 
     maxBrightness = ULTIMARCTYPEBRIGHTNESS[dataUltimarc.type];
 
-    groupFilePath = dataUltimarc.groupFile;
+    groupFilePath = other.groupFilePath;
 
     regularLEDMap = other.regularLEDMap;
 
@@ -42,6 +42,8 @@ LightController::LightController(quint8 cntlrNum, LightController const &other, 
 
     useRandomPins = false;
     useSideColor = false;
+    rgbFollowerFirstTime = false;
+    doReset = false;
 
     //Load the Group File
     LoadGroupFile();
@@ -54,14 +56,6 @@ LightController::LightController(quint8 cntlrNum, LightController const &other, 
     p_rgbTimer = new QTimer(this);
     p_rgbTimer->setSingleShot (true);
 
-    if(!rgbColorMap.contains("black"))
-    {
-        RGBColor black;
-        black.r = 0;
-        black.g = 0;
-        black.b = 0;
-        rgbColorMap.insert("black", black);
-    }
 }
 
 
@@ -106,6 +100,8 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
 
     useRandomPins = false;
     useSideColor = false;
+    rgbFollowerFirstTime = false;
+    doReset = false;
 
     //Load the Group File
     LoadGroupFile();
@@ -118,15 +114,6 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
     p_rgbTimer = new QTimer(this);
     p_rgbTimer->setSingleShot (true);
 
-    RGBColor black;
-    black.r = 0;
-    black.g = 0;
-    black.b = 0;
-    rgbColorMap.insert("black", black);
-
-
-    //connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularTimeOut()));
-    //connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBTimeOut()));
 }
 
 
@@ -171,11 +158,18 @@ void LightController::CopyLightController(LightController const &lcMember)
 
     didGroupFileLoad = false;
 
+    isCommandRunning = lcMember.isCommandRunning;
+
     title = "Light Controller Group File Error";
 
     rgbOff.r = 0;
     rgbOff.g = 0;
     rgbOff.b = 0;
+
+    useRandomPins = false;
+    useSideColor = false;
+    rgbFollowerFirstTime = false;
+    doReset = false;
 
     //Load the Group File
     LoadGroupFile();
@@ -226,6 +220,8 @@ void LightController::LoadGroupFile()
     rgbLEDGroupList.clear();
     rgbColorMap.clear();
     usedPinsList.clear();
+    colorNameList.clear();
+    numberColors = 0;
 
     if(loadGroupData.exists() == false)
         return;
@@ -240,7 +236,6 @@ void LightController::LoadGroupFile()
     {
         QString message = "Can not open light controller group data file to read. Please close program and solve file problem. Might be permissions problem.";
         emit ShowErrorMessage(title, message);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", "Can not open light controller group data file to read. Please close program and solve file problem. Might be permissions problem.", QMessageBox::Ok);
         return;
     }
 
@@ -274,7 +269,6 @@ void LightController::LoadGroupFile()
             {
                 QString tempCrit = "Cannot mix GRP_RGB and GRP_RGB_FAST.\nFile: "+groupFilePath;
                 emit ShowErrorMessage(title, tempCrit);
-                //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
                 groupLoading = false;
             }
             else
@@ -293,7 +287,6 @@ void LightController::LoadGroupFile()
             {
                 QString tempCrit = "Cannot mix GRP_RGB and GRP_RGB_FAST.\nFile: "+groupFilePath;
                 emit ShowErrorMessage(title, tempCrit);
-                //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
                 groupLoading = false;
             }
             else
@@ -323,28 +316,24 @@ void LightController::LoadGroupFile()
     {
         QString tempCrit = "Pin group failed to load. Please correct the group file for this light controller.\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         didGroupFileLoad = false;
     }
     else if(!didColorLoad)
     {
         QString tempCrit = "A RGB color failed to load. Please correct the group file for this light controller.\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         didGroupFileLoad = false;
     }
     else if(!gotData)
     {
         QString tempCrit = "No group data was loaded. Please correct the group file for this light controller.\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         didGroupFileLoad = false;
     }
     else if(usedPinsList.count() > numberLEDs)
     {
         QString tempCrit = "Too many pins were loaded into the Light Controller. Please correct the group file for this light controller.\nUsed Pins: "+QString::number(usedPinsList.count())+"File: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         didGroupFileLoad = false;
     }
     else
@@ -361,7 +350,6 @@ void LightController::LoadGroupFile()
     {
         QString tempCrit = "No group data was loaded. Please correct the group file for this light controller.\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         didGroupFileLoad = false;
     }
 }
@@ -393,7 +381,6 @@ bool LightController::LoadGroupRGBFast(quint16 lineNum, quint16 lineMax, QString
     {
         QString tempCrit = "The group number already exists in the RGB group(s).\nGroup Number: "+QString::number(groupNumberBright.groupNumber)+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         return false;
     }
 
@@ -441,7 +428,6 @@ bool LightController::LoadGroupRGB(quint16 lineNum, quint16 lineMax, QStringList
     {
         QString tempCrit = "The group number already exists in the RGB group(s).\nGroup Number: "+QString::number(groupNumberBright.groupNumber)+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         return false;
     }
 
@@ -488,7 +474,6 @@ bool LightController::LoadGroupRegular(quint16 lineNum, quint16 lineMax, QString
     {
         QString tempCrit = "The group number already exists in the regular group(s).\nGroup Number: "+QString::number(groupNumberBright.groupNumber)+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         return false;
     }
 
@@ -531,7 +516,6 @@ LightControllerTop LightController::GetGroupNumber(quint8 groupMode, quint16 lin
     {
         QString tempCrit = "The group kind is not matching the 3 known groups.\nLine Number: "+QString::number(lineNumber)+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         groupNumberBright.isDataSet = false;
         return groupNumberBright;
     }
@@ -542,7 +526,6 @@ LightControllerTop LightController::GetGroupNumber(quint8 groupMode, quint16 lin
     {
         QString tempCrit = "The group number, is not a number.\nLine Number: "+QString::number(lineNumber)+"\nGroup Number "+splitData[1]+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         groupNumberBright.isDataSet = false;
         return groupNumberBright;
     }
@@ -551,7 +534,6 @@ LightControllerTop LightController::GetGroupNumber(quint8 groupMode, quint16 lin
     {
         QString tempCrit = "The group number, needs to be set from 0 to 255.\nLine Number: "+QString::number(lineNumber)+"\nGroup Number "+splitData[1]+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         groupNumberBright.isDataSet = false;
         return groupNumberBright;
     }
@@ -605,7 +587,8 @@ LCPinData LightController::GetGroupPinData(quint8 lcKind, quint16 grpStart, quin
         numberLEDsCheck = numberLEDs;
 
 
-    while(groupEnd < lineMax && (fileData[groupEnd][0] != 'G' && fileData[groupEnd][0] != 'C'))
+    //Find Where the Group Ends, If new line Starts with GRP, Color, or END_GRP. Then Found End
+    while(groupEnd < lineMax && (!fileData[groupEnd].startsWith(REGULARGROUP) && !fileData[groupEnd].startsWith(RGBCOLOR) && !fileData[groupEnd].startsWith(ENDGROUP)))
     {
         groupEnd++;
     }
@@ -632,7 +615,6 @@ LCPinData LightController::GetGroupPinData(quint8 lcKind, quint16 grpStart, quin
             {
                 QString tempCrit = "The pin number, is not a number.\nPin Number "+splitGrpData[j]+"\nFile: "+groupFilePath;
                 emit ShowErrorMessage(title, tempCrit);
-                //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
                 pinDataStruct.isDataSet = false;
                 return pinDataStruct;
             }
@@ -641,7 +623,6 @@ LCPinData LightController::GetGroupPinData(quint8 lcKind, quint16 grpStart, quin
             {
                 QString tempCrit = "The pin number is out of range.\nPin Number "+splitGrpData[j]+"\nFile: "+groupFilePath;
                 emit ShowErrorMessage(title, tempCrit);
-                //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
                 pinDataStruct.isDataSet = false;
                 return pinDataStruct;
             }
@@ -654,28 +635,9 @@ LCPinData LightController::GetGroupPinData(quint8 lcKind, quint16 grpStart, quin
                 {
                     QString tempCrit = "The pin number (+0,+1,+2) is already in the group.\nPin Number "+splitGrpData[j]+"\nFile: "+groupFilePath;
                     emit ShowErrorMessage(title, tempCrit);
-                    //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
                     pinDataStruct.isDataSet = false;
                     return pinDataStruct;
                 }
-
-                /*
-                if(j > 1)
-                {
-                    for(k = 0; k < j; k++)
-                    {
-                        if(grpData[k]+2 >= pin)
-                        {
-                            QString tempCrit = "The RGB Fast pin number (+0,+1,+2) is already in the group.\n1st Pin: "+QString::number(grpData[k])+"\n2nd Pin: "+splitGrpData[j]+"\nFile: "+groupFilePath;
-                            emit ShowErrorMessage(title, tempCrit);
-                            //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
-                            pinDataStruct.isDataSet = false;
-                            return pinDataStruct;
-                        }
-                    }
-                }
-                */
-
             }
             else
             {
@@ -683,7 +645,6 @@ LCPinData LightController::GetGroupPinData(quint8 lcKind, quint16 grpStart, quin
                 {
                     QString tempCrit = "The pin number is already in the group.\nPin Number "+splitGrpData[j]+"\nFile: "+groupFilePath;
                     emit ShowErrorMessage(title, tempCrit);
-                    //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
                     pinDataStruct.isDataSet = false;
                     return pinDataStruct;
                 }
@@ -714,7 +675,6 @@ LCPinData LightController::GetGroupPinData(quint8 lcKind, quint16 grpStart, quin
         {
             QString tempCrit = "Too many regular pins were added to the group than the light controller supports.\nNumber of Pins "+QString::number(addedPins)+"\nFile: "+groupFilePath;
             emit ShowErrorMessage(title, tempCrit);
-            //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
             pinDataStruct.isDataSet = false;
             return pinDataStruct;
         }
@@ -725,7 +685,6 @@ LCPinData LightController::GetGroupPinData(quint8 lcKind, quint16 grpStart, quin
         {
             QString tempCrit = "Too many RGB pins were added to the group than the light controller supports.\nNumber of Pins "+QString::number(addedPins)+"\nFile: "+groupFilePath;
             emit ShowErrorMessage(title, tempCrit);
-            //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
             pinDataStruct.isDataSet = false;
             return pinDataStruct;
         }
@@ -734,7 +693,6 @@ LCPinData LightController::GetGroupPinData(quint8 lcKind, quint16 grpStart, quin
         {
             QString tempCrit = "The pins in the RGB group need to be divided by 3.\nNumber of Pins "+QString::number(addedPins)+"\nFile: "+groupFilePath;
             emit ShowErrorMessage(title, tempCrit);
-            //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
             pinDataStruct.isDataSet = false;
             return pinDataStruct;
         }
@@ -745,7 +703,6 @@ LCPinData LightController::GetGroupPinData(quint8 lcKind, quint16 grpStart, quin
         {
             QString tempCrit = "Too many RGB Fast pins were added to the group than the light controller supports.\nNumber of Pins "+QString::number(addedPins)+"\nFile: "+groupFilePath;
             emit ShowErrorMessage(title, tempCrit);
-            //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
             pinDataStruct.isDataSet = false;
             return pinDataStruct;
         }
@@ -773,7 +730,6 @@ bool LightController::LoadRGBColor(QString line)
     {
         QString tempCrit = "The RGB color has too much or too little data.\nColor Data: "+line+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         return false;
     }
 
@@ -788,7 +744,6 @@ bool LightController::LoadRGBColor(QString line)
     {
         QString tempCrit = "The RGB color red value, is not a number.\nRed Color Data: "+splitData[2]+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         return false;
     }
 
@@ -796,7 +751,6 @@ bool LightController::LoadRGBColor(QString line)
     {
         QString tempCrit = "The RGB color red value needs to be set from 0 to 255.\nRed Color Data: "+splitData[2]+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         return false;
     }
 
@@ -810,7 +764,6 @@ bool LightController::LoadRGBColor(QString line)
     {
         QString tempCrit = "The RGB color green value, is not a number.\nGreen Color Data: "+splitData[3]+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         return false;
     }
 
@@ -818,7 +771,6 @@ bool LightController::LoadRGBColor(QString line)
     {
         QString tempCrit = "The RGB color green value needs to be set from 0 to 255.\nGreen Color Data: "+splitData[3]+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         return false;
     }
 
@@ -832,7 +784,6 @@ bool LightController::LoadRGBColor(QString line)
     {
         QString tempCrit = "The RGB color blue value, is not a number.\nBlue Color Data: "+splitData[4]+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         return false;
     }
 
@@ -840,14 +791,16 @@ bool LightController::LoadRGBColor(QString line)
     {
         QString tempCrit = "The RGB color blue value needs to be set from 0 to 255.\nBlue Color Data: "+splitData[4]+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
-        //QMessageBox::critical (nullptr, "Light Controller Group File Error", tempCrit, QMessageBox::Ok);
         return false;
     }
 
     tempColor.b = static_cast<quint8>(tempColorData);
 
-
     rgbColorMap.insert(colorName, tempColor);
+
+    colorNameList.insert(numberColors, colorName);
+
+    numberColors++;
 
     //qDebug() << "Color:" << colorName << "R:" << tempColor.r << "G:" << tempColor.g << "B:" << tempColor.b;
 
@@ -877,7 +830,6 @@ void LightController::FlashRGBLights(QList<quint8> grpNumList, quint16 timeOnMs,
         {
             QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
             emit ShowErrorMessage(title, tempCrit);
-            //QMessageBox::critical (nullptr, "Light Controller RGB Color Fail", tempCrit, QMessageBox::Ok);
             return;
         }
 
@@ -912,7 +864,6 @@ void LightController::FlashRandomRGBLights(QList<quint8> grpNumList, quint16 tim
         {
             QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
             emit ShowErrorMessage(title, tempCrit);
-            //QMessageBox::critical (nullptr, "Light Controller RGB Color Fail", tempCrit, QMessageBox::Ok);
             return;
         }
 
@@ -970,11 +921,17 @@ void LightController::FlashRandomRGB2CLights(QList<quint8> grpNumList, quint16 t
         {
             QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
             emit ShowErrorMessage(title, tempCrit);
-            //QMessageBox::critical (nullptr, "Light Controller RGB Color Fail", tempCrit, QMessageBox::Ok);
             return;
         }
 
-        sideColor = rgbColorMap[sColor];
+        if(rgbColorMap.contains (sColor))
+            sideColor = rgbColorMap[sColor];
+        else
+        {
+            QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
+            emit ShowErrorMessage(title, tempCrit);
+            return;
+        }
 
         isCommandRunning = true;
         useRandomPins = true;
@@ -1027,7 +984,7 @@ void LightController::SequenceRGBLights(QList<quint8> grpNumList, quint16 delay,
 {
     if(!isCommandRunning)
     {
-        rgbFlashGroupList = grpNumList;
+        rgbSequenceGroupList = grpNumList;
         sequenceDelay = delay;
         sequenceCount = 0;
         sequenceMaxCount = 1;
@@ -1035,19 +992,18 @@ void LightController::SequenceRGBLights(QList<quint8> grpNumList, quint16 delay,
 
 
         if(rgbColorMap.contains (color))
-            rgbFlashColor = rgbColorMap[color];
+            rgbSequenceColor = rgbColorMap[color];
         else
         {
             QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
             QString title = "Light Controller RGB Color Fail";
             emit ShowErrorMessage(title, tempCrit);
-            //QMessageBox::critical (nullptr, "Light Controller RGB Color Fail", tempCrit, QMessageBox::Ok);
             return;
         }
 
         isCommandRunning = true;
 
-        ShowRGBColorOne(rgbFlashGroupList, rgbFlashColor, sequenceCount);
+        ShowRGBColorOne(rgbSequenceGroupList, rgbSequenceColor, sequenceCount);
 
         //Connect Timer to Turn On Next LEDs in the Sequence
         connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(SequenceDelayDone()));
@@ -1057,7 +1013,44 @@ void LightController::SequenceRGBLights(QList<quint8> grpNumList, quint16 delay,
 }
 
 
+void LightController::FollowerRGBLights(QList<quint8> grpNumList, QString color, quint16 data)
+{  
+    if(data > 0)
+    {
+        if(rgbColorMap.contains (color))
+            rgbFollowerColor = rgbColorMap[color];
+        else
+        {
+            QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
+            emit ShowErrorMessage(title, tempCrit);
+            return;
+        }
 
+        ShowRGBColor(grpNumList, rgbFollowerColor);
+    }
+    else
+    {
+        //TurnRGBState(grpNumList, false);
+        ShowRGBColor(grpNumList, rgbOff);
+    }
+
+}
+
+void LightController::FollowerRandomRGBLights(QList<quint8> grpNumList, quint16 data)
+{
+    if(!isCommandRunning)
+    {
+        if(data > 0)
+        {
+            quint16 randomColor = QRandomGenerator::global()->bounded(0, numberColors);
+            rgbFollowerColor = rgbColorMap[colorNameList[randomColor]];
+        }
+        else
+            rgbFollowerColor = rgbOff;
+
+        ShowRGBColor(grpNumList, rgbFollowerColor);
+    }
+}
 
 void LightController::ShowRGBColor(QList<quint8> grpNumList, RGBColor color)
 {
@@ -1141,7 +1134,7 @@ void LightController::ShowRGBColorOne(QList<quint8> grpNumList, RGBColor color, 
             isOutOfRange = true;
 
 
-        //qDebug() << "Writing to Light Controller ID:" << id;
+        //qDebug() << "Writing to Light Controller ID:" << id << "sequenceCount" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
 
         //Set RGB Lights to the Color
         if(!isOutOfRange)
@@ -1149,6 +1142,46 @@ void LightController::ShowRGBColorOne(QList<quint8> grpNumList, RGBColor color, 
     }
 
     sequenceMaxCountSet = true;
+}
+
+
+void LightController::TurnRGBState(QList<quint8> grpNumList, bool state)
+{
+    quint8 i, j;
+
+    for(i = 0; i < grpNumList.count(); i++)
+    {
+        //For Pins in Groups
+        QList pins = rgbLEDMap[grpNumList[i]];
+        RGBPins rgbPins;
+
+        for(j = 0; j < pins.count(); j++)
+        {
+            //Get the RGB Pin Number
+            if(rgbFastMode)
+            {
+                rgbPins.r = pins[j]-1;
+                rgbPins.g = rgbPins.r + 1;
+                rgbPins.b = rgbPins.g + 1;
+            }
+            else
+            {
+                rgbPins.r = pins[j]-1;
+                j++;
+                rgbPins.g = pins[j]-1;
+                j++;
+                rgbPins.b = pins[j]-1;
+            }
+
+            //qDebug() << "Red Pin" << rgbPins.r << "Green Pin" << rgbPins.g << "Blue Pin" << rgbPins.b;
+            //qDebug() << "Red" << color.r << "Green" << color.g << "Blue" << color.b;
+
+            //Set RGB Lights to the Color
+            emit SetPinState(id, rgbPins.r, state);
+            emit SetPinState(id, rgbPins.g, state);
+            emit SetPinState(id, rgbPins.b, state);
+        }
+    }
 }
 
 
@@ -1169,6 +1202,22 @@ bool LightController::CheckRGBGroupNumber(quint8 grpNum)
         return false;
 }
 
+void LightController::ResetLightController()
+{
+    rgbNumberFlash = 0;
+    rgbTimesFlashed = 0;
+    useRandomPins = false;
+    useSideColor = false;
+
+    sequenceCount = 0;
+    sequenceMaxCount = 0;
+    sequenceMaxCountSet = false;
+
+    rgbFollowerFirstTime = false;
+
+    doReset = false;
+
+}
 
 //Private Slots
 
@@ -1248,6 +1297,9 @@ void LightController::RGBFlashOn()
         isCommandRunning = false;
         useRandomPins = false;
         useSideColor = false;
+
+        if(doReset)
+            ResetLightController();
     }
 }
 
@@ -1256,8 +1308,9 @@ void LightController::SequenceDelayDone()
 {
     if(sequenceCount < sequenceMaxCount)
     {
+        //qDebug() << "Sequence Timer Ended: sequence" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
         //Light Up the Next Sequence
-        ShowRGBColorOne(rgbFlashGroupList, rgbFlashColor, sequenceCount);
+        ShowRGBColorOne(rgbSequenceGroupList, rgbSequenceColor, sequenceCount);
 
         //Connect Timer to Turn On Next LEDs in the Sequence
         p_rgbTimer->start();
@@ -1265,11 +1318,14 @@ void LightController::SequenceDelayDone()
     else
     {
         //Turn Off Lights
-        ShowRGBColor(rgbFlashGroupList, rgbColorMap["black"]);
+        ShowRGBColor(rgbSequenceGroupList, rgbOff);
 
         //Disconnect the Timer
         disconnect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(SequenceDelayDone()));
         isCommandRunning = false;
+
+        if(doReset)
+            ResetLightController();
     }
 }
 

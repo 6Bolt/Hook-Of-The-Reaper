@@ -66,9 +66,13 @@ public:
     bool ProcessSequenceRGB();
     bool ProcessReloadSequenceRGB();
 
-    //Random Flash
+    //Random Flash RGB
     bool ProcessRandomFlashRGB();
     bool ProcessRandomFlash2CRGB();
+
+    //Follower RGB
+    bool ProcessFollowerRGB();
+
 
 //signals:
 

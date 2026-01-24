@@ -32,12 +32,21 @@ public:
     UltimarcData GetUltimarcData(quint8 index);
 
     //Get Number of Ultimarc Devices
-    quint8 GetNumberUltimarcDevices() { return numberUltimarcDevices; }
+    qint8 GetNumberUltimarcDevices() { return numberUltimarcDevices; }
+
+    //Get Number of Ultimarc Devices in List
+    quint8 GetNumberDevicesInList() { return devicesInList; }
 
     //Turns Off All Lights
     void TurnOffAllLights();
 
     quint8 GetIDFromDevicePath(QString devicePath);
+
+    void TurnOffLights(quint8 id);
+
+    bool CheckLoadedUltimarcDevice(UltimarcData dataU);
+
+    void DeletedFromList(UltimarcData dataU);
 
 public slots:
 
@@ -45,12 +54,28 @@ public slots:
 
     void SetRGBLightIntensity(const quint8 &id, const RGBPins &pins, const RGBColor &color);
 
+    void SetPinState(quint8 id, quint8 pin, bool state);
+
+signals:
+
+    //Show Error Message Box in Main Thread
+    void ShowErrorMessage(const QString &title, const QString &message);
+
 
 
 public:
 
-    //Number of Ultrimarc Devices
+    //Number of Ultimac Devices that are Valid
+    qint8                       numberUltimarcDevicesValid;
+
+    //Number of Ultrimarc Devices Filtered
     qint8                       numberUltimarcDevices;
+
+    QMap<quint8,quint8>         idToIndex;
+
+    quint8                      devicesInList;
+
+    QList<quint8>               idList;
 
     //Ultimarc Device Data
     UltimarcData                dataUltimarc[ULTIMARCMAXDEVICES];
@@ -63,6 +88,9 @@ public:
 
     QMap<quint8,QList<quint8>>  lightIntensityMap;
 
+    QList<quint8>               numberGroups;
+
+    QMap<quint8,QList<quint8>>  groupStateData;
 
 };
 

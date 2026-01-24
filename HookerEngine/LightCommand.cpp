@@ -29,13 +29,16 @@ LightCommand::LightCommand(QString outputSig, QString cmd, QStringList cmdArgs, 
 
     errorTitle = "Light Game/Default File Error";
 
-    numberCntlrs = cntlrsGroup.count ();
+    //numberCntlrs = cntlrsGroup.count ();
+    numberCntlrs = 0;
 
     QMapIterator<quint8, QList<quint8>> x(cntlrsGrps);
     while (x.hasNext())
     {
         x.next();
-        listCntlrs << x.key();
+        //listCntlrs << x.key();
+        listCntlrs.insert(numberCntlrs, x.key());
+        numberCntlrs++;
     }
 
     //quint8 i;
@@ -115,9 +118,19 @@ void LightCommand::ProcessLightCommand()
         commandNumber = RELOADSEQUENCERGBCMD;
         isCommandValid = ProcessReloadSequenceRGB();
     }
-
-
-
+    else if(command == FOLLOWERRGB)
+    {
+        kindOfCommand = FOLLOWERCOMMAND;
+        commandNumber = FOLLOWERRGBCMD;
+        isCommandValid = ProcessFollowerRGB();
+    }
+    else if(command == FOLLOWERRANDOMRGB)
+    {
+        kindOfCommand = FOLLOWERCOMMAND;
+        commandNumber = FOLLOWERRANDOMRGBCMD;
+        color = "";
+        isCommandValid = true;
+    }
 }
 
 
@@ -226,7 +239,7 @@ bool LightCommand::ProcessFlashRGB()
     if(!check)
         return false;
 
-
+    //Ran the Gauntlet
     return true;
 }
 
@@ -345,6 +358,14 @@ bool LightCommand::ProcessRandomFlash2CRGB()
     if(!check)
         return false;
 
+
+    return true;
+}
+
+
+bool LightCommand::ProcessFollowerRGB()
+{
+    color = commandArg[0];
 
     return true;
 }

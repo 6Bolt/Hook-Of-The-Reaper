@@ -1744,6 +1744,8 @@ void addLightGunWindowV2::ChangeLabels(int index)
 
         if(index == OPENFIRE)
         {
+
+
             //Display Settings - OpenFire
             ui->openFireNoDisplayCheckBox->setStyleSheet("QCheckBox { color: red; }");
             ui->openFireNoDisplayCheckBox->setEnabled (true);
@@ -1771,6 +1773,7 @@ void addLightGunWindowV2::ChangeLabels(int index)
         }
         else
         {
+
             //Display Settings - OpenFire
             ui->openFireNoDisplayCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
             ui->openFireNoDisplayCheckBox->setEnabled (false);
@@ -1799,12 +1802,34 @@ void addLightGunWindowV2::ChangeLabels(int index)
     }
     else
     {
+        //No Display
         ui->ammoRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
         ui->lifeRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
         ui->displayPriorityLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
 
         ui->displayOtherCheckBox->setEnabled (false);
         ui->displayOtherCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+
+        //Alien
+        ui->no2DigitCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+        ui->no2DigitCheckBox->setEnabled (false);
+
+        //OpenFire
+        ui->openFireNoDisplayCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+        ui->openFireNoDisplayCheckBox->setEnabled (false);
+
+        ui->openFireBothCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+        ui->openFireBothCheckBox->setEnabled (false);
+
+        ui->openFireDisplayLifeLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 84); }");
+        ui->openFireGlyphRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->openFireBarRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+        ui->openFireNumberRadioButton->setStyleSheet("QRadioButton { color: rgba(0, 0, 0, 84); }");
+
+        //Blamcon
+        ui->blamconDisplayCheckBox->setStyleSheet("QCheckBox { color: rgba(0, 0, 0, 84); }");
+        ui->blamconDisplayCheckBox->setEnabled (false);
+
     }
 }
 

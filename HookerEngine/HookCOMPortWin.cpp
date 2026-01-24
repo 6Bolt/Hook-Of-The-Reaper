@@ -110,6 +110,18 @@ quint16 HookCOMPortWin::TCPPortNumber()
     return connectedTCPPort;
 }
 
+bool HookCOMPortWin::IsCOMConnected(quint8 comPortNum)
+{
+    return comPortOpen[comPortNum];
+}
+
+
+bool HookCOMPortWin::IsUSBHIDConnected(quint8 playerNum)
+{
+    return hidOpen[playerNum];
+}
+
+
 //public slots
 
  void HookCOMPortWin::Connect(const quint8 &playerNum, const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const QString &comPortPath, const bool &isWriteOnly)
@@ -381,7 +393,7 @@ quint16 HookCOMPortWin::TCPPortNumber()
             numPortOpen++;
             isPortOpen = true;
 
-            emit LightGunConnected(playerNum);
+            //emit LightGunConnected(playerNum);
         }
     }
 
@@ -553,7 +565,7 @@ void HookCOMPortWin::ConnectHID(const quint8 &playerNum, const HIDInfo &lgHIDInf
         {
             //Connection Made, Ready to Go
             hidOpen[playerNum] = true;
-            emit LightGunConnected(playerNum);
+            //emit LightGunConnected(playerNum);
         }
     }
 }
