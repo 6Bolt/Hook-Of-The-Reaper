@@ -329,11 +329,6 @@ void PacDriveControl::SetLightIntensity(quint8 id, quint8 pin, quint8 intensity)
             if(writePass)
             {
                 lightIntensityMap[id][pin] = intensity;
-
-                if(intensity > 0)
-                    lightStateMap[id][pin] = true;
-                else
-                    lightStateMap[id][pin] = false;
             }
             else
             {
@@ -350,6 +345,51 @@ void PacDriveControl::SetLightIntensity(quint8 id, quint8 pin, quint8 intensity)
         emit ShowErrorMessage(title, msg);
     }
 }
+
+void PacDriveControl::SetLightIntensityGroup(quint8 id, QList<quint8> group, quint8 intensity)
+{
+    if(dataUltimarc[id].valid)
+    {
+        quint8 i, pin;
+
+        for(i = 0; i < group.count(); i++)
+        {
+            pin = group[i]-1;
+
+            if(lightIntensityMap[id][pin] != intensity)
+            {
+                bool writePass;
+                quint8 writeCount = 0;
+
+                do
+                {
+                    writePass = Pac64SetLEDIntensity(id, pin, intensity);
+                    writeCount++;
+                } while(!writePass && writeCount < WRITERETRYATTEMPTS+1);
+
+                if(writePass)
+                {
+                    lightIntensityMap[id][pin] = intensity;
+                }
+                else
+                {
+                    QString title = "Write to Ultimarc Light Controller Failed";
+                    QString msg = "Write to Ultimarc light controller with ID: "+QString::number(id)+" failed after 3 write attampts. Something is wrong with the hardware. Please check device and USB path.";
+                    emit ShowErrorMessage(title, msg);
+                }
+            }
+        }
+    }
+    else
+    {
+        QString title = "Invalid Ultimarc Light Controller ID";
+        QString msg = "Invalid Ultimarc ID: "+QString::number(id)+". The ID is not found in the valid Ultimarc light controllers.";
+        emit ShowErrorMessage(title, msg);
+    }
+
+}
+
+
 
 void PacDriveControl::SetRGBLightIntensity(const quint8 &id, const RGBPins &pins, const RGBColor &color)
 {
@@ -371,11 +411,6 @@ void PacDriveControl::SetRGBLightIntensity(const quint8 &id, const RGBPins &pins
             if(writePass)
             {
                 lightIntensityMap[id][pins.r] = color.r;
-
-                if(color.r > 0)
-                    lightStateMap[id][pins.r] = true;
-                else
-                    lightStateMap[id][pins.r] = false;
             }
             else
             {
@@ -398,11 +433,6 @@ void PacDriveControl::SetRGBLightIntensity(const quint8 &id, const RGBPins &pins
             if(writePass)
             {
                 lightIntensityMap[id][pins.g] = color.g;
-
-                if(color.g > 0)
-                    lightStateMap[id][pins.g] = true;
-                else
-                    lightStateMap[id][pins.g] = false;
             }
             else
             {
@@ -425,11 +455,6 @@ void PacDriveControl::SetRGBLightIntensity(const quint8 &id, const RGBPins &pins
             if(writePass)
             {
                 lightIntensityMap[id][pins.b] = color.b;
-
-                if(color.b > 0)
-                    lightStateMap[id][pins.b] = true;
-                else
-                    lightStateMap[id][pins.b] = false;
             }
             else
             {

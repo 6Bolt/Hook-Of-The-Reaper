@@ -131,6 +131,62 @@ void LightCommand::ProcessLightCommand()
         color = "";
         isCommandValid = true;
     }
+    else if(command == FLASHREG)
+    {
+        kindOfCommand = REGFLASHCOMMAND;
+        commandNumber = FLASHREGCMD;
+        isCommandValid = ProcessFlashRegular();
+        isRGB = false;
+    }
+    else if(command == RELOADFLASHREG)
+    {
+        kindOfCommand = REGFLASHCOMMAND;
+        commandNumber = RELOADFLASHREGCMD;
+        isCommandValid = ProcessPlayerFlashRegular();
+        isRGB = false;
+    }
+    else if(command == DEATHFLASHREG)
+    {
+        kindOfCommand = REGFLASHCOMMAND;
+        commandNumber = DEATHFLASHREGCMD;
+        isCommandValid = ProcessPlayerFlashRegular();
+        isRGB = false;
+    }
+    else if(command == RANDOMFLASHREG)
+    {
+        kindOfCommand = REGFLASHCOMMAND;
+        commandNumber = RANDOMFLASHREGCMD;
+        isCommandValid = ProcessRandomFlashRegular();
+        isRGB = false;
+    }
+    else if(command == RANDOMFLASHREG2I)
+    {
+        kindOfCommand = REGFLASHCOMMAND;
+        commandNumber = RANDOMFLASHREG2ICMD;
+        isCommandValid = ProcessRandomFlash2IRegular();
+        isRGB = false;
+    }
+    else if(command == SEQUENCEREG)
+    {
+        kindOfCommand = REGSEQUENCECOMMAND;
+        commandNumber = SEQUENCEREGCMD;
+        isCommandValid = ProcessSequenceRegular();
+        isRGB = false;
+    }
+    else if(command == RELOADSEQUENCEREG)
+    {
+        kindOfCommand = REGSEQUENCECOMMAND;
+        commandNumber = RELOADSEQUENCEREGCMD;
+        isCommandValid = ProcessPlayerSequenceRegular();
+        isRGB = false;
+    }
+    else if(command == FOLLOWERREG)
+    {
+        kindOfCommand = REGFOLLOWERCOMMAND;
+        commandNumber = FOLLOWERREGCMD;
+        isCommandValid = ProcessFollowerRegular();
+        isRGB = false;
+    }
 }
 
 
@@ -215,6 +271,33 @@ bool LightCommand::CheckPlayerNumber(QString pNum)
 
     return true;
 }
+
+
+bool LightCommand::CheckIntensity(QString inten)
+{
+    bool isNumber;
+
+    intensity = inten.toUInt(&isNumber);
+
+    if(!isNumber)
+        return false;
+
+    return true;
+}
+
+
+bool LightCommand::CheckSideIntensity(QString sideInten)
+{
+    bool isNumber;
+
+    sideIntensity = sideInten.toUInt(&isNumber);
+
+    if(!isNumber)
+        return false;
+
+    return true;
+}
+
 
 
 
@@ -369,3 +452,185 @@ bool LightCommand::ProcessFollowerRGB()
 
     return true;
 }
+
+
+bool LightCommand::ProcessFlashRegular()
+{
+    bool check;
+
+    check = CheckIntensity(commandArg[0]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeOn(commandArg[1]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeOff(commandArg[2]);
+
+    if(!check)
+        return false;
+
+    check = CheckNumberFlashes(commandArg[3]);
+
+    if(!check)
+        return false;
+
+    //Ran the Gauntlet
+    return true;
+}
+
+
+bool LightCommand::ProcessPlayerFlashRegular()
+{
+    bool check;
+
+    check = CheckIntensity(commandArg[0]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeOn(commandArg[1]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeOff(commandArg[2]);
+
+    if(!check)
+        return false;
+
+    check = CheckNumberFlashes(commandArg[3]);
+
+    if(!check)
+        return false;
+
+    check = CheckPlayerNumber(commandArg[4]);
+
+    if(!check)
+        return false;
+
+    //Ran the Gauntlet
+    return true;
+}
+
+
+bool LightCommand::ProcessSequenceRegular()
+{
+    bool check;
+
+    check = CheckIntensity(commandArg[0]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeDelay(commandArg[1]);
+
+    if(!check)
+        return false;
+
+    //Ran the Gauntlet
+    return true;
+}
+
+bool LightCommand::ProcessPlayerSequenceRegular()
+{
+    bool check;
+
+    check = CheckIntensity(commandArg[0]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeDelay(commandArg[1]);
+
+    if(!check)
+        return false;
+
+    check = CheckPlayerNumber(commandArg[2]);
+
+    if(!check)
+        return false;
+
+    //Ran the Gauntlet
+    return true;
+}
+
+
+bool LightCommand::ProcessRandomFlashRegular()
+{
+    bool check;
+
+    check = CheckIntensity(commandArg[0]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeOn(commandArg[1]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeOff(commandArg[2]);
+
+    if(!check)
+        return false;
+
+    check = CheckNumberFlashes(commandArg[3]);
+
+    if(!check)
+        return false;
+
+
+    return true;
+}
+
+bool LightCommand::ProcessRandomFlash2IRegular()
+{
+    bool check;
+
+    check = CheckIntensity(commandArg[0]);
+
+    if(!check)
+        return false;
+
+    check = CheckSideIntensity(commandArg[1]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeOn(commandArg[2]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeOff(commandArg[3]);
+
+    if(!check)
+        return false;
+
+    check = CheckNumberFlashes(commandArg[4]);
+
+    if(!check)
+        return false;
+
+
+    return true;
+}
+
+
+bool LightCommand::ProcessFollowerRegular()
+{
+    bool check;
+
+    check = CheckIntensity(commandArg[0]);
+
+    if(!check)
+        return false;
+
+    return true;
+}
+
+

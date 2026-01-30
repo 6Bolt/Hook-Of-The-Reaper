@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.2.5"
+#define VERSION                 "1.2.6"
 #define VERSIONMAIN             1
 #define VERSIONMID              2
 #define VERSIONLAST             4
@@ -706,11 +706,21 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 
 //Kinds of Commands
 #define UNKNOWNCOMMAND          0
+
+//RGB
 #define FLASHCOMMAND            1
 #define SEQUENCECOMMAND         2
 #define FOLLOWERCOMMAND         3
 
+//Regular
+#define REGCOMMANDS             20
+#define REGFLASHCOMMAND         21
+#define REGSEQUENCECOMMAND      22
+#define REGFOLLOWERCOMMAND      23
+
 //Flashes
+
+//RGB
 #define FLASHRGB                "Flash_RGB"
 #define FLASHRGBARGS            4
 #define FLASHRGBCMD             0
@@ -727,8 +737,27 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 #define RANDOMFLASHRGB2CARGS    5
 #define RANDOMFLASHRGB2CCMD     4
 
+//Regular
+#define FLASHREG                "Flash_Regular"
+#define FLASHREGARGS            4
+#define FLASHREGCMD             0
+#define RELOADFLASHREG          "Reload_Flash_Regular"
+#define RELOADFLASHREGARGS      5
+#define RELOADFLASHREGCMD       1
+#define DEATHFLASHREG           "Death_Flash_Regular"
+#define DEATHFLASHREGARGS       5
+#define DEATHFLASHREGCMD        2
+#define RANDOMFLASHREG          "Random_Flash_Regular"
+#define RANDOMFLASHREGARGS      4
+#define RANDOMFLASHREGCMD       3
+#define RANDOMFLASHREG2I        "Random_Flash_2I_Regular"
+#define RANDOMFLASHREG2IARGS    5
+#define RANDOMFLASHREG2ICMD     4
+
 
 //Sequence
+
+//RGB
 #define SEQUENCERGB             "Sequence_RGB"
 #define SEQUENCERGBARGS         2
 #define SEQUENCERGBCMD          0
@@ -736,8 +765,17 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 #define RELOADSEQUENCERGBARGS   3
 #define RELOADSEQUENCERGBCMD    1
 
+//Regular
+#define SEQUENCEREG             "Sequence_Regular"
+#define SEQUENCEREGARGS         2
+#define SEQUENCEREGCMD          0
+#define RELOADSEQUENCEREG       "Reload_Sequence_Regular"
+#define RELOADSEQUENCEREGARGS   3
+#define RELOADSEQUENCEREGCMD    1
 
 //Follower Commands
+
+//RGB
 #define FOLLOWERRGB             "Follower_RGB"
 #define FOLLOWERRGBARGS         1
 #define FOLLOWERRGBCMD          0
@@ -745,6 +783,10 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 #define FOLLOWERRANDOMRGBARGS   0
 #define FOLLOWERRANDOMRGBCMD    1
 
+//Regular
+#define FOLLOWERREG             "Follower_Regular"
+#define FOLLOWERREGARGS         1
+#define FOLLOWERREGCMD          0
 
 //Not Used Yet, But Needed for Future
 //#define DEFAULTCDDIR            "defaultCD"

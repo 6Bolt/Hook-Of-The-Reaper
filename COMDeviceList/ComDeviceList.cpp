@@ -324,6 +324,7 @@ void ComDeviceList::AddLightController(UltimarcData dataU)
 
     //The Connect the Signal and Slots for the PacDrive
     connect(p_lightCntlrList[numberLightCntrls],&LightController::SetLightIntensity, p_pacDrive, &PacDriveControl::SetLightIntensity);
+    connect(p_lightCntlrList[numberLightCntrls],&LightController::SetLightIntensityGroup, p_pacDrive, &PacDriveControl::SetLightIntensityGroup);
     connect(p_lightCntlrList[numberLightCntrls],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
     connect(p_lightCntlrList[numberLightCntrls],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
 

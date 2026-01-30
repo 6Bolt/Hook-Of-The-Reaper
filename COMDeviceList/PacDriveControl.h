@@ -10,7 +10,7 @@
 #include "../Global.h"
 
 //Ultimarc SDK
-//#include "StdAfx.h"
+#include "StdAfx.h"
 #include "Windows.h"
 #include "PacDrive.h"
 
@@ -51,6 +51,8 @@ public:
 public slots:
 
     void SetLightIntensity(quint8 id, quint8 pin, quint8 intensity);
+
+    void SetLightIntensityGroup(quint8 id, QList<quint8> group, quint8 intensity);
 
     void SetRGBLightIntensity(const quint8 &id, const RGBPins &pins, const RGBColor &color);
 

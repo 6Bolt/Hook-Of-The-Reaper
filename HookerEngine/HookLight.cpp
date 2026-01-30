@@ -186,6 +186,9 @@ bool HookLight::LoadLightFile()
 
                     bool chkGrp = p_comDeviceList->p_lightCntlrList[cntlrNum]->CheckRGBGroupNumber (tempGrp);
 
+                    if(!chkGrp)
+                        chkGrp = p_comDeviceList->p_lightCntlrList[cntlrNum]->CheckRegularGroupNumber (tempGrp);
+
                     if(chkGrp)
                     {
                         groups << tempGrp;
@@ -330,6 +333,22 @@ quint8 HookLight::CheckCommandArgs(QString command)
         return FOLLOWERRGBARGS;
     else if(command == FOLLOWERRANDOMRGB)
         return FOLLOWERRANDOMRGBARGS;
+    else if(command == FLASHREG)
+        return FLASHREGARGS;
+    else if(command == RELOADFLASHREG)
+        return RELOADFLASHREGARGS;
+    else if(command == DEATHFLASHREG)
+        return DEATHFLASHREGARGS;
+    else if(command == RANDOMFLASHREG)
+        return RANDOMFLASHREGARGS;
+    else if(command == RANDOMFLASHREG2I)
+        return RANDOMFLASHREG2IARGS;
+    else if(command == SEQUENCEREG)
+        return SEQUENCEREGARGS;
+    else if(command == RELOADSEQUENCEREG)
+        return RELOADSEQUENCEREGARGS;
+    else if(command == FOLLOWERREG)
+        return FOLLOWERREGARGS;
     else
         return 255;
 }
@@ -434,42 +453,28 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
         quint8 commandNumber = lightCmd.GetCommandNumber();
         quint8 numberCntlrs = lightCmd.GetNumberControllers();
 
-        QString color = lightCmd.GetColor();
+
         quint8 i, cntlrNumber;
 
         //qDebug() << "kindOfCommand" << kindOfCommand << "commandNumber" << commandNumber;
 
-        if(kindOfCommand == FLASHCOMMAND)
+        if(kindOfCommand < REGCOMMANDS)
         {
-            //Flash Command - Get Normal Flash Command Args Ready
-            quint16 timeOn = lightCmd.GetTimeOn();
-            quint16 timeOff = lightCmd.GetTimeOff();
-            quint8 numberFlashs = lightCmd.GetNumberFlashes();
 
-            if(commandNumber < 3) //For Flash Command 0-2
+            if(kindOfCommand == FLASHCOMMAND)
             {
+                //Flash Command - Get Normal Flash Command Args Ready
+                QString color = lightCmd.GetColor();
+                quint16 timeOn = lightCmd.GetTimeOn();
+                quint16 timeOff = lightCmd.GetTimeOff();
+                quint8 numberFlashs = lightCmd.GetNumberFlashes();
 
-                if(commandNumber == FLASHRGBCMD && dataNumber != 0)
+                if(commandNumber < 3) //For Flash Command 0-2
                 {
-                    //Flash RGB Command
-                    for(i = 0; i < numberCntlrs; i++)
-                    {
-                        cntlrNumber = lightCmd.GetControllerNumber(i);
-                        QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
 
-                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRGBLights(groups, timeOn, timeOff, numberFlashs, color);
-                    }
-                }
-                else if(commandNumber == RELOADFLASHRGBCMD)
-                {
-                    //Reload Flash RGB Command
-                    //Get New Ammo and Player Number
-                    quint16 newAmmo = data.toUInt ();
-                    quint8 playerNum = lightCmd.GetPlayerNumber();
-
-                    if(newAmmo > ammoValue[playerNum])
+                    if(commandNumber == FLASHRGBCMD && dataNumber != 0)
                     {
-                        //Then a Reload Happened
+                        //Flash RGB Command
                         for(i = 0; i < numberCntlrs; i++)
                         {
                             cntlrNumber = lightCmd.GetControllerNumber(i);
@@ -478,88 +483,90 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                             p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRGBLights(groups, timeOn, timeOff, numberFlashs, color);
                         }
                     }
-
-                    //Make New Ammo the Old Ammo Value
-                    ammoValue[playerNum] = newAmmo;
-                }
-                else if(commandNumber == DEATHFLASHRGBCMD)
-                {
-                    //Reload Flash RGB Command
-                    //Get New Ammo and Player Number
-                    quint16 newLife = data.toUInt ();
-                    quint8 playerNum = lightCmd.GetPlayerNumber();
-
-                    if(newLife == 0 && lifeValue[playerNum] == 1)
+                    else if(commandNumber == RELOADFLASHRGBCMD)
                     {
-                        //Then a Reload Happened
+                        //Reload Flash RGB Command
+                        //Get New Ammo and Player Number
+                        quint16 newAmmo = data.toUInt ();
+                        quint8 playerNum = lightCmd.GetPlayerNumber();
+
+                        if(newAmmo > ammoValue[playerNum])
+                        {
+                            //Then a Reload Happened
+                            for(i = 0; i < numberCntlrs; i++)
+                            {
+                                cntlrNumber = lightCmd.GetControllerNumber(i);
+                                QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                                p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRGBLights(groups, timeOn, timeOff, numberFlashs, color);
+                            }
+                        }
+
+                        //Make New Ammo the Old Ammo Value
+                        ammoValue[playerNum] = newAmmo;
+                    }
+                    else if(commandNumber == DEATHFLASHRGBCMD)
+                    {
+                        //Reload Flash RGB Command
+                        //Get New Ammo and Player Number
+                        quint16 newLife = data.toUInt ();
+                        quint8 playerNum = lightCmd.GetPlayerNumber();
+
+                        if(newLife == 0 && lifeValue[playerNum] == 1)
+                        {
+                            //Then a Reload Happened
+                            for(i = 0; i < numberCntlrs; i++)
+                            {
+                                cntlrNumber = lightCmd.GetControllerNumber(i);
+                                QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                                p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRGBLights(groups, timeOn, timeOff, numberFlashs, color);
+                            }
+                        }
+
+                        //Make New Ammo the Old Ammo Value
+                        lifeValue[playerNum] = newLife;
+                    }
+
+                }
+                else if(commandNumber > 2) //For Flash Commands 3-4
+                {
+
+                    if(commandNumber == RANDOMFLASHRGBCMD && dataNumber != 0)
+                    {
+                        //Random Flash RGB Command
                         for(i = 0; i < numberCntlrs; i++)
                         {
                             cntlrNumber = lightCmd.GetControllerNumber(i);
                             QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
 
-                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRGBLights(groups, timeOn, timeOff, numberFlashs, color);
+                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRandomRGBLights(groups, timeOn, timeOff, numberFlashs, color);
+                        }
+                    }
+                    else if(commandNumber == RANDOMFLASHRGB2CCMD && dataNumber != 0)
+                    {
+                        //Random Flash RGB Command
+                        for(i = 0; i < numberCntlrs; i++)
+                        {
+                            QString sideColor = lightCmd.GetSideColor();
+
+                            cntlrNumber = lightCmd.GetControllerNumber(i);
+                            QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRandomRGB2CLights(groups, timeOn, timeOff, numberFlashs, color, sideColor);
                         }
                     }
 
-                    //Make New Ammo the Old Ammo Value
-                    lifeValue[playerNum] = newLife;
-                }
-
-            }
-            else if(commandNumber > 2) //For Flash Commands 3-4
-            {
-
-                if(commandNumber == RANDOMFLASHRGBCMD && dataNumber != 0)
-                {
-                    //Random Flash RGB Command
-                    for(i = 0; i < numberCntlrs; i++)
-                    {
-                        cntlrNumber = lightCmd.GetControllerNumber(i);
-                        QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
-
-                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRandomRGBLights(groups, timeOn, timeOff, numberFlashs, color);
-                    }
-                }
-                else if(commandNumber == RANDOMFLASHRGB2CCMD && dataNumber != 0)
-                {
-                    //Random Flash RGB Command
-                    for(i = 0; i < numberCntlrs; i++)
-                    {
-                        QString sideColor = lightCmd.GetSideColor();
-
-                        cntlrNumber = lightCmd.GetControllerNumber(i);
-                        QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
-
-                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRandomRGB2CLights(groups, timeOn, timeOff, numberFlashs, color, sideColor);
-                    }
-                }
-
-            }
-        }
-        else if(kindOfCommand == SEQUENCECOMMAND)
-        {
-            //Sequence Command - Get Normal Flash Command Args Ready
-            quint16 timeDelay = lightCmd.GetTimeDelay();
-
-
-            if(commandNumber == SEQUENCERGBCMD && dataNumber != 0)
-            {
-                for(i = 0; i < numberCntlrs; i++)
-                {
-                    cntlrNumber = lightCmd.GetControllerNumber(i);
-                    QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
-
-                    p_comDeviceList->p_lightCntlrList[cntlrNumber]->SequenceRGBLights(groups, timeDelay, color);
                 }
             }
-            else if(commandNumber == RELOADSEQUENCERGBCMD)
+            else if(kindOfCommand == SEQUENCECOMMAND)
             {
-                //Sequence Flash RGB Command
-                //Get New Ammo and Player Number
-                quint16 newAmmo = data.toUInt ();
-                quint8 playerNum = lightCmd.GetPlayerNumber();
+                //Sequence Command - Get Normal Flash Command Args Ready
+                QString color = lightCmd.GetColor();
+                quint16 timeDelay = lightCmd.GetTimeDelay();
 
-                if(newAmmo > ammoValue[playerNum])
+
+                if(commandNumber == SEQUENCERGBCMD && dataNumber != 0)
                 {
                     for(i = 0; i < numberCntlrs; i++)
                     {
@@ -569,34 +576,211 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                         p_comDeviceList->p_lightCntlrList[cntlrNumber]->SequenceRGBLights(groups, timeDelay, color);
                     }
                 }
+                else if(commandNumber == RELOADSEQUENCERGBCMD)
+                {
+                    //Sequence Flash RGB Command
+                    //Get New Ammo and Player Number
+                    quint16 newAmmo = data.toUInt ();
+                    quint8 playerNum = lightCmd.GetPlayerNumber();
 
-                //Make New Ammo the Old Ammo Value
-                ammoValue[playerNum] = newAmmo;
+                    if(newAmmo > ammoValue[playerNum])
+                    {
+                        for(i = 0; i < numberCntlrs; i++)
+                        {
+                            cntlrNumber = lightCmd.GetControllerNumber(i);
+                            QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->SequenceRGBLights(groups, timeDelay, color);
+                        }
+                    }
+
+                    //Make New Ammo the Old Ammo Value
+                    ammoValue[playerNum] = newAmmo;
+                }
             }
-        }
-        else if(kindOfCommand == FOLLOWERCOMMAND)
+            else if(kindOfCommand == FOLLOWERCOMMAND)
+            {
+                QString color = lightCmd.GetColor();
+
+                if(commandNumber == FOLLOWERRGBCMD)
+                {
+                    for(i = 0; i < numberCntlrs; i++)
+                    {
+                        cntlrNumber = lightCmd.GetControllerNumber(i);
+                        QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->FollowerRGBLights(groups, color, dataNumber);
+                    }
+                }
+                else if(commandNumber == FOLLOWERRANDOMRGBCMD)
+                {
+                    for(i = 0; i < numberCntlrs; i++)
+                    {
+                        cntlrNumber = lightCmd.GetControllerNumber(i);
+                        QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->FollowerRandomRGBLights(groups, dataNumber);
+                    }
+                }
+            }
+        } //End of RGB Commands
+        else
         {
-            if(commandNumber == FOLLOWERRGBCMD)
+            if(kindOfCommand == REGFLASHCOMMAND)
             {
-                for(i = 0; i < numberCntlrs; i++)
-                {
-                    cntlrNumber = lightCmd.GetControllerNumber(i);
-                    QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+                //Flash Command - Get Normal Flash Command Args Ready
+                quint8 intensity = lightCmd.GetIntensity();
+                quint16 timeOn = lightCmd.GetTimeOn();
+                quint16 timeOff = lightCmd.GetTimeOff();
+                quint8 numberFlashs = lightCmd.GetNumberFlashes();
 
-                    p_comDeviceList->p_lightCntlrList[cntlrNumber]->FollowerRGBLights(groups, color, dataNumber);
+                if(commandNumber < 3) //For Flash Command 0-2
+                {
+
+                    if(commandNumber == FLASHREGCMD && dataNumber != 0)
+                    {
+                        //Flash Regular Command
+                        for(i = 0; i < numberCntlrs; i++)
+                        {
+                            cntlrNumber = lightCmd.GetControllerNumber(i);
+                            QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRegularLights(groups, timeOn, timeOff, numberFlashs, intensity);
+                        }
+                    }
+                    else if(commandNumber == RELOADFLASHREGCMD)
+                    {
+                        //Reload Flash RGB Command
+                        //Get New Ammo and Player Number
+                        quint16 newAmmo = data.toUInt ();
+                        quint8 playerNum = lightCmd.GetPlayerNumber();
+
+                        if(newAmmo > ammoValue[playerNum])
+                        {
+                            //Then a Reload Happened
+                            for(i = 0; i < numberCntlrs; i++)
+                            {
+                                cntlrNumber = lightCmd.GetControllerNumber(i);
+                                QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                                p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRegularLights(groups, timeOn, timeOff, numberFlashs, intensity);
+                            }
+                        }
+
+                        //Make New Ammo the Old Ammo Value
+                        ammoValue[playerNum] = newAmmo;
+                    }
+                    else if(commandNumber == DEATHFLASHREGCMD)
+                    {
+                        //Reload Flash RGB Command
+                        //Get New Ammo and Player Number
+                        quint16 newLife = data.toUInt ();
+                        quint8 playerNum = lightCmd.GetPlayerNumber();
+
+                        if(newLife == 0 && lifeValue[playerNum] == 1)
+                        {
+                            //Then a Reload Happened
+                            for(i = 0; i < numberCntlrs; i++)
+                            {
+                                cntlrNumber = lightCmd.GetControllerNumber(i);
+                                QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                                p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRegularLights(groups, timeOn, timeOff, numberFlashs, intensity);
+                            }
+                        }
+
+                        //Make New Ammo the Old Ammo Value
+                        lifeValue[playerNum] = newLife;
+                    }
+
                 }
-            }
-            else if(commandNumber == FOLLOWERRANDOMRGBCMD)
+                else if(commandNumber > 2) //For Flash Commands 3-4
+                {
+
+                    if(commandNumber == RANDOMFLASHREGCMD && dataNumber != 0)
+                    {
+                        //Random Flash RGB Command
+                        for(i = 0; i < numberCntlrs; i++)
+                        {
+                            cntlrNumber = lightCmd.GetControllerNumber(i);
+                            QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRandomRegularLights(groups, timeOn, timeOff, numberFlashs, intensity);
+                        }
+                    }
+                    else if(commandNumber == RANDOMFLASHREG2ICMD && dataNumber != 0)
+                    {
+                        //Random Flash RGB Command
+                        for(i = 0; i < numberCntlrs; i++)
+                        {
+                            quint8 sideIntensity = lightCmd.GetSideIntensity();
+
+                            cntlrNumber = lightCmd.GetControllerNumber(i);
+                            QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->FlashRandomRegular2ILights(groups, timeOn, timeOff, numberFlashs, intensity, sideIntensity);
+                        }
+                    }
+
+                }
+            } //End of Regular Flash Commands
+            else if(kindOfCommand == REGSEQUENCECOMMAND)
             {
-                for(i = 0; i < numberCntlrs; i++)
-                {
-                    cntlrNumber = lightCmd.GetControllerNumber(i);
-                    QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+                //Sequence Command - Get Normal Flash Command Args Ready
+                quint8 intensity = lightCmd.GetIntensity();
+                quint16 timeDelay = lightCmd.GetTimeDelay();
 
-                    p_comDeviceList->p_lightCntlrList[cntlrNumber]->FollowerRandomRGBLights(groups, dataNumber);
+
+                if(commandNumber == SEQUENCEREGCMD && dataNumber != 0)
+                {
+                    for(i = 0; i < numberCntlrs; i++)
+                    {
+                        cntlrNumber = lightCmd.GetControllerNumber(i);
+                        QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->SequenceRegularLights(groups, timeDelay, intensity);
+                    }
                 }
-            }
-        }
+                else if(commandNumber == RELOADSEQUENCEREGCMD)
+                {
+                    //Sequence Flash RGB Command
+                    //Get New Ammo and Player Number
+                    quint16 newAmmo = data.toUInt ();
+                    quint8 playerNum = lightCmd.GetPlayerNumber();
+
+                    if(newAmmo > ammoValue[playerNum])
+                    {
+                        for(i = 0; i < numberCntlrs; i++)
+                        {
+                            cntlrNumber = lightCmd.GetControllerNumber(i);
+                            QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->SequenceRegularLights(groups, timeDelay, intensity);
+                        }
+                    }
+
+                    //Make New Ammo the Old Ammo Value
+                    ammoValue[playerNum] = newAmmo;
+                }
+            }//End of Regular Sequence Commands
+            else if(kindOfCommand == REGFOLLOWERCOMMAND)
+            {
+                quint8 intensity = lightCmd.GetIntensity();
+
+                if(commandNumber == FOLLOWERREGCMD)
+                {
+                    for(i = 0; i < numberCntlrs; i++)
+                    {
+                        cntlrNumber = lightCmd.GetControllerNumber(i);
+                        QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->FollowerRegularLights(groups, intensity, dataNumber);
+                    }
+                }
+
+            } //End of Regular Follower Commands
+
+        } //End of Regular Commands
 
 
     }

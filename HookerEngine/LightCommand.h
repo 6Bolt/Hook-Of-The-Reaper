@@ -41,6 +41,8 @@ public:
     quint8 GetCommandNumber() { return commandNumber; }
     quint8 GetNumberControllers() { return numberCntlrs; }
     quint8 GetPlayerNumber() { return playerNumber; }
+    quint8 GetIntensity() { return intensity; }
+    quint8 GetSideIntensity() { return sideIntensity; }
 
     quint8 GetControllerNumber(quint8 index) { return listCntlrs[index]; }
     QList<quint8> GetControllerGroups(quint8 index) { return cntlrsGroup[index]; }
@@ -55,6 +57,8 @@ public:
     bool CheckTimeDelay(QString tDelay);
     bool CheckNumberFlashes(QString numF);
     bool CheckPlayerNumber(QString pNum);
+    bool CheckIntensity(QString inten);
+    bool CheckSideIntensity(QString sideInten);
 
     //Check Command's Arguments
 
@@ -72,6 +76,26 @@ public:
 
     //Follower RGB
     bool ProcessFollowerRGB();
+
+
+
+    //Flash Regular
+    bool ProcessFlashRegular();
+    bool ProcessPlayerFlashRegular();
+
+    //Sequence Regular
+    bool ProcessSequenceRegular();
+    bool ProcessPlayerSequenceRegular();
+
+    //Random Flash Regular
+    bool ProcessRandomFlashRegular();
+    bool ProcessRandomFlash2IRegular();
+
+    //Follower Regular
+    bool ProcessFollowerRegular();
+
+
+
 
 
 //signals:
@@ -104,6 +128,9 @@ public:
 
     QString                             color;
     QString                             sideColor;
+
+    quint8                              intensity;
+    quint8                              sideIntensity;
 
 };
 

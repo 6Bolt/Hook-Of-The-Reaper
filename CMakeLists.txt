@@ -1,17 +1,20 @@
 cmake_minimum_required(VERSION 3.19)
 project(HookOfTheReaper LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
-find_package(Qt6 REQUIRED COMPONENTS SerialPort)
-find_package(Qt6 REQUIRED COMPONENTS Network)
-find_package(Qt6 REQUIRED COMPONENTS Multimedia)
-find_package(Qt6 REQUIRED COMPONENTS Bluetooth)
-find_package(Qt6 REQUIRED COMPONENTS Core)
-find_package(Qt6 REQUIRED COMPONENTS Core)
-find_package(Qt6 REQUIRED COMPONENTS Core)
-find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets SerialPort Network Multimedia Bluetooth)
+#find_package(Qt6 REQUIRED COMPONENTS SerialPort)
+#find_package(Qt6 REQUIRED COMPONENTS Network)
+#find_package(Qt6 REQUIRED COMPONENTS Multimedia)
+#find_package(Qt6 REQUIRED COMPONENTS Bluetooth)
+#find_package(Qt6 REQUIRED COMPONENTS Core)
+#find_package(Qt6 REQUIRED COMPONENTS Core)
+#find_package(Qt6 REQUIRED COMPONENTS Core)
+#find_package(Qt6 REQUIRED COMPONENTS Core)
 
 qt_standard_project_setup()
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_AUTORCC ON)
 
@@ -94,10 +97,10 @@ target_link_libraries(HookOfTheReaper
         hidapi
         PacDrive64
 )
-target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
-target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
-target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
-target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
+#target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
+#target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
+#target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
+#target_link_libraries(HookOfTheReaper PRIVATE Qt6::Core)
 
 
 include(GNUInstallDirs)

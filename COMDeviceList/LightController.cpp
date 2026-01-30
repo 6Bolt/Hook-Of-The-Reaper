@@ -809,20 +809,39 @@ bool LightController::LoadRGBColor(QString line)
 
 
 
-void LightController::FlashRegularLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes)
+void LightController::FlashRegularLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, quint8 intensity)
 {
+    if(!isCommandRunning)
+    {
+        flashGroupList = grpNumList;
+        numberFlash = numFlashes;
+        timesFlashed = 0;
+        flashTimeOn = timeOnMs;
+        flashTimeOff = timeOffMs;
+        flashIntensity = intensity;
 
+        isCommandRunning = true;
+
+        ShowRegularIntensity(flashGroupList, flashIntensity);
+
+        //Connect Timer to Turn Off LEDs
+        connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
+        p_regularTimer->setInterval (flashTimeOn);
+        p_regularTimer->start();
+
+        //Now Wait until timer runs out
+    }
 }
 
 void LightController::FlashRGBLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, QString color)
 {
     if(!isCommandRunning)
     {
-        rgbFlashGroupList = grpNumList;
-        rgbNumberFlash = numFlashes;
-        rgbTimesFlashed = 0;
-        rgbFlashTimeOn = timeOnMs;
-        rgbFlashTimeOff = timeOffMs;
+        flashGroupList = grpNumList;
+        numberFlash = numFlashes;
+        timesFlashed = 0;
+        flashTimeOn = timeOnMs;
+        flashTimeOff = timeOffMs;
 
         if(rgbColorMap.contains (color))
             rgbFlashColor = rgbColorMap[color];
@@ -835,27 +854,64 @@ void LightController::FlashRGBLights(QList<quint8> grpNumList, quint16 timeOnMs,
 
         isCommandRunning = true;
 
-        ShowRGBColor(rgbFlashGroupList, rgbFlashColor);
+        ShowRGBColor(flashGroupList, rgbFlashColor);
 
         //Connect Timer to Turn Off LEDs
         connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOff()));
-        p_rgbTimer->setInterval (rgbFlashTimeOn);
+        p_rgbTimer->setInterval (flashTimeOn);
         p_rgbTimer->start();
 
         //Now Wait until timer runs out
     }
 }
 
+void LightController::FlashRandomRegularLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, quint8 intensity)
+{
+    if(!isCommandRunning)
+    {
+        flashGroupList = grpNumList;
+        numberFlash = numFlashes;
+        timesFlashed = 0;
+        flashTimeOn = timeOnMs;
+        flashTimeOff = timeOffMs;
+        randomPins.clear();
+        flashIntensity = intensity;
+
+        isCommandRunning = true;
+        useRandomPins = true;
+
+        //Find Random Pin for Groups
+        quint8 i;
+        for(i = 0; i < flashGroupList.count(); i++)
+        {
+            quint8 count = regularLEDMap[flashGroupList[i]].count();
+
+            quint8 randomPin = QRandomGenerator::global()->bounded(0, count);
+
+            //But Random Number into List
+            randomPins << randomPin;
+        }
+
+        ShowRegularIntensityOne(flashGroupList, flashIntensity, randomPins, 0);
+
+        //Connect Timer to Turn Off LEDs
+        connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
+        p_regularTimer->setInterval (flashTimeOn);
+        p_regularTimer->start();
+
+        //Now Wait until timer runs out
+    }
+}
 
 void LightController::FlashRandomRGBLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, QString color)
 {
     if(!isCommandRunning)
     {
-        rgbFlashGroupList = grpNumList;
-        rgbNumberFlash = numFlashes;
-        rgbTimesFlashed = 0;
-        rgbFlashTimeOn = timeOnMs;
-        rgbFlashTimeOff = timeOffMs;
+        flashGroupList = grpNumList;
+        numberFlash = numFlashes;
+        timesFlashed = 0;
+        flashTimeOn = timeOnMs;
+        flashTimeOff = timeOffMs;
         randomPins.clear();
 
         if(rgbColorMap.contains (color))
@@ -872,17 +928,12 @@ void LightController::FlashRandomRGBLights(QList<quint8> grpNumList, quint16 tim
 
         //Find Random Pin for Groups
         quint8 i;
-        for(i = 0; i < rgbFlashGroupList.count(); i++)
+        for(i = 0; i < flashGroupList.count(); i++)
         {
-            quint8 count = rgbLEDMap[rgbFlashGroupList[i]].count();
+            quint8 count = rgbLEDMap[flashGroupList[i]].count();
 
-            if(rgbFastMode)
-                count--;
-            else
-            {
+            if(!rgbFastMode)
                 count = count / 3;
-                count = count - 1;
-            }
 
             quint8 randomPin = QRandomGenerator::global()->bounded(0, count);
 
@@ -890,29 +941,75 @@ void LightController::FlashRandomRGBLights(QList<quint8> grpNumList, quint16 tim
                 randomPin = randomPin * 3;
 
             randomPins << randomPin;
-
-            ShowRGBColorOne(rgbFlashGroupList, rgbFlashColor, randomPin);
         }
+
+        ShowRGBColorOne(flashGroupList, rgbFlashColor, randomPins, 0);
 
         //Connect Timer to Turn Off LEDs
         connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOff()));
-        p_rgbTimer->setInterval (rgbFlashTimeOn);
+        p_rgbTimer->setInterval (flashTimeOn);
         p_rgbTimer->start();
+
+        //Now Wait until timer runs out
+    }
+}
+
+void LightController::FlashRandomRegular2ILights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, quint8 intensity, quint8 sIntensity)
+{
+    if(!isCommandRunning)
+    {
+        flashGroupList = grpNumList;
+        numberFlash = numFlashes;
+        timesFlashed = 0;
+        flashTimeOn = timeOnMs;
+        flashTimeOff = timeOffMs;
+        flashIntensity = intensity;
+        flashSideIntensity = sIntensity;
+        randomPins.clear();
+
+        isCommandRunning = true;
+        useRandomPins = true;
+        useSideColor = true;
+
+        //Find Random Pin for Groups
+        quint8 i;
+
+        for(i = 0; i < flashGroupList.count(); i++)
+        {
+            quint8 count = regularLEDMap[flashGroupList[i]].count();
+            quint8 randomPin;
+
+            randomPin = QRandomGenerator::global()->bounded(1, count-1);
+
+            randomPins << randomPin;
+
+            //qDebug() << "Group:" << i << "Random Pin:" << randomPin << "Count" << count;
+        }
+
+        ShowRegularIntensityOne(flashGroupList, flashIntensity, randomPins, 0);
+        ShowRegularIntensityOne(flashGroupList, flashSideIntensity, randomPins, 1);
+        ShowRegularIntensityOne(flashGroupList, flashSideIntensity, randomPins, -1);
+
+        //Connect Timer to Turn Off LEDs
+        connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
+        p_regularTimer->setInterval (flashTimeOn);
+        p_regularTimer->start();
 
         //Now Wait until timer runs out
 
     }
 }
 
+
 void LightController::FlashRandomRGB2CLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, QString color, QString sColor)
 {
     if(!isCommandRunning)
     {
-        rgbFlashGroupList = grpNumList;
-        rgbNumberFlash = numFlashes;
-        rgbTimesFlashed = 0;
-        rgbFlashTimeOn = timeOnMs;
-        rgbFlashTimeOff = timeOffMs;
+        flashGroupList = grpNumList;
+        numberFlash = numFlashes;
+        timesFlashed = 0;
+        flashTimeOn = timeOnMs;
+        flashTimeOff = timeOffMs;
         randomPins.clear();
 
         if(rgbColorMap.contains (color))
@@ -939,22 +1036,16 @@ void LightController::FlashRandomRGB2CLights(QList<quint8> grpNumList, quint16 t
 
         //Find Random Pin for Groups
         quint8 i;
-        quint8 offset = 1;
-        for(i = 0; i < rgbFlashGroupList.count(); i++)
+
+        for(i = 0; i < flashGroupList.count(); i++)
         {
-            quint8 count = rgbLEDMap[rgbFlashGroupList[i]].count();
+            quint8 count = rgbLEDMap[flashGroupList[i]].count();
             quint8 randomPin;
 
-            if(rgbFastMode)
-                count--;
-            else
-            {
+            if(!rgbFastMode)
                 count = count / 3;
-                count = count - 1;
-                offset = 3;
-            }
 
-            randomPin = QRandomGenerator::global()->bounded(1, count);
+            randomPin = QRandomGenerator::global()->bounded(1, count-1);
 
             if(!rgbFastMode)
                 randomPin = randomPin * 3;
@@ -962,19 +1053,42 @@ void LightController::FlashRandomRGB2CLights(QList<quint8> grpNumList, quint16 t
             randomPins << randomPin;
 
             //qDebug() << "Group:" << i << "Random Pin:" << randomPin << "Count" << count;
-
-            ShowRGBColorOne(rgbFlashGroupList, rgbFlashColor, randomPin);
-            ShowRGBColorOne(rgbFlashGroupList, sideColor, randomPin-offset);
-            ShowRGBColorOne(rgbFlashGroupList, sideColor, randomPin+offset);
         }
+
+        ShowRGBColorOne(flashGroupList, rgbFlashColor, randomPins, 0);
+        ShowRGBColorOne(flashGroupList, sideColor, randomPins, 1);
+        ShowRGBColorOne(flashGroupList, sideColor, randomPins, -1);
 
         //Connect Timer to Turn Off LEDs
         connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOff()));
-        p_rgbTimer->setInterval (rgbFlashTimeOn);
+        p_rgbTimer->setInterval (flashTimeOn);
         p_rgbTimer->start();
 
         //Now Wait until timer runs out
 
+    }
+}
+
+
+void LightController::SequenceRegularLights(QList<quint8> grpNumList, quint16 delay, quint8 intensity)
+{
+    if(!isCommandRunning)
+    {
+        sequenceGroupList = grpNumList;
+        sequenceDelay = delay;
+        sequenceCount = 0;
+        sequenceMaxCount = 1;
+        sequenceMaxCountSet = false;
+        sequenceIntensity = intensity;
+
+        isCommandRunning = true;
+
+        ShowRegularIntensityOneSequence(sequenceGroupList, sequenceIntensity, sequenceCount);
+
+        //Connect Timer to Turn On Next LEDs in the Sequence
+        connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularSequenceDelayDone()));
+        p_regularTimer->setInterval (delay);
+        p_regularTimer->start();
     }
 }
 
@@ -984,7 +1098,7 @@ void LightController::SequenceRGBLights(QList<quint8> grpNumList, quint16 delay,
 {
     if(!isCommandRunning)
     {
-        rgbSequenceGroupList = grpNumList;
+        sequenceGroupList = grpNumList;
         sequenceDelay = delay;
         sequenceCount = 0;
         sequenceMaxCount = 1;
@@ -1003,12 +1117,25 @@ void LightController::SequenceRGBLights(QList<quint8> grpNumList, quint16 delay,
 
         isCommandRunning = true;
 
-        ShowRGBColorOne(rgbSequenceGroupList, rgbSequenceColor, sequenceCount);
+        ShowRGBColorOneSequence(sequenceGroupList, rgbSequenceColor, sequenceCount);
 
         //Connect Timer to Turn On Next LEDs in the Sequence
-        connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(SequenceDelayDone()));
+        connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDone()));
         p_rgbTimer->setInterval (delay);
         p_rgbTimer->start();
+    }
+}
+
+
+void LightController::FollowerRegularLights(QList<quint8> grpNumList, quint8 intensity, quint16 data)
+{
+    if(data > 0)
+    {
+        ShowRegularIntensity(grpNumList, intensity);
+    }
+    else
+    {
+        ShowRegularIntensity(grpNumList, 0);
     }
 }
 
@@ -1033,24 +1160,99 @@ void LightController::FollowerRGBLights(QList<quint8> grpNumList, QString color,
         //TurnRGBState(grpNumList, false);
         ShowRGBColor(grpNumList, rgbOff);
     }
-
 }
 
 void LightController::FollowerRandomRGBLights(QList<quint8> grpNumList, quint16 data)
 {
-    if(!isCommandRunning)
+    if(data > 0)
     {
-        if(data > 0)
-        {
-            quint16 randomColor = QRandomGenerator::global()->bounded(0, numberColors);
-            rgbFollowerColor = rgbColorMap[colorNameList[randomColor]];
-        }
-        else
-            rgbFollowerColor = rgbOff;
+        quint16 randomColor = QRandomGenerator::global()->bounded(0, numberColors);
+        rgbFollowerColor = rgbColorMap[colorNameList[randomColor]];
+    }
+    else
+        rgbFollowerColor = rgbOff;
 
-        ShowRGBColor(grpNumList, rgbFollowerColor);
+    ShowRGBColor(grpNumList, rgbFollowerColor);
+}
+
+
+
+
+
+void LightController::ShowRegularIntensity(QList<quint8> grpNumList, quint8 intensity)
+{
+    quint8 i;
+
+    //qDebug() << "rgbFastMode:" << rgbFastMode;
+
+    //For Groups
+    for(i = 0; i < grpNumList.count(); i++)
+    {
+        //For Pins in Groups
+        QList<quint8> pins = regularLEDMap[grpNumList[i]];
+
+        //Set Regular Lights Group to Intensity
+        emit SetLightIntensityGroup(id, pins, intensity);
     }
 }
+
+
+void LightController::ShowRegularIntensityOne(QList<quint8> grpNumList, quint8 intensity, QList<quint8> indexList, qint8 offset)
+{
+    quint8 i;
+
+    //qDebug() << "rgbFastMode:" << rgbFastMode;
+
+    //For Groups
+    for(i = 0; i < grpNumList.count(); i++)
+    {
+        //For Pins in Groups
+        QList<quint8> pins = regularLEDMap[grpNumList[i]];
+        quint8 pin = pins[indexList[i]+offset]-1;
+
+        //Set Regular Lights Group to Intensity
+        emit SetLightIntensity(id, pin, intensity);
+    }
+}
+
+void LightController::ShowRegularIntensityOneSequence(QList<quint8> grpNumList, quint8 intensity, quint8 index)
+{
+    quint8 i;
+
+    //For Groups
+    for(i = 0; i < grpNumList.count(); i++)
+    {
+        //For Pins in Groups
+        QList pins = regularLEDMap[grpNumList[i]];
+        quint8 pin;
+        quint8 count = pins.count();
+        bool isOutOfRange = false;
+
+        if(!sequenceMaxCountSet)
+        {
+            if(count > sequenceMaxCount)
+                sequenceMaxCount = count;
+        }
+
+        //Get the RGB Pin Number
+        if(index < count)
+            pin = pins[index]-1;
+        else
+            isOutOfRange = true;
+
+        //qDebug() << "Writing to Light Controller ID:" << id << "sequenceCount" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
+
+        //Set RGB Lights to the Color
+        if(!isOutOfRange)
+            emit SetLightIntensity(id, pin, intensity);
+    }
+
+    //Incease the Count
+    sequenceCount++;
+
+    sequenceMaxCountSet = true;
+}
+
 
 void LightController::ShowRGBColor(QList<quint8> grpNumList, RGBColor color)
 {
@@ -1064,7 +1266,6 @@ void LightController::ShowRGBColor(QList<quint8> grpNumList, RGBColor color)
         //For Pins in Groups
         QList pins = rgbLEDMap[grpNumList[i]];
         RGBPins rgbPins;
-        quint8 red, green, blue;
 
         for(j = 0; j < pins.count(); j++)
         {
@@ -1094,7 +1295,7 @@ void LightController::ShowRGBColor(QList<quint8> grpNumList, RGBColor color)
 }
 
 
-void LightController::ShowRGBColorOne(QList<quint8> grpNumList, RGBColor color, quint8 index)
+void LightController::ShowRGBColorOne(QList<quint8> grpNumList, RGBColor color, QList<quint8> indexList, qint8 offset)
 {
     quint8 i, j;
 
@@ -1104,7 +1305,46 @@ void LightController::ShowRGBColorOne(QList<quint8> grpNumList, RGBColor color, 
         //For Pins in Groups
         QList pins = rgbLEDMap[grpNumList[i]];
         RGBPins rgbPins;
-        quint8 red, green, blue;
+        quint8 count = pins.count();
+        bool isOutOfRange = false;
+
+        //Get the RGB Pin Number
+        if(rgbFastMode && indexList[i] < count)
+        {
+
+            rgbPins.r = pins[indexList[i]+offset]-1;
+            rgbPins.g = rgbPins.r + 1;
+            rgbPins.b = rgbPins.g + 1;
+        }
+        else if(!rgbFastMode && indexList[i]+2 < count)
+        {
+            qint8 newOffset = offset*3;
+            rgbPins.r = pins[indexList[i]+newOffset]-1;
+            rgbPins.g = pins[indexList[i]+newOffset+1]-1;
+            rgbPins.b = pins[indexList[i]+newOffset+2]-1;
+        }
+        else
+            isOutOfRange = true;
+
+        //qDebug() << "Writing to Light Controller ID:" << id << "sequenceCount" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
+
+        //Set RGB Lights to the Color
+        if(!isOutOfRange)
+            emit SetRGBLightIntensity(id, rgbPins, color);
+    }
+}
+
+
+void LightController::ShowRGBColorOneSequence(QList<quint8> grpNumList, RGBColor color, quint8 index)
+{
+    quint8 i;
+
+    //For Groups
+    for(i = 0; i < grpNumList.count(); i++)
+    {
+        //For Pins in Groups
+        QList pins = rgbLEDMap[grpNumList[i]];
+        RGBPins rgbPins;
         quint8 count = pins.count();
         bool isOutOfRange = false;
 
@@ -1117,18 +1357,15 @@ void LightController::ShowRGBColorOne(QList<quint8> grpNumList, RGBColor color, 
         //Get the RGB Pin Number
         if(rgbFastMode && index < count)
         {
-
             rgbPins.r = pins[index]-1;
             rgbPins.g = rgbPins.r + 1;
             rgbPins.b = rgbPins.g + 1;
-            sequenceCount++;
         }
         else if(!rgbFastMode && index+2 < count)
         {
             rgbPins.r = pins[index]-1;
             rgbPins.g = pins[index+1]-1;
             rgbPins.b = pins[index+2]-1;
-            sequenceCount = sequenceCount + 3;
         }
         else
             isOutOfRange = true;
@@ -1141,8 +1378,36 @@ void LightController::ShowRGBColorOne(QList<quint8> grpNumList, RGBColor color, 
             emit SetRGBLightIntensity(id, rgbPins, color);
     }
 
+    if(rgbFastMode)
+        sequenceCount++;
+    else
+        sequenceCount = sequenceCount + 3;
+
     sequenceMaxCountSet = true;
 }
+
+
+
+void LightController::TurnRegularState(QList<quint8> grpNumList, bool state)
+{
+    quint8 i, j;
+
+    for(i = 0; i < grpNumList.count(); i++)
+    {
+        //For Pins in Groups
+        QList pins = regularLEDMap[grpNumList[i]];
+        quint8 pin;
+
+        for(j = 0; j < pins.count(); j++)
+        {
+            pin = pins[j]-1;
+
+            //Set RGB Lights to the Color
+            emit SetPinState(id, pin, state);
+        }
+    }
+}
+
 
 
 void LightController::TurnRGBState(QList<quint8> grpNumList, bool state)
@@ -1204,8 +1469,8 @@ bool LightController::CheckRGBGroupNumber(quint8 grpNum)
 
 void LightController::ResetLightController()
 {
-    rgbNumberFlash = 0;
-    rgbTimesFlashed = 0;
+    numberFlash = 0;
+    timesFlashed = 0;
     useRandomPins = false;
     useSideColor = false;
 
@@ -1229,27 +1494,23 @@ void LightController::RGBFlashOff()
     if(useRandomPins)
     {
         quint8 i;
-        for(i = 0; i < rgbFlashGroupList.count(); i++)
+        for(i = 0; i < flashGroupList.count(); i++)
         {
-            ShowRGBColorOne(rgbFlashGroupList, rgbOff, randomPins[i]);
+            ShowRGBColorOne(flashGroupList, rgbOff, randomPins, 0);
 
             if(useSideColor)
             {
-                quint8 offset = 1;
-                if(!rgbFastMode)
-                    offset = 3;
-
-                ShowRGBColorOne(rgbFlashGroupList, rgbOff, randomPins[i]-offset);
-                ShowRGBColorOne(rgbFlashGroupList, rgbOff, randomPins[i]+offset);
+                ShowRGBColorOne(flashGroupList, rgbOff, randomPins, 1);
+                ShowRGBColorOne(flashGroupList, rgbOff, randomPins, -1);
             }
         }
     }
     else
-        ShowRGBColor(rgbFlashGroupList, rgbOff);
+        ShowRGBColor(flashGroupList, rgbOff);
 
     //Connect Timer to Turn Off LEDs
     connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOn()));
-    p_rgbTimer->setInterval (rgbFlashTimeOff);
+    p_rgbTimer->setInterval (flashTimeOff);
     p_rgbTimer->start();
 }
 
@@ -1257,37 +1518,33 @@ void LightController::RGBFlashOff()
 void LightController::RGBFlashOn()
 {
     //Increament Flash Time when Off Happens
-    rgbTimesFlashed++;
+    timesFlashed++;
 
     //Unconnect the Timer
     disconnect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOn()));
 
-    if(rgbTimesFlashed < rgbNumberFlash)
+    if(timesFlashed < numberFlash)
     {
         if(useRandomPins)
         {
             quint8 i;
-            for(i = 0; i < rgbFlashGroupList.count(); i++)
+            for(i = 0; i < flashGroupList.count(); i++)
             {
-                ShowRGBColorOne(rgbFlashGroupList, rgbFlashColor, randomPins[i]);
+                ShowRGBColorOne(flashGroupList, rgbFlashColor, randomPins, 0);
 
                 if(useSideColor)
                 {
-                    quint8 offset = 1;
-                    if(!rgbFastMode)
-                        offset = 3;
-
-                    ShowRGBColorOne(rgbFlashGroupList, sideColor, randomPins[i]-offset);
-                    ShowRGBColorOne(rgbFlashGroupList, sideColor, randomPins[i]+offset);
+                    ShowRGBColorOne(flashGroupList, sideColor, randomPins, 1);
+                    ShowRGBColorOne(flashGroupList, sideColor, randomPins, -1);
                 }
             }
         }
         else
-            ShowRGBColor(rgbFlashGroupList, rgbFlashColor);
+            ShowRGBColor(flashGroupList, rgbFlashColor);
 
         //Connect Timer to Turn Off LEDs
         connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOff()));
-        p_rgbTimer->setInterval (rgbFlashTimeOn);
+        p_rgbTimer->setInterval (flashTimeOn);
         p_rgbTimer->start();
 
         //Now Wait until timer runs out
@@ -1304,13 +1561,13 @@ void LightController::RGBFlashOn()
 }
 
 
-void LightController::SequenceDelayDone()
+void LightController::RGBSequenceDelayDone()
 {
     if(sequenceCount < sequenceMaxCount)
     {
         //qDebug() << "Sequence Timer Ended: sequence" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
         //Light Up the Next Sequence
-        ShowRGBColorOne(rgbSequenceGroupList, rgbSequenceColor, sequenceCount);
+        ShowRGBColorOneSequence(sequenceGroupList, rgbSequenceColor, sequenceCount);
 
         //Connect Timer to Turn On Next LEDs in the Sequence
         p_rgbTimer->start();
@@ -1318,16 +1575,120 @@ void LightController::SequenceDelayDone()
     else
     {
         //Turn Off Lights
-        ShowRGBColor(rgbSequenceGroupList, rgbOff);
+        ShowRGBColor(sequenceGroupList, rgbOff);
 
         //Disconnect the Timer
-        disconnect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(SequenceDelayDone()));
+        disconnect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDone()));
         isCommandRunning = false;
 
         if(doReset)
             ResetLightController();
     }
 }
+
+
+
+
+void LightController::RegularFlashOff()
+{
+    //Unconnect the Timer
+    disconnect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
+
+    if(useRandomPins)
+    {
+        quint8 i;
+        for(i = 0; i < flashGroupList.count(); i++)
+        {
+            ShowRegularIntensityOne(flashGroupList, 0, randomPins, 0);
+
+            if(useSideColor)
+            {
+                ShowRegularIntensityOne(flashGroupList, 0, randomPins, 1);
+                ShowRegularIntensityOne(flashGroupList, 0, randomPins, -1);
+            }
+        }
+    }
+    else
+        ShowRegularIntensity(flashGroupList, 0);
+
+    //Connect Timer to Turn Off LEDs
+    connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOn()));
+    p_regularTimer->setInterval (flashTimeOff);
+    p_regularTimer->start();
+}
+
+void LightController::RegularFlashOn()
+{
+    //Increament Flash Time when Off Happens
+    timesFlashed++;
+
+    //Unconnect the Timer
+    disconnect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOn()));
+
+    if(timesFlashed < numberFlash)
+    {
+        if(useRandomPins)
+        {
+            quint8 i;
+            for(i = 0; i < flashGroupList.count(); i++)
+            {
+                ShowRegularIntensityOne(flashGroupList, flashIntensity, randomPins, 0);
+
+                if(useSideColor)
+                {
+                    ShowRegularIntensityOne(flashGroupList, flashSideIntensity, randomPins, 1);
+                    ShowRegularIntensityOne(flashGroupList, flashSideIntensity, randomPins, -1);
+                }
+            }
+        }
+        else
+            ShowRegularIntensity(flashGroupList, flashIntensity);
+
+        //Connect Timer to Turn Off LEDs
+        connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
+        p_regularTimer->setInterval (flashTimeOn);
+        p_regularTimer->start();
+
+        //Now Wait until timer runs out
+    }
+    else
+    {
+        isCommandRunning = false;
+        useRandomPins = false;
+        useSideColor = false;
+
+        if(doReset)
+            ResetLightController();
+    }
+}
+
+
+void LightController::RegularSequenceDelayDone()
+{
+    if(sequenceCount < sequenceMaxCount)
+    {
+        //qDebug() << "Sequence Timer Ended: sequence" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
+        //Light Up the Next Sequence
+        ShowRegularIntensityOneSequence(sequenceGroupList, sequenceIntensity, sequenceCount);
+
+        //Connect Timer to Turn On Next LEDs in the Sequence
+        p_regularTimer->start();
+    }
+    else
+    {
+        //Turn Off Lights
+        ShowRegularIntensity(sequenceGroupList, 0);
+
+        //Disconnect the Timer
+        disconnect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularSequenceDelayDone()));
+        isCommandRunning = false;
+
+        if(doReset)
+            ResetLightController();
+    }
+}
+
+
 
 
 
