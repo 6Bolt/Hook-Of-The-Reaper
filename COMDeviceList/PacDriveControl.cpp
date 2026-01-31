@@ -142,7 +142,6 @@ void PacDriveControl::CollectUltimarcData()
                 if(!invalid)
                 {
                     dataUltimarc[i].valid = true;
-                    idList << dataUltimarc[i].id;
                     numberUltimarcDevicesValid++;
                 }
 

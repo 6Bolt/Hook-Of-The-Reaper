@@ -34,27 +34,37 @@ LightController::LightController(quint8 cntlrNum, LightController const &other, 
 
     title = "Light Controller Group File Error";
 
-    isCommandRunning = other.isCommandRunning;
-
     rgbOff.r = 0;
     rgbOff.g = 0;
     rgbOff.b = 0;
 
-    useRandomPins = false;
-    useSideColor = false;
-    rgbFollowerFirstTime = false;
     doReset = false;
+
+    numberPins = ULTIMARCTYPELEDCOUNT[dataUltimarc.type];
+
+    if(dataUltimarc.type == IPACULTIMATEIO)
+        numberGroups = ULTIMATEGRPS;
+    else
+        numberGroups = OTHERGRPS;
+
+    p_usedPins = new quint8[numberGroups];
+
+    quint8 i;
+
+    for(i = 0; i < numberGroups; i++)
+        p_usedPins[i] = 0;
 
     //Load the Group File
     LoadGroupFile();
 
-    //Regular Timer Set-up
-    p_regularTimer = new QTimer(this);
-    p_regularTimer->setSingleShot (true);
+    if(didGroupFileLoad)
+    {
+        //Build Group Data for Regular and RGB
+        BuildRegularGroupData();
+        BuildRGBGroupData();
 
-    //RGB Timer Set-up
-    p_rgbTimer = new QTimer(this);
-    p_rgbTimer->setSingleShot (true);
+        //PrintGroupData();
+    }
 
 }
 
@@ -88,8 +98,6 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
 
     noRGBGroups = false;
 
-    isCommandRunning = false;
-
     didGroupFileLoad = false;
 
     title = "Light Controller Group File Error";
@@ -98,21 +106,41 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
     rgbOff.g = 0;
     rgbOff.b = 0;
 
-    useRandomPins = false;
-    useSideColor = false;
-    rgbFollowerFirstTime = false;
     doReset = false;
+
+    numberPins = ULTIMARCTYPELEDCOUNT[dataUltimarc.type];
+
+    if(dataUltimarc.type == IPACULTIMATEIO)
+        numberGroups = ULTIMATEGRPS;
+    else
+        numberGroups = OTHERGRPS;
+
+
+    p_usedPins = new quint8[numberGroups];
+
+    quint16 i;
+
+    for(i = 0; i < numberGroups; i++)
+        p_usedPins[i] = 0;
+
+    for(i = 0; i < NUMBEREXECUTIONS; i++)
+        p_execution[i] = nullptr;
+
+    executionCount = 0;
 
     //Load the Group File
     LoadGroupFile();
 
-    //Regular Timer Set-up
-    p_regularTimer = new QTimer(this);
-    p_regularTimer->setSingleShot (true);
+    if(didGroupFileLoad)
+    {
+        //Build Group Data for Regular and RGB
+        BuildRegularGroupData();
+        BuildRGBGroupData();
 
-    //RGB Timer Set-up
-    p_rgbTimer = new QTimer(this);
-    p_rgbTimer->setSingleShot (true);
+        //PrintGroupData();
+    }
+
+
 
 }
 
@@ -121,11 +149,20 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
 
 LightController::~LightController()
 {
-    //if(p_regularTimer != nullptr)
-    //    delete p_regularTimer;
+    quint16 i;
 
-    //if(p_rgbTimer != nullptr)
-    //    delete p_rgbTimer;
+    //Light Execution Classes
+    for(i = 0; i < NUMBEREXECUTIONS; i++)
+    {
+        if(p_execution[i] != nullptr)
+        {
+            delete p_execution[i];
+            p_execution[i] = nullptr;
+        }
+    }
+
+    //Used Pins Array
+    delete[] p_usedPins;
 }
 
 
@@ -158,21 +195,43 @@ void LightController::CopyLightController(LightController const &lcMember)
 
     didGroupFileLoad = false;
 
-    isCommandRunning = lcMember.isCommandRunning;
-
     title = "Light Controller Group File Error";
 
     rgbOff.r = 0;
     rgbOff.g = 0;
     rgbOff.b = 0;
 
-    useRandomPins = false;
-    useSideColor = false;
-    rgbFollowerFirstTime = false;
     doReset = false;
+
+    numberPins = lcMember.numberPins;
+
+    if(numberGroups != lcMember.numberGroups)
+    {
+        delete[] p_usedPins;
+        p_usedPins = nullptr;
+
+        numberGroups = lcMember.numberGroups;
+
+        p_usedPins = new quint8[numberGroups];
+    }
+
+    quint8 i;
+
+    for(i = 0; i < numberGroups; i++)
+        p_usedPins[i] = 0;
+
 
     //Load the Group File
     LoadGroupFile();
+
+    if(didGroupFileLoad)
+    {
+        //Build Group Data for Regular and RGB
+        BuildRegularGroupData();
+        BuildRGBGroupData();
+
+        //PrintGroupData();
+    }
 }
 
 void LightController::SetGroupFile(QString filePath)
@@ -190,6 +249,13 @@ void LightController::SetGroupFile(QString filePath)
 
     //Load the Group File
     LoadGroupFile();
+
+    if(didGroupFileLoad)
+    {
+        //Build Group Data for Regular and RGB
+        BuildRegularGroupData();
+        BuildRGBGroupData();
+    }
 }
 
 void LightController::LoadGroupFile()
@@ -200,9 +266,6 @@ void LightController::LoadGroupFile()
     QStringList fileData;
     quint16 lineNumber = 0;
     quint16 lineCount;
-    bool isNumber;
-    qint16 groupNumber;
-    qint16 defaultBrightness;
     bool didGroupLoad = true;
     bool didColorLoad = true;
     bool groupLoading = true;
@@ -212,10 +275,10 @@ void LightController::LoadGroupFile()
     //Clear Out Maps and Lists
     regularLEDMap.clear();
     rgbLEDMap.clear();
-    regularPinsCount.clear();
-    rgbPinsCount.clear();
-    regularBrightnessMap.clear();
-    rgbBrightnessMap.clear();
+    //regularPinsCount.clear();
+    //rgbPinsCount.clear();
+    //regularBrightnessMap.clear();
+    //rgbBrightnessMap.clear();
     regularLEDGroupList.clear();
     rgbLEDGroupList.clear();
     rgbColorMap.clear();
@@ -388,13 +451,13 @@ bool LightController::LoadGroupRGBFast(quint16 lineNum, quint16 lineMax, QString
     rgbLEDGroupList << groupNumberBright.groupNumber;
 
     //Add Default Brightness to Group Map
-    rgbBrightnessMap.insert(groupNumberBright.groupNumber, groupNumberBright.defaultBrightness);
+    //rgbBrightnessMap.insert(groupNumberBright.groupNumber, groupNumberBright.defaultBrightness);
 
     //Add Group with its pins to the Map
     rgbLEDMap.insert(groupNumberBright.groupNumber, pinDataSruct.pinData);
 
     //Map Group Number with RGB Pin Count
-    rgbPinsCount.insert(groupNumberBright.groupNumber, pinDataSruct.numberPins);
+    //rgbPinsCount.insert(groupNumberBright.groupNumber, pinDataSruct.numberPins);
 
     return true;
 }
@@ -435,13 +498,13 @@ bool LightController::LoadGroupRGB(quint16 lineNum, quint16 lineMax, QStringList
     rgbLEDGroupList << groupNumberBright.groupNumber;
 
     //Add Default Brightness to Group Map
-    rgbBrightnessMap.insert(groupNumberBright.groupNumber, groupNumberBright.defaultBrightness);
+    //rgbBrightnessMap.insert(groupNumberBright.groupNumber, groupNumberBright.defaultBrightness);
 
     //Add Group with its pins to the Map
     rgbLEDMap.insert(groupNumberBright.groupNumber, pinDataSruct.pinData);
 
     //Map Group Number with RGB Pin Count
-    rgbPinsCount.insert(groupNumberBright.groupNumber, pinDataSruct.numberPins);
+    //rgbPinsCount.insert(groupNumberBright.groupNumber, pinDataSruct.numberPins);
 
     return true;
 }
@@ -481,13 +544,13 @@ bool LightController::LoadGroupRegular(quint16 lineNum, quint16 lineMax, QString
     regularLEDGroupList << groupNumberBright.groupNumber;
 
     //Add Default Brightness to Group Map
-    regularBrightnessMap.insert(groupNumberBright.groupNumber, groupNumberBright.defaultBrightness);
+    //regularBrightnessMap.insert(groupNumberBright.groupNumber, groupNumberBright.defaultBrightness);
 
     //Add Group with its pins to the Map
     regularLEDMap.insert(groupNumberBright.groupNumber, pinDataSruct.pinData);
 
     //Map Group Number with Regular Pin Count
-    regularPinsCount.insert(groupNumberBright.groupNumber, pinDataSruct.numberPins);
+    //regularPinsCount.insert(groupNumberBright.groupNumber, pinDataSruct.numberPins);
 
     return true;
 }
@@ -497,7 +560,7 @@ LightControllerTop LightController::GetGroupNumber(quint8 groupMode, quint16 lin
 {
     bool isNumber;
     qint16 groupNumber;
-    qint16 defaultBrightness;
+    //qint16 defaultBrightness;
     quint16 lineNumber = lineNum;
     QString groupKind;
     LightControllerTop groupNumberBright;
@@ -539,7 +602,7 @@ LightControllerTop LightController::GetGroupNumber(quint8 groupMode, quint16 lin
     }
 
 
-    defaultBrightness = DEFAULTBRIGHTNESS;
+    //defaultBrightness = DEFAULTBRIGHTNESS;
 
     /*
     defaultBrightness = splitData[2].toInt(&isNumber);
@@ -564,7 +627,7 @@ LightControllerTop LightController::GetGroupNumber(quint8 groupMode, quint16 lin
     */
 
     groupNumberBright.groupNumber = static_cast<quint8>(groupNumber);
-    groupNumberBright.defaultBrightness = static_cast<quint8>(defaultBrightness);
+    //groupNumberBright.defaultBrightness = static_cast<quint8>(defaultBrightness);
     groupNumberBright.isDataSet = true;
     return groupNumberBright;
 }
@@ -574,7 +637,7 @@ LCPinData LightController::GetGroupPinData(quint8 lcKind, quint16 grpStart, quin
 {
     bool isNumber;
     QList<quint8> grpData;
-    quint16 i, j, k;
+    quint16 i, j;
     quint8 addedPins = 0;
     LCPinData pinDataStruct;
     quint16 numberLEDsCheck;
@@ -809,39 +872,373 @@ bool LightController::LoadRGBColor(QString line)
 
 
 
+
+//Build Byte Arrays for Checking
+
+
+//For Regular Groups
+
+void LightController::BuildRegularGroupData()
+{
+    if(!noRegularGroups)
+    {
+        //i is for group, and j is for pin
+        quint8 i, j;
+
+        //Clear Out QMaps
+        regularArrayPosition.clear();
+        regularArrayData.clear();
+
+        for(i = 0; i < regularLEDGroupList.count(); i++)
+        {
+            quint8 groupNum = regularLEDGroupList[i];
+            QList<quint8> pins = regularLEDMap[groupNum];
+            QList<quint8> arrayPosAll;
+            QList<quint8> arrayData;
+
+            //Zero Out the Data Array
+            for(j = 0; j < numberGroups; j++)
+                arrayData.insert(j,0);
+
+            for(j = 0; j < pins.count(); j++)
+            {
+                quint8 pin = pins[j] - 1;
+
+                quint8 arrayPos = (pin >> 3);
+                quint8 pinPos = pin & 0x7;
+                quint8 pinData = (1 << pinPos);
+
+                if(!arrayPosAll.contains(arrayPos))
+                    arrayPosAll << arrayPos;
+
+                arrayData[arrayPos] = arrayData[arrayPos] | pinData;
+
+            }
+
+            //Now Sort the arrayPosAll List
+            std::sort(arrayPosAll.begin(), arrayPosAll.end());
+
+            //Insert the All Array Positions and Array Data
+            regularArrayPosition.insert(groupNum,arrayPosAll);
+            regularArrayData.insert(groupNum,arrayData);
+        }
+    }
+}
+
+
+//For RGB Groups
+
+void LightController::BuildRGBGroupData()
+{
+    if(!noRGBGroups)
+    {
+        //i is for group, and j is for pin
+        quint8 i, j;
+
+        //Clear Out QMaps
+        rgbArrayPosition.clear();
+        rgbArrayData.clear();
+
+        for(i = 0; i < rgbLEDGroupList.count(); i++)
+        {
+            quint8 groupNum = rgbLEDGroupList[i];
+            QList<quint8> pins = rgbLEDMap[groupNum];
+            QList<quint8> arrayPosAll;
+            QList<quint8> arrayData;
+
+            //Zero Out the Data Array with Number of Groups
+            for(j = 0; j < numberGroups; j++)
+                arrayData.insert(j,0);
+
+            for(j = 0; j < pins.count(); j++)
+            {
+                quint8 pin = pins[j] - 1;
+
+                quint8 arrayPos = (pin >> 3);
+                quint8 pinPos = pin & 0x7;
+                quint8 pinData = (1 << pinPos);
+                bool nextArray1 = false;
+                bool nextArray2 = false;
+
+               //qDebug() << "arrayPos" << arrayPos << "pinPos" << pinPos << "pinData" << pinData << "arrayData" << arrayData[arrayPos] << arrayData;
+
+                //If Using RGB Fast, then Add 2 Pins After
+                if(rgbFastMode)
+                {
+                    //If Position is 0-5
+                    if(pinPos < 6)
+                    {
+                        quint8 otherData = (0x3 << (pinPos+1));
+                        pinData = pinData | otherData;
+                    }
+                    else if(pinPos == 6) //If 6
+                    {
+                        nextArray1 = true;
+                        pinData = pinData | 128;
+                    }
+                    else if(pinPos == 7) //If 7
+                        nextArray2 = true;
+                }
+
+                if(!arrayPosAll.contains(arrayPos))
+                    arrayPosAll << arrayPos;
+
+                arrayData[arrayPos] = arrayData[arrayPos] | pinData;
+
+
+                //qDebug() << "arrayPos" << arrayPos << "pinPos" << pinPos << "pinData" << pinData << "arrayData" << arrayData[arrayPos] << nextArray1 << nextArray2;
+
+
+                if(nextArray1 || nextArray2)
+                {
+                    quint8 otherData2;
+
+                    if(nextArray1)
+                        otherData2 = 1;
+                    else
+                        otherData2 = 3;
+
+                    if(!arrayPosAll.contains(arrayPos+1))
+                        arrayPosAll << arrayPos+1;
+
+                    arrayData[arrayPos+1] = arrayData[arrayPos+1] | otherData2;
+                }
+
+            } //End of for j, pins data finished
+
+            //qDebug() << "For Group:" << groupNum << "Position Data:" << arrayPosAll;
+
+            //Now Sort the arrayPosAll List
+            std::sort(arrayPosAll.begin(), arrayPosAll.end());
+
+            //Insert the All Array Positions and Array Data
+            rgbArrayPosition.insert(groupNum,arrayPosAll);
+            rgbArrayData.insert(groupNum,arrayData);
+
+            //qDebug() << "For Group:" << groupNum << "Position Data:" << arrayPosAll << "Data:" << arrayData;
+
+        } //End of for i, RGB Groups finished
+    } //End of No RGB Groups Check
+}
+
+
+void LightController::PrintGroupData()
+{
+    if(!noRGBGroups)
+    {
+        //i is for group, and j is for pin
+        quint8 i, j;
+
+        for(i = 0; i < rgbLEDGroupList.count(); i++)
+        {
+            quint8 groupNum = rgbLEDGroupList[i];
+
+            QList<quint8> arrayPos = rgbArrayPosition[groupNum];
+            QList<quint8> arrayData = rgbArrayData[groupNum];
+
+            qDebug() << "For Group:" << groupNum << "Position Data:" << arrayPos;
+
+            for(j = 0; j < arrayPos.count(); j++)
+            {
+
+                quint8 position = arrayPos[j];
+                quint8 data = arrayData[position];
+                QString binaryData = QString("%1").arg(data, 8, 2, QChar('0'));
+
+                qDebug() << "Group:" << groupNum << "Position:" << position << "Data:" << binaryData;
+            }
+        }
+    }
+
+    if(!noRegularGroups)
+    {
+        //i is for group, and j is for pin
+        quint8 i, j;
+
+        for(i = 0; i < regularLEDGroupList.count(); i++)
+        {
+            quint8 groupNum = regularLEDGroupList[i];
+
+            QList<quint8> arrayPos = regularArrayPosition[groupNum];
+            QList<quint8> arrayData = regularArrayData[groupNum];
+
+            qDebug() << "For Group:" << groupNum << "Position Data:" << arrayPos;
+
+            for(j = 0; j < arrayPos.count(); j++)
+            {
+
+                quint8 position = arrayPos[j];
+                quint8 data = arrayData[position];
+                QString binaryData = QString("%1").arg(data, 8, 2, QChar('0'));
+
+                qDebug() << "Group:" << groupNum << "Position:" << position << "Data:" << binaryData;
+            }
+        }
+    }
+
+}
+
+
+
+
+
+bool LightController::CheckRegularGroups(QList<quint8> groupNumber)
+{
+    //i is for group, and j is for pin
+    quint8 i, j;
+
+    for(i = 0; i < groupNumber.count(); i++)
+    {
+        QList<quint8> arrayPos = regularArrayPosition[groupNumber[i]];
+        QList<quint8> arrayData = regularArrayData[groupNumber[i]];
+
+        for(j = 0; j < arrayPos.count(); j++)
+        {
+            quint8 checkData = arrayData[arrayPos[j]] & p_usedPins[arrayPos[j]];
+
+            if(checkData != 0)
+                return false;
+        }
+    }
+
+    //Ran the Gaunlet
+    return true;
+}
+
+
+void LightController::SetRegularGroups(QList<quint8> groupNumber)
+{
+    //i is for group, and j is for pin
+    quint8 i, j;
+
+    for(i = 0; i < groupNumber.count(); i++)
+    {
+        QList<quint8> arrayPos = regularArrayPosition[groupNumber[i]];
+        QList<quint8> arrayData = regularArrayData[groupNumber[i]];
+
+        for(j = 0; j < arrayPos.count(); j++)
+            p_usedPins[arrayPos[j]] = p_usedPins[arrayPos[j]] | arrayData[arrayPos[j]];
+
+    }
+}
+
+
+void LightController::UnsetRegularGroups(QList<quint8> groupNumber)
+{
+    //i is for group, and j is for pin
+    quint8 i, j;
+
+    for(i = 0; i < groupNumber.count(); i++)
+    {
+        QList<quint8> arrayPos = regularArrayPosition[groupNumber[i]];
+        QList<quint8> arrayData = regularArrayData[groupNumber[i]];
+
+        for(j = 0; j < arrayPos.count(); j++)
+            p_usedPins[arrayPos[j]] = p_usedPins[arrayPos[j]] & ~(arrayData[arrayPos[j]]);
+
+    }
+}
+
+
+
+
+
+bool LightController::CheckRGBGroups(QList<quint8> groupNumber)
+{
+    //i is for group, and j is for pin
+    quint8 i, j;
+
+    for(i = 0; i < groupNumber.count(); i++)
+    {
+        QList<quint8> arrayPos = rgbArrayPosition[groupNumber[i]];
+        QList<quint8> arrayData = rgbArrayData[groupNumber[i]];
+
+        for(j = 0; j < arrayPos.count(); j++)
+        {
+            quint8 checkData = arrayData[arrayPos[j]] & p_usedPins[arrayPos[j]];
+
+            if(checkData != 0)
+                return false;
+        }
+    }
+
+    //Ran the Gaunlet
+    return true;
+}
+
+
+void LightController::SetRGBGroups(QList<quint8> groupNumber)
+{
+    //i is for group, and j is for pin
+    quint8 i, j;
+
+    for(i = 0; i < groupNumber.count(); i++)
+    {
+        QList<quint8> arrayPos = rgbArrayPosition[groupNumber[i]];
+        QList<quint8> arrayData = rgbArrayData[groupNumber[i]];
+
+        for(j = 0; j < arrayPos.count(); j++)
+            p_usedPins[arrayPos[j]] = p_usedPins[arrayPos[j]]| arrayData[arrayPos[j]];
+    }
+}
+
+
+void LightController::UnsetRGBGroups(QList<quint8> groupNumber)
+{
+    //i is for group, and j is for pin
+    quint8 i, j;
+
+    for(i = 0; i < groupNumber.count(); i++)
+    {
+        QList<quint8> arrayPos = rgbArrayPosition[groupNumber[i]];
+        QList<quint8> arrayData = rgbArrayData[groupNumber[i]];
+
+        for(j = 0; j < arrayPos.count(); j++)
+            p_usedPins[arrayPos[j]] = p_usedPins[arrayPos[j]] & ~(arrayData[arrayPos[j]]);
+
+    }
+}
+
+
+
+
+
+
+//Light Commands
+
+
+//Flash Commands
+
 void LightController::FlashRegularLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, quint8 intensity)
 {
-    if(!isCommandRunning)
+    bool runCMD = CheckRegularGroups(grpNumList);
+
+    if(runCMD)
     {
-        flashGroupList = grpNumList;
-        numberFlash = numFlashes;
-        timesFlashed = 0;
-        flashTimeOn = timeOnMs;
-        flashTimeOff = timeOffMs;
-        flashIntensity = intensity;
+        //Set Used Pins
+        SetRegularGroups(grpNumList);
 
-        isCommandRunning = true;
+        //Make New Light Execution Class
+        p_execution[executionCount] = new LightExecution(executionCount, grpNumList, regularLEDMap, false, rgbFastMode);
 
-        ShowRegularIntensity(flashGroupList, flashIntensity);
+        //Connect Signals and Slots
+        ConnectRegular(executionCount);
 
-        //Connect Timer to Turn Off LEDs
-        connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
-        p_regularTimer->setInterval (flashTimeOn);
-        p_regularTimer->start();
+        //Execute the Command
+        p_execution[executionCount]->FlashRegularLights(timeOnMs, timeOffMs, numFlashes, intensity);
 
-        //Now Wait until timer runs out
+        //Increament Count
+        executionCount++;
     }
 }
 
 void LightController::FlashRGBLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, QString color)
 {
-    if(!isCommandRunning)
+    bool runCMD = CheckRGBGroups(grpNumList);
+
+    if(runCMD)
     {
-        flashGroupList = grpNumList;
-        numberFlash = numFlashes;
-        timesFlashed = 0;
-        flashTimeOn = timeOnMs;
-        flashTimeOff = timeOffMs;
+        RGBColor rgbFlashColor;
 
         if(rgbColorMap.contains (color))
             rgbFlashColor = rgbColorMap[color];
@@ -852,67 +1249,53 @@ void LightController::FlashRGBLights(QList<quint8> grpNumList, quint16 timeOnMs,
             return;
         }
 
-        isCommandRunning = true;
+        //Set Used Pins
+        SetRGBGroups(grpNumList);
 
-        ShowRGBColor(flashGroupList, rgbFlashColor);
+        //Make New Light Execution Class
+        p_execution[executionCount] = new LightExecution(executionCount, grpNumList, rgbLEDMap, true, rgbFastMode);
 
-        //Connect Timer to Turn Off LEDs
-        connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOff()));
-        p_rgbTimer->setInterval (flashTimeOn);
-        p_rgbTimer->start();
+        //Connect Signals and Slots
+        ConnectRGB(executionCount);
 
-        //Now Wait until timer runs out
+        //Execute the Command
+        p_execution[executionCount]->FlashRGBLights(timeOnMs, timeOffMs, numFlashes, rgbFlashColor);
+
+        //Increament Count
+        executionCount++;
     }
 }
 
 void LightController::FlashRandomRegularLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, quint8 intensity)
 {
-    if(!isCommandRunning)
+    bool runCMD = CheckRegularGroups(grpNumList);
+
+    if(runCMD)
     {
-        flashGroupList = grpNumList;
-        numberFlash = numFlashes;
-        timesFlashed = 0;
-        flashTimeOn = timeOnMs;
-        flashTimeOff = timeOffMs;
-        randomPins.clear();
-        flashIntensity = intensity;
+        //Set Used Pins
+        SetRegularGroups(grpNumList);
 
-        isCommandRunning = true;
-        useRandomPins = true;
+        //Make New Light Execution Class
+        p_execution[executionCount] = new LightExecution(executionCount, grpNumList, regularLEDMap, false, rgbFastMode);
 
-        //Find Random Pin for Groups
-        quint8 i;
-        for(i = 0; i < flashGroupList.count(); i++)
-        {
-            quint8 count = regularLEDMap[flashGroupList[i]].count();
+        //Connect Signals and Slots
+        ConnectRegular(executionCount);
 
-            quint8 randomPin = QRandomGenerator::global()->bounded(0, count);
+        //Execute the Command
+        p_execution[executionCount]->FlashRandomRegularLights(timeOnMs, timeOffMs, numFlashes, intensity);
 
-            //But Random Number into List
-            randomPins << randomPin;
-        }
-
-        ShowRegularIntensityOne(flashGroupList, flashIntensity, randomPins, 0);
-
-        //Connect Timer to Turn Off LEDs
-        connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
-        p_regularTimer->setInterval (flashTimeOn);
-        p_regularTimer->start();
-
-        //Now Wait until timer runs out
+        //Increament Count
+        executionCount++;
     }
 }
 
 void LightController::FlashRandomRGBLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, QString color)
 {
-    if(!isCommandRunning)
+    bool runCMD = CheckRGBGroups(grpNumList);
+
+    if(runCMD)
     {
-        flashGroupList = grpNumList;
-        numberFlash = numFlashes;
-        timesFlashed = 0;
-        flashTimeOn = timeOnMs;
-        flashTimeOff = timeOffMs;
-        randomPins.clear();
+        RGBColor rgbFlashColor;
 
         if(rgbColorMap.contains (color))
             rgbFlashColor = rgbColorMap[color];
@@ -923,94 +1306,54 @@ void LightController::FlashRandomRGBLights(QList<quint8> grpNumList, quint16 tim
             return;
         }
 
-        isCommandRunning = true;
-        useRandomPins = true;
+        //Set Used Pins
+        SetRGBGroups(grpNumList);
 
-        //Find Random Pin for Groups
-        quint8 i;
-        for(i = 0; i < flashGroupList.count(); i++)
-        {
-            quint8 count = rgbLEDMap[flashGroupList[i]].count();
+        //Make New Light Execution Class
+        p_execution[executionCount] = new LightExecution(executionCount, grpNumList, rgbLEDMap, true, rgbFastMode);
 
-            if(!rgbFastMode)
-                count = count / 3;
+        //Connect Signals and Slots
+        ConnectRGB(executionCount);
 
-            quint8 randomPin = QRandomGenerator::global()->bounded(0, count);
+        //Execute the Command
+        p_execution[executionCount]->FlashRandomRGBLights(timeOnMs, timeOffMs, numFlashes, rgbFlashColor);
 
-            if(!rgbFastMode)
-                randomPin = randomPin * 3;
-
-            randomPins << randomPin;
-        }
-
-        ShowRGBColorOne(flashGroupList, rgbFlashColor, randomPins, 0);
-
-        //Connect Timer to Turn Off LEDs
-        connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOff()));
-        p_rgbTimer->setInterval (flashTimeOn);
-        p_rgbTimer->start();
-
-        //Now Wait until timer runs out
+        //Increament Count
+        executionCount++;
     }
 }
 
 void LightController::FlashRandomRegular2ILights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, quint8 intensity, quint8 sIntensity)
 {
-    if(!isCommandRunning)
+    bool runCMD = CheckRegularGroups(grpNumList);
+
+    if(runCMD)
     {
-        flashGroupList = grpNumList;
-        numberFlash = numFlashes;
-        timesFlashed = 0;
-        flashTimeOn = timeOnMs;
-        flashTimeOff = timeOffMs;
-        flashIntensity = intensity;
-        flashSideIntensity = sIntensity;
-        randomPins.clear();
+        //Set Used Pins
+        SetRegularGroups(grpNumList);
 
-        isCommandRunning = true;
-        useRandomPins = true;
-        useSideColor = true;
+        //Make New Light Execution Class
+        p_execution[executionCount] = new LightExecution(executionCount, grpNumList, regularLEDMap, false, rgbFastMode);
 
-        //Find Random Pin for Groups
-        quint8 i;
+        //Connect Signals and Slots
+        ConnectRegular(executionCount);
 
-        for(i = 0; i < flashGroupList.count(); i++)
-        {
-            quint8 count = regularLEDMap[flashGroupList[i]].count();
-            quint8 randomPin;
+        //Execute the Command
+        p_execution[executionCount]->FlashRandomRegular2ILights(timeOnMs, timeOffMs, numFlashes, intensity, sIntensity);
 
-            randomPin = QRandomGenerator::global()->bounded(1, count-1);
-
-            randomPins << randomPin;
-
-            //qDebug() << "Group:" << i << "Random Pin:" << randomPin << "Count" << count;
-        }
-
-        ShowRegularIntensityOne(flashGroupList, flashIntensity, randomPins, 0);
-        ShowRegularIntensityOne(flashGroupList, flashSideIntensity, randomPins, 1);
-        ShowRegularIntensityOne(flashGroupList, flashSideIntensity, randomPins, -1);
-
-        //Connect Timer to Turn Off LEDs
-        connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
-        p_regularTimer->setInterval (flashTimeOn);
-        p_regularTimer->start();
-
-        //Now Wait until timer runs out
-
+        //Increament Count
+        executionCount++;
     }
 }
 
 
 void LightController::FlashRandomRGB2CLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, QString color, QString sColor)
 {
-    if(!isCommandRunning)
+    bool runCMD = CheckRGBGroups(grpNumList);
+
+    if(runCMD)
     {
-        flashGroupList = grpNumList;
-        numberFlash = numFlashes;
-        timesFlashed = 0;
-        flashTimeOn = timeOnMs;
-        flashTimeOff = timeOffMs;
-        randomPins.clear();
+        RGBColor rgbFlashColor, sideColor;
 
         if(rgbColorMap.contains (color))
             rgbFlashColor = rgbColorMap[color];
@@ -1030,65 +1373,48 @@ void LightController::FlashRandomRGB2CLights(QList<quint8> grpNumList, quint16 t
             return;
         }
 
-        isCommandRunning = true;
-        useRandomPins = true;
-        useSideColor = true;
+        //Set Used Pins
+        SetRGBGroups(grpNumList);
 
-        //Find Random Pin for Groups
-        quint8 i;
+        //Make New Light Execution Class
+        p_execution[executionCount] = new LightExecution(executionCount, grpNumList, rgbLEDMap, true, rgbFastMode);
 
-        for(i = 0; i < flashGroupList.count(); i++)
-        {
-            quint8 count = rgbLEDMap[flashGroupList[i]].count();
-            quint8 randomPin;
+        //Connect Signals and Slots
+        ConnectRGB(executionCount);
 
-            if(!rgbFastMode)
-                count = count / 3;
+        //Execute the Command
+        p_execution[executionCount]->FlashRandomRGB2CLights(timeOnMs, timeOffMs, numFlashes, rgbFlashColor, sideColor);
 
-            randomPin = QRandomGenerator::global()->bounded(1, count-1);
-
-            if(!rgbFastMode)
-                randomPin = randomPin * 3;
-
-            randomPins << randomPin;
-
-            //qDebug() << "Group:" << i << "Random Pin:" << randomPin << "Count" << count;
-        }
-
-        ShowRGBColorOne(flashGroupList, rgbFlashColor, randomPins, 0);
-        ShowRGBColorOne(flashGroupList, sideColor, randomPins, 1);
-        ShowRGBColorOne(flashGroupList, sideColor, randomPins, -1);
-
-        //Connect Timer to Turn Off LEDs
-        connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOff()));
-        p_rgbTimer->setInterval (flashTimeOn);
-        p_rgbTimer->start();
-
-        //Now Wait until timer runs out
-
+        //Increament Count
+        executionCount++;
     }
 }
 
 
 void LightController::SequenceRegularLights(QList<quint8> grpNumList, quint16 delay, quint8 intensity)
 {
-    if(!isCommandRunning)
+    bool runCMD = CheckRegularGroups(grpNumList);
+
+    if(runCMD)
     {
-        sequenceGroupList = grpNumList;
-        sequenceDelay = delay;
         sequenceCount = 0;
         sequenceMaxCount = 1;
         sequenceMaxCountSet = false;
-        sequenceIntensity = intensity;
 
-        isCommandRunning = true;
+        //Set Used Pins
+        SetRegularGroups(grpNumList);
 
-        ShowRegularIntensityOneSequence(sequenceGroupList, sequenceIntensity, sequenceCount);
+        //Make New Light Execution Class
+        p_execution[executionCount] = new LightExecution(executionCount, grpNumList, regularLEDMap, false, rgbFastMode);
 
-        //Connect Timer to Turn On Next LEDs in the Sequence
-        connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularSequenceDelayDone()));
-        p_regularTimer->setInterval (delay);
-        p_regularTimer->start();
+        //Connect Signals and Slots
+        ConnectRegular(executionCount);
+
+        //Execute the Command
+        p_execution[executionCount]->SequenceRegularLights(delay, intensity);
+
+        //Increament Count
+        executionCount++;
     }
 }
 
@@ -1096,33 +1422,39 @@ void LightController::SequenceRegularLights(QList<quint8> grpNumList, quint16 de
 
 void LightController::SequenceRGBLights(QList<quint8> grpNumList, quint16 delay, QString color)
 {
-    if(!isCommandRunning)
-    {
-        sequenceGroupList = grpNumList;
-        sequenceDelay = delay;
-        sequenceCount = 0;
-        sequenceMaxCount = 1;
-        sequenceMaxCountSet = false;
+    bool runCMD = CheckRGBGroups(grpNumList);
 
+    if(runCMD)
+    {
+        RGBColor rgbSequenceColor;
 
         if(rgbColorMap.contains (color))
             rgbSequenceColor = rgbColorMap[color];
         else
         {
             QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
-            QString title = "Light Controller RGB Color Fail";
             emit ShowErrorMessage(title, tempCrit);
             return;
         }
 
-        isCommandRunning = true;
+        sequenceCount = 0;
+        sequenceMaxCount = 1;
+        sequenceMaxCountSet = false;
 
-        ShowRGBColorOneSequence(sequenceGroupList, rgbSequenceColor, sequenceCount);
+        //Set Used Pins
+        SetRGBGroups(grpNumList);
 
-        //Connect Timer to Turn On Next LEDs in the Sequence
-        connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDone()));
-        p_rgbTimer->setInterval (delay);
-        p_rgbTimer->start();
+        //Make New Light Execution Class
+        p_execution[executionCount] = new LightExecution(executionCount, grpNumList, rgbLEDMap, true, rgbFastMode);
+
+        //Connect Signals and Slots
+        ConnectRGB(executionCount);
+
+        //Execute the Command
+        p_execution[executionCount]->SequenceRGBLights(delay, rgbSequenceColor);
+
+        //Increament Count
+        executionCount++;
     }
 }
 
@@ -1176,6 +1508,49 @@ void LightController::FollowerRandomRGBLights(QList<quint8> grpNumList, quint16 
 }
 
 
+void LightController::ConnectRegular(quint8 index)
+{
+    connect(p_execution[index],&LightExecution::ShowRegularIntensity, this, &LightController::ShowRegularIntensity);
+
+    connect(p_execution[index],&LightExecution::ShowRegularIntensityOne, this, &LightController::ShowRegularIntensityOne);
+
+    connect(p_execution[index],&LightExecution::ShowRegularIntensityOneSequence, this, &LightController::ShowRegularIntensityOneSequence);
+
+    connect(p_execution[index],&LightExecution::CommandExecuted, this, &LightController::RegularExecutionFinished);
+}
+
+void LightController::ConnectRGB(quint8 index)
+{
+    connect(p_execution[index],&LightExecution::ShowRGBColor, this, &LightController::ShowRGBColor);
+
+    connect(p_execution[index],&LightExecution::ShowRGBColorOne, this, &LightController::ShowRGBColorOne);
+
+    connect(p_execution[index],&LightExecution::ShowRGBColorOneSequence, this, &LightController::ShowRGBColorOneSequence);
+
+    connect(p_execution[index],&LightExecution::CommandExecuted, this, &LightController::RGBExecutionFinished);
+}
+
+void LightController::DisconnectRegular(quint8 index)
+{
+    disconnect(p_execution[index],&LightExecution::ShowRegularIntensity, this, &LightController::ShowRegularIntensity);
+
+    disconnect(p_execution[index],&LightExecution::ShowRegularIntensityOne, this, &LightController::ShowRegularIntensityOne);
+
+    disconnect(p_execution[index],&LightExecution::ShowRegularIntensityOneSequence, this, &LightController::ShowRegularIntensityOneSequence);
+
+    disconnect(p_execution[index],&LightExecution::CommandExecuted, this, &LightController::RegularExecutionFinished);
+}
+
+void LightController::DisconnectRGB(quint8 index)
+{
+    disconnect(p_execution[index],&LightExecution::ShowRGBColor, this, &LightController::ShowRGBColor);
+
+    disconnect(p_execution[index],&LightExecution::ShowRGBColorOne, this, &LightController::ShowRGBColorOne);
+
+    disconnect(p_execution[index],&LightExecution::ShowRGBColorOneSequence, this, &LightController::ShowRGBColorOneSequence);
+
+    disconnect(p_execution[index],&LightExecution::CommandExecuted, this, &LightController::RGBExecutionFinished);
+}
 
 
 
@@ -1450,6 +1825,36 @@ void LightController::TurnRGBState(QList<quint8> grpNumList, bool state)
 }
 
 
+void LightController::RegularExecutionFinished(quint8 exeNum, QList<quint8> grpNumList)
+{
+    //Unset Pins
+    UnsetRegularGroups(grpNumList);
+
+    //Disconnect Signals and Slots
+    DisconnectRegular(exeNum);
+
+    //Delete the Light Execution
+    delete p_execution[exeNum];
+    p_execution[exeNum] = nullptr;
+}
+
+void LightController::RGBExecutionFinished(quint8 exeNum, QList<quint8> grpNumList)
+{
+    //Unset Pins
+    UnsetRGBGroups(grpNumList);
+
+    //Disconnect Signals and Slots
+    DisconnectRGB(exeNum);
+
+    //Delete the Light Execution
+    delete p_execution[exeNum];
+    p_execution[exeNum] = nullptr;
+}
+
+
+
+
+
 
 bool LightController::CheckRegularGroupNumber(quint8 grpNum)
 {
@@ -1469,16 +1874,9 @@ bool LightController::CheckRGBGroupNumber(quint8 grpNum)
 
 void LightController::ResetLightController()
 {
-    numberFlash = 0;
-    timesFlashed = 0;
-    useRandomPins = false;
-    useSideColor = false;
-
     sequenceCount = 0;
     sequenceMaxCount = 0;
     sequenceMaxCountSet = false;
-
-    rgbFollowerFirstTime = false;
 
     doReset = false;
 
@@ -1486,207 +1884,17 @@ void LightController::ResetLightController()
 
 //Private Slots
 
-void LightController::RGBFlashOff()
-{
-    //Unconnect the Timer
-    disconnect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOff()));
-
-    if(useRandomPins)
-    {
-        quint8 i;
-        for(i = 0; i < flashGroupList.count(); i++)
-        {
-            ShowRGBColorOne(flashGroupList, rgbOff, randomPins, 0);
-
-            if(useSideColor)
-            {
-                ShowRGBColorOne(flashGroupList, rgbOff, randomPins, 1);
-                ShowRGBColorOne(flashGroupList, rgbOff, randomPins, -1);
-            }
-        }
-    }
-    else
-        ShowRGBColor(flashGroupList, rgbOff);
-
-    //Connect Timer to Turn Off LEDs
-    connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOn()));
-    p_rgbTimer->setInterval (flashTimeOff);
-    p_rgbTimer->start();
-}
-
-
-void LightController::RGBFlashOn()
-{
-    //Increament Flash Time when Off Happens
-    timesFlashed++;
-
-    //Unconnect the Timer
-    disconnect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOn()));
-
-    if(timesFlashed < numberFlash)
-    {
-        if(useRandomPins)
-        {
-            quint8 i;
-            for(i = 0; i < flashGroupList.count(); i++)
-            {
-                ShowRGBColorOne(flashGroupList, rgbFlashColor, randomPins, 0);
-
-                if(useSideColor)
-                {
-                    ShowRGBColorOne(flashGroupList, sideColor, randomPins, 1);
-                    ShowRGBColorOne(flashGroupList, sideColor, randomPins, -1);
-                }
-            }
-        }
-        else
-            ShowRGBColor(flashGroupList, rgbFlashColor);
-
-        //Connect Timer to Turn Off LEDs
-        connect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBFlashOff()));
-        p_rgbTimer->setInterval (flashTimeOn);
-        p_rgbTimer->start();
-
-        //Now Wait until timer runs out
-    }
-    else
-    {
-        isCommandRunning = false;
-        useRandomPins = false;
-        useSideColor = false;
-
-        if(doReset)
-            ResetLightController();
-    }
-}
-
-
-void LightController::RGBSequenceDelayDone()
-{
-    if(sequenceCount < sequenceMaxCount)
-    {
-        //qDebug() << "Sequence Timer Ended: sequence" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
-        //Light Up the Next Sequence
-        ShowRGBColorOneSequence(sequenceGroupList, rgbSequenceColor, sequenceCount);
-
-        //Connect Timer to Turn On Next LEDs in the Sequence
-        p_rgbTimer->start();
-    }
-    else
-    {
-        //Turn Off Lights
-        ShowRGBColor(sequenceGroupList, rgbOff);
-
-        //Disconnect the Timer
-        disconnect(p_rgbTimer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDone()));
-        isCommandRunning = false;
-
-        if(doReset)
-            ResetLightController();
-    }
-}
 
 
 
 
-void LightController::RegularFlashOff()
-{
-    //Unconnect the Timer
-    disconnect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
-
-    if(useRandomPins)
-    {
-        quint8 i;
-        for(i = 0; i < flashGroupList.count(); i++)
-        {
-            ShowRegularIntensityOne(flashGroupList, 0, randomPins, 0);
-
-            if(useSideColor)
-            {
-                ShowRegularIntensityOne(flashGroupList, 0, randomPins, 1);
-                ShowRegularIntensityOne(flashGroupList, 0, randomPins, -1);
-            }
-        }
-    }
-    else
-        ShowRegularIntensity(flashGroupList, 0);
-
-    //Connect Timer to Turn Off LEDs
-    connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOn()));
-    p_regularTimer->setInterval (flashTimeOff);
-    p_regularTimer->start();
-}
-
-void LightController::RegularFlashOn()
-{
-    //Increament Flash Time when Off Happens
-    timesFlashed++;
-
-    //Unconnect the Timer
-    disconnect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOn()));
-
-    if(timesFlashed < numberFlash)
-    {
-        if(useRandomPins)
-        {
-            quint8 i;
-            for(i = 0; i < flashGroupList.count(); i++)
-            {
-                ShowRegularIntensityOne(flashGroupList, flashIntensity, randomPins, 0);
-
-                if(useSideColor)
-                {
-                    ShowRegularIntensityOne(flashGroupList, flashSideIntensity, randomPins, 1);
-                    ShowRegularIntensityOne(flashGroupList, flashSideIntensity, randomPins, -1);
-                }
-            }
-        }
-        else
-            ShowRegularIntensity(flashGroupList, flashIntensity);
-
-        //Connect Timer to Turn Off LEDs
-        connect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
-        p_regularTimer->setInterval (flashTimeOn);
-        p_regularTimer->start();
-
-        //Now Wait until timer runs out
-    }
-    else
-    {
-        isCommandRunning = false;
-        useRandomPins = false;
-        useSideColor = false;
-
-        if(doReset)
-            ResetLightController();
-    }
-}
 
 
-void LightController::RegularSequenceDelayDone()
-{
-    if(sequenceCount < sequenceMaxCount)
-    {
-        //qDebug() << "Sequence Timer Ended: sequence" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
-        //Light Up the Next Sequence
-        ShowRegularIntensityOneSequence(sequenceGroupList, sequenceIntensity, sequenceCount);
 
-        //Connect Timer to Turn On Next LEDs in the Sequence
-        p_regularTimer->start();
-    }
-    else
-    {
-        //Turn Off Lights
-        ShowRegularIntensity(sequenceGroupList, 0);
 
-        //Disconnect the Timer
-        disconnect(p_regularTimer, SIGNAL(timeout()), this, SLOT(RegularSequenceDelayDone()));
-        isCommandRunning = false;
 
-        if(doReset)
-            ResetLightController();
-    }
-}
+
+
 
 
 

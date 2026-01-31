@@ -250,7 +250,6 @@ HookOfTheReaper::HookOfTheReaper(QWidget *parent)
 
     //Get the Number of Devices, after Loading Up the Save Data
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();
-    numberComDevices = p_comDeviceList->GetNumberComPortDevices();
 
     //Start the Hooker Engine. If no Light Guns Saved, then must use INI Files
     p_hookEngine->Start ();
@@ -472,47 +471,6 @@ void HookOfTheReaper::Add_Light_Controller_Window_Closed()
 }
 
 
-
-void HookOfTheReaper::on_actionAdd_Device_triggered()
-{
-    if (!p_aCDW)
-    {
-        numberComDevices = p_comDeviceList->GetNumberComPortDevices();
-
-
-        if(engineRunning)
-        {
-            //Stop the Hooker Engine
-            p_hookEngine->Stop ();
-            engineRunning = false;
-            ui->statusbar->showMessage ("Stopped");
-        }
-
-        p_aCDW = new addComDeviceWindow(p_comDeviceList, this);
-        p_aCDW->setAttribute(Qt::WA_DeleteOnClose);
-        connect(p_aCDW, SIGNAL(accepted()), this, SLOT(Add_Com_Device_Window_Closed()));
-        connect(p_aCDW, SIGNAL(rejected()), this, SLOT(Add_Com_Device_Window_Closed()));
-    }
-    p_aCDW->exec ();
-}
-
-void HookOfTheReaper::Add_Com_Device_Window_Closed()
-{
-    quint8 newNumberComDevices = p_comDeviceList->GetNumberComPortDevices();
-
-    if(newNumberComDevices > numberComDevices)
-    {
-        p_comDeviceList->SaveComDeviceList();
-        numberComDevices = newNumberComDevices;
-    }
-
-    numberLightGuns = p_comDeviceList->GetNumberLightGuns();
-
-    p_hookEngine->Start ();
-    engineRunning = true;
-    ui->statusbar->showMessage ("Running");
-}
-
 void HookOfTheReaper::on_actionExit_triggered()
 {
     //Closed Down the hookOfTheReaper Close, Which Closes the Program
@@ -555,8 +513,6 @@ void HookOfTheReaper::Edit_Light_Gun_Window_Closed()
     //Always save light gun data after the edit window closes
     p_comDeviceList->SaveLightGunList();
 
-    //numberComDevices = p_comDeviceList->GetNumberComPortDevices();
-    numberComDevices = 0;
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();
 
     //To be safe, reload settings to Light guns
@@ -612,49 +568,6 @@ void HookOfTheReaper::Edit_Light_Controller_Window_Closed()
     ui->statusbar->showMessage ("Running");
 }
 
-
-void HookOfTheReaper::on_actionEdit_Device_triggered()
-{
-    quint8 numComDevices = p_comDeviceList->GetNumberComPortDevices();
-
-    if(numComDevices == 0)
-    {
-        QMessageBox::warning (this, "No Saved COM Devices", "There are no saved COM Port Devices to edit. Please add a COM Device first.");
-    }
-    else
-    {
-        if (!p_eCDW)
-        {
-            if(engineRunning)
-            {
-                //Stop the Hooker Engine
-                p_hookEngine->Stop ();
-                engineRunning = false;
-                ui->statusbar->showMessage ("Stopped");
-            }
-
-            p_eCDW = new editComDeviceWindow(p_comDeviceList, this);
-            p_eCDW->setAttribute(Qt::WA_DeleteOnClose);
-            connect(p_eCDW, SIGNAL(accepted()), this, SLOT(Edit_Com_Device_Window_Closed()));
-            connect(p_eCDW, SIGNAL(rejected()), this, SLOT(Edit_Com_Device_Window_Closed()));
-        }
-        p_eCDW->exec ();
-    }
-}
-
-void HookOfTheReaper::Edit_Com_Device_Window_Closed()
-{
-    //Always save COM device data after the edit window closes
-    p_comDeviceList->SaveComDeviceList();
-
-    numberComDevices = p_comDeviceList->GetNumberComPortDevices();
-    numberLightGuns = p_comDeviceList->GetNumberLightGuns();
-
-    p_hookEngine->Start ();
-    engineRunning = true;
-    ui->statusbar->showMessage ("Running");
-}
-
 void HookOfTheReaper::on_actionPlayer_Assignment_triggered()
 {
     quint8 numLightGuns = p_comDeviceList->GetNumberLightGuns();
@@ -689,7 +602,6 @@ void HookOfTheReaper::Player_Assign_Window_Closed()
     //Always save player assignment data after the player assignment window closes
     p_comDeviceList->SavePlayersAss();
 
-    numberComDevices = p_comDeviceList->GetNumberComPortDevices();
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();
 
     p_hookEngine->Start ();
@@ -720,7 +632,6 @@ void HookOfTheReaper::on_actionSettings_triggered()
 
 void HookOfTheReaper::SettingsWindowClosed()
 {
-    numberComDevices = p_comDeviceList->GetNumberComPortDevices();
     numberLightGuns = p_comDeviceList->GetNumberLightGuns();
 
     //Re-Load Settings in Hooker Engine

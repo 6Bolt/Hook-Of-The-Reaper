@@ -2711,7 +2711,6 @@ void LightGun::LoadDefaultLGCommands()
 QStringList LightGun::SplitLoadedCommands(QString commandList)
 {
     QStringList cmdSplit, returnList;
-    quint8 cmdCount;
     QString goodCMD;
     QString frontPart;
     bool isError = false;

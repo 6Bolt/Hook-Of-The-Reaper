@@ -125,7 +125,7 @@ void settingsWindow::on_cancelPushButton_clicked()
 void settingsWindow::CheckAndSaveSetting()
 {
     QString tempRTD;
-    bool isNumber, isNumberAmmo, isNumberSlide;
+    bool isNumber;
 
     defaultLG = ui->useDefaultLGCheckBox->checkState ();
     multiThreading = ui->useMultiThreadCheckBox->checkState ();

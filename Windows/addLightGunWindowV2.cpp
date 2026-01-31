@@ -750,7 +750,7 @@ bool addLightGunWindowV2::IsValidData()
 
     if(defaultLGIndex == JBGUN4IR || defaultLGIndex == OPENFIRE)
     {
-        bool isNumber;
+        //bool isNumber;
         //QString analString = ui->analogLineEdit->text();
         quint16 analStrengthBig = DEFAULTANALOGSTRENGTH;  //analString.toUInt (&isNumber);
         //if(!isNumber)

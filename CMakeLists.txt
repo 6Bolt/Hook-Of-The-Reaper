@@ -33,11 +33,11 @@ qt_add_executable(HookOfTheReaper
     ini/default.ini
     ini/MAME/digdug.ini ini/default.ini
     defaultLG/hotd4.txt defaultLG/jp.txt defaultLG/rambo.txt
-    COMDeviceList/ComDeviceList.cpp COMDeviceList/ComDeviceList.h COMDeviceList/ComPortDevice.cpp COMDeviceList/ComPortDevice.h COMDeviceList/LightGun.cpp COMDeviceList/LightGun.h
+    COMDeviceList/ComDeviceList.cpp COMDeviceList/ComDeviceList.h   COMDeviceList/LightGun.cpp COMDeviceList/LightGun.h
     HookerEngine/HookCOMPort.cpp HookerEngine/HookCOMPort.h HookerEngine/HookerEngine.cpp HookerEngine/HookerEngine.h HookerEngine/HookTCPSocket.cpp HookerEngine/HookTCPSocket.h
-    Windows/addComDeviceWindow.cpp Windows/addComDeviceWindow.h Windows/addComDeviceWindow.ui
 
-    Windows/editComDeviceWindow.cpp Windows/editComDeviceWindow.h Windows/editComDeviceWindow.ui
+
+
 
     Windows/playerAssignWindow.cpp Windows/playerAssignWindow.h Windows/playerAssignWindow.ui
     Windows/settingsWindow.cpp Windows/settingsWindow.h Windows/settingsWindow.ui
@@ -64,6 +64,7 @@ qt_add_executable(HookOfTheReaper
     COMDeviceList/PacDriveControl.h COMDeviceList/PacDriveControl.cpp
     HookerEngine/HookLight.h HookerEngine/HookLight.cpp
     HookerEngine/LightCommand.h HookerEngine/LightCommand.cpp
+    COMDeviceList/LightExecution.h COMDeviceList/LightExecution.cpp
 
 )
 
@@ -122,7 +123,7 @@ install(SCRIPT ${deploy_script})
 
 set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/data/icons/icons.rc")
 
-
+target_link_options(HookOfTheReaper PRIVATE "-Wl,--start-group")
 
 #target_link_libraries(HookOfTheReaper
 #    PRIVATE

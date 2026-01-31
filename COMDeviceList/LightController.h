@@ -6,9 +6,14 @@
 #include <QList>
 #include <QFile>
 #include <QTextStream>
-#include <QMessageBox>
-#include <QTimer>
-#include <QRandomGenerator>
+#include <QDebug>
+//#include <QMessageBox>
+//#include <QTimer>
+//#include <QRandomGenerator>
+
+
+
+#include "LightExecution.h"
 
 #include "../Global.h"
 
@@ -57,9 +62,10 @@ public:
 
     quint8 GetID() { return id; }
 
+
+
+
     //Loading Group File Functions
-
-
 
     //Load Group File
     void LoadGroupFile();
@@ -82,6 +88,41 @@ public:
     //Load RGB Color from Group File
     bool LoadRGBColor(QString line);
 
+
+    //Builds The Groups Array Positions and Array Byte Data
+
+    //Build Regular Lights Group Byte Data if Bit Banging
+    void BuildRegularGroupData();
+
+    //Build RGB Lights Group Byte Data if Bit Banging
+    void BuildRGBGroupData();
+
+    //Prints out the Groups
+    void PrintGroupData();
+
+
+    //Regular Group Checking and Setting/Unsetting
+
+    //Check Regular Groups Against Used Pins
+    bool CheckRegularGroups(QList<quint8> groupNumber);
+
+    //Set Regular Groups Against Used Pins
+    void SetRegularGroups(QList<quint8> groupNumber);
+
+    //Unset Regular Groups Against Used Pins
+    void UnsetRegularGroups(QList<quint8> groupNumber);
+
+
+    //RGB Group Checking and Setting/Unsetting
+
+    //Check RGB Groups Against Used Pins
+    bool CheckRGBGroups(QList<quint8> groupNumber);
+
+    //Set RGB Groups Against Used Pins
+    void SetRGBGroups(QList<quint8> groupNumber);
+
+    //Unset RGB Groups Against Used Pins
+    void UnsetRGBGroups(QList<quint8> groupNumber);
 
 
 
@@ -129,6 +170,28 @@ public:
     void FollowerRandomRGBLights(QList<quint8> grpNumList, quint16 data);
 
 
+    //Connect Execution Signals and Slots
+
+    //Connect for Regular Lights
+    void ConnectRegular(quint8 index);
+
+    //Connect for RGB Lights
+    void ConnectRGB(quint8 index);
+
+
+    //Disconnect Execution Signals and Slots
+
+    //Disconnect for Regular Lights
+    void DisconnectRegular(quint8 index);
+
+    //Disconnect for RGB Lights
+    void DisconnectRGB(quint8 index);
+
+
+
+public slots:
+
+
     //Regular Lights Changing Intensity
 
     //Set Intensity for Regular Light Groups
@@ -153,6 +216,7 @@ public:
     void ShowRGBColorOneSequence(QList<quint8> grpNumList, RGBColor color, quint8 index);
 
 
+    //Change States for RGB and Regular
 
     //Turn State for a Group of Regular
     void TurnRegularState(QList<quint8> grpNumList, bool state);
@@ -161,7 +225,19 @@ public:
     void TurnRGBState(QList<quint8> grpNumList, bool state);
 
 
+    //When an Execution has Finished
 
+    //Regular Lights Execution has Finished
+    void RegularExecutionFinished(quint8 exeNum, QList<quint8> grpNumList);
+
+    //RGB Lights Execution has Finished
+    void RGBExecutionFinished(quint8 exeNum, QList<quint8> grpNumList);
+
+
+
+public:
+
+    //Check Regular and RGB Groups Exists or Not
 
     //Check Group Number for Regular
     bool CheckRegularGroupNumber(quint8 grpNum);
@@ -169,13 +245,21 @@ public:
     //Check Group Number for RGB
     bool CheckRGBGroupNumber(quint8 grpNum);
 
+
+
+    //Reset Light Controller when Game Ends
+
     //Reset Light Controller when Game Ends
     void ResetLightController();
 
     //Set the Do Reset Flag to Reset after Command
     void DoReset() { doReset = true; }
 
+
+
 signals:
+
+    //Signals to PacDriveControl to Change Intensity or State
 
     //Set 1 Light Intensity
     void SetLightIntensity(quint8 id, quint8 pin, quint8 intensity);
@@ -186,7 +270,11 @@ signals:
     //Set RGB Lights Intensity
     void SetRGBLightIntensity(const quint8 &id, const RGBPins &pins, const RGBColor &color);
 
+    //Set Pin State
     void SetPinState(quint8 id, quint8 pin, bool state);
+
+
+    //Signal to Show Error Message
 
     //Show Error Message Box in Main Thread
     void ShowErrorMessage(const QString &title, const QString &message);
@@ -194,41 +282,22 @@ signals:
 
 private slots:
 
-    void RGBFlashOff();
-    void RGBFlashOn();
 
-    void RGBSequenceDelayDone();
 
-    void RegularFlashOff();
-    void RegularFlashOn();
 
-    void RegularSequenceDelayDone();
-
-    //Time out for Regular Timer
-    //void RegularTimeOut();
-
-    //Time out for RGB Timer
-    //void RGBTimeOut();
 
 
 private:
 
     //Private Varibles
 
+    //Light Controller Info
+
     //Light Controller List Number
     quint8                          lightCntlrNum;
 
     //Maker of Light Controller
     quint8                          lightCntlrMaker;
-
-    //Number of Regular LEDs
-    quint8                          numberLEDs;
-
-    //Number of RGB LEDs
-    quint8                          numberRGBLEDs;
-
-    //Max Brightness of LEDs
-    quint8                          maxBrightness;
 
     //Ultimarc Data Struct
     UltimarcData                    dataUltimarc;
@@ -239,44 +308,46 @@ private:
     //Group File with Path
     QString                         groupFilePath;
 
+    //Number of Pins on Device
+    quint8                          numberPins;
+
+    //Number of Group Byte in an Array
+    quint8                          numberGroups;
+
+    //Number of Regular LEDs
+    quint8                          numberLEDs;
+
+    //Number of RGB LEDs
+    quint8                          numberRGBLEDs;
+
+    //Max Brightness of LEDs
+    quint8                          maxBrightness;
+
+    //Tells Light Controller to Reset when Command Finishes
+    bool                            doReset;
+
+    //Off Color
+    RGBColor                        rgbOff;
+
+
+
+
+    //Execution List
+
+    //Execution Array
+    LightExecution*                 p_execution[NUMBEREXECUTIONS];
+
+    //Where the Next Execution Goes
+    quint8                          executionCount;
+
+
+
+
+
+    //Group File Data
+
     //Group File Loaded Correctly
     bool                            didGroupFileLoad;
-
-    //Groups Regular LED Map
-    QMap<quint8,QList<quint8>>      regularLEDMap;
-
-    //Groups RGB LED Map
-    QMap<quint8,QList<quint8>>      rgbLEDMap;
-
-    //Number of RGB Pins in a Group
-    QMap<quint8,quint8>             regularPinsCount;
-
-    //Number of RGB Pins in a Group
-    QMap<quint8,quint8>             rgbPinsCount;
-
-    //Brightness for Regular LED Groups
-    QMap<quint8,quint8>             regularBrightnessMap;
-
-    //Brightness for RGB LED Groups
-    QMap<quint8,quint8>             rgbBrightnessMap;
-
-    //Regular LED Group List
-    QList<quint8>                   regularLEDGroupList;
-
-    //RGB LED Group List
-    QList<quint8>                   rgbLEDGroupList;
-
-    //RGB 8bit Color Map
-    QMap<QString,RGBColor>          rgbColorMap;
-
-    //Used Pins List
-    QList<quint8>                   usedPinsList;
-
-    //String List of Colors
-    QStringList                     colorNameList;
-
-    //Number of Colors Stored
-    quint16                         numberColors;
 
     //If RGB Fast Mode is Enabled
     bool                            rgbFastMode;
@@ -287,53 +358,87 @@ private:
     //If No RGB LEDs Group
     bool                            noRGBGroups;
 
+    //Groups Regular LED Map
+    QMap<quint8,QList<quint8>>      regularLEDMap;
 
-    //Timer for Regular Lights
-    QTimer                          *p_regularTimer;
+    //Groups RGB LED Map
+    QMap<quint8,QList<quint8>>      rgbLEDMap;
 
-    //Timer for RGB Lights
-    QTimer                          *p_rgbTimer;
+    //Regular LED Group List
+    QList<quint8>                   regularLEDGroupList;
 
-    //If Command is is Running
-    bool                            isCommandRunning;
+    //RGB LED Group List
+    QList<quint8>                   rgbLEDGroupList;
+
+    //RGB 8bit Color Map
+    QMap<QString,RGBColor>          rgbColorMap;
+
+    //String List of Colors
+    QStringList                     colorNameList;
+
+    //Number of Colors Stored
+    quint16                         numberColors;
+
+    //Used Pins List
+    QList<quint8>                   usedPinsList;
+
+    //Not Used
+
+    //Brightness for Regular LED Groups
+    //QMap<quint8,quint8>             regularBrightnessMap;
+
+    //Brightness for RGB LED Groups
+    //QMap<quint8,quint8>             rgbBrightnessMap;
+
+    //Number of Regular Pins in a Group
+    //QMap<quint8,quint8>             regularPinsCount;
+
+    //Number of RGB Pins in a Group
+    //QMap<quint8,quint8>             rgbPinsCount;
+
+
+
+
+
+    //Check if Pins are Being Used
+
+    //Used Pins, Being Used in a Command
+    quint8                           *p_usedPins;
+
+
+    //Group Array Position and Byte Data
+
+    //Regular Lights Group - Array Position Map
+    QMap<quint8,QList<quint8>>      regularArrayPosition;
+
+    //Regular Lights Group - Array Data
+    QMap<quint8,QList<quint8>>      regularArrayData;
+
+    //RGB Lights Group - Array Position Map
+    QMap<quint8,QList<quint8>>      rgbArrayPosition;
+
+    //RGB Lights Group - Array Data
+    QMap<quint8,QList<quint8>>      rgbArrayData;
+
+
+
+
+    //Commands Varible
+
+    //Sequence RGB
+    quint8                          sequenceCount;
+    quint8                          sequenceMaxCount;
+    bool                            sequenceMaxCountSet;
+
+    //Follower RGB
+    RGBColor                        rgbFollowerColor;
+
+
+    //Misc
 
     //Error Title
     QString                         title;
 
-    //Tells Light Controller to Reset when Command Finishes
-    bool                            doReset;
-
-    //Flash RGB Group List
-    //RGB LED Group List
-    QList<quint8>                   flashGroupList;
-    quint8                          numberFlash;
-    quint8                          timesFlashed;
-    quint16                         flashTimeOn;
-    quint16                         flashTimeOff;
-    RGBColor                        rgbFlashColor;
-    RGBColor                        rgbOff;
-    QList<quint8>                   randomPins;
-    QList<quint8>                   randomPinsPOffset;
-    QList<quint8>                   randomPinsNOffset;
-    bool                            useRandomPins;
-    bool                            useSideColor;
-    RGBColor                        sideColor;
-    quint8                          flashIntensity;
-    quint8                          flashSideIntensity;
-
-    //Sequence RGB
-    QList<quint8>                   sequenceGroupList;
-    quint16                         sequenceDelay;
-    quint8                          sequenceCount;
-    quint8                          sequenceMaxCount;
-    bool                            sequenceMaxCountSet;
-    RGBColor                        rgbSequenceColor;
-    quint8                          sequenceIntensity;
-
-    //Follower RGB
-    //QList<quint8>                   rgbFollowerGroupList;
-    RGBColor                        rgbFollowerColor;
-    bool                            rgbFollowerFirstTime;
 };
 
 #endif // LIGHTCONTROLLER_H

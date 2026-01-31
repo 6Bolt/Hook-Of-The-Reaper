@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.2.6"
+#define VERSION                 "1.2.7"
 #define VERSIONMAIN             1
 #define VERSIONMID              2
 #define VERSIONLAST             4
@@ -788,6 +788,11 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 #define FOLLOWERREGARGS         1
 #define FOLLOWERREGCMD          0
 
+
+//Execution List
+#define NUMBEREXECUTIONS        256
+
+
 //Not Used Yet, But Needed for Future
 //#define DEFAULTCDDIR            "defaultCD"
 
@@ -934,7 +939,7 @@ struct UltimarcData
 struct LightControllerTop
 {
     quint8 groupNumber;
-    quint8 defaultBrightness;
+    //quint8 defaultBrightness;
     bool isDataSet;
 };
 

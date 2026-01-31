@@ -19,11 +19,15 @@
 
 #include "../Global.h"
 
-#include "Windows.h"
+//#include "Windows.h"
 
+//Light Gun Class
 #include "LightGun.h"
+
+//Light Controller Class
 #include "LightController.h"
-#include "ComPortDevice.h"
+
+//Ultimarc PacDrive SDK
 #include "PacDriveControl.h"
 
 class ComDeviceList : public QObject
@@ -61,17 +65,12 @@ public:
     void            AddLightController(LightController const &other);
     void            AddLightController(UltimarcData dataU);
 
-    //Adds a COM Device in the List
-    void            AddComPortDevice(ComPortDevice const &cpdMember);
-    void            AddComPortDevice(QString cpdString, quint8 cpdNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow);
-
     //Copies Available COM Ports
     void            CopyAvailableComPortsArray(bool *targetArray, quint8 size);
 
     //Get the Number of Certain Devices
     quint8          GetNumberLightGuns();
     quint8          GetNumberLightControllers();
-    quint8          GetNumberComPortDevices();
 
     //Switch COM Ports, Used in Edit Window
     void            SwitchComPortsInList(quint8 oldPort, quint8 newPort);
@@ -82,7 +81,6 @@ public:
     //Delete a Light Gun, Light Controller, or COM device
     void            DeleteLightGun(quint8 lgNumber);
     void            DeleteLightController(quint8 lcNumber);
-    void            DeleteComDevice(quint8 cdNumber);
 
     //Player's Light Gun Assignment, Deassignment, or Get Assignment
     bool            AssignPlayerLightGun(quint8 playerNum, quint8 lgNum);
@@ -94,8 +92,6 @@ public:
     void            SaveLightGunList();
     void            LoadLightGunList();
 
-    //Load V2 Light Gun Saved Data
-    void            LoadLightGunListV2();
     //Load V3 Light Gun Saved Data
     void            LoadLightGunListV3();
 
@@ -104,15 +100,10 @@ public:
     void            SavePlayersAss();
     void            LoadPlayersAss();
 
-    //Save or Load COM Device to/from a File
-    void            SaveComDeviceList();
-    void            LoadComDeviceList();
-
     //Save or Load Settings to/from a File
     void            SaveSettings();
     void            LoadSettings();
 
-    void            LoadSettingsV1();
     void            LoadSettingsV2();
 
     //Save or Load Light Controllers
@@ -148,10 +139,6 @@ public:
     bool            GetEnableNewGameFileCreation();
     void            SetEnableNewGameFileCreation(bool enableNGFC);
 
-    //Enable and Delay for Reamper Ammo 0 Delay
-    //quint8          GetReaperAmmo0Delay(bool *isAmmo0DelayEnabled, quint16 *reaperHST);
-    //void            SetReaperAmmo0Delay(bool isAmmo0DelayEnabled, quint8 delayTime, quint16 reaperHST);
-
     //Get TCP Port Player Info
     qint8           GetTCPPortPlayerInfo(quint16 portNumber);
     void            SetTCPPortPlayerInfo(quint16 portNumber, quint8 playerInfo);
@@ -160,8 +147,6 @@ public:
 
     //Update Light Gun Settings New and Old
     void            UpdateLightGunWithSettings();
-    void            UpdateLightGunWithSettingsOld();
-
 
     //Copies Used Dip Players Array
     void            CopyUsedDipPlayersArray(bool *targetArray, quint8 size, quint8 hubComPort);
@@ -213,9 +198,6 @@ public:
     //Light Controllers List
     LightController*    p_lightCntlrList[MAXLIGHTCONTROLLERS];
 
-    //COM Devices List
-    ComPortDevice*      p_comPortDeviceList[MAXCOMPORTS];
-
     //PacDrive Controller
     PacDriveControl*    p_pacDrive;
 
@@ -237,7 +219,6 @@ private:
     //Number of Light Guns & COM Devices
     quint8              numberLightGuns;
     quint8              numberLightCntrls;
-    quint8              numberComPortDevices;
 
     //Player's Light Gun Assignment
     quint8              playersLightGun[MAXPLAYERLIGHTGUNS];

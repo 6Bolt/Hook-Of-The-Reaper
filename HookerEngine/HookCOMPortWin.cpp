@@ -174,8 +174,6 @@ bool HookCOMPortWin::IsUSBHIDConnected(quint8 playerNum)
         //If Serial COM Port Connection Failed
         if (comPortArray[comPortNum] == INVALID_HANDLE_VALUE)
         {
-            COMSTAT status;
-            DWORD errors;
             quint16 lastError = GetLastError();
 
             //qDebug() << "lastError: " << lastError;

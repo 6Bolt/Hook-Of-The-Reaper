@@ -73,11 +73,7 @@ public:
     //Number of Ultrimarc Devices Filtered
     qint8                       numberUltimarcDevices;
 
-    QMap<quint8,quint8>         idToIndex;
-
     quint8                      devicesInList;
-
-    QList<quint8>               idList;
 
     //Ultimarc Device Data
     UltimarcData                dataUltimarc[ULTIMARCMAXDEVICES];

@@ -803,8 +803,6 @@ void editLightGunWindowV2::on_deletePushButton_clicked()
     quint8 dlgIndex = ui->savedLightGunsComboBox->currentIndex ();
     quint8 i;
     QString tempQS;
-    quint8 hupComPort;
-
 
     //Delete Selected Light Gun
     p_comDeviceList->DeleteLightGun (dlgIndex);
@@ -1391,7 +1389,6 @@ bool editLightGunWindowV2::IsDefaultLightGun()
 void editLightGunWindowV2::EditLightGun()
 {
     quint8 oldComPort;
-    quint8 hupComPort;
     bool reloadNR = false;
     bool reloadDisable = false;
     SupportedRecoils recoilOptions;
@@ -2421,17 +2418,16 @@ void editLightGunWindowV2::ProcessHIDInfo()
 qint16 editLightGunWindowV2::FindLightGunHID(quint8 lgNum)
 {
     //Check if Light Gun is Not USB, if so return -1
-    //if(!p_comDeviceList->p_lightGunList[lgNum]->IsLightGunUSB () || numberHIDDevices == 0)
     if(p_comDeviceList->p_lightGunList[lgNum]->GetOutputConnection() != USBHID || numberHIDDevices == 0)
         return -1;
 
-    bool isSerialNumber;
+
     qint16 matchNum = -1;
     quint8 numberMatches = 0;
 
     HIDInfo tempHIDInfo = p_comDeviceList->p_lightGunList[lgNum]->GetUSBHIDInfo ();
 
-    //qDebug() << "isSerialNumber: " << isSerialNumber << " numberHIDDevices: " << numberHIDDevices << " tempHIDInfo.serialNumber: " << tempHIDInfo.serialNumber;
+    //qDebug() << " numberHIDDevices: " << numberHIDDevices << " tempHIDInfo.serialNumber: " << tempHIDInfo.serialNumber;
 
     for(quint16 i = 0; i < numberHIDDevices; i++)
     {

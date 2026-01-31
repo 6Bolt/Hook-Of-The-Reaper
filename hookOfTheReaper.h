@@ -23,20 +23,18 @@
 #include "Windows/addLightControllerWindow.h"
 #include "Windows/editLightControllerWindow.h"
 
-#include "Windows/addComDeviceWindow.h"
-#include "Windows/editComDeviceWindow.h"
-
 #include "Windows/playerAssignWindow.h"
 #include "Windows/settingsWindow.h"
 #include "Windows/aboutWindow.h"
 #include "Windows/testComPortWindow.h"
 
-
+//Devices List
 #include "COMDeviceList/ComDeviceList.h"
 
+//Hooker Engine
 #include "HookerEngine/HookerEngine.h"
 
-
+//Windows Include File
 #include <Windows.h>
 
 
@@ -96,12 +94,6 @@ private slots:
     //On Close of Add Light Controller Window
     void Add_Light_Controller_Window_Closed();
 
-    //Open Add COM Device Window
-    void on_actionAdd_Device_triggered();
-
-    //On Close of Add Light Gun Window
-    void Add_Com_Device_Window_Closed();
-
     //Close Main Window
     void on_actionExit_triggered();
 
@@ -116,12 +108,6 @@ private slots:
 
     //On Close of Edit Light Controller Window
     void Edit_Light_Controller_Window_Closed();
-
-    //Open Edit COM Device Window
-    void on_actionEdit_Device_triggered();
-
-    //On Close of Add Light Gun Window
-    void Edit_Com_Device_Window_Closed();
 
     //Assign Light Guns to a Player
     void on_actionPlayer_Assignment_triggered();
@@ -204,22 +190,16 @@ private:
     //Add Light Gun Window QPointer
     QPointer<addLightGunWindowV2>   p_aLGW;
 
-    //Add COM Port Device Window QPointer
-    QPointer<addComDeviceWindow>    p_aCDW;
-
     //Edit Light Gun Window QPointer
     QPointer<editLightGunWindowV2>  p_eLGW;
 
-    //Edit COM Port Device Window QPointer
-    QPointer<editComDeviceWindow>   p_eCDW;
-
-    //Edit COM Port Device Window QPointer
+    //Player Assignment Window QPointer
     QPointer<playerAssignWindow>    p_pAW;
 
-    //Edit COM Port Device Window QPointer
+    //Settings Window QPointer
     QPointer<settingsWindow>        p_setW;
 
-    //Edit COM Port Device Window QPointer
+    //About Window QPointer
     QPointer<aboutWindow>           p_aboutW;
 
     //Test COM Port Window QPointer
@@ -237,7 +217,6 @@ private:
     //Number of Saved Light Guns & Other COM Devices Max is 255 (2^8)
     quint8                          numberLightGuns;
     quint8                          numberLightCntrls;
-    quint8                          numberComDevices;
 
     //Used to Display Text on the Text Browser
     QStringList                     displayText;
