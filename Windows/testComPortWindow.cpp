@@ -1,5 +1,5 @@
 #include "testComPortWindow.h"
-#include "ui_testComPortWindow.h"
+#include "Windows/ui_testComPortWindow.h"
 
 testComPortWindow::testComPortWindow(ComDeviceList *cdList, QWidget *parent)
     : QDialog(parent)

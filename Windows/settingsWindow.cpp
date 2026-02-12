@@ -1,5 +1,5 @@
 #include "settingsWindow.h"
-#include "ui_settingsWindow.h"
+#include "Windows/ui_settingsWindow.h"
 
 //Constructor
 settingsWindow::settingsWindow(ComDeviceList *cdList, QWidget *parent)

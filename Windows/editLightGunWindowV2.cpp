@@ -1,5 +1,5 @@
 #include "editLightGunWindowV2.h"
-#include "ui_editLightGunWindowV2.h"
+#include "Windows/ui_editLightGunWindowV2.h"
 #include "../Global.h"
 
 editLightGunWindowV2::editLightGunWindowV2(ComDeviceList *cdList, QWidget *parent)

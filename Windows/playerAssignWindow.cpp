@@ -1,5 +1,5 @@
 #include "playerAssignWindow.h"
-#include "ui_playerAssignWindow.h"
+#include "Windows/ui_playerAssignWindow.h"
 
 //Constructor
 playerAssignWindow::playerAssignWindow(ComDeviceList *cdList, QWidget *parent)

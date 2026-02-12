@@ -1,5 +1,5 @@
 #include "addLightControllerWindow.h"
-#include "ui_addLightControllerWindow.h"
+#include "Windows/ui_addLightControllerWindow.h"
 #include "../Global.h"
 
 

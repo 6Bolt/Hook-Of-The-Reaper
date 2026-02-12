@@ -1,5 +1,5 @@
 #include "editLightControllerWindow.h"
-#include "ui_editLightControllerWindow.h"
+#include "Windows/ui_editLightControllerWindow.h"
 
 editLightControllerWindow::editLightControllerWindow(ComDeviceList *cdList, QWidget *parent)
     : QDialog(parent)
