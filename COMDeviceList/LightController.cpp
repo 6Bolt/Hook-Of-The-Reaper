@@ -30,7 +30,13 @@ LightController::LightController(quint8 cntlrNum, LightController const &other, 
 
     noRGBGroups = other.noRGBGroups;
 
+    rgbColorMapMap = other.rgbColorMapMap;
+
     didGroupFileLoad = false;
+
+    defaultBrightness = 255;
+
+    isBackground = false;
 
     title = "Light Controller Group File Error";
 
@@ -54,6 +60,9 @@ LightController::LightController(quint8 cntlrNum, LightController const &other, 
     for(i = 0; i < numberGroups; i++)
         p_usedPins[i] = 0;
 
+    for(i = 0; i < MAXGAMEPLAYERS; i++)
+        backgroundActive[i] = false;
+
     //Load the Group File
     LoadGroupFile();
 
@@ -74,6 +83,8 @@ LightController::LightController(quint8 cntlrNum, LightController const &other, 
 LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *parent)
     : QObject{parent}
 {
+    initDone = false;
+
     lightCntlrNum = cntlrNum;
 
     dataUltimarc = dataU;
@@ -82,7 +93,7 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
 
     //qDebug() << "Light Controller ID:" << id;
 
-    lightCntlrMaker = ULTIMARC; 
+    lightCntlrMaker = ULTIMARC;
 
     numberLEDs = ULTIMARCTYPELEDCOUNT[dataUltimarc.type];
 
@@ -100,7 +111,13 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
 
     didGroupFileLoad = false;
 
+    defaultBrightness = 255;
+
+    isBackground = false;
+
     title = "Light Controller Group File Error";
+    titleGF = "Light Controller Game File Error";
+    titleC = "Light Controller Color Error";
 
     rgbOff.r = 0;
     rgbOff.g = 0;
@@ -126,6 +143,9 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
     for(i = 0; i < NUMBEREXECUTIONS; i++)
         p_execution[i] = nullptr;
 
+    for(i = 0; i < MAXGAMEPLAYERS; i++)
+        backgroundActive[i] = false;
+
     executionCount = 0;
 
     //Load the Group File
@@ -133,6 +153,8 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
 
     if(didGroupFileLoad)
     {
+        //qDebug() << "Creating Group Pin Data";
+
         //Build Group Data for Regular and RGB
         BuildRegularGroupData();
         BuildRGBGroupData();
@@ -140,8 +162,7 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
         //PrintGroupData();
     }
 
-
-
+    initDone = true;
 }
 
 
@@ -163,6 +184,9 @@ LightController::~LightController()
 
     //Used Pins Array
     delete[] p_usedPins;
+
+    TurnOffLights();
+    ResetLightController();
 }
 
 
@@ -187,6 +211,8 @@ void LightController::CopyLightController(LightController const &lcMember)
 
     rgbLEDMap = lcMember.rgbLEDMap;
 
+    rgbColorMapMap = lcMember.rgbColorMapMap;
+
     rgbFastMode = false;
 
     noRegularGroups = false;
@@ -194,6 +220,8 @@ void LightController::CopyLightController(LightController const &lcMember)
     noRGBGroups = false;
 
     didGroupFileLoad = false;
+
+    defaultBrightness = lcMember.defaultBrightness;
 
     title = "Light Controller Group File Error";
 
@@ -234,7 +262,7 @@ void LightController::CopyLightController(LightController const &lcMember)
     }
 }
 
-void LightController::SetGroupFile(QString filePath)
+bool LightController::SetGroupFile(QString filePath)
 {
     groupFilePath = filePath;
     dataUltimarc.groupFile = filePath;
@@ -256,7 +284,89 @@ void LightController::SetGroupFile(QString filePath)
         BuildRegularGroupData();
         BuildRGBGroupData();
     }
+    else
+        return didGroupFileLoad;
+
+    if(!noRegularGroups && didGroupFileLoad)
+    {
+        quint8 i;
+
+        p_pinsState = new quint8[numberGroups];
+
+        for(i = 0; i < numberGroups; i++)
+            p_pinsState[i] = 0xFF;
+
+        if(dataUltimarc.type == NANOLED)
+            p_pinsState[numberGroups-1] = 0x0F;
+
+        //Conver Regular Lights from Intensity to State
+        ConvertRegularToState();
+    }
+
+    return didGroupFileLoad;
 }
+
+bool LightController::ReloadGroupFile()
+{
+    rgbFastMode = false;
+
+    noRegularGroups = false;
+
+    noRGBGroups = false;
+
+    didGroupFileLoad = false;
+
+    //Load the Group File
+    LoadGroupFile();
+
+    if(didGroupFileLoad)
+    {
+        //Build Group Data for Regular and RGB
+        BuildRegularGroupData();
+        BuildRGBGroupData();
+    }
+    else
+        return didGroupFileLoad;
+
+
+    if(!noRegularGroups && didGroupFileLoad)
+    {
+        quint8 i;
+
+        p_pinsState = new quint8[numberGroups];
+
+        for(i = 0; i < numberGroups; i++)
+            p_pinsState[i] = 0xFF;
+
+        if(dataUltimarc.type == NANOLED)
+            p_pinsState[numberGroups-1] = 0x0F;
+
+        //Conver Regular Lights from Intensity to State
+        ConvertRegularToState();
+    }
+
+    return didGroupFileLoad;
+}
+
+
+
+bool LightController::IsRegularGroups()
+{
+    if(noRegularGroups)
+        return false;
+    else
+        return true;
+}
+
+bool LightController::IsRGBGroups()
+{
+    if(noRGBGroups)
+        return false;
+    else
+        return true;
+}
+
+
 
 void LightController::LoadGroupFile()
 {
@@ -271,6 +381,9 @@ void LightController::LoadGroupFile()
     bool groupLoading = true;
     bool loadedRGBNormal = false;
     bool gotData = false;
+    bool didColorMapLoad = true;
+    bool didDefaultBrightLoad = true;
+    quint8 defaultBrightCount = 0;
 
     //Clear Out Maps and Lists
     regularLEDMap.clear();
@@ -285,9 +398,15 @@ void LightController::LoadGroupFile()
     usedPinsList.clear();
     colorNameList.clear();
     numberColors = 0;
+    rgbColorMapMap.clear();
 
     if(loadGroupData.exists() == false)
+    {
+        QString message = "The light controller group file doesn't exisits. Please close program and solve file problem.";
+        emit ShowErrorMessage(title, message);
+        didGroupFileLoad = false;
         return;
+    }
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     openFile = loadGroupData.open (QIODeviceBase::ReadOnly | QIODevice::Text);
@@ -299,6 +418,7 @@ void LightController::LoadGroupFile()
     {
         QString message = "Can not open light controller group data file to read. Please close program and solve file problem. Might be permissions problem.";
         emit ShowErrorMessage(title, message);
+        didGroupFileLoad = false;
         return;
     }
 
@@ -324,7 +444,7 @@ void LightController::LoadGroupFile()
 
     lineCount = fileData.length ();
 
-    while(lineNumber < lineCount && didGroupLoad && groupLoading && didColorLoad)
+    while(lineNumber < lineCount && didGroupLoad && groupLoading && didColorLoad && didColorMapLoad && didDefaultBrightLoad)
     {
         if(fileData[lineNumber].startsWith(RGBFASTGROUP))
         {
@@ -367,9 +487,27 @@ void LightController::LoadGroupFile()
             gotData = true;
             didGroupLoad = LoadGroupRegular(lineNumber, lineCount, fileData);
         }
+        else if(fileData[lineNumber].startsWith(COLORMAP))
+        {
+            didColorMapLoad = LoadRGBColorMap(fileData[lineNumber]);
+        }
         else if(fileData[lineNumber].startsWith(RGBCOLOR))
         {
             didColorLoad = LoadRGBColor(fileData[lineNumber]);
+        }
+        else if(fileData[lineNumber].startsWith(DEFAULTBRIGHTNESS))
+        {
+            if(defaultBrightCount == 0)
+            {
+                didDefaultBrightLoad = LoadDefaultBrightness(fileData[lineNumber]);
+                defaultBrightCount++;
+            }
+            else
+            {
+                didDefaultBrightLoad = false;
+                QString tempCrit = "Default brightness already loaded. Please remove extra default brightness statements.\nLine: "+fileData[lineNumber]+"\nFile: "+groupFilePath;
+                emit ShowErrorMessage(title, tempCrit);
+            }
         }
 
         lineNumber++;
@@ -397,6 +535,14 @@ void LightController::LoadGroupFile()
     {
         QString tempCrit = "Too many pins were loaded into the Light Controller. Please correct the group file for this light controller.\nUsed Pins: "+QString::number(usedPinsList.count())+"File: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
+        didGroupFileLoad = false;
+    }
+    else if(!didColorMapLoad)
+    {
+        didGroupFileLoad = false;
+    }
+    else if(!didDefaultBrightLoad)
+    {
         didGroupFileLoad = false;
     }
     else
@@ -477,7 +623,7 @@ bool LightController::LoadGroupRGB(quint16 lineNum, quint16 lineMax, QStringList
     if(!groupNumberBright.isDataSet)
         return false;
 
-    //qDebug() << "Group Number" << groupNumberBright.groupNumber << "Default Brightness" << groupNumberBright.defaultBrightness;
+    //qDebug() << "Group Number" << groupNumberBright.groupNumber; // << "Default Brightness" << groupNumberBright.defaultBrightness;
 
     LCPinData pinDataSruct = GetGroupPinData(1, grpStart, grpEnd, lineMax, fileData);
 
@@ -684,6 +830,7 @@ LCPinData LightController::GetGroupPinData(quint8 lcKind, quint16 grpStart, quin
 
             if(pinData < 1 || pinData > numberLEDsCheck)
             {
+                //qDebug() << "Pin Data:" << QString::number(pinData) << "numberLEDsCheck" << QString::number(numberLEDsCheck);
                 QString tempCrit = "The pin number is out of range.\nPin Number "+splitGrpData[j]+"\nFile: "+groupFilePath;
                 emit ShowErrorMessage(title, tempCrit);
                 pinDataStruct.isDataSet = false;
@@ -710,6 +857,63 @@ LCPinData LightController::GetGroupPinData(quint8 lcKind, quint16 grpStart, quin
                     emit ShowErrorMessage(title, tempCrit);
                     pinDataStruct.isDataSet = false;
                     return pinDataStruct;
+                }
+            }
+
+            //Check if Pin is in other Light Group. If Regular, then Check RGB
+            if(lcKind == 2 || lcKind == 1)
+            {
+                //RGB Fast, Check Regular Group
+                if(regularLEDGroupList.count() > 0)
+                {
+                    quint8 i;
+
+                    for(i = 0; i < regularLEDGroupList.count(); i++)
+                    {
+                        QList<quint8> pins = regularLEDMap[regularLEDGroupList[i]];
+
+                        if(lcKind == 2)
+                        {
+                            if(pins.contains(pin) || pins.contains(pin+1) || pins.contains(pin+2))
+                            {
+                                QString tempCrit = "The pin number (+0,+1,+2) is already used in a regular group.\nPin Number: "+splitGrpData[j]+"\nRegular Group: "+QString::number(regularLEDGroupList[i])+"\nFile: "+groupFilePath;
+                                emit ShowErrorMessage(title, tempCrit);
+                                pinDataStruct.isDataSet = false;
+                                return pinDataStruct;
+                            }
+                        }
+                        else
+                        {
+                            if(pins.contains(pin))
+                            {
+                                QString tempCrit = "The pin number is already used in a regular group.\nPin Number: "+splitGrpData[j]+"\nRegular Group: "+QString::number(regularLEDGroupList[i])+"\nFile: "+groupFilePath;
+                                emit ShowErrorMessage(title, tempCrit);
+                                pinDataStruct.isDataSet = false;
+                                return pinDataStruct;
+                            }
+                        }
+                    }
+                }
+            }
+            else if(lcKind == 0)
+            {
+                //Regular, Check RGB Group
+                if(rgbLEDGroupList.count() > 0)
+                {
+                    quint8 i;
+
+                    for(i = 0; i < rgbLEDGroupList.count(); i++)
+                    {
+                        QList<quint8> pins = rgbLEDMap[rgbLEDGroupList[i]];
+
+                        if(pins.contains(pin))
+                        {
+                            QString tempCrit = "The pin number is already used in a RGB group.\nPin Number: "+splitGrpData[j]+"\nRGB Group: "+QString::number(rgbLEDGroupList[i])+"\nFile: "+groupFilePath;
+                            emit ShowErrorMessage(title, tempCrit);
+                            pinDataStruct.isDataSet = false;
+                            return pinDataStruct;
+                        }
+                    }
                 }
             }
 
@@ -870,6 +1074,91 @@ bool LightController::LoadRGBColor(QString line)
     return true;
 }
 
+bool LightController::LoadRGBColorMap(QString line)
+{
+    quint8 i;
+    QString colorName, colorMapName;
+    QStringList colorNames;
+
+    QStringList splitData = line.split(' ', Qt::SkipEmptyParts);
+
+    if(splitData.length() < COLORMAPSIZE)
+    {
+        QString tempCrit = "The RGB color map needs more data or color names.\nColor Map Data: "+line+"\nFile: "+groupFilePath;
+        emit ShowErrorMessage(title, tempCrit);
+        return false;
+    }
+
+    colorMapName = splitData[1];
+
+    colorMapName = colorMapName.trimmed ();
+
+    for(i = 2; i < splitData.length(); i++)
+    {
+        colorName = splitData[i];
+        colorName = colorName.trimmed ();
+
+        if(!colorNameList.contains(colorName))
+        {
+            QString tempCrit = "The RGB color doesn't exists in the color names list. Please add all colors, beforing doing color maps.\nColor Data: "+colorName+"\nFile: "+groupFilePath;
+            emit ShowErrorMessage(title, tempCrit);
+            return false;
+        }
+        else
+            colorNames << colorName;
+    }
+
+    //Add Color Map to the RGB Color Map Map
+    rgbColorMapMap.insert(colorMapName,colorNames);
+
+    //qDebug() << "Loaded Color Map:" << colorMapName << "With these Colors:" << colorNames;
+
+    //Ran the Gaunlet
+    return true;
+}
+
+bool LightController::LoadDefaultBrightness(QString line)
+{
+    quint8 i;
+    bool isNumber;
+    quint16 tempDB;
+    QString tempDBS;
+
+    QStringList splitData = line.split(' ', Qt::SkipEmptyParts);
+
+    if(splitData.length() != DEFAULTBRIGHTNESSSIZE)
+    {
+        QString tempCrit = "The default brightness has no number, or 2 or more numbers. Only 1 number after the definition.\nDefault Brightness Line: "+line+"\nFile: "+groupFilePath;
+        emit ShowErrorMessage(title, tempCrit);
+        return false;
+    }
+
+    tempDBS = splitData[1];
+
+    tempDBS = tempDBS.trimmed ();
+
+    tempDB = tempDBS.toUInt(&isNumber);
+
+    if(!isNumber)
+    {
+        QString tempCrit = "The default brightness is not a number. Please fix the group file.\nDefault Brightness: "+tempDBS+"\nFile: "+groupFilePath;
+        emit ShowErrorMessage(title, tempCrit);
+        return false;
+    }
+
+    if(tempDB == 0 || tempDB > 255)
+    {
+        QString tempCrit = "The default brightness is out of range. It is 0, or greater than 255. Please fix the group file.\nDefault Brightness: "+tempDBS+"\nFile: "+groupFilePath;
+        emit ShowErrorMessage(title, tempCrit);
+        return false;
+    }
+
+    //qDebug() << "Setting Default Brightness to" << tempDB;
+
+    //Ran the Gaunlet
+    defaultBrightness = tempDB;
+    return true;
+}
 
 
 
@@ -1079,6 +1368,58 @@ void LightController::PrintGroupData()
 }
 
 
+void LightController::ConvertRegularToState()
+{
+    //i is for group, and j is for pin
+    quint8 i, j, pin;
+    QList<quint8> wrotePins;
+
+    //First Set the State to false, then Set Intensity
+    for(i = 0; i < regularLEDGroupList.count(); i++)
+    {
+        quint8 groupNum = regularLEDGroupList[i];
+        QList<quint8> pins = regularLEDMap[groupNum];
+
+        for(j = 0; j < pins.count(); j++)
+        {
+            pin = pins[j] - 1;
+
+            if(!wrotePins.contains(pin))
+            {
+                //Set Intensity to Default Brightness
+                emit SetLightIntensity(id, pin, defaultBrightness);
+
+                //Turn State Off
+                emit SetPinState(id, pin, false);
+
+                wrotePins << pin;
+            }
+        }
+    }
+
+    //Then Set the State for the Regular Lights to Off (0)
+    for(i = 0; i < regularLEDGroupList.count(); i++)
+    {
+        quint8 groupNum = regularLEDGroupList[i];
+
+        QList<quint8> arrayPos = regularArrayPosition[groupNum];
+        QList<quint8> arrayData = regularArrayData[groupNum];
+
+        for(j = 0; j < arrayPos.count(); j++)
+        {
+            quint8 position = arrayPos[j];
+            quint8 data = arrayData[position];
+
+            p_pinsState[position] = p_pinsState[position] & ~(data);
+        }
+    }
+
+    //for(i = 0; i < numberGroups; i++)
+    //    qDebug() << "Pins State - Array Position:" << i << "State Data:" << p_pinsState[i];
+}
+
+
+
 
 
 
@@ -1143,7 +1484,7 @@ void LightController::UnsetRegularGroups(QList<quint8> groupNumber)
 
 
 
-bool LightController::CheckRGBGroups(QList<quint8> groupNumber)
+bool LightController::CheckRGBGroups(QList<quint8> groupNumber, quint8 *failedGroup)
 {
     //i is for group, and j is for pin
     quint8 i, j;
@@ -1158,7 +1499,10 @@ bool LightController::CheckRGBGroups(QList<quint8> groupNumber)
             quint8 checkData = arrayData[arrayPos[j]] & p_usedPins[arrayPos[j]];
 
             if(checkData != 0)
+            {
+                *failedGroup = groupNumber[i];
                 return false;
+            }
         }
     }
 
@@ -1178,7 +1522,7 @@ void LightController::SetRGBGroups(QList<quint8> groupNumber)
         QList<quint8> arrayData = rgbArrayData[groupNumber[i]];
 
         for(j = 0; j < arrayPos.count(); j++)
-            p_usedPins[arrayPos[j]] = p_usedPins[arrayPos[j]]| arrayData[arrayPos[j]];
+            p_usedPins[arrayPos[j]] = p_usedPins[arrayPos[j]] | arrayData[arrayPos[j]];
     }
 }
 
@@ -1209,7 +1553,7 @@ void LightController::UnsetRGBGroups(QList<quint8> groupNumber)
 
 //Flash Commands
 
-void LightController::FlashRegularLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, quint8 intensity)
+void LightController::FlashRegularLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes)
 {
     bool runCMD = CheckRegularGroups(grpNumList);
 
@@ -1225,7 +1569,7 @@ void LightController::FlashRegularLights(QList<quint8> grpNumList, quint16 timeO
         ConnectRegular(executionCount);
 
         //Execute the Command
-        p_execution[executionCount]->FlashRegularLights(timeOnMs, timeOffMs, numFlashes, intensity);
+        p_execution[executionCount]->FlashRegularLights(timeOnMs, timeOffMs, numFlashes);
 
         //Increament Count
         executionCount++;
@@ -1234,20 +1578,14 @@ void LightController::FlashRegularLights(QList<quint8> grpNumList, quint16 timeO
 
 void LightController::FlashRGBLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, QString color)
 {
-    bool runCMD = CheckRGBGroups(grpNumList);
+    quint8 failedGroup;
+    bool runCMD = CheckRGBGroups(grpNumList, &failedGroup);
 
     if(runCMD)
     {
+        //Color is Checked when Loading Game File
         RGBColor rgbFlashColor;
-
-        if(rgbColorMap.contains (color))
-            rgbFlashColor = rgbColorMap[color];
-        else
-        {
-            QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
-            emit ShowErrorMessage(title, tempCrit);
-            return;
-        }
+        rgbFlashColor = rgbColorMap[color];
 
         //Set Used Pins
         SetRGBGroups(grpNumList);
@@ -1264,9 +1602,42 @@ void LightController::FlashRGBLights(QList<quint8> grpNumList, quint16 timeOnMs,
         //Increament Count
         executionCount++;
     }
+    else
+    {
+        if(isBackground)
+        {
+            quint8 i;
+
+            for(i = 0; i < MAXGAMEPLAYERS; i++)
+            {
+                if(backgroundActive[i])
+                {
+                    if(backgroundGroup[i] == failedGroup)
+                    {
+                        p_background[i]->FlashRGBLights(grpNumList, timeOnMs, timeOffMs, numFlashes, rgbColorMap[color]);
+                        return;
+                    }
+                    else
+                    {
+                        quint8 j;
+                        //Check Groups
+                        for(j = 0; j < grpNumList.count(); j++)
+                        {
+                            //otherBGGroups[i]
+                            if(otherBGGroups[i].contains(grpNumList[j]))
+                            {
+                                p_background[i]->FlashRGBLights(grpNumList, timeOnMs, timeOffMs, numFlashes, rgbColorMap[color]);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
-void LightController::FlashRandomRegularLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, quint8 intensity)
+void LightController::FlashRandomRegularLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes)
 {
     bool runCMD = CheckRegularGroups(grpNumList);
 
@@ -1282,7 +1653,7 @@ void LightController::FlashRandomRegularLights(QList<quint8> grpNumList, quint16
         ConnectRegular(executionCount);
 
         //Execute the Command
-        p_execution[executionCount]->FlashRandomRegularLights(timeOnMs, timeOffMs, numFlashes, intensity);
+        p_execution[executionCount]->FlashRandomRegularLights(timeOnMs, timeOffMs, numFlashes);
 
         //Increament Count
         executionCount++;
@@ -1291,20 +1662,14 @@ void LightController::FlashRandomRegularLights(QList<quint8> grpNumList, quint16
 
 void LightController::FlashRandomRGBLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, QString color)
 {
-    bool runCMD = CheckRGBGroups(grpNumList);
+    quint8 failedGroup;
+    bool runCMD = CheckRGBGroups(grpNumList, &failedGroup);
 
     if(runCMD)
     {
+        //Color is Checked when Loading Game File
         RGBColor rgbFlashColor;
-
-        if(rgbColorMap.contains (color))
-            rgbFlashColor = rgbColorMap[color];
-        else
-        {
-            QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
-            emit ShowErrorMessage(title, tempCrit);
-            return;
-        }
+        rgbFlashColor = rgbColorMap[color];
 
         //Set Used Pins
         SetRGBGroups(grpNumList);
@@ -1321,57 +1686,54 @@ void LightController::FlashRandomRGBLights(QList<quint8> grpNumList, quint16 tim
         //Increament Count
         executionCount++;
     }
-}
-
-void LightController::FlashRandomRegular2ILights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, quint8 intensity, quint8 sIntensity)
-{
-    bool runCMD = CheckRegularGroups(grpNumList);
-
-    if(runCMD)
+    else
     {
-        //Set Used Pins
-        SetRegularGroups(grpNumList);
+        if(isBackground)
+        {
+            quint8 i;
 
-        //Make New Light Execution Class
-        p_execution[executionCount] = new LightExecution(executionCount, grpNumList, regularLEDMap, false, rgbFastMode);
-
-        //Connect Signals and Slots
-        ConnectRegular(executionCount);
-
-        //Execute the Command
-        p_execution[executionCount]->FlashRandomRegular2ILights(timeOnMs, timeOffMs, numFlashes, intensity, sIntensity);
-
-        //Increament Count
-        executionCount++;
+            for(i = 0; i < MAXGAMEPLAYERS; i++)
+            {
+                if(backgroundActive[i])
+                {
+                    if(backgroundGroup[i] == failedGroup)
+                    {
+                        p_background[i]->FlashRandomRGBLights(grpNumList, timeOnMs, timeOffMs, numFlashes, rgbColorMap[color]);
+                        return;
+                    }
+                    else
+                    {
+                        quint8 j;
+                        //Check Groups
+                        for(j = 0; j < grpNumList.count(); j++)
+                        {
+                            //otherBGGroups[i]
+                            if(otherBGGroups[i].contains(grpNumList[j]))
+                            {
+                                p_background[i]->FlashRandomRGBLights(grpNumList, timeOnMs, timeOffMs, numFlashes, rgbColorMap[color]);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
 
+
 void LightController::FlashRandomRGB2CLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, QString color, QString sColor)
 {
-    bool runCMD = CheckRGBGroups(grpNumList);
+    quint8 failedGroup;
+    bool runCMD = CheckRGBGroups(grpNumList, &failedGroup);
 
     if(runCMD)
     {
+        //Color is Checked when Loading Game File
         RGBColor rgbFlashColor, sideColor;
-
-        if(rgbColorMap.contains (color))
-            rgbFlashColor = rgbColorMap[color];
-        else
-        {
-            QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
-            emit ShowErrorMessage(title, tempCrit);
-            return;
-        }
-
-        if(rgbColorMap.contains (sColor))
-            sideColor = rgbColorMap[sColor];
-        else
-        {
-            QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
-            emit ShowErrorMessage(title, tempCrit);
-            return;
-        }
+        rgbFlashColor = rgbColorMap[color];
+        sideColor = rgbColorMap[sColor];
 
         //Set Used Pins
         SetRGBGroups(grpNumList);
@@ -1388,19 +1750,134 @@ void LightController::FlashRandomRGB2CLights(QList<quint8> grpNumList, quint16 t
         //Increament Count
         executionCount++;
     }
+    else
+    {
+        if(isBackground)
+        {
+            quint8 i;
+
+            for(i = 0; i < MAXGAMEPLAYERS; i++)
+            {
+                if(backgroundActive[i])
+                {
+                    if(backgroundGroup[i] == failedGroup)
+                    {
+                        p_background[i]->FlashRandomRGB2CLights(grpNumList, timeOnMs, timeOffMs, numFlashes, rgbColorMap[color], rgbColorMap[sColor]);
+                        return;
+                    }
+                    else
+                    {
+                        quint8 j;
+                        //Check Groups
+                        for(j = 0; j < grpNumList.count(); j++)
+                        {
+                            if(otherBGGroups[i].contains(grpNumList[j]))
+                            {
+                                p_background[i]->FlashRandomRGB2CLights(grpNumList, timeOnMs, timeOffMs, numFlashes, rgbColorMap[color], rgbColorMap[sColor]);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 
-void LightController::SequenceRegularLights(QList<quint8> grpNumList, quint16 delay, quint8 intensity)
+void LightController::FlashRandomRGBLightsCM(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, QString colorMap)
+{
+    quint8 failedGroup;
+    bool runCMD = CheckRGBGroups(grpNumList, &failedGroup);
+
+    if(runCMD)
+    {
+        QStringList colors = rgbColorMapMap[colorMap];
+
+        quint8 randomNum = QRandomGenerator::global()->bounded(0, colors.count());
+
+        QString color = colors[randomNum];
+
+        RGBColor rgbFlashColor = rgbColorMap[color];
+
+        //Set Used Pins
+        SetRGBGroups(grpNumList);
+
+        //Make New Light Execution Class
+        p_execution[executionCount] = new LightExecution(executionCount, grpNumList, rgbLEDMap, true, rgbFastMode);
+
+        //Connect Signals and Slots
+        ConnectRGB(executionCount);
+
+        //Execute the Command
+        p_execution[executionCount]->FlashRandomRGBLights(timeOnMs, timeOffMs, numFlashes, rgbFlashColor);
+
+        //Increament Count
+        executionCount++;
+    }
+    else
+    {
+        if(isBackground)
+        {
+            quint8 i;
+
+            for(i = 0; i < MAXGAMEPLAYERS; i++)
+            {
+                if(backgroundActive[i])
+                {
+                    if(backgroundGroup[i] == failedGroup)
+                    {
+                        QStringList colors = rgbColorMapMap[colorMap];
+
+                        quint8 randomNum = QRandomGenerator::global()->bounded(0, colors.count());
+
+                        QString color = colors[randomNum];
+
+                        RGBColor rgbFlashColor = rgbColorMap[color];
+
+                        p_background[i]->FlashRandomRGBLights(grpNumList, timeOnMs, timeOffMs, numFlashes, rgbFlashColor);
+                        return;
+                    }
+                    else
+                    {
+                        quint8 j;
+                        //Check Groups
+                        for(j = 0; j < grpNumList.count(); j++)
+                        {
+                            //otherBGGroups[i]
+                            if(otherBGGroups[i].contains(grpNumList[j]))
+                            {
+                                QStringList colors = rgbColorMapMap[colorMap];
+
+                                quint8 randomNum = QRandomGenerator::global()->bounded(0, colors.count());
+
+                                QString color = colors[randomNum];
+
+                                RGBColor rgbFlashColor = rgbColorMap[color];
+
+                                p_background[i]->FlashRandomRGBLights(grpNumList, timeOnMs, timeOffMs, numFlashes, rgbFlashColor);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+void LightController::SequenceRegularLights(QList<quint8> grpNumList, quint16 delay)
 {
     bool runCMD = CheckRegularGroups(grpNumList);
 
     if(runCMD)
     {
-        sequenceCount = 0;
-        sequenceMaxCount = 1;
-        sequenceMaxCountSet = false;
-
         //Set Used Pins
         SetRegularGroups(grpNumList);
 
@@ -1411,7 +1888,7 @@ void LightController::SequenceRegularLights(QList<quint8> grpNumList, quint16 de
         ConnectRegular(executionCount);
 
         //Execute the Command
-        p_execution[executionCount]->SequenceRegularLights(delay, intensity);
+        p_execution[executionCount]->SequenceRegularLights(delay);
 
         //Increament Count
         executionCount++;
@@ -1422,24 +1899,14 @@ void LightController::SequenceRegularLights(QList<quint8> grpNumList, quint16 de
 
 void LightController::SequenceRGBLights(QList<quint8> grpNumList, quint16 delay, QString color)
 {
-    bool runCMD = CheckRGBGroups(grpNumList);
+    quint8 failedGroup;
+    bool runCMD = CheckRGBGroups(grpNumList, &failedGroup);
 
     if(runCMD)
     {
+        //Color is Checked when Loading Game File
         RGBColor rgbSequenceColor;
-
-        if(rgbColorMap.contains (color))
-            rgbSequenceColor = rgbColorMap[color];
-        else
-        {
-            QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
-            emit ShowErrorMessage(title, tempCrit);
-            return;
-        }
-
-        sequenceCount = 0;
-        sequenceMaxCount = 1;
-        sequenceMaxCountSet = false;
+        rgbSequenceColor = rgbColorMap[color];
 
         //Set Used Pins
         SetRGBGroups(grpNumList);
@@ -1456,18 +1923,133 @@ void LightController::SequenceRGBLights(QList<quint8> grpNumList, quint16 delay,
         //Increament Count
         executionCount++;
     }
+    else
+    {
+        if(isBackground)
+        {
+            quint8 i;
+
+            for(i = 0; i < MAXGAMEPLAYERS; i++)
+            {
+                if(backgroundActive[i])
+                {
+                    if(backgroundGroup[i] == failedGroup)
+                    {
+                        p_background[i]->SequenceRGBLights(grpNumList, delay, rgbColorMap[color]);
+                        return;
+                    }
+                    else
+                    {
+                        quint8 j;
+                        //Check Groups
+                        for(j = 0; j < grpNumList.count(); j++)
+                        {
+                            //otherBGGroups[i]
+                            if(otherBGGroups[i].contains(grpNumList[j]))
+                            {
+                                p_background[i]->SequenceRGBLights(grpNumList, delay, rgbColorMap[color]);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
-
-void LightController::FollowerRegularLights(QList<quint8> grpNumList, quint8 intensity, quint16 data)
+void LightController::SequenceRGBLightsCM(QList<quint8> grpNumList, quint16 delay, QString colorMap)
 {
-    if(data > 0)
+    quint8 failedGroup;
+    bool runCMD = CheckRGBGroups(grpNumList, &failedGroup);
+
+    if(runCMD)
     {
-        ShowRegularIntensity(grpNumList, intensity);
+        //Color is Checked when Loading Game File
+        //Make RGBColor List
+        QStringList colors = rgbColorMapMap[colorMap];
+        quint8 i;
+        QList<RGBColor> colorList;
+
+        for(i = 0; i < colors.count(); i++)
+            colorList.insert(i,rgbColorMap[colors[i]]);
+
+        //Set Used Pins
+        SetRGBGroups(grpNumList);
+
+        //Make New Light Execution Class
+        p_execution[executionCount] = new LightExecution(executionCount, grpNumList, rgbLEDMap, true, rgbFastMode);
+
+        //Connect Signals and Slots
+        ConnectRGB(executionCount);
+
+        //Execute the Command
+        p_execution[executionCount]->SequenceRGBLightsCM(delay, colorList);
+
+        //Increament Count
+        executionCount++;
     }
     else
     {
-        ShowRegularIntensity(grpNumList, 0);
+        if(isBackground)
+        {
+            quint8 i;
+
+            for(i = 0; i < MAXGAMEPLAYERS; i++)
+            {
+                if(backgroundActive[i])
+                {
+                    if(backgroundGroup[i] == failedGroup)
+                    {
+                        QStringList colors = rgbColorMapMap[colorMap];
+                        QList<RGBColor> colorList;
+                        quint8 k;
+
+                        for(k = 0; k < colors.count(); k++)
+                            colorList.insert(k,rgbColorMap[colors[k]]);
+
+                        p_background[i]->SequenceRGBLightsCM(grpNumList, delay, colorList);
+                        return;
+                    }
+                    else
+                    {
+                        quint8 j;
+                        //Check Groups
+                        for(j = 0; j < grpNumList.count(); j++)
+                        {
+                            //otherBGGroups[i]
+                            if(otherBGGroups[i].contains(grpNumList[j]))
+                            {
+                                QStringList colors = rgbColorMapMap[colorMap];
+                                QList<RGBColor> colorList;
+                                quint8 k;
+
+                                for(k = 0; k < colors.count(); k++)
+                                    colorList.insert(k,rgbColorMap[colors[k]]);
+
+                                p_background[i]->SequenceRGBLightsCM(grpNumList, delay, colorList);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+void LightController::FollowerRegularLights(QList<quint8> grpNumList, quint16 data)
+{
+    if(data > 0)
+    {
+        //ShowRegularIntensity(grpNumList, intensity);
+        ShowRegularState(grpNumList, true);
+    }
+    else
+    {
+        //ShowRegularIntensity(grpNumList, 0);
+        ShowRegularState(grpNumList, false);
     }
 }
 
@@ -1476,14 +2058,8 @@ void LightController::FollowerRGBLights(QList<quint8> grpNumList, QString color,
 {  
     if(data > 0)
     {
-        if(rgbColorMap.contains (color))
-            rgbFollowerColor = rgbColorMap[color];
-        else
-        {
-            QString tempCrit = "The RGB color was not found in the RGB color map. Failing Color: " + color;
-            emit ShowErrorMessage(title, tempCrit);
-            return;
-        }
+        //Color is Checked when Loading Game File
+        rgbFollowerColor = rgbColorMap[color];
 
         ShowRGBColor(grpNumList, rgbFollowerColor);
     }
@@ -1508,13 +2084,92 @@ void LightController::FollowerRandomRGBLights(QList<quint8> grpNumList, quint16 
 }
 
 
+void LightController::TurnOffLights()
+{
+    quint16 i;
+
+    //Go through all the Light Executions and Turn Off Lights and End
+    for(i = 0; i < NUMBEREXECUTIONS; i++)
+    {
+        if(p_execution[i] != nullptr)
+            p_execution[i]->TurnOffLightsEnd ();
+    }
+
+    //Turn Off All Regular Lights, if Any
+    if(!noRegularGroups)
+        ShowRegularState(regularLEDGroupList, false);
+
+    //Turn Off All RGB Lights, if Any
+    if(!noRGBGroups)
+        ShowRGBColor(rgbLEDGroupList, rgbOff);
+}
+
+
+void LightController::SetUpBackgroundRGB(QList<quint8> grpNumList, QString colorMap, quint8 playerNumber, quint16 delay, quint16 delayBGR, quint8 highCount, QList<quint8> otherGrpList)
+{
+    if(!backgroundActive[playerNumber])
+    {
+        quint8 i;
+        isBackground = true;
+        backgroundActive[playerNumber] = true;
+        backgroundGroup[playerNumber] = grpNumList[0];
+        otherBGGroups[playerNumber] = otherGrpList;
+        //Put the Background Group Number into
+        otherBGGroups[playerNumber].prepend (grpNumList[0]);
+
+        quint8 highCountNew;
+        quint8 rgbPins = rgbLEDMap[grpNumList[0]].count();
+
+        if(!rgbFastMode)
+            rgbPins = rgbPins / 3;
+
+        //Check High Count
+        if(highCount == 0)
+            highCountNew = rgbPins;
+        else if(highCount > rgbPins)
+            highCountNew = rgbPins;
+        else
+            highCountNew = highCount;
+
+
+        QStringList bgColorMap = rgbColorMapMap[colorMap];
+        QList<RGBColor> bgRGBColorMap;
+
+        //Make QList of RGB Colors from Map
+        for(i = 0; i < bgColorMap.count(); i++)
+        {
+            RGBColor tempRGB = rgbColorMap[bgColorMap[i]];
+            bgRGBColorMap << tempRGB;
+        }
+
+        //Set Used Pins
+        SetRGBGroups(grpNumList);
+
+        p_background[playerNumber] = new LightBackground(playerNumber, 1, grpNumList[0], rgbLEDMap, true, rgbFastMode, bgRGBColorMap, highCountNew, delay, delayBGR);
+
+        ConnectRGBBG(playerNumber);
+
+        p_background[playerNumber]->TurnOnBackGround ();
+    }
+}
+
+void LightController::BackgroundRGB(quint8 playerNumber, quint16 ammoValue)
+{
+    if(backgroundActive[playerNumber])
+    {
+        p_background[playerNumber]->UpdateCount(ammoValue);
+    }
+}
+
+
+
 void LightController::ConnectRegular(quint8 index)
 {
-    connect(p_execution[index],&LightExecution::ShowRegularIntensity, this, &LightController::ShowRegularIntensity);
+    connect(p_execution[index],&LightExecution::ShowRegularState, this, &LightController::ShowRegularState);
 
-    connect(p_execution[index],&LightExecution::ShowRegularIntensityOne, this, &LightController::ShowRegularIntensityOne);
+    connect(p_execution[index],&LightExecution::ShowRegularStateOne, this, &LightController::ShowRegularStateOne);
 
-    connect(p_execution[index],&LightExecution::ShowRegularIntensityOneSequence, this, &LightController::ShowRegularIntensityOneSequence);
+    connect(p_execution[index],&LightExecution::ShowRegularStateOneSequence, this, &LightController::ShowRegularStateOneSequence);
 
     connect(p_execution[index],&LightExecution::CommandExecuted, this, &LightController::RegularExecutionFinished);
 }
@@ -1532,11 +2187,11 @@ void LightController::ConnectRGB(quint8 index)
 
 void LightController::DisconnectRegular(quint8 index)
 {
-    disconnect(p_execution[index],&LightExecution::ShowRegularIntensity, this, &LightController::ShowRegularIntensity);
+    disconnect(p_execution[index],&LightExecution::ShowRegularState, this, &LightController::ShowRegularState);
 
-    disconnect(p_execution[index],&LightExecution::ShowRegularIntensityOne, this, &LightController::ShowRegularIntensityOne);
+    disconnect(p_execution[index],&LightExecution::ShowRegularStateOne, this, &LightController::ShowRegularStateOne);
 
-    disconnect(p_execution[index],&LightExecution::ShowRegularIntensityOneSequence, this, &LightController::ShowRegularIntensityOneSequence);
+    disconnect(p_execution[index],&LightExecution::ShowRegularStateOneSequence, this, &LightController::ShowRegularStateOneSequence);
 
     disconnect(p_execution[index],&LightExecution::CommandExecuted, this, &LightController::RegularExecutionFinished);
 }
@@ -1553,80 +2208,131 @@ void LightController::DisconnectRGB(quint8 index)
 }
 
 
-
-void LightController::ShowRegularIntensity(QList<quint8> grpNumList, quint8 intensity)
+void LightController::ConnectRGBBG(quint8 player)
 {
-    quint8 i;
+    connect(p_background[player],&LightBackground::ShowRGBColor, this, &LightController::ShowRGBColor);
 
-    //qDebug() << "rgbFastMode:" << rgbFastMode;
+    connect(p_background[player],&LightBackground::ShowRGBColorOne, this, &LightController::ShowRGBColorOne);
 
-    //For Groups
+    connect(p_background[player],&LightBackground::ShowRGBColorOneSequence, this, &LightController::ShowRGBColorOneSequence);
+}
+
+
+void LightController::DisconnectRGBBG(quint8 player)
+{
+    disconnect(p_background[player],&LightBackground::ShowRGBColor, this, &LightController::ShowRGBColor);
+
+    disconnect(p_background[player],&LightBackground::ShowRGBColorOne, this, &LightController::ShowRGBColorOne);
+
+    disconnect(p_background[player],&LightBackground::ShowRGBColorOneSequence, this, &LightController::ShowRGBColorOneSequence);
+}
+
+
+
+
+
+
+void LightController::ShowRegularState(QList<quint8> grpNumList, bool state)
+{
+    quint8 i, j;
+
     for(i = 0; i < grpNumList.count(); i++)
     {
-        //For Pins in Groups
-        QList<quint8> pins = regularLEDMap[grpNumList[i]];
+        QList<quint8> arrayPos = regularArrayPosition[grpNumList[i]];
+        QList<quint8> arrayData = regularArrayData[grpNumList[i]];
 
-        //Set Regular Lights Group to Intensity
-        emit SetLightIntensityGroup(id, pins, intensity);
+        //qDebug() << "For Group:" << grpNumList[i] << "Position Data:" << arrayPos;
+
+        for(j = 0; j < arrayPos.count(); j++)
+        {
+            quint8 position = arrayPos[j];
+            quint8 data = arrayData[position];
+
+            //qDebug() << "Position:" << position << "Data:" << data << "State Data:" << p_pinsState[position] << "State:" << state;
+
+            if(state)
+                p_pinsState[position] = p_pinsState[position] | data;
+            else
+                p_pinsState[position] = p_pinsState[position] & ~(data);
+
+            emit SetPinStates(id, position, p_pinsState[position], false);
+
+            //qDebug() << "State Data:" << p_pinsState[position] << "State:" << state;
+        }
     }
 }
 
 
-void LightController::ShowRegularIntensityOne(QList<quint8> grpNumList, quint8 intensity, QList<quint8> indexList, qint8 offset)
+void LightController::ShowRegularStateOne(QList<quint8> grpNumList, bool state, QList<quint8> indexList, qint8 offset)
 {
     quint8 i;
 
-    //qDebug() << "rgbFastMode:" << rgbFastMode;
-
-    //For Groups
     for(i = 0; i < grpNumList.count(); i++)
     {
-        //For Pins in Groups
+        //Get Pin Data and Position
         QList<quint8> pins = regularLEDMap[grpNumList[i]];
         quint8 pin = pins[indexList[i]+offset]-1;
+        quint8 position = (pin >> 3);
+        quint8 pinPos = pin & 0x07;
+        quint8 pinData = (1 << pinPos);
 
-        //Set Regular Lights Group to Intensity
-        emit SetLightIntensity(id, pin, intensity);
+        //Get State Data of Pin
+        quint8 dataChk = p_pinsState[position] & pinData;
+        bool stateChk;
+
+        if(dataChk == 0)
+            stateChk = false;
+        else
+            stateChk = true;
+
+        //If State doesn't Match, then do a Write
+        if(stateChk != state)
+        {
+            if(state)
+                p_pinsState[position] = p_pinsState[position] | pinData;
+            else
+                p_pinsState[position] = p_pinsState[position] & ~(pinData);
+
+            emit SetPinState(id, pin, state);
+        }
     }
 }
 
-void LightController::ShowRegularIntensityOneSequence(QList<quint8> grpNumList, quint8 intensity, quint8 index)
+void LightController::ShowRegularStateOneSequence(QList<quint8> grpNumList, bool state, quint8 index)
 {
     quint8 i;
 
-    //For Groups
     for(i = 0; i < grpNumList.count(); i++)
     {
-        //For Pins in Groups
-        QList pins = regularLEDMap[grpNumList[i]];
-        quint8 pin;
-        quint8 count = pins.count();
-        bool isOutOfRange = false;
+        //Get Pin Data and Position
+        QList<quint8> pins = regularLEDMap[grpNumList[i]];
+        quint8 pin = pins[index]-1;
+        quint8 position = (pin >> 3);
+        quint8 pinPos = pin & 0x07;
+        quint8 pinData = (1 << pinPos);
 
-        if(!sequenceMaxCountSet)
-        {
-            if(count > sequenceMaxCount)
-                sequenceMaxCount = count;
-        }
+        //Get State Data of Pin
+        quint8 dataChk = p_pinsState[position] & pinData;
+        bool stateChk;
 
-        //Get the RGB Pin Number
-        if(index < count)
-            pin = pins[index]-1;
+        if(dataChk == 0)
+            stateChk = false;
         else
-            isOutOfRange = true;
+            stateChk = true;
 
-        //qDebug() << "Writing to Light Controller ID:" << id << "sequenceCount" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
+        //If State doesn't Match, then do a Write
+        if(stateChk != state)
+        {
+            if(state)
+                p_pinsState[position] = p_pinsState[position] | pinData;
+            else
+                p_pinsState[position] = p_pinsState[position] & ~(pinData);
 
-        //Set RGB Lights to the Color
-        if(!isOutOfRange)
-            emit SetLightIntensity(id, pin, intensity);
+            emit SetPinState(id, pin, state);
+        }
     }
-
-    //Incease the Count
-    sequenceCount++;
-
-    sequenceMaxCountSet = true;
 }
+
 
 
 void LightController::ShowRGBColor(QList<quint8> grpNumList, RGBColor color)
@@ -1647,8 +2353,8 @@ void LightController::ShowRGBColor(QList<quint8> grpNumList, RGBColor color)
             //Get the RGB Pin Number
             if(rgbFastMode)
             {
-                rgbPins.r = pins[j]-1;
-                rgbPins.g = rgbPins.r + 1;
+                rgbPins.g = pins[j];
+                rgbPins.r = rgbPins.g - 1;
                 rgbPins.b = rgbPins.g + 1;
             }
             else
@@ -1686,22 +2392,22 @@ void LightController::ShowRGBColorOne(QList<quint8> grpNumList, RGBColor color, 
         //Get the RGB Pin Number
         if(rgbFastMode && indexList[i] < count)
         {
-
-            rgbPins.r = pins[indexList[i]+offset]-1;
-            rgbPins.g = rgbPins.r + 1;
+            //Pins are -1, So Green is +1, to make it 0
+            rgbPins.g = pins[indexList[i]+offset];
+            rgbPins.r = rgbPins.g - 1;
             rgbPins.b = rgbPins.g + 1;
         }
         else if(!rgbFastMode && indexList[i]+2 < count)
         {
-            qint8 newOffset = offset*3;
+            //quint8 newOffset = offset*3;
+            //Offset shifted by 1 to left (x2) + Offset = 3 x Offset
+            quint8 newOffset = (offset << 1) + offset;
             rgbPins.r = pins[indexList[i]+newOffset]-1;
             rgbPins.g = pins[indexList[i]+newOffset+1]-1;
             rgbPins.b = pins[indexList[i]+newOffset+2]-1;
         }
         else
             isOutOfRange = true;
-
-        //qDebug() << "Writing to Light Controller ID:" << id << "sequenceCount" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
 
         //Set RGB Lights to the Color
         if(!isOutOfRange)
@@ -1723,17 +2429,11 @@ void LightController::ShowRGBColorOneSequence(QList<quint8> grpNumList, RGBColor
         quint8 count = pins.count();
         bool isOutOfRange = false;
 
-        if(!sequenceMaxCountSet)
-        {
-            if(count > sequenceMaxCount)
-                sequenceMaxCount = count;
-        }
-
-        //Get the RGB Pin Number
+        //Check if Index is Out of Range of Array
         if(rgbFastMode && index < count)
         {
-            rgbPins.r = pins[index]-1;
-            rgbPins.g = rgbPins.r + 1;
+            rgbPins.g = pins[index];
+            rgbPins.r = rgbPins.g - 1;
             rgbPins.b = rgbPins.g + 1;
         }
         else if(!rgbFastMode && index+2 < count)
@@ -1745,20 +2445,10 @@ void LightController::ShowRGBColorOneSequence(QList<quint8> grpNumList, RGBColor
         else
             isOutOfRange = true;
 
-
-        //qDebug() << "Writing to Light Controller ID:" << id << "sequenceCount" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
-
         //Set RGB Lights to the Color
         if(!isOutOfRange)
             emit SetRGBLightIntensity(id, rgbPins, color);
     }
-
-    if(rgbFastMode)
-        sequenceCount++;
-    else
-        sequenceCount = sequenceCount + 3;
-
-    sequenceMaxCountSet = true;
 }
 
 
@@ -1800,8 +2490,8 @@ void LightController::TurnRGBState(QList<quint8> grpNumList, bool state)
             //Get the RGB Pin Number
             if(rgbFastMode)
             {
-                rgbPins.r = pins[j]-1;
-                rgbPins.g = rgbPins.r + 1;
+                rgbPins.g = pins[j];
+                rgbPins.r = rgbPins.g - 1;
                 rgbPins.b = rgbPins.g + 1;
             }
             else
@@ -1872,15 +2562,108 @@ bool LightController::CheckRGBGroupNumber(quint8 grpNum)
         return false;
 }
 
+bool LightController::CheckColor(QString color)
+{
+    if(rgbColorMap.contains (color))
+        return true;
+    else
+        return false;
+}
+
+bool LightController::CheckSideColor(QString sideColor)
+{
+    if(rgbColorMap.contains (sideColor))
+        return true;
+    else
+        return false;
+}
+
+bool LightController::CheckColorMap(QString colorMap)
+{
+    if(rgbColorMapMap.contains (colorMap))
+        return true;
+    else
+        return false;
+}
+
+bool LightController::CheckGroupsfor2Colors(QList<quint8> grpNumList)
+{
+    quint8 i;
+
+    for(i = 0; i < grpNumList.count(); i++)
+    {
+        quint8 pinsCount = rgbLEDMap[grpNumList[i]].count();
+
+        if(rgbFastMode)
+        {
+            if(pinsCount < 3)
+                return false;
+        }
+        else
+        {
+            if(pinsCount < 9)
+                return false;
+        }
+    }
+
+    //Ran the Gauntlet
+    return true;
+}
+
+
 void LightController::ResetLightController()
 {
-    sequenceCount = 0;
-    sequenceMaxCount = 0;
-    sequenceMaxCountSet = false;
+    quint8 i;
 
     doReset = false;
 
+    if(isBackground)
+    {
+        isBackground = false;
+
+        for(i = 0; i < MAXGAMEPLAYERS; i++)
+        {
+            if(backgroundActive[i])
+            {
+                //Turn Off Lights
+                p_background[i]->TurnOffLightsEnd();
+                //Disconnect Background Signals & Slots
+                DisconnectRGBBG(i);
+                //Delete Background
+                delete p_background[i];
+                p_background[i] = nullptr;
+                //Unset Used Pins
+                QList<quint8> tempList;
+                tempList << backgroundGroup[i];
+                UnsetRGBGroups(tempList);
+                backgroundActive[i] = false;
+            }
+        }
+    }
 }
+
+
+void LightController::SetUpLights()
+{
+    if(!noRegularGroups && didGroupFileLoad)
+    {
+        quint8 i;
+
+        p_pinsState = new quint8[numberGroups];
+
+        for(i = 0; i < numberGroups; i++)
+            p_pinsState[i] = 0xFF;
+
+        if(dataUltimarc.type == NANOLED)
+            p_pinsState[numberGroups-1] = 0x0F;
+
+        //Conver Regular Lights from Intensity to State
+        ConvertRegularToState();
+    }
+}
+
+
+
 
 //Private Slots
 

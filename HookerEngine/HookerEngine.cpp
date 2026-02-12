@@ -206,6 +206,10 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
     //Show Error Message Box
     connect(p_hookLight,&HookLight::ShowErrorMessage, this, &HookerEngine::ErrorMessage);
 
+    //Connect Internal Hooker Engine Signals to Hook Light
+    if(isLightCntlrs)
+        connect(this, &HookerEngine::InternalSignal2Light, p_hookLight, &HookLight::ProcessSignal);
+
     if(useMultiThreading)
     {
         //Start TCP and Light Threads
@@ -313,6 +317,8 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
 
 
 
+
+
     for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
     {
         //Set Up Game Players
@@ -344,6 +350,8 @@ HookerEngine::HookerEngine(ComDeviceList *cdList, bool displayGUI, QWidget *guiC
         lgTCPPort[i] = 0;
         lgTCPPlayer[i] = UNASSIGN;
         isLGConnected[i] = false;
+        QString tempR2S = "P"+QString::number(i+1)+INTERNALRECOILR2S;
+        recoilR2SInternalSignalName.insert(i,tempR2S);
     }
 
     //Status of the LG TCP Server
@@ -1907,6 +1915,9 @@ void HookerEngine::PXRecoilR2S(quint8 player)
 
         for(quint8 k = 0; k < dlgCommands.count(); k++)
             lgGamePlayers[player].Write (dlgCommands[k]);
+
+        //Send Signal to Hook Light
+        emit InternalSignal2Light(recoilR2SInternalSignalName[player], "1");
 
         if(isRecoilDelaySet[player])
         {
@@ -6182,6 +6193,10 @@ void HookerEngine::ProcessLGCommands(const QString &signalName, const QString &v
                                                     dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
                                                     pRecoilR2STimer[player].start ();
 
+                                                    //Send Signal to Hook Light
+                                                    emit InternalSignal2Light(recoilR2SInternalSignalName[player], "1");
+
+
                                                     if(isRecoilDelaySet[player])
                                                     {
                                                         openSolenoidOrRecoilDelay[player].start();
@@ -6215,10 +6230,17 @@ void HookerEngine::ProcessLGCommands(const QString &signalName, const QString &v
                                                             openSolenoidOrRecoilDelay[player].start();
                                                             blockRecoil[player] = true;
                                                             doRecoilDelayEnds[player] = false;
+
+                                                            //Send Signal to Hook Light
+                                                            emit InternalSignal2Light(recoilR2SInternalSignalName[player], "1");
                                                         }
                                                     }
                                                     else
+                                                    {
                                                         dlgCommands = p_comDeviceList->p_lightGunList[lightGun]->RecoilCommands(&dlgCMDFound);
+                                                        //Send Signal to Hook Light
+                                                        emit InternalSignal2Light(recoilR2SInternalSignalName[player], "1");
+                                                    }
                                                 }
                                             }
                                             else

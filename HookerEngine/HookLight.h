@@ -69,6 +69,10 @@ public:
     quint16                         ammoValue[MAXGAMEPLAYERS];
     quint16                         lifeValue[MAXGAMEPLAYERS];
 
+    bool                            playerAlive[MAXGAMEPLAYERS];
+    quint8                          maxLifeValue[MAXGAMEPLAYERS];
+    quint8                          maxDamage[MAXGAMEPLAYERS];
+
 };
 
 #endif // HOOKLIGHT_H

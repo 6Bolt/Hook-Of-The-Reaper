@@ -3,10 +3,10 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.2.7"
+#define VERSION                 "1.2.8"
 #define VERSIONMAIN             1
 #define VERSIONMID              2
-#define VERSIONLAST             4
+#define VERSIONLAST             8
 
 //Global Settings
 #define MAXPLAYERLIGHTGUNS      8
@@ -369,6 +369,9 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 //Input Mask for Reaper Hold Slide Back Timing 1.0-9.0 seconds
 #define REAPERHOLDSLIDEMASK     "9.9"
 
+//Input Mask for Light Controller Time Delay
+#define LIGHTCNTLRTIMEMASK      "00000"
+
 #define USBDEVICEMASK           "000"
 #define USBINPUTMASKHEX         "HHHH"
 #define USBRECOILDELAYMASK      "9999"
@@ -639,6 +642,9 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define ENDOFLIGHTFILE          ".txt"
 #define DEFAULTLIGHTFILE        "default.txt"
 
+#define INTERNALRECOILR2S       "_CtmRecoil"
+
+
 
 // Light Controller Group File Stuff
 #define REGULARGROUP            "GRP"
@@ -647,7 +653,11 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define RGBCOLOR                "Color"
 #define ENDGROUP                "END_GRP"
 #define COLORSIZE               5
-
+#define COLORMAP                "Color_Map"
+#define COLORMAPSIZE            4
+#define DEFAULTBRIGHTNESS       "Default_Brightness"
+#define DEFAULTBRIGHTNESSSIZE   2
+#define INVERTDATASYMBOL        '~'
 
 
 //Max Light Controllers Supported
@@ -700,7 +710,7 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 
 
 #define ULTIMARCMAXDEVICES      24
-#define DEFAULTBRIGHTNESS       160
+//#define DEFAULTBRIGHTNESS       160
 
 //Light Controller Commands
 
@@ -712,11 +722,22 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 #define SEQUENCECOMMAND         2
 #define FOLLOWERCOMMAND         3
 
+#define FLASHCMCOMMAND          4
+#define SEQUENCECMCOMMAND       5
+
 //Regular
 #define REGCOMMANDS             20
 #define REGFLASHCOMMAND         21
 #define REGSEQUENCECOMMAND      22
 #define REGFOLLOWERCOMMAND      23
+
+//Background Command
+#define BACKGROUNDCOMMAND       40
+
+//General Commands
+#define GENERALCOMMAND          50
+
+
 
 //Flashes
 
@@ -737,22 +758,27 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 #define RANDOMFLASHRGB2CARGS    5
 #define RANDOMFLASHRGB2CCMD     4
 
+//RGB Color Map
+#define RANDOMFLASHRGBCM        "Random_Flash_RGB_CM"
+#define RANDOMFLASHRGBCMARGS    4
+#define RANDOMFLASHRGBCMCMD     0
+
+
+
 //Regular
 #define FLASHREG                "Flash_Regular"
-#define FLASHREGARGS            4
+#define FLASHREGARGS            3
 #define FLASHREGCMD             0
 #define RELOADFLASHREG          "Reload_Flash_Regular"
-#define RELOADFLASHREGARGS      5
+#define RELOADFLASHREGARGS      4
 #define RELOADFLASHREGCMD       1
 #define DEATHFLASHREG           "Death_Flash_Regular"
-#define DEATHFLASHREGARGS       5
+#define DEATHFLASHREGARGS       4
 #define DEATHFLASHREGCMD        2
 #define RANDOMFLASHREG          "Random_Flash_Regular"
-#define RANDOMFLASHREGARGS      4
+#define RANDOMFLASHREGARGS      3
 #define RANDOMFLASHREGCMD       3
-#define RANDOMFLASHREG2I        "Random_Flash_2I_Regular"
-#define RANDOMFLASHREG2IARGS    5
-#define RANDOMFLASHREG2ICMD     4
+
 
 
 //Sequence
@@ -765,12 +791,21 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 #define RELOADSEQUENCERGBARGS   3
 #define RELOADSEQUENCERGBCMD    1
 
+//RGB Color Map
+#define SEQUENCERGBCM           "Sequence_RGB_CM"
+#define SEQUENCERGBCMARGS       2
+#define SEQUENCERGBCMCMD        0
+#define RELOADSEQUENCERGBCM     "Reload_Sequence_RGB_CM"
+#define RELOADSEQUENCERGBCMARGS 3
+#define RELOADSEQUENCERGBCMCMD  1
+
+
 //Regular
 #define SEQUENCEREG             "Sequence_Regular"
-#define SEQUENCEREGARGS         2
+#define SEQUENCEREGARGS         1
 #define SEQUENCEREGCMD          0
 #define RELOADSEQUENCEREG       "Reload_Sequence_Regular"
-#define RELOADSEQUENCEREGARGS   3
+#define RELOADSEQUENCEREGARGS   2
 #define RELOADSEQUENCEREGCMD    1
 
 //Follower Commands
@@ -785,8 +820,29 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 
 //Regular
 #define FOLLOWERREG             "Follower_Regular"
-#define FOLLOWERREGARGS         1
+#define FOLLOWERREGARGS         0
 #define FOLLOWERREGCMD          0
+
+
+//Background Commands
+
+//Background Ammo RGB
+#define BACKGROUNDRGB           "Background_RGB"
+#define BACKGROUNDRGBARGS       5
+#define BACKGROUNDRGBCMD        0
+
+
+
+
+//General Commands
+
+#define TURNOFFLIGHTS           "TurnOffLights"
+#define TURNOFFLIGHTSARGS       0
+#define TURNOFFLIGHTSCMD        0
+
+
+
+
 
 
 //Execution List

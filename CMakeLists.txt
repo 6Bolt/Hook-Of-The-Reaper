@@ -65,6 +65,8 @@ qt_add_executable(HookOfTheReaper
     HookerEngine/HookLight.h HookerEngine/HookLight.cpp
     HookerEngine/LightCommand.h HookerEngine/LightCommand.cpp
     COMDeviceList/LightExecution.h COMDeviceList/LightExecution.cpp
+    Windows/testLightController.h Windows/testLightController.cpp Windows/testLightController.ui
+    COMDeviceList/LightBackground.h COMDeviceList/LightBackground.cpp
 
 )
 

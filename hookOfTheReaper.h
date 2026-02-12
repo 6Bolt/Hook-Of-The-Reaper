@@ -27,6 +27,7 @@
 #include "Windows/settingsWindow.h"
 #include "Windows/aboutWindow.h"
 #include "Windows/testComPortWindow.h"
+#include "Windows/testLightController.h"
 
 //Devices List
 #include "COMDeviceList/ComDeviceList.h"
@@ -77,7 +78,7 @@ public slots:
     void UpdateTCPConnectionStatus(bool tcpConStatus);
 
     //Handle Error Message Box from a different Thread
-    void ErrorMessage(const QString &title, const QString &message);
+    void ErrorMessage(const QString title, const QString message);
 
 
 private slots:
@@ -138,6 +139,7 @@ private slots:
     void on_actionTest_INI_Game_File_triggered();
 
 
+    void on_actionTest_Light_Controller_triggered();
 
 
 
@@ -210,6 +212,9 @@ private:
 
     //Add Light Controller Window QPointer
     QPointer<editLightControllerWindow>  p_eLCW;
+
+    //Test Light Controller Window
+    QPointer<testLightController>   p_tLCW;
 
     //When a Child Window is Open, stop the Engine. Then when Closed, Update and Restart Hooker Engine
     bool                            engineRunning;

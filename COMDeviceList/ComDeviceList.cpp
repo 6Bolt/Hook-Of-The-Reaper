@@ -316,13 +316,15 @@ void ComDeviceList::AddLightController(UltimarcData dataU)
     connect(p_lightCntlrList[numberLightCntrls],&LightController::SetLightIntensityGroup, p_pacDrive, &PacDriveControl::SetLightIntensityGroup);
     connect(p_lightCntlrList[numberLightCntrls],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
     connect(p_lightCntlrList[numberLightCntrls],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
-
-    quint8 id = p_lightCntlrList[numberLightCntrls]->GetID();
-
-    p_pacDrive->TurnOffLights(id);
+    connect(p_lightCntlrList[numberLightCntrls],&LightController::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
 
     //Connect Light Controller to Error Message Box
     connect(p_lightCntlrList[numberLightCntrls],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
+
+    //Turn Off Lights in PacDrive
+    quint8 id = p_lightCntlrList[numberLightCntrls]->GetID();
+
+    p_pacDrive->TurnOffLights(id);
 
     //Move to Thread if using MultiThread
     if(useMultiThreading)
@@ -331,8 +333,29 @@ void ComDeviceList::AddLightController(UltimarcData dataU)
         connect(p_threadForLight, &QThread::finished, p_lightCntlrList[numberLightCntrls], &QObject::deleteLater);
     }
 
+    //Wait Until Light Controller Init is Done
+    bool initDone = p_lightCntlrList[numberLightCntrls]->GetInitDone ();
 
+    while(!initDone)
+    {
+        initDone = p_lightCntlrList[numberLightCntrls]->GetInitDone ();
+        QThread::msleep (50);
+    }
+
+
+    //Reload Group File and Set-Up Lights, so File Can Do Checks
+    bool fileLoad = p_lightCntlrList[numberLightCntrls]->ReloadGroupFile ();
+
+    //Increament Light Controllers
     numberLightCntrls++;
+
+    if(!fileLoad)
+    {
+        QString message = "Light Controller "+dataU.typeName+" with product ID "+dataU.productIDS+" and serial number "+dataU.serialNumber+" failed to load group file. Deleting the light controller";
+        QMessageBox::critical (nullptr, "Light Controller Error", message, QMessageBox::Ok);
+        DeleteLightController(numberLightCntrls-1);
+        return;
+    }
 
 }
 
@@ -489,7 +512,14 @@ void ComDeviceList::DeleteLightController(quint8 lcNumber)
     //Only One Light Controller In the List
     if(numberLightCntrls == 1 && lcNumber == 0)
     {
-        // Disconnect Light Controller to Error Message Box
+        //Disconnect the Light Controller from PacDrive
+        disconnect(p_lightCntlrList[lcNumber],&LightController::SetLightIntensity, p_pacDrive, &PacDriveControl::SetLightIntensity);
+        disconnect(p_lightCntlrList[lcNumber],&LightController::SetLightIntensityGroup, p_pacDrive, &PacDriveControl::SetLightIntensityGroup);
+        disconnect(p_lightCntlrList[lcNumber],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
+        disconnect(p_lightCntlrList[lcNumber],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
+        disconnect(p_lightCntlrList[lcNumber],&LightController::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
+
+        //Disconnect Light Controller to Error Message Box
         disconnect(p_lightCntlrList[lcNumber],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
 
         delete p_lightCntlrList[lcNumber];
@@ -498,7 +528,14 @@ void ComDeviceList::DeleteLightController(quint8 lcNumber)
     }
     else if((lcNumber+1) == numberLightCntrls)
     {
-        // Disconnect Light Controller to Error Message Box
+        //Disconnect the Light Controller from PacDrive
+        disconnect(p_lightCntlrList[lcNumber],&LightController::SetLightIntensity, p_pacDrive, &PacDriveControl::SetLightIntensity);
+        disconnect(p_lightCntlrList[lcNumber],&LightController::SetLightIntensityGroup, p_pacDrive, &PacDriveControl::SetLightIntensityGroup);
+        disconnect(p_lightCntlrList[lcNumber],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
+        disconnect(p_lightCntlrList[lcNumber],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
+        disconnect(p_lightCntlrList[lcNumber],&LightController::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
+
+        //Disconnect Light Controller to Error Message Box
         disconnect(p_lightCntlrList[lcNumber],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
 
         //Targeted Light Controller is the Last in the List. So Don't have to Move Light guns Around
@@ -517,7 +554,14 @@ void ComDeviceList::DeleteLightController(quint8 lcNumber)
 
         numberLightCntrls--;
 
-        // Disconnect Light Controller to Error Message Box
+        //Disconnect the Last Light Controller from PacDrive
+        disconnect(p_lightCntlrList[numberLightCntrls],&LightController::SetLightIntensity, p_pacDrive, &PacDriveControl::SetLightIntensity);
+        disconnect(p_lightCntlrList[numberLightCntrls],&LightController::SetLightIntensityGroup, p_pacDrive, &PacDriveControl::SetLightIntensityGroup);
+        disconnect(p_lightCntlrList[numberLightCntrls],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
+        disconnect(p_lightCntlrList[numberLightCntrls],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
+        disconnect(p_lightCntlrList[numberLightCntrls],&LightController::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
+
+        // Disconnect Last Light Controller to Error Message Box
         disconnect(p_lightCntlrList[numberLightCntrls],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
 
         delete p_lightGunList[numberLightCntrls];
@@ -2443,7 +2487,7 @@ quint8* ComDeviceList::GetRecoilPriority()
 //Public Slots
 
 
-void ComDeviceList::ErrorMessage(const QString &title, const QString &message)
+void ComDeviceList::ErrorMessage(const QString title, const QString message)
 {
     //Forward Error Message to Main Thread
     emit ShowErrorMessage(title, message);

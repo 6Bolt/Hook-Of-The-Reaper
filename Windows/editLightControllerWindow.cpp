@@ -99,8 +99,7 @@ void editLightControllerWindow::on_editPushButton_clicked()
 
     if(fileExists)
     {
-        p_comDeviceList->p_lightCntlrList[index]->SetGroupFile (dataUltimarc[index].groupFile);
-        bool didGroupFileLoad = p_comDeviceList->p_lightCntlrList[index]->DidGroupFileLoad ();
+        bool didGroupFileLoad = p_comDeviceList->p_lightCntlrList[index]->SetGroupFile (dataUltimarc[index].groupFile);
 
         //qDebug() << "didGroupFileLoad" << didGroupFileLoad;
 
@@ -120,8 +119,7 @@ void editLightControllerWindow::on_editClosePushButton_clicked()
 
     if(fileExists)
     {
-        p_comDeviceList->p_lightCntlrList[index]->SetGroupFile (dataUltimarc[index].groupFile);
-        bool didGroupFileLoad = p_comDeviceList->p_lightCntlrList[index]->DidGroupFileLoad ();
+        bool didGroupFileLoad = p_comDeviceList->p_lightCntlrList[index]->SetGroupFile (dataUltimarc[index].groupFile);
 
         if(!didGroupFileLoad)
             QMessageBox::critical (nullptr, "Group File Error", "The group file for light controller didn't load properly. Please fix errors in group file", QMessageBox::Ok);

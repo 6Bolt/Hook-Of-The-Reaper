@@ -369,7 +369,7 @@ void HookOfTheReaper::UpdateTCPConnectionStatus(bool tcpConStatus)
     DisplayText();
 }
 
-void HookOfTheReaper::ErrorMessage(const QString &title, const QString &message)
+void HookOfTheReaper::ErrorMessage(const QString title, const QString message)
 {
     QMessageBox::critical (this, title, message, QMessageBox::Ok);
 }
@@ -900,4 +900,39 @@ void HookOfTheReaper::changeEvent(QEvent *event)
 
 
 
+
+
+void HookOfTheReaper::on_actionTest_Light_Controller_triggered()
+{
+    quint8 numberLightCntrls = p_comDeviceList->GetNumberLightControllers();
+
+    if(numberLightCntrls == 0)
+    {
+        QMessageBox::warning (this, "No Saved Light Controllers", "There are no saved Light Controllers to test. Please add a Light Controller first.");
+    }
+    else
+    {
+
+        if (!p_tLCW)
+        {
+            //Close All COM Port Connections to Light Guns, so that the can be Tested
+            p_hookEngine->CloseAllLightGunConnections();
+
+            if(engineRunning)
+            {
+                //Stop the Hooker Engine
+                p_hookEngine->Stop ();
+                engineRunning = false;
+                ui->statusbar->showMessage ("Stopped");
+            }
+
+            p_tLCW = new testLightController(p_comDeviceList, this);
+            p_tLCW->setAttribute(Qt::WA_DeleteOnClose);
+            connect(p_tLCW, SIGNAL(accepted()), this, SLOT(TestComPortWindowClosed()));
+            connect(p_tLCW, SIGNAL(rejected()), this, SLOT(TestComPortWindowClosed()));
+        }
+        p_tLCW->exec ();
+
+    }
+}
 

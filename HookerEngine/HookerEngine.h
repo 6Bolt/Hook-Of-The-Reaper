@@ -143,6 +143,9 @@ signals:
     //Send Window State to TCP
     void WindowStateToTCP(const bool &isMin);
 
+    //Internal Signals from Hooker Engine to Hook Light
+    void InternalSignal2Light(const QString &signal, const QString &data);
+
 
 private slots:
 
@@ -565,9 +568,11 @@ private:
 
     ///////////////////////////////////////////////////////////////////////////
 
+    //For Recoil_R2S
     QTimer                          pRecoilR2STimer[MAXGAMEPLAYERS];
     bool                            isPRecoilR2SFirstTime[MAXGAMEPLAYERS];
     quint32                         recoilR2SSkewPrec[MAXGAMEPLAYERS];
+    QStringList                     recoilR2SInternalSignalName;
 
     ///////////////////////////////////////////////////////////////////////////
 

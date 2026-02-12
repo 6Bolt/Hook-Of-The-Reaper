@@ -1,29 +1,39 @@
-#ifndef LIGHTEXECUTION_H
-#define LIGHTEXECUTION_H
+#ifndef LIGHTBACKGROUND_H
+#define LIGHTBACKGROUND_H
 
 #include <QObject>
-#include <QTimer>
 #include <QMap>
 #include <QList>
+#include <QTimer>
 #include <QRandomGenerator>
-//#include <QDebug>
+#include <QDebug>
 
 //Global Stuff
 #include "../Global.h"
 
-class LightExecution : public QObject
+class LightBackground : public QObject
 {
 
     Q_OBJECT
 
-
 public:
+    explicit LightBackground(quint8 player, quint8 mode, quint8 grpNum, QMap<quint8,QList<quint8>> lightMap, bool rgb, bool rgbFast, QList<RGBColor> cMap, quint8 hCount, quint16 tDelay, quint16 rDelay, QObject *parent = nullptr);
 
-    explicit LightExecution(quint8 exeNum, QList<quint8> grpNumList, QMap<quint8,QList<quint8>> lightMap, bool rgb, bool rgbFast, QObject *parent = nullptr);
-
-    ~LightExecution();
+    ~LightBackground();
 
     bool GetIsRGB() { return isRGB; }
+
+
+    //Turn On Background
+    void TurnOnBackGround();
+
+    //Turn Off Background
+    void TurnOffBackGround();
+
+    //Reload Ammo or Health
+    void ReloadBackground();
+
+    void UpdateCount(quint16 ammo);
 
     //Flash Commands
     //Normal Flash
@@ -32,7 +42,7 @@ public:
     void FlashRegularLights(quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes);
 
     //Flash RGB Lights
-    void FlashRGBLights(quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, RGBColor color);
+    void FlashRGBLights(QList<quint8> grpList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, RGBColor color);
 
     //Random Flash
 
@@ -40,12 +50,12 @@ public:
     void FlashRandomRegularLights(quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes);
 
     //Flash Random RGB Lights
-    void FlashRandomRGBLights(quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, RGBColor color);
+    void FlashRandomRGBLights(QList<quint8> grpList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, RGBColor color);
 
     //Random Flash 2 C
 
     //Flash Random RGB Lights with 2 Colors
-    void FlashRandomRGB2CLights(quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, RGBColor color, RGBColor sColor);
+    void FlashRandomRGB2CLights(QList<quint8> grpList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, RGBColor color, RGBColor sColor);
 
     //Sequence Commands
 
@@ -53,10 +63,10 @@ public:
     void SequenceRegularLights(quint16 delay);
 
     //Sequence RGB Lights, Light Up Lights One by One
-    void SequenceRGBLights(quint16 delay, RGBColor color);
+    void SequenceRGBLights(QList<quint8> grpList, quint16 delay, RGBColor color);
 
     //Sequence RGB Lights, Light Up Lights One by One with Color Map
-    void SequenceRGBLightsCM(quint16 delay, QList<RGBColor> colorsMap);
+    void SequenceRGBLightsCM(QList<quint8> grpList, quint16 delay, QList<RGBColor> colorsMap);
 
     //Find Max Sequence Count for Regular & RGB Lights
     void FindMaxSequence();
@@ -65,8 +75,14 @@ public:
     void TurnOffLightsEnd();
 
 
-
 private slots:
+
+    //After Delay for RGB
+    void FlashRGBLightsPost();
+    void FlashRandomRGBLightsPost();
+    void FlashRandomRGB2CLightsPost();
+    void SequenceRGBLightsPost();
+    void SequenceRGBLightsCMPost();
 
     //Slots for RGB Commands with Timer
 
@@ -76,7 +92,6 @@ private slots:
     void RGBSequenceDelayDone();
 
     void RGBSequenceDelayDoneCM();
-
 
     //Slots for Regular Commands with Timer
 
@@ -91,24 +106,11 @@ signals:
 
     //Regular Lights Changing Intensity
 
-    //Set Intensity for Regular Light Groups
-    void ShowRegularIntensity(QList<quint8> grpNumList, quint8 intensity);
-
     //Set State for Regular Light Groups
     void ShowRegularState(QList<quint8> grpNumList, bool state);
 
-
-
-    //Set 1 Pins in Group Intensity
-    void ShowRegularIntensityOne(QList<quint8> grpNumList, quint8 intensity, QList<quint8> indexList, qint8 offset);
-
     //Set 1 Pin State
     void ShowRegularStateOne(QList<quint8> grpNumList, bool state, QList<quint8> indexList, qint8 offset);
-
-
-
-    //Set 1 Pins in Group Intensity for Sequence
-    void ShowRegularIntensityOneSequence(QList<quint8> grpNumList, quint8 intensity, quint8 index);
 
     //Set 1 Pin State for Sequence
     void ShowRegularStateOneSequence(QList<quint8> grpNumList, bool state, quint8 index);
@@ -127,16 +129,46 @@ signals:
     void ShowRGBColorOneSequence(QList<quint8> grpNumList, RGBColor color, quint8 index);
 
 
-
-    //Command Has Been Executed and Finished
-    void CommandExecuted(quint8 exeNum, QList<quint8> grpNumList);
-
-
 private:
 
+    //Player Number
+    quint8                          playerNumber;
 
-    quint8                          executionNumber;
+    //Different Background Modes
+    //0 is normal background, 1 is Ammo, and 2 is Life
+    bool                            ammoMode;
+    bool                            lifeMode;
 
+    //High Count, How much the count Goes Up
+    quint16                         highCount;
+
+    //High Count Times 2, for Big Count
+    quint16                         highCountX2;
+
+    //Big Count Mode, is when Reload or Life Start is 2x then High Count
+    bool                            bigCount;
+
+    //Group Lights that are On
+    quint16                         groupLights;
+    quint16                         oldGroupLights;
+
+    //Time Delay, when Background Lights Go Off, then Delay, and then New Command
+    quint16                         bgDelay;
+
+    //List of the Group Pins
+    QList<quint8>                   grpPins;
+    quint8                          grpPinsCount;
+
+
+    bool                            isCommandRunning;
+
+    quint16                         ammoCount;
+    quint16                         ammoPerLight;
+    quint16                         shotsFired;
+
+    bool                            doingReload;
+    quint8                          reloadColorCount;
+    quint16                         reloadDelay;
 
     //Timer
 
@@ -150,7 +182,8 @@ private:
     //Generic
     bool                            isRGB;
     bool                            rgbFastMode;
-    //Group List for Command
+    //Background Group List for Command
+    quint8                          groupNumber;
     QList<quint8>                   groupList;
     //Groups LED Map
     QMap<quint8,QList<quint8>>      ledMap;
@@ -158,6 +191,17 @@ private:
     bool                            isFlash;
     bool                            isSequence;
 
+    //Background RGB Color Map
+    QList<RGBColor>                 bgColorMap;
+    quint8                          bgColorMapCount;
+
+    //RGB 8bit Color Map
+    //QMap<QString,RGBColor>          colorMap;
+
+    //RGB Color Map Map
+    //QMap<QString,QStringList>       colorMapMap;
+
+    QList<quint8>                   otherGroupList;
 
     //Flash Command
     //Generic
@@ -191,8 +235,6 @@ private:
     RGBColor                        rgbSequenceColor;
     quint8                          sequenceIntensity;
 
-
-
 };
 
-#endif // LIGHTEXECUTION_H
+#endif // LIGHTBACKGROUND_H

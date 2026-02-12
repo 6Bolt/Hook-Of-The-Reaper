@@ -41,13 +41,27 @@ public:
     quint8 GetCommandNumber() { return commandNumber; }
     quint8 GetNumberControllers() { return numberCntlrs; }
     quint8 GetPlayerNumber() { return playerNumber; }
-    quint8 GetIntensity() { return intensity; }
-    quint8 GetSideIntensity() { return sideIntensity; }
+    QString GetColorMap() { return colorMapName; }
+    bool IsGeneralCommand() { return isGeneralCommand; }
+    bool IsBackgroundCommand() { return isBackground; }
+    quint8 GetHighCount() { return highCount; }
+    quint16 GetBGTimeDelayReload() { return timeBGReload; }
+
+    bool IsColor() { return isColor; }
+    bool IsSideColor() { return isSideColor; }
+    bool IsColorMap() { return isColorMap; }
+
 
     quint8 GetControllerNumber(quint8 index) { return listCntlrs[index]; }
     QList<quint8> GetControllerGroups(quint8 index) { return cntlrsGroup[index]; }
 
+    QList<quint8> GetOtherBGGroups() { return otherBGGroups; }
+
+
     void SetOutputSignal(QString outputSig) { outputSignal = outputSig; }
+
+    void SetInvertData() { isInvertData = true; }
+    bool IsInvertData() { return isInvertData; }
 
     void ProcessLightCommand();
 
@@ -57,8 +71,8 @@ public:
     bool CheckTimeDelay(QString tDelay);
     bool CheckNumberFlashes(QString numF);
     bool CheckPlayerNumber(QString pNum);
-    bool CheckIntensity(QString inten);
-    bool CheckSideIntensity(QString sideInten);
+    bool CheckHighCount(QString hcount);
+    bool CheckBGTimeDelayReload(QString tDelay);
 
     //Check Command's Arguments
 
@@ -69,10 +83,13 @@ public:
     //Sequence RGB
     bool ProcessSequenceRGB();
     bool ProcessReloadSequenceRGB();
+    bool ProcessSequenceRGBCM();
+    bool ProcessReloadSequenceRGBCM();
 
     //Random Flash RGB
     bool ProcessRandomFlashRGB();
     bool ProcessRandomFlash2CRGB();
+    bool ProcessRandomFlashRGBCM();
 
     //Follower RGB
     bool ProcessFollowerRGB();
@@ -89,10 +106,11 @@ public:
 
     //Random Flash Regular
     bool ProcessRandomFlashRegular();
-    bool ProcessRandomFlash2IRegular();
 
-    //Follower Regular
-    bool ProcessFollowerRegular();
+    //Background RGB Command
+    bool ProcessBackgroundRGB();
+
+
 
 
 
@@ -114,6 +132,10 @@ public:
     QString                             outputSignal;
     bool                                isCommandValid;
     bool                                isRGB;
+    bool                                isGeneralCommand;
+    bool                                isInvertData;
+    bool                                isBackground;
+
 
     quint8                              kindOfCommand;
     quint8                              commandNumber;
@@ -125,12 +147,22 @@ public:
     quint16                             timeOn;
     quint16                             timeOff;
     quint16                             timeDelay;
+    quint16                             timeBGReload;
+
+    bool                                isColor;
+    bool                                isSideColor;
 
     QString                             color;
     QString                             sideColor;
 
-    quint8                              intensity;
-    quint8                              sideIntensity;
+    bool                                isColorMap;
+    QString                             colorMapName;
+
+    quint8                              highCount;
+
+
+    //Background
+    QList<quint8>                       otherBGGroups;
 
 };
 

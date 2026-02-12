@@ -135,7 +135,12 @@ void PacDriveControl::CollectUltimarcData()
                 QList<quint8> stateData;
 
                 for(j = 0; j < numberGroups[i]; j++)
-                    stateData.insert(j, 0xFF);
+                {
+                    if(j == 7 && type == NANOLED)
+                        stateData.insert(j, 0x0F);
+                    else
+                        stateData.insert(j, 0xFF);
+                }
 
                 groupStateData.insert(i, stateData);
 
@@ -248,9 +253,9 @@ void PacDriveControl::TurnOffLights(quint8 id)
         for(i = 0; i < numberGroups[id]; i++)
         {
             if(i == 7 && dataUltimarc[id].type == NANOLED)
-                Pac64SetLEDStates(id, i, 0x0F);
+                Pac64SetLEDStates(id, i+1, 0x0F);
             else
-                Pac64SetLEDStates(id, i, 0xFF);
+                Pac64SetLEDStates(id, i+1, 0xFF);
         }
 
         //Turn Intensity for all Pins Off
@@ -373,7 +378,7 @@ void PacDriveControl::SetLightIntensityGroup(quint8 id, QList<quint8> group, qui
                 else
                 {
                     QString title = "Write to Ultimarc Light Controller Failed";
-                    QString msg = "Write to Ultimarc light controller with ID: "+QString::number(id)+" failed after 3 write attampts. Something is wrong with the hardware. Please check device and USB path.";
+                    QString msg = "Write to Ultimarc light controller with ID: "+QString::number(id)+" failed after 3 write attampts with Pac64SetLEDIntensity. Something is wrong with the hardware. Please check device and USB path.";
                     emit ShowErrorMessage(title, msg);
                 }
             }
@@ -477,26 +482,43 @@ void PacDriveControl::SetPinState(quint8 id, quint8 pin, bool state)
 {
     if(dataUltimarc[id].valid)
     {
-        //qDebug() << "lightStateMap[id][pin]" << lightStateMap[id][pin];
+        bool writePass, stateChk;
+        quint8 group = (pin >> 3);
+        quint8 port = pin & 0x07;
+        quint8 pinData = (1 << port);
+        quint8 dataChk = groupStateData[id][group] & pinData;
+        //INT groupW = group + 1;
+        //INT portW = port;
+        //INT idW = id;
 
-        if(lightStateMap[id][pin] != state)
+        if(dataChk == 0)
+            stateChk = false;
+        else
+            stateChk = true;
+
+        //qDebug() << "stateChk" << stateChk << "State" << state << "dataChk" << dataChk;
+
+        if(stateChk != state)
         {
-            bool writePass;
             quint8 writeCount = 0;
-            quint8 group = pin/8;
-            quint8 port = pin - (group*8);
-            group++;
 
             //qDebug() << "pin" << pin << "group" << group << "port" << port;
 
             do
             {
-                writePass = Pac64SetLEDState(id, group, port, state);
+                writePass = Pac64SetLEDState(id, group+1, port, state);
                 writeCount++;
             } while(!writePass && writeCount < WRITERETRYATTEMPTS+1);
 
             if(writePass)
-                lightStateMap[id][pin] = state;
+            {
+                if(state)
+                    groupStateData[id][group] |= pinData;
+                else
+                    groupStateData[id][group] &= ~(pinData);
+
+                //qDebug() << "groupStateData[id][group]" << groupStateData[id][group];
+            }
             else
             {
                 //qDebug() << "Failed writePass" << writePass << "writeCount" << writeCount;
@@ -509,7 +531,51 @@ void PacDriveControl::SetPinState(quint8 id, quint8 pin, bool state)
 }
 
 
+void PacDriveControl::SetPinStates(quint8 id, quint8 group, quint8 groupData, bool all)
+{
+    if(dataUltimarc[id].valid)
+    {
+        INT useGroup;
+        BYTE data = groupData;
+        bool writePass;
+        quint8 writeCount = 0;
 
+        if(all)
+            useGroup = 0;
+        else
+            useGroup = group + 1;
+
+        if(groupStateData[id][group] != groupData || all)
+        {
+            //qDebug() << "useGroup" << useGroup << "data" << data << "groupStateData[id][group]" << groupStateData[id][group];
+
+            do
+            {
+                writePass = Pac64SetLEDStates(id, useGroup, data);
+                writeCount++;
+            } while(!writePass && writeCount < WRITERETRYATTEMPTS+1);
+
+            if(writePass)
+            {
+                if(all)
+                {
+                    quint8 i;
+                    for(i = 0; i < numberGroups[id]; i++)
+                        groupStateData[id][i] = groupData;
+                }
+                else
+                    groupStateData[id][group] = groupData;
+            }
+            else
+            {
+                //qDebug() << "Failed writePass" << writePass << "writeCount" << writeCount;
+                QString title = "Write to Ultimarc Light Controller Failed";
+                QString msg = "Write to Ultimarc light controller with ID: "+QString::number(id)+" failed after 3 write attampts using Pac64SetLEDStates. Something is wrong with the hardware. Please check device and USB path.";
+                emit ShowErrorMessage(title, msg);
+            }
+        }
+    }
+}
 
 
 

@@ -64,6 +64,7 @@
     <addaction name="actionEdit_Light_Controller"/>
     <addaction name="separator"/>
     <addaction name="actionTest_COM_Port"/>
+    <addaction name="actionTest_Light_Controller"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
    </widget>
@@ -141,6 +142,11 @@
   <action name="actionEdit_Light_Controller">
    <property name="text">
     <string>Edit Light Controller</string>
+   </property>
+  </action>
+  <action name="actionTest_Light_Controller">
+   <property name="text">
+    <string>Test Light Controller</string>
    </property>
   </action>
  </widget>

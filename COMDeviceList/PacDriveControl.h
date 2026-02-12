@@ -58,6 +58,9 @@ public slots:
 
     void SetPinState(quint8 id, quint8 pin, bool state);
 
+    //Set Group States
+    void SetPinStates(quint8 id, quint8 group, quint8 groupData, bool all);
+
 signals:
 
     //Show Error Message Box in Main Thread
@@ -89,6 +92,8 @@ public:
     QList<quint8>               numberGroups;
 
     QMap<quint8,QList<quint8>>  groupStateData;
+
+
 
 };
 

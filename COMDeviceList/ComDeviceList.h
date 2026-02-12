@@ -165,14 +165,14 @@ public:
 public slots:
 
     //Handle Error Message Box from a different Thread
-    void ErrorMessage(const QString &title, const QString &message);
+    void ErrorMessage(const QString title, const QString message);
 
 
 
 signals:
 
     //Show Error Message Box in Main Thread, from LightCommand
-    void ShowErrorMessage(const QString &title, const QString &message);
+    void ShowErrorMessage(const QString title, const QString message);
 
 
 public:

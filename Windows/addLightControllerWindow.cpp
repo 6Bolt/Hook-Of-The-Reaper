@@ -259,9 +259,7 @@ bool addLightControllerWindow::AddLightController()
 
         connect(&tempLC,&LightController::ShowErrorMessage, this, &addLightControllerWindow::ErrorMessage);
 
-        tempLC.SetGroupFile(fileAndPath);
-
-        bool didFileLoad = tempLC.DidGroupFileLoad();
+        bool didFileLoad = tempLC.SetGroupFile(fileAndPath);
 
         disconnect(&tempLC,&LightController::ShowErrorMessage, this, &addLightControllerWindow::ErrorMessage);
 

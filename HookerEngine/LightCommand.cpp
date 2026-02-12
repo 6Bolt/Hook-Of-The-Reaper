@@ -14,6 +14,16 @@ LightCommand::LightCommand()
     numberCntlrs = 0;
     kindOfCommand = 0;
 
+    isColor = false;
+    isSideColor = false;
+    isColorMap = false;
+
+
+    isGeneralCommand = false;
+    isBackground = false;
+
+    isInvertData = false;
+
     errorTitle = "Light Game/Default File Error";
 }
 
@@ -26,6 +36,16 @@ LightCommand::LightCommand(QString outputSig, QString cmd, QStringList cmdArgs, 
     cntlrsGroup = cntlrsGrps;
     isCommandValid = false;
     isRGB = true;
+
+    isColor = false;
+    isSideColor = false;
+    isColorMap = false;
+
+
+    isGeneralCommand = false;
+    isBackground = false;
+
+    isInvertData = false;
 
     errorTitle = "Light Game/Default File Error";
 
@@ -159,13 +179,6 @@ void LightCommand::ProcessLightCommand()
         isCommandValid = ProcessRandomFlashRegular();
         isRGB = false;
     }
-    else if(command == RANDOMFLASHREG2I)
-    {
-        kindOfCommand = REGFLASHCOMMAND;
-        commandNumber = RANDOMFLASHREG2ICMD;
-        isCommandValid = ProcessRandomFlash2IRegular();
-        isRGB = false;
-    }
     else if(command == SEQUENCEREG)
     {
         kindOfCommand = REGSEQUENCECOMMAND;
@@ -184,8 +197,40 @@ void LightCommand::ProcessLightCommand()
     {
         kindOfCommand = REGFOLLOWERCOMMAND;
         commandNumber = FOLLOWERREGCMD;
-        isCommandValid = ProcessFollowerRegular();
+        isCommandValid = true;
         isRGB = false;
+    }
+    else if(command == TURNOFFLIGHTS)
+    {
+        kindOfCommand = GENERALCOMMAND;
+        commandNumber = TURNOFFLIGHTSCMD;
+        isCommandValid = true;
+        isGeneralCommand = true;
+    }
+    else if(command == RANDOMFLASHRGBCM)
+    {
+        kindOfCommand = FLASHCMCOMMAND;
+        commandNumber = RANDOMFLASHRGBCMCMD;
+        isCommandValid = ProcessRandomFlashRGBCM();
+    }
+    else if(command == SEQUENCERGBCM)
+    {
+        kindOfCommand = SEQUENCECMCOMMAND;
+        commandNumber = SEQUENCERGBCMCMD;
+        isCommandValid = ProcessSequenceRGBCM();
+    }
+    else if(command == RELOADSEQUENCERGBCM)
+    {
+        kindOfCommand = SEQUENCECMCOMMAND;
+        commandNumber = RELOADSEQUENCERGBCMCMD;
+        isCommandValid = ProcessReloadSequenceRGBCM();
+    }
+    else if(command == BACKGROUNDRGB)
+    {
+        kindOfCommand = BACKGROUNDCOMMAND;
+        commandNumber = BACKGROUNDRGBCMD;
+        isBackground = true;
+        isCommandValid = ProcessBackgroundRGB();
     }
 }
 
@@ -272,33 +317,38 @@ bool LightCommand::CheckPlayerNumber(QString pNum)
     return true;
 }
 
-
-bool LightCommand::CheckIntensity(QString inten)
+bool LightCommand::CheckHighCount(QString hCount)
 {
     bool isNumber;
 
-    intensity = inten.toUInt(&isNumber);
+    highCount = hCount.toUInt(&isNumber);
 
     if(!isNumber)
+    {
+        //QString failMeg = "Number of flashes is not a number.\nFailing Number: "+numF;
+        //emit ShowErrorMessage(errorTitle, failMeg);
         return false;
+    }
 
     return true;
 }
 
 
-bool LightCommand::CheckSideIntensity(QString sideInten)
+bool LightCommand::CheckBGTimeDelayReload(QString tDelay)
 {
     bool isNumber;
 
-    sideIntensity = sideInten.toUInt(&isNumber);
+    timeBGReload = tDelay.toUInt(&isNumber);
 
     if(!isNumber)
+    {
+        //QString failMeg = "Time off is not a number.\nFailing Number: "+tDelay;
+        //emit ShowErrorMessage(errorTitle, failMeg);
         return false;
+    }
 
     return true;
 }
-
-
 
 
 bool LightCommand::ProcessFlashRGB()
@@ -306,6 +356,8 @@ bool LightCommand::ProcessFlashRGB()
     bool check;
 
     color = commandArg[0];
+
+    isColor = true;
 
     check = CheckTimeOn(commandArg[1]);
 
@@ -332,6 +384,8 @@ bool LightCommand::ProcessReloadFlashRGB()
     bool check;
 
     color = commandArg[0];
+
+    isColor = true;
 
     check = CheckTimeOn(commandArg[1]);
 
@@ -363,6 +417,8 @@ bool LightCommand::ProcessSequenceRGB()
 
     color = commandArg[0];
 
+    isColor = true;
+
     check = CheckTimeDelay(commandArg[1]);
 
     if(!check)
@@ -377,6 +433,47 @@ bool LightCommand::ProcessReloadSequenceRGB()
     bool check;
 
     color = commandArg[0];
+
+    isColor = true;
+
+    check = CheckTimeDelay(commandArg[1]);
+
+    if(!check)
+        return false;
+
+    check = CheckPlayerNumber(commandArg[2]);
+
+    if(!check)
+        return false;
+
+    //Ran the Gauntlet
+    return true;
+}
+
+bool LightCommand::ProcessSequenceRGBCM()
+{
+    bool check;
+
+    colorMapName = commandArg[0];
+
+    isColorMap = true;
+
+    check = CheckTimeDelay(commandArg[1]);
+
+    if(!check)
+        return false;
+
+    //Ran the Gauntlet
+    return true;
+}
+
+bool LightCommand::ProcessReloadSequenceRGBCM()
+{
+    bool check;
+
+    colorMapName = commandArg[0];
+
+    isColorMap = true;
 
     check = CheckTimeDelay(commandArg[1]);
 
@@ -398,6 +495,8 @@ bool LightCommand::ProcessRandomFlashRGB()
     bool check;
 
     color = commandArg[0];
+
+    isColor = true;
 
     check = CheckTimeOn(commandArg[1]);
 
@@ -424,7 +523,11 @@ bool LightCommand::ProcessRandomFlash2CRGB()
 
     color = commandArg[0];
 
+    isColor = true;
+
     sideColor = commandArg[1];
+
+    isSideColor = true;
 
     check = CheckTimeOn(commandArg[2]);
 
@@ -445,23 +548,13 @@ bool LightCommand::ProcessRandomFlash2CRGB()
     return true;
 }
 
-
-bool LightCommand::ProcessFollowerRGB()
-{
-    color = commandArg[0];
-
-    return true;
-}
-
-
-bool LightCommand::ProcessFlashRegular()
+bool LightCommand::ProcessRandomFlashRGBCM()
 {
     bool check;
 
-    check = CheckIntensity(commandArg[0]);
+    colorMapName = commandArg[0];
 
-    if(!check)
-        return false;
+    isColorMap = true;
 
     check = CheckTimeOn(commandArg[1]);
 
@@ -474,6 +567,43 @@ bool LightCommand::ProcessFlashRegular()
         return false;
 
     check = CheckNumberFlashes(commandArg[3]);
+
+    if(!check)
+        return false;
+
+
+    return true;
+}
+
+
+
+
+
+bool LightCommand::ProcessFollowerRGB()
+{
+    color = commandArg[0];
+
+    isColor = true;
+
+    return true;
+}
+
+
+bool LightCommand::ProcessFlashRegular()
+{
+    bool check;
+
+    check = CheckTimeOn(commandArg[0]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeOff(commandArg[1]);
+
+    if(!check)
+        return false;
+
+    check = CheckNumberFlashes(commandArg[2]);
 
     if(!check)
         return false;
@@ -487,27 +617,22 @@ bool LightCommand::ProcessPlayerFlashRegular()
 {
     bool check;
 
-    check = CheckIntensity(commandArg[0]);
+    check = CheckTimeOn(commandArg[0]);
 
     if(!check)
         return false;
 
-    check = CheckTimeOn(commandArg[1]);
+    check = CheckTimeOff(commandArg[1]);
 
     if(!check)
         return false;
 
-    check = CheckTimeOff(commandArg[2]);
+    check = CheckNumberFlashes(commandArg[2]);
 
     if(!check)
         return false;
 
-    check = CheckNumberFlashes(commandArg[3]);
-
-    if(!check)
-        return false;
-
-    check = CheckPlayerNumber(commandArg[4]);
+    check = CheckPlayerNumber(commandArg[3]);
 
     if(!check)
         return false;
@@ -521,12 +646,7 @@ bool LightCommand::ProcessSequenceRegular()
 {
     bool check;
 
-    check = CheckIntensity(commandArg[0]);
-
-    if(!check)
-        return false;
-
-    check = CheckTimeDelay(commandArg[1]);
+    check = CheckTimeDelay(commandArg[0]);
 
     if(!check)
         return false;
@@ -539,17 +659,12 @@ bool LightCommand::ProcessPlayerSequenceRegular()
 {
     bool check;
 
-    check = CheckIntensity(commandArg[0]);
+    check = CheckTimeDelay(commandArg[0]);
 
     if(!check)
         return false;
 
-    check = CheckTimeDelay(commandArg[1]);
-
-    if(!check)
-        return false;
-
-    check = CheckPlayerNumber(commandArg[2]);
+    check = CheckPlayerNumber(commandArg[1]);
 
     if(!check)
         return false;
@@ -563,22 +678,17 @@ bool LightCommand::ProcessRandomFlashRegular()
 {
     bool check;
 
-    check = CheckIntensity(commandArg[0]);
+    check = CheckTimeOn(commandArg[0]);
 
     if(!check)
         return false;
 
-    check = CheckTimeOn(commandArg[1]);
+    check = CheckTimeOff(commandArg[1]);
 
     if(!check)
         return false;
 
-    check = CheckTimeOff(commandArg[2]);
-
-    if(!check)
-        return false;
-
-    check = CheckNumberFlashes(commandArg[3]);
+    check = CheckNumberFlashes(commandArg[2]);
 
     if(!check)
         return false;
@@ -587,50 +697,52 @@ bool LightCommand::ProcessRandomFlashRegular()
     return true;
 }
 
-bool LightCommand::ProcessRandomFlash2IRegular()
+bool LightCommand::ProcessBackgroundRGB()
 {
     bool check;
+    quint8 i;
 
-    check = CheckIntensity(commandArg[0]);
+    colorMapName = commandArg[0];
 
-    if(!check)
-        return false;
+    isColorMap = true;
 
-    check = CheckSideIntensity(commandArg[1]);
-
-    if(!check)
-        return false;
-
-    check = CheckTimeOn(commandArg[2]);
+    check = CheckPlayerNumber(commandArg[1]);
 
     if(!check)
         return false;
 
-    check = CheckTimeOff(commandArg[3]);
+    check = CheckTimeDelay(commandArg[2]);
 
     if(!check)
         return false;
 
-    check = CheckNumberFlashes(commandArg[4]);
+    check = CheckBGTimeDelayReload(commandArg[3]);
+
+    if(!check)
+        return false;
+
+    check = CheckHighCount(commandArg[4]);
 
     if(!check)
         return false;
 
 
+    if(commandArg.count() > 5)
+    {
+        bool isNumber;
+
+        for(i = 5; i < commandArg.count(); i++)
+        {
+            quint8 tempGroupNum = commandArg[i].toUInt (&isNumber);
+
+            if(!isNumber)
+                return false;
+
+            otherBGGroups << tempGroupNum;
+        }
+    }
+
+    //Ran the Gauntlet
     return true;
 }
-
-
-bool LightCommand::ProcessFollowerRegular()
-{
-    bool check;
-
-    check = CheckIntensity(commandArg[0]);
-
-    if(!check)
-        return false;
-
-    return true;
-}
-
 
