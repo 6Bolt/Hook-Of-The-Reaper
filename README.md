@@ -4,9 +4,6 @@
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
 
-# ****** I am Out Sick ******
-I am not feeling well and out sick. When I feel better, I will be back. Until July of 2026, I will be in and out, due to health reasons. I cannot respond quickly to problems. If there is a bug, please file it in the HOTR GitHub Issues.
-
 
 
 # Quick Links
