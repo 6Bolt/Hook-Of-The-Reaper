@@ -353,11 +353,19 @@ If you find any bugs, please report them here.
 
 ## Compile the Code
 
-Almost everything is in Qt, so you need Qt and the MSVC 2022 tools. Then you need the libusb/hidapi library. This is for USB HID communication. Below is what I used in Qt to compile the program. 
+Almost everything is in Qt, so you need Qt and the MSVC 2022 tools. Then you need the libusb/hidapi library. This is for USB HID communication. Also, you need the Ultimarc's PacDrive SDK, for the light controller. Below is what I used in Qt to compile the program. 
 
 - Qt 6.8.1 with a CMake File with MSVC 2022
-* My CMake Version: 3.29.3
+- My CMake Version: 3.29.3
 - libusb's hidapi library on GitHub - https://github.com/libusb/hidapi
+- Ultimarc PacDrive SDK - https://www.ultimarc.com/PacDriveSDK.zip
+
+
+Before compiling, you need to do 2 things. 
+
+- In COMDeviceList\LightGun.cpp, need to commet out '#include "../../saeicmrterta.h"' on the 4th line.
+- In COMDeviceList\LightGun.cpp, make this define on line 5, '#define ARIEMCTORIRLK ""'
+
 
 
 # FAQ
