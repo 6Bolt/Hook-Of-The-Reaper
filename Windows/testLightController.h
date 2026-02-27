@@ -26,6 +26,8 @@ public:
 
     void SetUpRegularSequence();
 
+    void SetUpRegularBackground();
+
     void SetUpRGBFlash();
 
     void SetUpRGBFlash2C();
@@ -35,6 +37,8 @@ public:
     void SetUpRGBSequence();
 
     void SetUpRGBSequenceCM();
+
+    void SetUpRGBBackground();
 
     bool GetTimeOn();
 
@@ -52,6 +56,16 @@ public:
 
     bool GetGroups();
 
+    bool GetTimeBG();
+
+    bool GetTimeBGR();
+
+    bool GetHighCount();
+
+    bool GetOtherGroups();
+
+    bool GetPlayerNumber();
+
 private slots:
     void on_lightCntlrComboBox_currentIndexChanged(int index);
 
@@ -59,12 +73,17 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void on_updateBG_clicked();
+
 private:
     Ui::testLightController *ui;
 
 
     //ComDeviceList to Add the Light Gun Too. Do Not Delete!
     ComDeviceList       *p_comDeviceList;
+
+    //First Controller Loaded
+    bool                isFirstController;
 
     //Number of Light Controllers
     quint8              numberLightCntlrs;
@@ -111,6 +130,25 @@ private:
     //Command Index
     quint8              commandIndex;
 
+    //Background Time Delay
+    quint16             timeBG;
+
+    //Background Time Delay for Reload
+    quint16             timeBGR;
+
+    //Background High Count
+    quint8              highCount;
+    quint8              bgGroupPinCount;
+
+    //Background Other Groups
+    QList<quint8>       otherGroups;
+
+    //Background Player Number
+    quint8              playerNumber;
+
+    //Is Background Running
+    bool                isBGRunning;
+    bool                isBGRGB;
 
 };
 

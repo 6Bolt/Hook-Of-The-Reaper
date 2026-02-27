@@ -56,10 +56,19 @@ public slots:
 
     void SetRGBLightIntensity(const quint8 &id, const RGBPins &pins, const RGBColor &color);
 
+    //Set Pin State for Pac64
     void SetPinState(quint8 id, quint8 pin, bool state);
 
-    //Set Group States
+    //Set Group States for Pac64
     void SetPinStates(quint8 id, quint8 group, quint8 groupData, bool all);
+
+    //Set Pin States for PacDrive
+    void SetPACLEDStates(quint8 id, quint16 data);
+
+    //Set Pin State for PacDrive
+    void SetPACLEDState(quint8 id, quint8 pin, bool state);
+
+
 
 signals:
 

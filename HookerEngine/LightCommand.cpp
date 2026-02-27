@@ -232,6 +232,14 @@ void LightCommand::ProcessLightCommand()
         isBackground = true;
         isCommandValid = ProcessBackgroundRGB();
     }
+    else if(command == BACKGROUNDREG)
+    {
+        kindOfCommand = BACKGROUNDCOMMAND;
+        commandNumber = BACKGROUNDREGCMD;
+        isBackground = true;
+        isRGB = false;
+        isCommandValid = ProcessBackgroundRegular();
+    }
 }
 
 
@@ -746,3 +754,47 @@ bool LightCommand::ProcessBackgroundRGB()
     return true;
 }
 
+bool LightCommand::ProcessBackgroundRegular()
+{
+    bool check;
+    quint8 i;
+
+    check = CheckPlayerNumber(commandArg[0]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeDelay(commandArg[1]);
+
+    if(!check)
+        return false;
+
+    check = CheckBGTimeDelayReload(commandArg[2]);
+
+    if(!check)
+        return false;
+
+    check = CheckHighCount(commandArg[3]);
+
+    if(!check)
+        return false;
+
+
+    if(commandArg.count() > 4)
+    {
+        bool isNumber;
+
+        for(i = 4; i < commandArg.count(); i++)
+        {
+            quint8 tempGroupNum = commandArg[i].toUInt (&isNumber);
+
+            if(!isNumber)
+                return false;
+
+            otherBGGroups << tempGroupNum;
+        }
+    }
+
+    //Ran the Gauntlet
+    return true;
+}

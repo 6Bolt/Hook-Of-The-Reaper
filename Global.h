@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.2.8"
+#define VERSION                 "1.2.9"
 #define VERSIONMAIN             1
 #define VERSIONMID              2
 #define VERSIONLAST             8
@@ -61,7 +61,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Default Light Gun Definition - There is No Zero, as that is blan and nonDefaultLG
-#define NUM_DEFAULTLG           13
+#define NUM_DEFAULTLG           14
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -169,6 +169,8 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define OPENFIRERELOAD          "0"
 #define OPENFIREMAXAMMONUM      0
 #define OPENFIRERELOADNUM       0
+
+#define OPENFIREENDCOM          "E"
 
 
 //Seventh Default Light Gun
@@ -291,6 +293,22 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define SINDENAUTOFASTCMD       'H'
 #define SINDENAUTOSTRONGE       3
 #define SINDENAUTOSTRONGECMD    'I'
+
+
+//Thirtenth Default Light Gun
+//RKADE Light Guns - Modified Alien USB Light Guns
+#define RKADE                   13
+#define RKADENAME               "RKADE Fixed Gun"
+#define RKADEBAUD               0
+#define RKADEDATA               0
+#define RKADEPARITY             0
+#define RKADESTOP               0
+#define RKADEFLOW               0
+#define RKADEMAXAMMO            "0"
+#define RKADERELOAD             "0"
+#define RKADEMAXAMMONUM         0
+#define RKADERELOADNUM          0
+
 
 
 //TCP Socket
@@ -695,6 +713,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 #define ULTIMATEGRPS            12
 #define OTHERGRPS               8
+#define SMALLGROUPS             2
 
 #define PACDRIVENAME            "PacDrive"
 #define UHIDNAME                "U-HID"
@@ -826,12 +845,15 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 
 //Background Commands
 
-//Background Ammo RGB
+//Background RGB
 #define BACKGROUNDRGB           "Background_RGB"
 #define BACKGROUNDRGBARGS       5
 #define BACKGROUNDRGBCMD        0
 
-
+//Background Regular
+#define BACKGROUNDREG           "Background_Regular"
+#define BACKGROUNDREGARGS       4
+#define BACKGROUNDREGCMD        1
 
 
 //General Commands
@@ -1019,5 +1041,20 @@ struct RGBPins
     quint8 g;
     quint8 b;
 };
+
+
+struct SerialPortData
+{
+    quint8 portNum;
+    QString portName;
+    qint32 portBaud;
+    quint8 portData;
+    quint8 portParity;
+    quint8 portStop;
+    quint8 portFlow;
+    QString portPath;
+    bool isWriteOnly;
+};
+
 
 #endif // GLOBAL_H

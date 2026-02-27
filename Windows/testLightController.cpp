@@ -2,6 +2,9 @@
 #include "Windows/ui_testLightController.h"
 //#include "ui_testLightController.h"
 
+#define REGULARLOW          0
+#define REGULARHIGH         3
+
 testLightController::testLightController(ComDeviceList *cdList, QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::testLightController)
@@ -14,6 +17,10 @@ testLightController::testLightController(ComDeviceList *cdList, QWidget *parent)
     //Move Over the ComDevice List and Get a Copy of the Unused COM Ports
     p_comDeviceList = cdList;
 
+    isBGRunning = false;
+    isBGRGB = false;
+    isFirstController = true;
+
     numberLightCntlrs = p_comDeviceList->GetNumberLightControllers ();
 
     regularLights = p_comDeviceList->p_lightCntlrList[0]->IsRegularGroups ();
@@ -23,6 +30,8 @@ testLightController::testLightController(ComDeviceList *cdList, QWidget *parent)
     ui->timeOnLineEdit->setInputMask(LIGHTCNTLRTIMEMASK);
     ui->timeOffLineEdit->setInputMask(LIGHTCNTLRTIMEMASK);
     ui->timeDelayLineEdit->setInputMask(LIGHTCNTLRTIMEMASK);
+    ui->timeDelayBGLineEdit->setInputMask(LIGHTCNTLRTIMEMASK);
+    ui->timeDelayBGRLineEdit->setInputMask(LIGHTCNTLRTIMEMASK);
 
     //Add Light Controllers to the ComboBox
     quint8 i;
@@ -38,17 +47,25 @@ testLightController::testLightController(ComDeviceList *cdList, QWidget *parent)
 
     cntlrsNumber = 0;
 
+    ui->backgroundLineEdit->setEnabled (true);
+
     ui->lightCntlrComboBox->setCurrentIndex (0);
 }
 
 testLightController::~testLightController()
 {
     delete ui;
+
+    //Turn Off Lights
+    p_comDeviceList->p_lightCntlrList[cntlrsNumber]->TurnOffLights();
+    p_comDeviceList->p_lightCntlrList[cntlrsNumber]->ResetLightController();
 }
 
 
 void testLightController::LoadCommands()
 {
+    //qDebug() << "Loading Commands for Test Light Controller";
+
     QString tempCmd;
     numberCommands = 0;
 
@@ -65,6 +82,10 @@ void testLightController::LoadCommands()
         numberCommands++;
 
         tempCmd = SEQUENCEREG;
+        ui->commandsComboBox->insertItem(numberCommands, tempCmd);
+        numberCommands++;
+
+        tempCmd = BACKGROUNDREG;
         ui->commandsComboBox->insertItem(numberCommands, tempCmd);
         numberCommands++;
     }
@@ -94,7 +115,13 @@ void testLightController::LoadCommands()
         tempCmd = SEQUENCERGBCM;
         ui->commandsComboBox->insertItem(numberCommands, tempCmd);
         numberCommands++;
+
+        tempCmd = BACKGROUNDRGB;
+        ui->commandsComboBox->insertItem(numberCommands, tempCmd);
+        numberCommands++;
     }
+
+    ui->commandsComboBox->setCurrentIndex (0);
 }
 
 void testLightController::SetUpArguments(quint8 index)
@@ -108,17 +135,21 @@ void testLightController::SetUpArguments(quint8 index)
         else if(index == 2)
             SetUpRegularSequence();
         else if(index == 3)
-            SetUpRGBFlash();
+            SetUpRegularBackground();
         else if(index == 4)
             SetUpRGBFlash();
         else if(index == 5)
-            SetUpRGBFlash2C();
+            SetUpRGBFlash();
         else if(index == 6)
-            SetUpRGBFlashCM();
+            SetUpRGBFlash2C();
         else if(index == 7)
-            SetUpRGBSequence();
+            SetUpRGBFlashCM();
         else if(index == 8)
+            SetUpRGBSequence();
+        else if(index == 9)
             SetUpRGBSequenceCM();
+        else if(index == 10)
+            SetUpRGBBackground();
     }
     else if(regularLights)
     {
@@ -128,6 +159,8 @@ void testLightController::SetUpArguments(quint8 index)
             SetUpRegularFlash();
         else if(index == 2)
             SetUpRegularSequence();
+        else if(index == 3)
+            SetUpRegularBackground();
     }
     else if(rgbLights)
     {
@@ -143,6 +176,8 @@ void testLightController::SetUpArguments(quint8 index)
             SetUpRGBSequence();
         else if(index == 5)
             SetUpRGBSequenceCM();
+        else if(index == 6)
+            SetUpRGBBackground();
     }
 }
 
@@ -164,6 +199,13 @@ void testLightController::SetUpRegularFlash()
 
     //ui->colorMapLineEdit->clear();
     ui->colorMapLineEdit->setEnabled (false);
+
+    ui->playerNumberLineEdit->setEnabled (false);
+    ui->timeDelayBGLineEdit->setEnabled (false);
+    ui->timeDelayBGRLineEdit->setEnabled (false);
+    ui->highCountLineEdit->setEnabled (false);
+    ui->otherGroupsLineEdit->setEnabled (false);
+    //ui->backgroundLineEdit->setEnabled (false);
 }
 
 void testLightController::SetUpRegularSequence()
@@ -187,7 +229,43 @@ void testLightController::SetUpRegularSequence()
 
     //ui->colorMapLineEdit->clear();
     ui->colorMapLineEdit->setEnabled (false);
+
+    ui->playerNumberLineEdit->setEnabled (false);
+    ui->timeDelayBGLineEdit->setEnabled (false);
+    ui->timeDelayBGRLineEdit->setEnabled (false);
+    ui->highCountLineEdit->setEnabled (false);
+    ui->otherGroupsLineEdit->setEnabled (false);
+    //ui->backgroundLineEdit->setEnabled (false);
 }
+
+void testLightController::SetUpRegularBackground()
+{
+    ui->playerNumberLineEdit->setEnabled (true);
+    ui->timeDelayBGLineEdit->setEnabled (true);
+    ui->timeDelayBGRLineEdit->setEnabled (true);
+    ui->highCountLineEdit->setEnabled (true);
+    ui->otherGroupsLineEdit->setEnabled (true);
+    //ui->backgroundLineEdit->setEnabled (true);
+
+    ui->timeOnLineEdit->setEnabled (false);
+    ui->timeOffLineEdit->setEnabled (false);
+    ui->numFlashesLineEdit->setEnabled (false);
+
+    //ui->timeDelayLineEdit->clear();
+    ui->timeDelayLineEdit->setEnabled (false);
+
+    //ui->colorLineEdit->clear();
+    ui->colorLineEdit->setEnabled (false);
+
+    //ui->sideColorLineEdit->clear();
+    ui->sideColorLineEdit->setEnabled (false);
+
+    //ui->colorMapLineEdit->clear();
+    ui->colorMapLineEdit->setEnabled (false);
+}
+
+
+
 
 void testLightController::SetUpRGBFlash()
 {
@@ -206,6 +284,13 @@ void testLightController::SetUpRGBFlash()
 
     //ui->colorMapLineEdit->clear();
     ui->colorMapLineEdit->setEnabled (false);
+
+    ui->playerNumberLineEdit->setEnabled (false);
+    ui->timeDelayBGLineEdit->setEnabled (false);
+    ui->timeDelayBGRLineEdit->setEnabled (false);
+    ui->highCountLineEdit->setEnabled (false);
+    ui->otherGroupsLineEdit->setEnabled (false);
+    //ui->backgroundLineEdit->setEnabled (false);
 }
 
 void testLightController::SetUpRGBFlash2C()
@@ -223,6 +308,13 @@ void testLightController::SetUpRGBFlash2C()
 
     //ui->colorMapLineEdit->clear();
     ui->colorMapLineEdit->setEnabled (false);
+
+    ui->playerNumberLineEdit->setEnabled (false);
+    ui->timeDelayBGLineEdit->setEnabled (false);
+    ui->timeDelayBGRLineEdit->setEnabled (false);
+    ui->highCountLineEdit->setEnabled (false);
+    ui->otherGroupsLineEdit->setEnabled (false);
+    //ui->backgroundLineEdit->setEnabled (false);
 }
 
 void testLightController::SetUpRGBFlashCM()
@@ -241,6 +333,13 @@ void testLightController::SetUpRGBFlashCM()
 
     //ui->sideColorLineEdit->clear();
     ui->sideColorLineEdit->setEnabled (false);
+
+    ui->playerNumberLineEdit->setEnabled (false);
+    ui->timeDelayBGLineEdit->setEnabled (false);
+    ui->timeDelayBGRLineEdit->setEnabled (false);
+    ui->highCountLineEdit->setEnabled (false);
+    ui->otherGroupsLineEdit->setEnabled (false);
+    //ui->backgroundLineEdit->setEnabled (false);
 }
 
 void testLightController::SetUpRGBSequence()
@@ -262,6 +361,13 @@ void testLightController::SetUpRGBSequence()
 
     //ui->colorMapLineEdit->clear();
     ui->colorMapLineEdit->setEnabled (false);
+
+    ui->playerNumberLineEdit->setEnabled (false);
+    ui->timeDelayBGLineEdit->setEnabled (false);
+    ui->timeDelayBGRLineEdit->setEnabled (false);
+    ui->highCountLineEdit->setEnabled (false);
+    ui->otherGroupsLineEdit->setEnabled (false);
+    //ui->backgroundLineEdit->setEnabled (false);
 }
 
 void testLightController::SetUpRGBSequenceCM()
@@ -283,7 +389,38 @@ void testLightController::SetUpRGBSequenceCM()
 
     //ui->sideColorLineEdit->clear();
     ui->sideColorLineEdit->setEnabled (false);
+
+    ui->playerNumberLineEdit->setEnabled (false);
+    ui->timeDelayBGLineEdit->setEnabled (false);
+    ui->timeDelayBGRLineEdit->setEnabled (false);
+    ui->highCountLineEdit->setEnabled (false);
+    ui->otherGroupsLineEdit->setEnabled (false);
+    //ui->backgroundLineEdit->setEnabled (false);
 }
+
+void testLightController::SetUpRGBBackground()
+{
+    ui->colorMapLineEdit->setEnabled (true);
+    ui->playerNumberLineEdit->setEnabled (true);
+    ui->timeDelayBGLineEdit->setEnabled (true);
+    ui->timeDelayBGRLineEdit->setEnabled (true);
+
+    ui->highCountLineEdit->setEnabled (true);
+    ui->otherGroupsLineEdit->setEnabled (true);
+    //ui->backgroundLineEdit->setEnabled (true);
+
+    ui->timeOnLineEdit->setEnabled (false);
+    ui->timeOffLineEdit->setEnabled (false);
+    ui->numFlashesLineEdit->setEnabled (false);
+
+    ui->timeDelayLineEdit->setEnabled (false);
+
+    ui->colorLineEdit->setEnabled (false);
+    ui->sideColorLineEdit->setEnabled (false);
+
+}
+
+
 
 bool testLightController::GetTimeOn()
 {
@@ -460,7 +597,8 @@ bool testLightController::GetGroups()
     QStringList splitData = tempGroups.split(' ', Qt::SkipEmptyParts);
 
     quint8 i;
-    bool isNumber, isRGB;
+    bool isNumber;
+    bool isRGB;
     groups.clear();
 
     for(i = 0; i < splitData.length(); i++)
@@ -480,7 +618,7 @@ bool testLightController::GetGroups()
 
     if(regularLights && rgbLights)
     {
-        if(commandIndex >= 0 && commandIndex <= 2)
+        if(commandIndex >= REGULARLOW && commandIndex <= REGULARHIGH)
             isRGB = false;
         else
             isRGB = true;
@@ -489,6 +627,9 @@ bool testLightController::GetGroups()
         isRGB = false;
     else if(rgbLights)
         isRGB = true;
+    else
+        isRGB = true;
+
 
     for(i = 0; i < groups.count(); i++)
     {
@@ -513,13 +654,244 @@ bool testLightController::GetGroups()
 }
 
 
+bool testLightController::GetTimeBG()
+{
+    if(isBGRunning)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Background is already running. Can only have one background open.";
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
 
+    bool isNumber;
+    QString tempTimeDelay = ui->timeDelayBGLineEdit->text ();
+
+    quint16 tempDelay = tempTimeDelay.toUInt (&isNumber);
+
+    if(!isNumber)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Time Delay Background is not a number.\nTime Delay: "+tempTimeDelay;
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
+
+    if(tempDelay == 0)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Time Delay Background cannot be 0. Needs to be 1-65,535.\nTime Delay: "+tempTimeDelay;
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
+
+    timeBG = tempDelay;
+
+    return true;
+}
+
+
+bool testLightController::GetTimeBGR()
+{
+    if(isBGRunning)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Background is already running. Can only have one background open.";
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
+
+    bool isNumber;
+    QString tempTimeDelay = ui->timeDelayBGRLineEdit->text ();
+
+    quint16 tempDelay = tempTimeDelay.toUInt (&isNumber);
+
+    if(!isNumber)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Time Delay Background is not a number.\nTime Delay: "+tempTimeDelay;
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
+
+    if(tempDelay == 0)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Time Delay Background cannot be 0. Needs to be 1-65,535.\nTime Delay: "+tempTimeDelay;
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
+
+    timeBGR = tempDelay;
+
+    return true;
+}
+
+
+bool testLightController::GetHighCount()
+{
+    if(isBGRunning)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Background is already running. Can only have one background open.";
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
+
+    bool isNumber;
+    QString tempTimeDelay = ui->highCountLineEdit->text ();
+
+    quint8 tempCount = tempTimeDelay.toUInt (&isNumber);
+
+    if(!isNumber)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Background High Count is not a number.\nTime Delay: "+tempTimeDelay;
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
+
+    if(isBGRGB)
+        bgGroupPinCount = p_comDeviceList->p_lightCntlrList[cntlrsNumber]->GetRGBGroupPinCount(groups[0]);
+    else
+        bgGroupPinCount = p_comDeviceList->p_lightCntlrList[cntlrsNumber]->GetRegularGroupPinCount(groups[0]);
+
+    if(tempCount == 0)
+        highCount = bgGroupPinCount;
+    else if(tempCount > bgGroupPinCount)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Background High Count is larger than the pins in the background group.\nHigh Count: "+tempTimeDelay+"\nBackground Group Pins Count: "+QString::number(bgGroupPinCount);
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
+    else
+        highCount = tempCount;
+
+    return true;
+}
+
+
+bool testLightController::GetOtherGroups()
+{
+    if(isBGRunning)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Background is already running. Can only have one background open.";
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
+
+    QString tempGroups = ui->otherGroupsLineEdit->text ();
+
+    //Split Up Line Data with a Space
+    QStringList splitData = tempGroups.split(' ', Qt::SkipEmptyParts);
+
+    quint8 i;
+    bool isNumber, isRGB;
+    otherGroups.clear();
+
+    for(i = 0; i < splitData.length(); i++)
+    {
+        quint8 tempGrp = splitData[i].toUInt(&isNumber);
+
+        if(!isNumber)
+        {
+            QString title = "Test Light Controller Fail";
+            QString message = "Background's Other Group Number is not a number.\nGroup Number: "+splitData[i];
+            QMessageBox::critical (this, title, message, QMessageBox::Ok);
+            return false;
+        }
+
+        otherGroups << tempGrp;
+    }
+
+    if(regularLights && rgbLights)
+    {
+        if(commandIndex >= REGULARLOW && commandIndex <= REGULARHIGH)
+            isRGB = false;
+        else
+            isRGB = true;
+    }
+    else if(regularLights)
+        isRGB = false;
+    else if(rgbLights)
+        isRGB = true;
+    else
+        isRGB = true;
+
+    for(i = 0; i < otherGroups.count(); i++)
+    {
+        bool chkGrp;
+
+        if(isRGB)
+            chkGrp = p_comDeviceList->p_lightCntlrList[cntlrsNumber]->CheckRGBGroupNumber (otherGroups[i]);
+        else
+            chkGrp = p_comDeviceList->p_lightCntlrList[cntlrsNumber]->CheckRegularGroupNumber (otherGroups[i]);
+
+        if(!chkGrp)
+        {
+            QString title = "Test Light Controller Fail";
+            QString message = "Background's Other Group number doesn't exist in the light controller.\nFailing Group Number: "+QString::number(otherGroups[i])+"\nFailing Controller Number: "+QString::number(cntlrsNumber);
+            QMessageBox::critical (this, title, message, QMessageBox::Ok);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+bool testLightController::GetPlayerNumber()
+{
+
+    if(isBGRunning)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Background is already running. Can only have one background open.";
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
+
+    bool isNumber;
+    QString tempplayerNum = ui->playerNumberLineEdit->text ();
+
+    quint8 tempPlayNum = tempplayerNum.toUShort (&isNumber);
+
+    if(!isNumber)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Background Player Number is not a number.\nPlayer Number: "+tempplayerNum;
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
+
+    if(tempPlayNum > MAXGAMEPLAYERS || tempPlayNum == 0)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Background player number is out of range. Needs to be 1-4.\nPlayer Number: "+tempplayerNum;
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return false;
+    }
+
+    playerNumber = tempPlayNum - 1;
+    return true;
+}
 
 
 
 void testLightController::on_lightCntlrComboBox_currentIndexChanged(int index)
 {
-    //labelCntlrNum
+    //qDebug() << "Light Controller Index Changed for Test Light Controller";
+
+    //If Switching to a New Light Controller, then Turn Off Lights in Old Light Controller
+    if(!isFirstController)
+    {
+        p_comDeviceList->p_lightCntlrList[cntlrsNumber]->TurnOffLights();
+        p_comDeviceList->p_lightCntlrList[cntlrsNumber]->ResetLightController();
+        isBGRunning = false;
+    }
+
 
     cntlrsNumber = index;
 
@@ -532,8 +904,10 @@ void testLightController::on_lightCntlrComboBox_currentIndexChanged(int index)
     regularLights = p_comDeviceList->p_lightCntlrList[index]->IsRegularGroups ();
     rgbLights = p_comDeviceList->p_lightCntlrList[index]->IsRGBGroups ();
 
-
     LoadCommands();
+
+    isFirstController = false;
+
 }
 
 
@@ -543,7 +917,6 @@ void testLightController::on_commandsComboBox_currentIndexChanged(int index)
 
     //Set Up the Arguments
     SetUpArguments(index);
-
 }
 
 
@@ -594,7 +967,53 @@ void testLightController::on_pushButton_clicked()
 
             p_comDeviceList->p_lightCntlrList[cntlrsNumber]->SequenceRegularLights(groups, timeDelay);
         }
-        else if(commandIndex == 3 || commandIndex == 4)
+        else if(commandIndex == 3 && !isBGRunning)
+        {
+            isBGRGB = false;
+
+            chkArg = GetGroups();
+
+            if(!chkArg)
+                return;
+
+            if(groups.count() != 1)
+            {
+                QString title = "Test Light Controller Fail";
+                QString message = "Background Groups can only be 1 group.\nNumber of Groups: "+QString::number(groups.count());
+                QMessageBox::critical (this, title, message, QMessageBox::Ok);
+                return;
+            }
+
+            chkArg = GetPlayerNumber();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetTimeBG();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetTimeBGR();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetHighCount();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetOtherGroups();
+
+            if(!chkArg)
+                return;
+
+            p_comDeviceList->p_lightCntlrList[cntlrsNumber]->SetUpBackgroundRegular(groups, playerNumber, timeBG, timeBGR, highCount, otherGroups);
+
+            isBGRunning = true;
+        }
+        else if(commandIndex == 4 || commandIndex == 5)
         {
             chkArg = GetGroups();
 
@@ -621,12 +1040,12 @@ void testLightController::on_pushButton_clicked()
             if(!chkArg)
                 return;
 
-            if(commandIndex == 3)
+            if(commandIndex == 4)
                 p_comDeviceList->p_lightCntlrList[cntlrsNumber]->FlashRGBLights(groups, timeOn, timeOff, numberFlashes, color);
             else
                 p_comDeviceList->p_lightCntlrList[cntlrsNumber]->FlashRandomRGBLights(groups, timeOn, timeOff, numberFlashes, color);
         }
-        else if(commandIndex == 5)
+        else if(commandIndex == 6)
         {
             chkArg = GetGroups();
 
@@ -660,7 +1079,7 @@ void testLightController::on_pushButton_clicked()
 
             p_comDeviceList->p_lightCntlrList[cntlrsNumber]->FlashRandomRGB2CLights(groups, timeOn, timeOff, numberFlashes, color, sideColor);
         }
-        else if(commandIndex == 6)
+        else if(commandIndex == 7)
         {
             chkArg = GetGroups();
 
@@ -689,7 +1108,7 @@ void testLightController::on_pushButton_clicked()
 
             p_comDeviceList->p_lightCntlrList[cntlrsNumber]->FlashRandomRGBLightsCM(groups, timeOn, timeOff, numberFlashes, colorMap);
         }
-        else if(commandIndex == 7)
+        else if(commandIndex == 8)
         {
             chkArg = GetGroups();
 
@@ -708,7 +1127,7 @@ void testLightController::on_pushButton_clicked()
 
             p_comDeviceList->p_lightCntlrList[cntlrsNumber]->SequenceRGBLights(groups, timeDelay, color);
         }
-        else if(commandIndex == 8)
+        else if(commandIndex == 9)
         {
             chkArg = GetGroups();
 
@@ -726,6 +1145,57 @@ void testLightController::on_pushButton_clicked()
                 return;
 
             p_comDeviceList->p_lightCntlrList[cntlrsNumber]->SequenceRGBLightsCM(groups, timeDelay, colorMap);
+        }
+        else if(commandIndex == 10 && !isBGRunning)
+        {
+            isBGRGB = true;
+
+            chkArg = GetGroups();
+
+            if(!chkArg)
+                return;
+
+            if(groups.count() != 1)
+            {
+                QString title = "Test Light Controller Fail";
+                QString message = "Background Groups can only be 1 group.\nNumber of Groups: "+QString::number(groups.count());
+                QMessageBox::critical (this, title, message, QMessageBox::Ok);
+                return;
+            }
+
+            chkArg = CheckColorMap();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetPlayerNumber();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetTimeBG();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetTimeBGR();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetHighCount();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetOtherGroups();
+
+            if(!chkArg)
+                return;
+
+            p_comDeviceList->p_lightCntlrList[cntlrsNumber]->SetUpBackgroundRGB(groups, colorMap, playerNumber, timeBG, timeBGR, highCount, otherGroups);
+
+            isBGRunning = true;
         }
     }
     else if(regularLights)
@@ -770,6 +1240,52 @@ void testLightController::on_pushButton_clicked()
                 return;
 
             p_comDeviceList->p_lightCntlrList[cntlrsNumber]->SequenceRegularLights(groups, timeDelay);
+        }
+        else if(commandIndex == 3 && !isBGRunning)
+        {
+            isBGRGB = false;
+
+            chkArg = GetGroups();
+
+            if(!chkArg)
+                return;
+
+            if(groups.count() != 1)
+            {
+                QString title = "Test Light Controller Fail";
+                QString message = "Background Groups can only be 1 group.\nNumber of Groups: "+QString::number(groups.count());
+                QMessageBox::critical (this, title, message, QMessageBox::Ok);
+                return;
+            }
+
+            chkArg = GetPlayerNumber();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetTimeBG();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetTimeBGR();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetHighCount();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetOtherGroups();
+
+            if(!chkArg)
+                return;
+
+            p_comDeviceList->p_lightCntlrList[cntlrsNumber]->SetUpBackgroundRegular(groups, playerNumber, timeBG, timeBGR, highCount, otherGroups);
+
+            isBGRunning = true;
         }
     }
     else if(rgbLights)
@@ -907,6 +1423,87 @@ void testLightController::on_pushButton_clicked()
 
             p_comDeviceList->p_lightCntlrList[cntlrsNumber]->SequenceRGBLightsCM(groups, timeDelay, colorMap);
         }
+        else if(commandIndex == 6 && !isBGRunning)
+        {
+            isBGRGB = true;
+
+            chkArg = GetGroups();
+
+            if(!chkArg)
+                return;
+
+            if(groups.count() != 1)
+            {
+                QString title = "Test Light Controller Fail";
+                QString message = "Background Groups can only be 1 group.\nNumber of Groups: "+QString::number(groups.count());
+                QMessageBox::critical (this, title, message, QMessageBox::Ok);
+                return;
+            }
+
+            chkArg = CheckColorMap();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetPlayerNumber();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetTimeBG();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetTimeBGR();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetHighCount();
+
+            if(!chkArg)
+                return;
+
+            chkArg = GetOtherGroups();
+
+            if(!chkArg)
+                return;
+
+            p_comDeviceList->p_lightCntlrList[cntlrsNumber]->SetUpBackgroundRGB(groups, colorMap, playerNumber, timeBG, timeBGR, highCount, otherGroups);
+
+            isBGRunning = true;
+        }
     }
+}
+
+
+void testLightController::on_updateBG_clicked()
+{
+    if(!isBGRunning)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Background is not running.";
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return;
+    }
+
+    bool isNumber;
+    QString tempNumberS = ui->backgroundLineEdit->text ();
+
+    quint16 tempNumber = tempNumberS.toUInt (&isNumber);
+
+    if(!isNumber)
+    {
+        QString title = "Test Light Controller Fail";
+        QString message = "Background update is not a number.\nNumber: "+tempNumberS;
+        QMessageBox::critical (this, title, message, QMessageBox::Ok);
+        return;
+    }
+
+    if(isBGRGB)
+        p_comDeviceList->p_lightCntlrList[cntlrsNumber]->BackgroundRGB(playerNumber, tempNumber);
+    else
+        p_comDeviceList->p_lightCntlrList[cntlrsNumber]->BackgroundRegular(playerNumber, tempNumber);
 }
 

@@ -311,12 +311,21 @@ void ComDeviceList::AddLightController(UltimarcData dataU)
 
     p_lightCntlrList[numberLightCntrls] = new LightController(numberLightCntrls, dataU);
 
-    //The Connect the Signal and Slots for the PacDrive
-    connect(p_lightCntlrList[numberLightCntrls],&LightController::SetLightIntensity, p_pacDrive, &PacDriveControl::SetLightIntensity);
-    connect(p_lightCntlrList[numberLightCntrls],&LightController::SetLightIntensityGroup, p_pacDrive, &PacDriveControl::SetLightIntensityGroup);
-    connect(p_lightCntlrList[numberLightCntrls],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
-    connect(p_lightCntlrList[numberLightCntrls],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
-    connect(p_lightCntlrList[numberLightCntrls],&LightController::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
+    if(dataU.type >= NANOLED && dataU.type <= IPACULTIMATEIO)
+    {
+        //The Connect the Signal and Slots for the PacDrive
+        connect(p_lightCntlrList[numberLightCntrls],&LightController::SetLightIntensity, p_pacDrive, &PacDriveControl::SetLightIntensity);
+        connect(p_lightCntlrList[numberLightCntrls],&LightController::SetLightIntensityGroup, p_pacDrive, &PacDriveControl::SetLightIntensityGroup);
+        connect(p_lightCntlrList[numberLightCntrls],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
+        connect(p_lightCntlrList[numberLightCntrls],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
+        connect(p_lightCntlrList[numberLightCntrls],&LightController::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
+    }
+    else if(dataU.type >= PACDRIVE && dataU.type <= BLUEHID)
+    {
+        connect(p_lightCntlrList[numberLightCntrls],&LightController::SetPACLEDState, p_pacDrive, &PacDriveControl::SetPACLEDState);
+        connect(p_lightCntlrList[numberLightCntrls],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPACLEDState);
+        connect(p_lightCntlrList[numberLightCntrls],&LightController::SetPACLEDStates, p_pacDrive, &PacDriveControl::SetPACLEDStates);
+    }
 
     //Connect Light Controller to Error Message Box
     connect(p_lightCntlrList[numberLightCntrls],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
@@ -504,6 +513,10 @@ void ComDeviceList::DeleteLightGun(quint8 lgNumber)
 void ComDeviceList::DeleteLightController(quint8 lcNumber)
 {
     bool reNumber = false;
+    bool needConnect = true;
+
+    //First Disconnect all the Light Controllers
+    DisconnectLightControllers();
 
     //Remove Light Controller from the pacDrive
     UltimarcData tempData = p_lightCntlrList[lcNumber]->GetUltimarcData();
@@ -512,32 +525,13 @@ void ComDeviceList::DeleteLightController(quint8 lcNumber)
     //Only One Light Controller In the List
     if(numberLightCntrls == 1 && lcNumber == 0)
     {
-        //Disconnect the Light Controller from PacDrive
-        disconnect(p_lightCntlrList[lcNumber],&LightController::SetLightIntensity, p_pacDrive, &PacDriveControl::SetLightIntensity);
-        disconnect(p_lightCntlrList[lcNumber],&LightController::SetLightIntensityGroup, p_pacDrive, &PacDriveControl::SetLightIntensityGroup);
-        disconnect(p_lightCntlrList[lcNumber],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
-        disconnect(p_lightCntlrList[lcNumber],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
-        disconnect(p_lightCntlrList[lcNumber],&LightController::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
-
-        //Disconnect Light Controller to Error Message Box
-        disconnect(p_lightCntlrList[lcNumber],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
-
         delete p_lightCntlrList[lcNumber];
         numberLightCntrls--;
         p_lightCntlrList[numberLightCntrls] = nullptr;
+        needConnect = false;
     }
     else if((lcNumber+1) == numberLightCntrls)
     {
-        //Disconnect the Light Controller from PacDrive
-        disconnect(p_lightCntlrList[lcNumber],&LightController::SetLightIntensity, p_pacDrive, &PacDriveControl::SetLightIntensity);
-        disconnect(p_lightCntlrList[lcNumber],&LightController::SetLightIntensityGroup, p_pacDrive, &PacDriveControl::SetLightIntensityGroup);
-        disconnect(p_lightCntlrList[lcNumber],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
-        disconnect(p_lightCntlrList[lcNumber],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
-        disconnect(p_lightCntlrList[lcNumber],&LightController::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
-
-        //Disconnect Light Controller to Error Message Box
-        disconnect(p_lightCntlrList[lcNumber],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
-
         //Targeted Light Controller is the Last in the List. So Don't have to Move Light guns Around
         delete p_lightCntlrList[lcNumber];
         numberLightCntrls--;
@@ -554,16 +548,6 @@ void ComDeviceList::DeleteLightController(quint8 lcNumber)
 
         numberLightCntrls--;
 
-        //Disconnect the Last Light Controller from PacDrive
-        disconnect(p_lightCntlrList[numberLightCntrls],&LightController::SetLightIntensity, p_pacDrive, &PacDriveControl::SetLightIntensity);
-        disconnect(p_lightCntlrList[numberLightCntrls],&LightController::SetLightIntensityGroup, p_pacDrive, &PacDriveControl::SetLightIntensityGroup);
-        disconnect(p_lightCntlrList[numberLightCntrls],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
-        disconnect(p_lightCntlrList[numberLightCntrls],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
-        disconnect(p_lightCntlrList[numberLightCntrls],&LightController::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
-
-        // Disconnect Last Light Controller to Error Message Box
-        disconnect(p_lightCntlrList[numberLightCntrls],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
-
         delete p_lightGunList[numberLightCntrls];
         p_lightGunList[numberLightCntrls] = nullptr;
 
@@ -579,7 +563,71 @@ void ComDeviceList::DeleteLightController(quint8 lcNumber)
             p_lightCntlrList[i]->SetLightCntlrNumber(i);
     }
 
+    //Connect all the Light Controllers
+    if(needConnect)
+        ConnectLightControllers();
+}
 
+void ComDeviceList::ConnectLightControllers()
+{
+    if(numberLightCntrls > 0)
+    {
+        quint8 i;
+        for(i = 0; i < numberLightCntrls; i++)
+        {
+            bool isPAC64 = p_lightCntlrList[i]->IsPAC64 ();
+
+            if(isPAC64)
+            {
+                //The Connect the Signal and Slots for the PacDrive for PAC64
+                connect(p_lightCntlrList[i],&LightController::SetLightIntensity, p_pacDrive, &PacDriveControl::SetLightIntensity);
+                connect(p_lightCntlrList[i],&LightController::SetLightIntensityGroup, p_pacDrive, &PacDriveControl::SetLightIntensityGroup);
+                connect(p_lightCntlrList[i],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
+                connect(p_lightCntlrList[i],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
+                connect(p_lightCntlrList[i],&LightController::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
+            }
+            else
+            {
+                connect(p_lightCntlrList[i],&LightController::SetPACLEDState, p_pacDrive, &PacDriveControl::SetPACLEDState);
+                connect(p_lightCntlrList[i],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPACLEDState);
+                connect(p_lightCntlrList[i],&LightController::SetPACLEDStates, p_pacDrive, &PacDriveControl::SetPACLEDStates);
+            }
+
+            //Connect Light Controller to Error Message Box
+            connect(p_lightCntlrList[i],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
+        }
+    }
+}
+
+void ComDeviceList::DisconnectLightControllers()
+{
+    if(numberLightCntrls > 0)
+    {
+        quint8 i;
+        for(i = 0; i < numberLightCntrls; i++)
+        {
+            bool isPAC64 = p_lightCntlrList[i]->IsPAC64 ();
+
+            if(isPAC64)
+            {
+                //The Connect the Signal and Slots for the PacDrive for PAC64
+                disconnect(p_lightCntlrList[i],&LightController::SetLightIntensity, p_pacDrive, &PacDriveControl::SetLightIntensity);
+                disconnect(p_lightCntlrList[i],&LightController::SetLightIntensityGroup, p_pacDrive, &PacDriveControl::SetLightIntensityGroup);
+                disconnect(p_lightCntlrList[i],&LightController::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
+                disconnect(p_lightCntlrList[i],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
+                disconnect(p_lightCntlrList[i],&LightController::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
+            }
+            else
+            {
+                disconnect(p_lightCntlrList[i],&LightController::SetPACLEDState, p_pacDrive, &PacDriveControl::SetPACLEDState);
+                disconnect(p_lightCntlrList[i],&LightController::SetPinState, p_pacDrive, &PacDriveControl::SetPACLEDState);
+                disconnect(p_lightCntlrList[i],&LightController::SetPACLEDStates, p_pacDrive, &PacDriveControl::SetPACLEDStates);
+            }
+
+            //Connect Light Controller to Error Message Box
+            disconnect(p_lightCntlrList[i],&LightController::ShowErrorMessage, this, &ComDeviceList::ErrorMessage);
+        }
+    }
 }
 
 

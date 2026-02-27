@@ -78,6 +78,9 @@ void HookTCPSocket::TCPReadData()
             {
                 emit GameHasStopped();
                 inGame = false;
+
+                if(splitData.count() == 1)
+                    splitData.append("0");
             }
         }
 

@@ -28,7 +28,7 @@ public:
 
     //RS3 Reaper
     explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool disableLEDs, quint8 largeAmmo, ReaperSlideData slideData, QObject *parent = nullptr);
-    //Normal Light Gun & Fusion & Blamcon & X-Gunner & Xena & JB Gun4IR
+    //Normal Light Gun & Fusion & Blamcon & X-Gunner & Xena & JB Gun4IR & RKADE
     explicit LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, qint32 cpBaud, quint8 cpDataBits, quint8 cpParity, quint8 cpStopBits, quint8 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, QObject *parent = nullptr);
     //Copy Light Gun
     explicit LightGun(LightGun const &lgMember, QObject *parent = nullptr);

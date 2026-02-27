@@ -36,6 +36,9 @@ public:
 
     bool IsUSBHIDConnected(quint8 playerNum);
 
+    //Reconnect to Exsiting COM Port
+    bool Reconnect(quint8 comPortNum);
+
 public slots:
 
     //Connect to COM Port
@@ -84,6 +87,7 @@ public slots:
 
     void WriteTCP1(const QByteArray &writeData);
 
+
 signals:
 
     //Signal Used to Display Error Message from COM Port
@@ -110,6 +114,12 @@ private:
 
     //Pointer Array of Serial COM Ports
     HANDLE                          comPortArray[MAXCOMPORTS];
+
+    //COM Port Data
+    QList<DCB>                      comPortDCBList;
+    QList<COMMTIMEOUTS>             comPortTOList;
+    QList<quint8>                   comPortPlayerList;
+    QList<LPCWSTR>                  comPortLPCList;
 
     //Error char Array
     LPWSTR                          messageBuffer = nullptr;

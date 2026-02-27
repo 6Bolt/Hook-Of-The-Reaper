@@ -34,7 +34,16 @@ LightController::LightController(quint8 cntlrNum, LightController const &other, 
 
     didGroupFileLoad = false;
 
-    defaultBrightness = 255;
+    if(dataUltimarc.type >= NANOLED && dataUltimarc.type <= IPACULTIMATEIO)
+    {
+        defaultBrightness = 255;
+        isPAC64 = true;
+    }
+    else
+    {
+        defaultBrightness = 1;
+        isPAC64 = false;
+    }
 
     isBackground = false;
 
@@ -50,18 +59,29 @@ LightController::LightController(quint8 cntlrNum, LightController const &other, 
 
     if(dataUltimarc.type == IPACULTIMATEIO)
         numberGroups = ULTIMATEGRPS;
-    else
+    else if(dataUltimarc.type == NANOLED || dataUltimarc.type == PACLED64)
         numberGroups = OTHERGRPS;
+    else
+        numberGroups = SMALLGROUPS;
 
     p_usedPins = new quint8[numberGroups];
 
-    quint8 i;
+    quint16 i;
 
     for(i = 0; i < numberGroups; i++)
         p_usedPins[i] = 0;
 
+    for(i = 0; i < NUMBEREXECUTIONS; i++)
+        p_execution[i] = nullptr;
+
+
+    executionCount = 0;
+
     for(i = 0; i < MAXGAMEPLAYERS; i++)
+    {
         backgroundActive[i] = false;
+        backgroundRGB[i] = false;
+    }
 
     //Load the Group File
     LoadGroupFile();
@@ -111,7 +131,16 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
 
     didGroupFileLoad = false;
 
-    defaultBrightness = 255;
+    if(dataUltimarc.type >= NANOLED && dataUltimarc.type <= IPACULTIMATEIO)
+    {
+        defaultBrightness = 255;
+        isPAC64 = true;
+    }
+    else
+    {
+        defaultBrightness = 1;
+        isPAC64 = false;
+    }
 
     isBackground = false;
 
@@ -129,8 +158,10 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
 
     if(dataUltimarc.type == IPACULTIMATEIO)
         numberGroups = ULTIMATEGRPS;
-    else
+    else if(dataUltimarc.type == NANOLED || dataUltimarc.type == PACLED64)
         numberGroups = OTHERGRPS;
+    else
+        numberGroups = SMALLGROUPS;
 
 
     p_usedPins = new quint8[numberGroups];
@@ -144,7 +175,10 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
         p_execution[i] = nullptr;
 
     for(i = 0; i < MAXGAMEPLAYERS; i++)
+    {
         backgroundActive[i] = false;
+        backgroundRGB[i] = false;
+    }
 
     executionCount = 0;
 
@@ -223,6 +257,8 @@ void LightController::CopyLightController(LightController const &lcMember)
 
     defaultBrightness = lcMember.defaultBrightness;
 
+    isPAC64 = lcMember.isPAC64;
+
     title = "Light Controller Group File Error";
 
     rgbOff.r = 0;
@@ -243,11 +279,21 @@ void LightController::CopyLightController(LightController const &lcMember)
         p_usedPins = new quint8[numberGroups];
     }
 
-    quint8 i;
+    quint16 i;
 
     for(i = 0; i < numberGroups; i++)
         p_usedPins[i] = 0;
 
+    for(i = 0; i < NUMBEREXECUTIONS; i++)
+        p_execution[i] = nullptr;
+
+    for(i = 0; i < MAXGAMEPLAYERS; i++)
+    {
+        backgroundActive[i] = false;
+        backgroundRGB[i] = false;
+    }
+
+    executionCount = 0;
 
     //Load the Group File
     LoadGroupFile();
@@ -293,14 +339,23 @@ bool LightController::SetGroupFile(QString filePath)
 
         p_pinsState = new quint8[numberGroups];
 
-        for(i = 0; i < numberGroups; i++)
-            p_pinsState[i] = 0xFF;
+        if(isPAC64)
+        {
+            for(i = 0; i < numberGroups; i++)
+                p_pinsState[i] = 0xFF;
 
-        if(dataUltimarc.type == NANOLED)
-            p_pinsState[numberGroups-1] = 0x0F;
+            if(dataUltimarc.type == NANOLED)
+                p_pinsState[numberGroups-1] = 0x0F;
 
-        //Conver Regular Lights from Intensity to State
-        ConvertRegularToState();
+            //Conver Regular Lights from Intensity to State
+            ConvertRegularToState();
+        }
+        else
+        {
+            //Set 16 States to Off (0)
+            for(i = 0; i < numberGroups; i++)
+                p_pinsState[i] = 0x00;
+        }
     }
 
     return didGroupFileLoad;
@@ -335,14 +390,23 @@ bool LightController::ReloadGroupFile()
 
         p_pinsState = new quint8[numberGroups];
 
-        for(i = 0; i < numberGroups; i++)
-            p_pinsState[i] = 0xFF;
+        if(isPAC64)
+        {
+            for(i = 0; i < numberGroups; i++)
+                p_pinsState[i] = 0xFF;
 
-        if(dataUltimarc.type == NANOLED)
-            p_pinsState[numberGroups-1] = 0x0F;
+            if(dataUltimarc.type == NANOLED)
+                p_pinsState[numberGroups-1] = 0x0F;
 
-        //Conver Regular Lights from Intensity to State
-        ConvertRegularToState();
+            //Conver Regular Lights from Intensity to State
+            ConvertRegularToState();
+        }
+        else
+        {
+            //Set 16 States to Off (0)
+            for(i = 0; i < numberGroups; i++)
+                p_pinsState[i] = 0x00;
+        }
     }
 
     return didGroupFileLoad;
@@ -448,6 +512,13 @@ void LightController::LoadGroupFile()
     {
         if(fileData[lineNumber].startsWith(RGBFASTGROUP))
         {
+            if(!isPAC64)
+            {
+                QString tempCrit = "PACDrive, UHID, and BlueHID doesn't have RGB support. They can only do regular lights.\nFile: "+groupFilePath;
+                emit ShowErrorMessage(title, tempCrit);
+                groupLoading = false;
+            }
+
             if(loadedRGBNormal)
             {
                 QString tempCrit = "Cannot mix GRP_RGB and GRP_RGB_FAST.\nFile: "+groupFilePath;
@@ -466,6 +537,13 @@ void LightController::LoadGroupFile()
         }
         else if(fileData[lineNumber].startsWith(RGBGROUP))
         {
+            if(!isPAC64)
+            {
+                QString tempCrit = "PACDrive, UHID, and BlueHID doesn't have RGB support. They can only do regular lights.\nFile: "+groupFilePath;
+                emit ShowErrorMessage(title, tempCrit);
+                groupLoading = false;
+            }
+
             if(rgbFastMode)
             {
                 QString tempCrit = "Cannot mix GRP_RGB and GRP_RGB_FAST.\nFile: "+groupFilePath;
@@ -1201,7 +1279,6 @@ void LightController::BuildRegularGroupData()
                     arrayPosAll << arrayPos;
 
                 arrayData[arrayPos] = arrayData[arrayPos] | pinData;
-
             }
 
             //Now Sort the arrayPosAll List
@@ -1374,7 +1451,7 @@ void LightController::ConvertRegularToState()
     quint8 i, j, pin;
     QList<quint8> wrotePins;
 
-    //First Set the State to false, then Set Intensity
+    //First Set the Intensity to Default Brightness, then Set State to false
     for(i = 0; i < regularLEDGroupList.count(); i++)
     {
         quint8 groupNum = regularLEDGroupList[i];
@@ -1423,7 +1500,7 @@ void LightController::ConvertRegularToState()
 
 
 
-bool LightController::CheckRegularGroups(QList<quint8> groupNumber)
+bool LightController::CheckRegularGroups(QList<quint8> groupNumber, quint8 *failedGroup)
 {
     //i is for group, and j is for pin
     quint8 i, j;
@@ -1438,7 +1515,10 @@ bool LightController::CheckRegularGroups(QList<quint8> groupNumber)
             quint8 checkData = arrayData[arrayPos[j]] & p_usedPins[arrayPos[j]];
 
             if(checkData != 0)
-                return false;
+            {
+                *failedGroup = groupNumber[i];
+                return false;   
+            }
         }
     }
 
@@ -1555,7 +1635,8 @@ void LightController::UnsetRGBGroups(QList<quint8> groupNumber)
 
 void LightController::FlashRegularLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes)
 {
-    bool runCMD = CheckRegularGroups(grpNumList);
+    quint8 failedGroup;
+    bool runCMD = CheckRegularGroups(grpNumList, &failedGroup);
 
     if(runCMD)
     {
@@ -1573,6 +1654,39 @@ void LightController::FlashRegularLights(QList<quint8> grpNumList, quint16 timeO
 
         //Increament Count
         executionCount++;
+    }
+    else
+    {
+        if(isBackground)
+        {
+            quint8 i;
+
+            for(i = 0; i < MAXGAMEPLAYERS; i++)
+            {
+                if(backgroundActive[i] && !backgroundRGB[i])
+                {
+                    if(backgroundGroup[i] == failedGroup)
+                    {
+                        p_background[i]->FlashRegularLights(grpNumList, timeOnMs, timeOffMs, numFlashes);
+                        return;
+                    }
+                    else
+                    {
+                        quint8 j;
+                        //Check Groups
+                        for(j = 0; j < grpNumList.count(); j++)
+                        {
+                            //otherBGGroups[i]
+                            if(otherBGGroups[i].contains(grpNumList[j]))
+                            {
+                                p_background[i]->FlashRegularLights(grpNumList, timeOnMs, timeOffMs, numFlashes);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1610,7 +1724,7 @@ void LightController::FlashRGBLights(QList<quint8> grpNumList, quint16 timeOnMs,
 
             for(i = 0; i < MAXGAMEPLAYERS; i++)
             {
-                if(backgroundActive[i])
+                if(backgroundActive[i] && backgroundRGB[i])
                 {
                     if(backgroundGroup[i] == failedGroup)
                     {
@@ -1639,7 +1753,8 @@ void LightController::FlashRGBLights(QList<quint8> grpNumList, quint16 timeOnMs,
 
 void LightController::FlashRandomRegularLights(QList<quint8> grpNumList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes)
 {
-    bool runCMD = CheckRegularGroups(grpNumList);
+    quint8 failedGroup;
+    bool runCMD = CheckRegularGroups(grpNumList, &failedGroup);
 
     if(runCMD)
     {
@@ -1657,6 +1772,39 @@ void LightController::FlashRandomRegularLights(QList<quint8> grpNumList, quint16
 
         //Increament Count
         executionCount++;
+    }
+    else
+    {
+        if(isBackground)
+        {
+            quint8 i;
+
+            for(i = 0; i < MAXGAMEPLAYERS; i++)
+            {
+                if(backgroundActive[i] && !backgroundRGB[i])
+                {
+                    if(backgroundGroup[i] == failedGroup)
+                    {
+                        p_background[i]->FlashRandomRegularLights(grpNumList, timeOnMs, timeOffMs, numFlashes);
+                        return;
+                    }
+                    else
+                    {
+                        quint8 j;
+                        //Check Groups
+                        for(j = 0; j < grpNumList.count(); j++)
+                        {
+                            //otherBGGroups[i]
+                            if(otherBGGroups[i].contains(grpNumList[j]))
+                            {
+                                p_background[i]->FlashRandomRegularLights(grpNumList, timeOnMs, timeOffMs, numFlashes);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1694,7 +1842,7 @@ void LightController::FlashRandomRGBLights(QList<quint8> grpNumList, quint16 tim
 
             for(i = 0; i < MAXGAMEPLAYERS; i++)
             {
-                if(backgroundActive[i])
+                if(backgroundActive[i] && backgroundRGB[i])
                 {
                     if(backgroundGroup[i] == failedGroup)
                     {
@@ -1758,7 +1906,7 @@ void LightController::FlashRandomRGB2CLights(QList<quint8> grpNumList, quint16 t
 
             for(i = 0; i < MAXGAMEPLAYERS; i++)
             {
-                if(backgroundActive[i])
+                if(backgroundActive[i] && backgroundRGB[i])
                 {
                     if(backgroundGroup[i] == failedGroup)
                     {
@@ -1823,7 +1971,7 @@ void LightController::FlashRandomRGBLightsCM(QList<quint8> grpNumList, quint16 t
 
             for(i = 0; i < MAXGAMEPLAYERS; i++)
             {
-                if(backgroundActive[i])
+                if(backgroundActive[i] && backgroundRGB[i])
                 {
                     if(backgroundGroup[i] == failedGroup)
                     {
@@ -1874,7 +2022,8 @@ void LightController::FlashRandomRGBLightsCM(QList<quint8> grpNumList, quint16 t
 
 void LightController::SequenceRegularLights(QList<quint8> grpNumList, quint16 delay)
 {
-    bool runCMD = CheckRegularGroups(grpNumList);
+    quint8 failedGroup;
+    bool runCMD = CheckRegularGroups(grpNumList, &failedGroup);
 
     if(runCMD)
     {
@@ -1892,6 +2041,39 @@ void LightController::SequenceRegularLights(QList<quint8> grpNumList, quint16 de
 
         //Increament Count
         executionCount++;
+    }
+    else
+    {
+        if(isBackground)
+        {
+            quint8 i;
+
+            for(i = 0; i < MAXGAMEPLAYERS; i++)
+            {
+                if(backgroundActive[i] && !backgroundRGB[i])
+                {
+                    if(backgroundGroup[i] == failedGroup)
+                    {
+                        p_background[i]->SequenceRegularLights(grpNumList, delay);
+                        return;
+                    }
+                    else
+                    {
+                        quint8 j;
+                        //Check Groups
+                        for(j = 0; j < grpNumList.count(); j++)
+                        {
+                            //otherBGGroups[i]
+                            if(otherBGGroups[i].contains(grpNumList[j]))
+                            {
+                                p_background[i]->SequenceRegularLights(grpNumList, delay);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1931,7 +2113,7 @@ void LightController::SequenceRGBLights(QList<quint8> grpNumList, quint16 delay,
 
             for(i = 0; i < MAXGAMEPLAYERS; i++)
             {
-                if(backgroundActive[i])
+                if(backgroundActive[i] && backgroundRGB[i])
                 {
                     if(backgroundGroup[i] == failedGroup)
                     {
@@ -1997,7 +2179,7 @@ void LightController::SequenceRGBLightsCM(QList<quint8> grpNumList, quint16 dela
 
             for(i = 0; i < MAXGAMEPLAYERS; i++)
             {
-                if(backgroundActive[i])
+                if(backgroundActive[i] && backgroundRGB[i])
                 {
                     if(backgroundGroup[i] == failedGroup)
                     {
@@ -2116,6 +2298,7 @@ void LightController::SetUpBackgroundRGB(QList<quint8> grpNumList, QString color
         otherBGGroups[playerNumber] = otherGrpList;
         //Put the Background Group Number into
         otherBGGroups[playerNumber].prepend (grpNumList[0]);
+        backgroundRGB[playerNumber] = true;
 
         quint8 highCountNew;
         quint8 rgbPins = rgbLEDMap[grpNumList[0]].count();
@@ -2145,7 +2328,7 @@ void LightController::SetUpBackgroundRGB(QList<quint8> grpNumList, QString color
         //Set Used Pins
         SetRGBGroups(grpNumList);
 
-        p_background[playerNumber] = new LightBackground(playerNumber, 1, grpNumList[0], rgbLEDMap, true, rgbFastMode, bgRGBColorMap, highCountNew, delay, delayBGR);
+        p_background[playerNumber] = new LightBackground(playerNumber, grpNumList[0], rgbLEDMap, true, rgbFastMode, bgRGBColorMap, highCountNew, delay, delayBGR);
 
         ConnectRGBBG(playerNumber);
 
@@ -2155,12 +2338,59 @@ void LightController::SetUpBackgroundRGB(QList<quint8> grpNumList, QString color
 
 void LightController::BackgroundRGB(quint8 playerNumber, quint16 ammoValue)
 {
-    if(backgroundActive[playerNumber])
+    if(backgroundActive[playerNumber] && backgroundRGB[playerNumber])
     {
         p_background[playerNumber]->UpdateCount(ammoValue);
     }
 }
 
+
+void LightController::SetUpBackgroundRegular(QList<quint8> grpNumList, quint8 playerNumber, quint16 delay, quint16 delayBGR, quint8 highCount, QList<quint8> otherGrpList)
+{
+    if(!backgroundActive[playerNumber])
+    {
+        quint8 i;
+        isBackground = true;
+        backgroundActive[playerNumber] = true;
+        backgroundGroup[playerNumber] = grpNumList[0];
+        otherBGGroups[playerNumber] = otherGrpList;
+        //Put the Background Group Number into
+        otherBGGroups[playerNumber].prepend (grpNumList[0]);
+        backgroundRGB[playerNumber] = false;
+
+        quint8 highCountNew;
+        quint8 rgbPins = regularLEDMap[grpNumList[0]].count();
+
+
+        //Check High Count
+        if(highCount == 0)
+            highCountNew = rgbPins;
+        else if(highCount > rgbPins)
+            highCountNew = rgbPins;
+        else
+            highCountNew = highCount;
+
+        //Fake Color Map
+        QList<RGBColor> bgRGBColorMap;
+
+        //Set Used Pins
+        SetRegularGroups(grpNumList);
+
+        p_background[playerNumber] = new LightBackground(playerNumber, grpNumList[0], regularLEDMap, false, false, bgRGBColorMap, highCountNew, delay, delayBGR);
+
+        ConnectRegularBG(playerNumber);
+
+        p_background[playerNumber]->TurnOnBackGround ();
+    }
+}
+
+void LightController::BackgroundRegular(quint8 playerNumber, quint16 ammoValue)
+{
+    if(backgroundActive[playerNumber] && !backgroundRGB[playerNumber])
+    {
+        p_background[playerNumber]->UpdateCount(ammoValue);
+    }
+}
 
 
 void LightController::ConnectRegular(quint8 index)
@@ -2228,6 +2458,44 @@ void LightController::DisconnectRGBBG(quint8 player)
 }
 
 
+void LightController::ConnectRegularBG(quint8 player)
+{
+    connect(p_background[player],&LightBackground::ShowRegularState, this, &LightController::ShowRegularState);
+
+    connect(p_background[player],&LightBackground::ShowRegularStateOne, this, &LightController::ShowRegularStateOne);
+
+    connect(p_background[player],&LightBackground::ShowRegularStateOneSequence, this, &LightController::ShowRegularStateOneSequence);
+}
+
+void LightController::DisconnectRegularBG(quint8 player)
+{
+    disconnect(p_background[player],&LightBackground::ShowRegularState, this, &LightController::ShowRegularState);
+
+    disconnect(p_background[player],&LightBackground::ShowRegularStateOne, this, &LightController::ShowRegularStateOne);
+
+    disconnect(p_background[player],&LightBackground::ShowRegularStateOneSequence, this, &LightController::ShowRegularStateOneSequence);
+}
+
+
+quint8 LightController::GetRGBGroupPinCount(quint8 groupNumber)
+{
+    quint8 pinCount = 0;
+
+    if(rgbLEDMap.contains(groupNumber))
+        pinCount = rgbLEDMap[groupNumber].count();
+
+    return pinCount;
+}
+
+quint8 LightController::GetRegularGroupPinCount(quint8 groupNumber)
+{
+    quint8 pinCount = 0;
+
+    if(regularLEDMap.contains(groupNumber))
+        pinCount = regularLEDMap[groupNumber].count();
+
+    return pinCount;
+}
 
 
 
@@ -2255,10 +2523,19 @@ void LightController::ShowRegularState(QList<quint8> grpNumList, bool state)
             else
                 p_pinsState[position] = p_pinsState[position] & ~(data);
 
-            emit SetPinStates(id, position, p_pinsState[position], false);
+            if(isPAC64)
+                emit SetPinStates(id, position, p_pinsState[position], false);
 
             //qDebug() << "State Data:" << p_pinsState[position] << "State:" << state;
         }
+    }
+
+    if(!isPAC64)
+    {
+        quint16 pacData = p_pinsState[0];
+        quint16 tempPACData = (p_pinsState[1] << 8);
+        pacData |= tempPACData;
+        emit SetPACLEDStates(id, pacData);
     }
 }
 
@@ -2369,7 +2646,6 @@ void LightController::ShowRGBColor(QList<quint8> grpNumList, RGBColor color)
             //qDebug() << "Red Pin" << rgbPins.r << "Green Pin" << rgbPins.g << "Blue Pin" << rgbPins.b;
             //qDebug() << "Red" << color.r << "Green" << color.g << "Blue" << color.b;
 
-            //Set RGB Lights to the Color
             emit SetRGBLightIntensity(id, rgbPins, color);
         }
     }
@@ -2628,14 +2904,20 @@ void LightController::ResetLightController()
                 //Turn Off Lights
                 p_background[i]->TurnOffLightsEnd();
                 //Disconnect Background Signals & Slots
-                DisconnectRGBBG(i);
+                if(backgroundRGB[i])
+                    DisconnectRGBBG(i);
+                else
+                    DisconnectRegularBG(i);
                 //Delete Background
                 delete p_background[i];
                 p_background[i] = nullptr;
                 //Unset Used Pins
                 QList<quint8> tempList;
                 tempList << backgroundGroup[i];
-                UnsetRGBGroups(tempList);
+                if(backgroundRGB[i])
+                    UnsetRGBGroups(tempList);
+                else
+                    UnsetRegularGroups(tempList);
                 backgroundActive[i] = false;
             }
         }
@@ -2651,14 +2933,23 @@ void LightController::SetUpLights()
 
         p_pinsState = new quint8[numberGroups];
 
-        for(i = 0; i < numberGroups; i++)
-            p_pinsState[i] = 0xFF;
+        if(isPAC64)
+        {
+            for(i = 0; i < numberGroups; i++)
+                p_pinsState[i] = 0xFF;
 
-        if(dataUltimarc.type == NANOLED)
-            p_pinsState[numberGroups-1] = 0x0F;
+            if(dataUltimarc.type == NANOLED)
+                p_pinsState[numberGroups-1] = 0x0F;
 
-        //Conver Regular Lights from Intensity to State
-        ConvertRegularToState();
+            //Conver Regular Lights from Intensity to State
+            ConvertRegularToState();
+        }
+        else
+        {
+            for(i = 0; i < numberGroups; i++)
+                p_pinsState[i] = 0x00;
+        }
+
     }
 }
 

@@ -80,7 +80,8 @@ void addLightControllerWindow::on_pushButton_clicked()
     QString fileAndPath = QFileDialog::getOpenFileName(
         this, "Light Controller Group File", "lightCntlr", "Light Controller Group Files (*.txt)");
 
-
+    //Clear Out Line Edit, and Add In File and Path
+    ui->groupFileLineEdit->clear ();
     ui->groupFileLineEdit->insert(fileAndPath);
 }
 

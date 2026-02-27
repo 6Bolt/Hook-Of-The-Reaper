@@ -235,9 +235,18 @@ bool HookLight::LoadLightFile()
 
                 if(numArgs == 254)
                 {
-                    if(splitData.count() < 3)
+                    if(splitData.count() < 6)
                     {
-                        QString failMeg = "There is too little arguments for the background command.\nFailing Line: "+fileData[lineNumber];
+                        QString failMeg = "There is too little arguments for the RGB background command.\nFailing Line: "+fileData[lineNumber];
+                        emit ShowErrorMessage(title, failMeg);
+                        return false;
+                    }
+                }
+                else if(numArgs == 253)
+                {
+                    if(splitData.count() < 5)
+                    {
+                        QString failMeg = "There is too little arguments for the regular background command.\nFailing Line: "+fileData[lineNumber];
                         emit ShowErrorMessage(title, failMeg);
                         return false;
                     }
@@ -444,13 +453,16 @@ bool HookLight::LoadLightFile()
                 if(lightCmd.IsBackgroundCommand ())
                 {
                     quint8 numberCntlrs = lightCmd.GetNumberControllers();
+                    bool isRGB = lightCmd.IsRGB();
                     QString colorMap = lightCmd.GetColorMap ();
-                    //QString command = lightCmd.GetCommand ();
                     quint8 playerNumber = lightCmd.GetPlayerNumber ();
                     QList<quint8> otherGroups = lightCmd.GetOtherBGGroups();
                     quint16 delay = lightCmd.GetTimeDelay ();
                     quint8 highCount = lightCmd.GetHighCount ();
                     quint16 reloadDelay = lightCmd.GetBGTimeDelayReload ();
+
+                    if(isRGB)
+                        QString colorMap = lightCmd.GetColorMap ();
 
                     //qDebug() << "highCount" << highCount << "delay" << delay << "reloadDelay" << reloadDelay;
 
@@ -466,7 +478,10 @@ bool HookLight::LoadLightFile()
                             return false;
                         }
 
-                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpBackgroundRGB(groups, colorMap, playerNumber, delay, reloadDelay, highCount, otherGroups);
+                        if(isRGB)
+                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpBackgroundRGB(groups, colorMap, playerNumber, delay, reloadDelay, highCount, otherGroups);
+                        else
+                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpBackgroundRegular(groups, playerNumber, delay, reloadDelay, highCount, otherGroups);
                     }
                 }
             }
@@ -539,6 +554,8 @@ quint8 HookLight::CheckCommandArgs(QString command)
         return RELOADSEQUENCERGBCMARGS;
     else if(command == BACKGROUNDRGB)
         return 254;
+    else if(command == BACKGROUNDREG)
+        return 253;
     else
         return 255;
 }
@@ -1073,9 +1090,10 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
         } //End of Regular Follower Commands
 
     } //End of Regular Commands
-    else if(kindOfCommand == BACKGROUNDCOMMAND)
+    else if(kindOfCommand == BACKGROUNDCOMMAND)  //Background Commands
     {
-        if(commandNumber == BACKGROUNDRGBCMD)
+        //For Both RGB and Regular
+        if(commandNumber == BACKGROUNDRGBCMD || commandNumber == BACKGROUNDREGCMD)
         {
             quint8 playerNum = lightCmd.GetPlayerNumber();
 
@@ -1084,7 +1102,10 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                 cntlrNumber = lightCmd.GetControllerNumber(i);
                 QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
 
-                p_comDeviceList->p_lightCntlrList[cntlrNumber]->BackgroundRGB(playerNum, dataNumber);
+                if(commandNumber == BACKGROUNDRGBCMD)
+                    p_comDeviceList->p_lightCntlrList[cntlrNumber]->BackgroundRGB(playerNum, dataNumber);
+                else
+                    p_comDeviceList->p_lightCntlrList[cntlrNumber]->BackgroundRegular(playerNum, dataNumber);
             }
         }
 

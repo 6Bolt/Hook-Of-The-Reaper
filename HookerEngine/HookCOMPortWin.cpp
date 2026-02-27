@@ -15,6 +15,27 @@ HookCOMPortWin::HookCOMPortWin(QObject *parent)
         noLightGunWarning[i] = false;
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    comPortDCBList.resize(MAXCOMPORTS);
+    comPortTOList.resize(MAXCOMPORTS);
+    comPortPlayerList.resize(MAXCOMPORTS);
+    comPortLPCList.resize(MAXCOMPORTS);
+#else
+    DCB dcb = {0};
+    dcb.DCBlength = sizeof(DCB);
+    COMMTIMEOUTS timeout = {0};
+    LPCSTR portNameLPC = "";
+
+    for(quint8 i = 0; i < MAXCOMPORTS; i++)
+    {
+        comPortDCBList.append(dcb);
+        comPortTOList.append(timeout);
+        comPortLPCList.append(portNameLPC);
+        comPortPlayerList.append(UNASSIGN);
+    }
+
+#endif
+
     //Init the USB HID
     if (hid_init())
     {
@@ -121,13 +142,105 @@ bool HookCOMPortWin::IsUSBHIDConnected(quint8 playerNum)
     return hidOpen[playerNum];
 }
 
+bool HookCOMPortWin::Reconnect(quint8 comPortNum)
+{
+    //qDebug() << "Connecting to Serial Port" << comPortNum;
+    //Create COM Port
+
+    //qDebug() << "Reconnecting to COM Port" << comPortNum;
+
+    comPortArray[comPortNum] = CreateFile(comPortLPCList[comPortNum], GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+
+    if (comPortArray[comPortNum] == INVALID_HANDLE_VALUE)
+    {
+        DWORD lastError = GetLastError();
+        qDebug() << "Failed on COM Port Handle, error" << lastError;
+        return false;
+    }
+
+    DCB dcbSerialParam = comPortDCBList[comPortNum];
+    dcbSerialParam.DCBlength = sizeof(dcbSerialParam);
+
+    //Set the Params to the Serial Port, and fail handling
+    if (!SetCommState(comPortArray[comPortNum], &dcbSerialParam))
+    {
+        COMSTAT status;
+        DWORD errors;
+        DWORD lastError = GetLastError();
+
+        ClearCommError(comPortArray[comPortNum], &errors, &status);
+
+        QString critMessage;
+        critMessage = "Can not set the CommState for the Serial COM Port: "+QString::number(comPortNum)+".\nLast error: "+QString::number(lastError)+"\nErrors: "+QString::number(errors);
+        emit ErrorMessage("Serial COM Port Error",critMessage);
+        return false;
+    }
+
+
+    //Set the Times Out for the Serial COM Port
+
+    COMMTIMEOUTS timeout = comPortTOList[comPortNum];
+    //Set the Timeouts to the Serial Port, and fail handling
+    if (!SetCommTimeouts(comPortArray[comPortNum], &timeout))
+    {
+        COMSTAT status;
+        DWORD errors;
+        DWORD lastError = GetLastError();
+
+        ClearCommError(comPortArray[comPortNum], &errors, &status);
+
+        QString critMessage;
+
+        critMessage = "Serial COM Port failed to set TimeOuts, on COM Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections.\nError: "+QString::number(errors)+"\nLast error: "+QString::number(lastError);
+        emit ErrorMessage("Serial COM Port Error",critMessage);
+        return false;
+    }
+
+
+    comPortOpen[comPortNum] = true;
+    numPortOpen++;
+    isPortOpen = true;
+
+    return true;
+
+}
+
+
 
 //public slots
 
  void HookCOMPortWin::Connect(const quint8 &playerNum, const quint8 &comPortNum, const QString &comPortName, const qint32 &comPortBaud, const quint8 &comPortData, const quint8 &comPortParity, const quint8 &comPortStop, const quint8 &comPortFlow, const QString &comPortPath, const bool &isWriteOnly)
 {
+    //Check if COM Port is Open
+    if(comPortOpen[comPortNum])
+    {
+        DCB dcb = {0};
+        dcb.DCBlength = sizeof(DCB);
+
+        if(!GetCommState(comPortArray[comPortNum], &dcb) || comPortArray[comPortNum] == INVALID_HANDLE_VALUE)
+        {
+            CloseHandle(comPortArray[comPortNum]);
+            comPortOpen[comPortNum] = false;
+
+            if(numPortOpen > 0)
+                numPortOpen--;
+
+            if(numPortOpen == 0)
+                isPortOpen = false;
+
+            //qDebug() << "COM Port" << comPortName << "Was not Open, Reopening it";
+
+            //bool didReconnect = Reconnect(comPortNum);
+            Reconnect(comPortNum);
+
+            //qDebug() << "COM Port Reconnect is" << didReconnect;
+        }
+        //else
+        //    qDebug() << "Get COM State Passed for" << comPortName;
+    }
     //Check if it is Already Open, if so, do nothing
-    if(comPortOpen[comPortNum] == false)
+    //if(comPortOpen[comPortNum] == false)
+    else
     {
         //qDebug() << "Connecting to Serial Port" << comPortNum;
         //Create COM Port
@@ -384,6 +497,10 @@ bool HookCOMPortWin::IsUSBHIDConnected(quint8 playerNum)
                 return;
             }
 
+            comPortLPCList[comPortNum] = portNameLPC;
+            comPortDCBList[comPortNum] = dcbSerialParam;
+            comPortTOList[comPortNum] = timeout;
+            comPortPlayerList[comPortNum] = playerNum;
 
             //Done, COM Port is Set-Up, Set Connection bools
 
@@ -430,16 +547,51 @@ void HookCOMPortWin::WriteData(const quint8 &comPortNum, const QByteArray &write
         charArray[size] = '\0';
         quint8 retry = 0;
         DWORD dwWrite = 0;
-        qint16 writeOutput;
+        bool writeOutput;
         COMSTAT status;
         DWORD errors;
+        bool didReconnect = true;
 
         //qDebug() << "COM Port: " << comPortNum << " Data: " << writeData.toStdString ();
 
         writeOutput = WriteFile(comPortArray[comPortNum], charArray, size, &dwWrite, NULL);
 
+        //Check if Serial Port is still connected
+        if(!writeOutput)
+        {
+            DWORD lastError = GetLastError();
+
+            if(lastError == ERROR_GEN_FAILURE || lastError == ERROR_OPERATION_ABORTED || lastError == ERROR_NO_SUCH_DEVICE)
+            {
+                DCB dcb = {0};
+                dcb.DCBlength = sizeof(DCB);
+
+                if(!GetCommState(comPortArray[comPortNum], &dcb))
+                {
+                    CloseHandle(comPortArray[comPortNum]);
+                    comPortOpen[comPortNum] = false;
+
+                    if(numPortOpen > 0)
+                        numPortOpen--;
+
+                    if(numPortOpen == 0)
+                        isPortOpen = false;
+
+                    //qDebug() << "COM Port Write Fail On" << comPortNum << "Looks like it is Not Connected";
+
+                    didReconnect = Reconnect(comPortNum);
+
+                    //qDebug() << "COM Port Reconnect is" << didReconnect;
+                }
+            }
+            //else
+            //    qDebug() << "Last Error:" << lastError;
+        }
+
+        //qDebug() << "writeOutput" << writeOutput;
+
         //If Failed Write, then Retry
-        while(writeOutput == 0 && retry != WRITERETRYATTEMPTS)
+        while(!writeOutput && retry != WRITERETRYATTEMPTS && didReconnect)
         {
             //Clean Out Error & Set dwWrite back to 0
             ClearCommError(comPortArray[comPortNum], &errors, &status);

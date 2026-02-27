@@ -278,7 +278,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     deathSetting = lgSet.death;
     shakeEnalbe = lgSet.shake;
 
-    if(defaultLightGunNum == XGUNNER)
+    if(defaultLightGunNum == XGUNNER || defaultLightGunNum == RKADE)
     {
         if(reloadSetting == 1)
             loadReloadShake = true;
@@ -1502,9 +1502,14 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
 
     //Connect Commands up
     connect(this, &LightGun::DoAmmoValueCommands, this, &LightGun::AmmoValueNormal);
-    connect(this, &LightGun::DoDisplayAmmoCommands, this, &LightGun::DisplayAmmo2Digit);
-    connect(this, &LightGun::DoDisplayLifeCommands, this, &LightGun::DisplayLife2Digit);
-    connect(this, &LightGun::DoDisplayOtherCommands, this, &LightGun::DisplayOther2Digit);
+    connect(this, &LightGun::DoDisplayAmmoCommands, this, &LightGun::DisplayAmmoNormal);
+    connect(this, &LightGun::DoDisplayLifeCommands, this, &LightGun::DisplayLifeNormal);
+    connect(this, &LightGun::DoDisplayOtherCommands, this, &LightGun::DisplayOtherNormal);
+
+
+    //connect(this, &LightGun::DoDisplayAmmoCommands, this, &LightGun::DisplayAmmo2Digit);
+    //connect(this, &LightGun::DoDisplayLifeCommands, this, &LightGun::DisplayLife2Digit);
+    //connect(this, &LightGun::DoDisplayOtherCommands, this, &LightGun::DisplayOther2Digit);
 }
 
 //Deconstructor
@@ -3739,14 +3744,11 @@ void LightGun::DisplayLifeNormal(quint16 lifeValue)
     //Init Ammo Display
     if(!hasDisplayLifeInited)
     {
-        if(displayLifeInitCmdsSet && displayLifeCmdsSet && !hasDisplayAmmoAndLifeInited)
+        if(displayLifeInitCmdsSet && displayLifeCmdsSet)
         {
             for(quint8 i = 0; i < displayLifeInitCmds.length(); i++)
                 tempSL << displayLifeInitCmds[i];
         }
-
-        if(displayAmmoLife)
-            hasDisplayAmmoAndLifeInited = true;
 
         hasDisplayLifeInited = true;
     }
@@ -3754,7 +3756,10 @@ void LightGun::DisplayLifeNormal(quint16 lifeValue)
 
     if(displayLifeCmdsSet)
     {
-        newLifeValue = lifeValue;
+        if(lifeValue > 99)
+            newLifeValue = 99;
+        else
+            newLifeValue = lifeValue;
 
         //Replace the %s% with the ammo value (ammoValue)
         for(quint8 i = 0; i < displayLifeCmds.length(); i++)

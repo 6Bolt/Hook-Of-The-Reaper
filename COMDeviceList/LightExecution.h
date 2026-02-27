@@ -75,8 +75,6 @@ private slots:
 
     void RGBSequenceDelayDone();
 
-    void RGBSequenceDelayDoneCM();
-
 
     //Slots for Regular Commands with Timer
 
@@ -186,6 +184,7 @@ private:
     QList<RGBColor>                 sequenceColorList;
     quint8                          sequenceColorListCount;
     quint8                          sequenceColorCount;
+    bool                            isColorMap;
 
     //Color & Intensity
     RGBColor                        rgbSequenceColor;

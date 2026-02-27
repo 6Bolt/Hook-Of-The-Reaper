@@ -110,7 +110,8 @@ public:
     //Background RGB Command
     bool ProcessBackgroundRGB();
 
-
+    //Background RGB Command
+    bool ProcessBackgroundRegular();
 
 
 

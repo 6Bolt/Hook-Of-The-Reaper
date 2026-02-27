@@ -1,26 +1,10 @@
 #include "LightBackground.h"
 
-LightBackground::LightBackground(quint8 player, quint8 mode, quint8 grpNum, QMap<quint8,QList<quint8>> lightMap, bool rgb, bool rgbFast, QList<RGBColor> cMap, quint8 hCount, quint16 tDelay, quint16 rDelay, QObject *parent)
+LightBackground::LightBackground(quint8 player, quint8 grpNum, QMap<quint8,QList<quint8>> lightMap, bool rgb, bool rgbFast, QList<RGBColor> cMap, quint8 hCount, quint16 tDelay, quint16 rDelay, QObject *parent)
     : QObject{parent}
 {
     //backgroundNumber = bgNum;
     playerNumber = player;
-
-    if(mode == 1)
-    {
-        ammoMode = true;
-        lifeMode = false;
-    }
-    else if(mode == 2)
-    {
-        ammoMode = false;
-        lifeMode = true;
-    }
-    else
-    {
-        ammoMode = false;
-        lifeMode = false;
-    }
 
     highCount = hCount;
     highCountX2 = (highCount << 1);
@@ -82,7 +66,7 @@ void LightBackground::TurnOnBackGround()
     quint8 colorMapCount = 0;
     quint8 offset = 1;
 
-    if(!rgbFastMode)
+    if(!rgbFastMode && isRGB)
         offset = 3;
 
     for(i = 0; i < grpPinsCount; i+=offset)
@@ -91,21 +75,38 @@ void LightBackground::TurnOnBackGround()
         index << i;
 
         if(bgIndex < groupLights)
-            emit ShowRGBColorOne(groupList, bgColorMap[colorMapCount], index, 0);
+        {
+            if(isRGB)
+                emit ShowRGBColorOne(groupList, bgColorMap[colorMapCount], index, 0);
+            else
+                emit ShowRegularStateOne(groupList, true, index, 0);
+        }
         else
-            emit ShowRGBColorOne(groupList, rgbOff, index, 0);
+        {
+            if(isRGB)
+                emit ShowRGBColorOne(groupList, rgbOff, index, 0);
+            else
+                emit ShowRegularStateOne(groupList, false, index, 0);
 
+        }
         bgIndex++;
-        colorMapCount++;
 
-        if(colorMapCount >= bgColorMapCount)
-            colorMapCount = 0;
+        if(isRGB)
+        {
+            colorMapCount++;
+
+            if(colorMapCount >= bgColorMapCount)
+                colorMapCount = 0;
+        }
     }
 }
 
 void LightBackground::TurnOffBackGround()
 {
-    emit ShowRGBColor(groupList, rgbOff);
+    if(isRGB)
+        emit ShowRGBColor(groupList, rgbOff);
+    else
+        emit ShowRegularState(groupList, false);
 }
 
 
@@ -113,34 +114,49 @@ void LightBackground::ReloadBackground()
 {
 
     isSequence = true;
+    isCommandRunning = true;
+
+    otherGroupList = groupList;
     sequenceDelay = reloadDelay;
     sequenceCount = oldGroupLights;
     sequenceMaxCount = groupLights;
-    isCommandRunning = true;
 
-    if(rgbFastMode)
-        reloadColorCount = oldGroupLights;
-    else
+    if(isRGB)
     {
-        reloadColorCount = oldGroupLights/3;
+        sequenceColorCount = oldGroupLights;
+        sequenceColorListCount = bgColorMapCount;
+        sequenceColorList = bgColorMap;
+
+        if(sequenceColorCount >= sequenceColorListCount)
+            sequenceColorCount = 0;
+
+        rgbSequenceColor = bgColorMap[sequenceColorCount];
+    }
+
+    if(!rgbFastMode && isRGB)
+    {
+        //reloadColorCount = oldGroupLights/3;
         //Times sequenceCount and sequenceCountMax by 3
         sequenceCount = (sequenceCount << 1) + sequenceCount;
         sequenceMaxCount = (sequenceMaxCount << 1) + sequenceMaxCount;
     }
 
-    if(reloadColorCount >= bgColorMapCount)
-        reloadColorCount = 0;
 
-    rgbSequenceColor = bgColorMap[reloadColorCount];
+    if(isRGB)
+    {
+        emit ShowRGBColorOneSequence(groupList, rgbSequenceColor, sequenceCount);
+        //Connect Timer to Turn On Next LEDs in the Sequence
+        connect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDoneCM()));
+    }
+    else
+    {
+        emit ShowRegularStateOneSequence(groupList, true, sequenceCount);
+        //Connect Timer to Turn On Next LEDs in the Sequence
+        connect(p_timer, SIGNAL(timeout()), this, SLOT(RegularSequenceDelayDone()));
+    }
 
-    emit ShowRGBColorOneSequence(groupList, rgbSequenceColor, sequenceCount);
-
-    //Connect Timer to Turn On Next LEDs in the Sequence
-    connect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDone()));
     p_timer->setInterval (reloadDelay);
     p_timer->start();
-
-
 }
 
 
@@ -150,6 +166,8 @@ void LightBackground::UpdateCount(quint16 ammo)
     //Check for Reload
     if(ammo > ammoCount)
     {
+        reloadCount = ammo;
+
         if(ammo >= highCountX2)
             bigCount = true;
         else
@@ -173,7 +191,7 @@ void LightBackground::UpdateCount(quint16 ammo)
         if(!isCommandRunning)
         {
             doingReload = true;
-            reloadColorCount = oldGroupLights;
+            //reloadColorCount = oldGroupLights;
             ReloadBackground();
         }
     }
@@ -184,10 +202,23 @@ void LightBackground::UpdateCount(quint16 ammo)
 
         if(shotsFired >= ammoPerLight)
         {
-            shotsFired = 0;
-            if(groupLights != 0)
-                groupLights--;
-            redoLights = true;
+            if(bigCount)
+            {
+                shotsFired = 0;
+                if(groupLights != 0)
+                    groupLights--;
+                redoLights = true;
+            }
+            else
+            {
+                quint16 ammoDelta = reloadCount - shotsFired;
+                if(ammoDelta < groupLights)
+                {
+                    if(groupLights != 0)
+                        groupLights--;
+                    redoLights = true;
+                }
+            }
         }
 
         if(ammo == 0)
@@ -208,23 +239,30 @@ void LightBackground::UpdateCount(quint16 ammo)
 
 //Flash Commands
 
-void LightBackground::FlashRegularLights(quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes)
+void LightBackground::FlashRegularLights(QList<quint8> grpList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes)
 {
-    isFlash = true;
+    if(!isCommandRunning)
+    {
+        //Turn Off Background
+        TurnOffBackGround();
 
-    numberFlash = numFlashes;
-    timesFlashed = 0;
-    flashTimeOn = timeOnMs;
-    flashTimeOff = timeOffMs;
+        otherGroupList = grpList;
 
-    emit ShowRegularState(groupList, true);
+        isFlash = true;
+        isCommandRunning = true;
 
-    //Connect Timer to Turn Off LEDs
-    connect(p_timer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
-    p_timer->setInterval (flashTimeOn);
-    p_timer->start();
+        numberFlash = numFlashes;
+        timesFlashed = 0;
+        flashTimeOn = timeOnMs;
+        flashTimeOff = timeOffMs;
 
-    //Now Wait until timer runs out
+        //Connect Timer to Turn Off LEDs
+        connect(p_timer, SIGNAL(timeout()), this, SLOT(FlashRegularLightsPost()));
+        p_timer->setInterval (bgDelay);
+        p_timer->start();
+
+        //Now Wait until timer runs out
+    }
 }
 
 void LightBackground::FlashRGBLights(QList<quint8> grpList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, RGBColor color)
@@ -259,36 +297,48 @@ void LightBackground::FlashRGBLights(QList<quint8> grpList, quint16 timeOnMs, qu
 
 //Random Flash Commands
 
-void LightBackground::FlashRandomRegularLights(quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes)
+void LightBackground::FlashRandomRegularLights(QList<quint8> grpList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes)
 {
-    quint8 i;
-    isFlash = true;
-    numberFlash = numFlashes;
-    timesFlashed = 0;
-    flashTimeOn = timeOnMs;
-    flashTimeOff = timeOffMs;
-
-    useRandomPins = true;
-
-    //Find Random Pin for Groups
-    for(i = 0; i < groupList.count(); i++)
+    if(!isCommandRunning)
     {
-        quint8 count = ledMap[groupList[i]].count();
+        quint8 i;
 
-        quint8 randomPin = QRandomGenerator::global()->bounded(0, count);
+        //Turn Off Background
+        TurnOffBackGround();
 
-        //But Random Number into List
-        randomPins << randomPin;
+        otherGroupList = grpList;
+
+        isFlash = true;
+        isCommandRunning = true;
+
+        numberFlash = numFlashes;
+        timesFlashed = 0;
+        flashTimeOn = timeOnMs;
+        flashTimeOff = timeOffMs;
+
+        useRandomPins = true;
+        randomPins.clear();
+
+        //Find Random Pin for Groups
+        for(i = 0; i < otherGroupList.count(); i++)
+        {
+            quint8 count = ledMap[otherGroupList[i]].count();
+
+            quint8 randomPin = QRandomGenerator::global()->bounded(0, count);
+
+            //But Random Number into List
+            randomPins << randomPin;
+        }
+
+        //emit ShowRegularStateOne(otherGroupList, true, randomPins, 0);
+
+        //Connect Timer to Turn Off LEDs
+        connect(p_timer, SIGNAL(timeout()), this, SLOT(FlashRandomRegularLightsPost()));
+        p_timer->setInterval (bgDelay);
+        p_timer->start();
+
+        //Now Wait until timer runs out
     }
-
-    emit ShowRegularStateOne(groupList, true, randomPins, 0);
-
-    //Connect Timer to Turn Off LEDs
-    connect(p_timer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
-    p_timer->setInterval (flashTimeOn);
-    p_timer->start();
-
-    //Now Wait until timer runs out
 }
 
 void LightBackground::FlashRandomRGBLights(QList<quint8> grpList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, RGBColor color)
@@ -364,6 +414,7 @@ void LightBackground::FlashRandomRGB2CLights(QList<quint8> grpList, quint16 time
 
         useRandomPins = true;
         useSideColor = true;
+        randomPins.clear();
 
         //Find Random Pin for Groups
         for(i = 0; i < otherGroupList.count(); i++)
@@ -396,21 +447,28 @@ void LightBackground::FlashRandomRGB2CLights(QList<quint8> grpList, quint16 time
 
 //Sequence Commands
 
-void LightBackground::SequenceRegularLights(quint16 delay)
+void LightBackground::SequenceRegularLights(QList<quint8> grpList, quint16 delay)
 {
-    isSequence = true;
-    sequenceDelay = delay;
-    sequenceCount = 0;
-    sequenceMaxCount = 1;
+    if(!isCommandRunning)
+    {
+        //Turn Off Background
+        TurnOffBackGround();
 
-    FindMaxSequence();
+        isSequence = true;
+        isCommandRunning = true;
 
-    emit ShowRegularStateOneSequence(groupList, true, sequenceCount);
+        otherGroupList = grpList;
+        sequenceDelay = delay;
+        sequenceCount = 0;
+        sequenceMaxCount = 1;
 
-    //Connect Timer to Turn On Next LEDs in the Sequence
-    connect(p_timer, SIGNAL(timeout()), this, SLOT(RegularSequenceDelayDone()));
-    p_timer->setInterval (delay);
-    p_timer->start();
+        FindMaxSequence();
+
+        //Connect Timer to Turn On Next LEDs in the Sequence
+        connect(p_timer, SIGNAL(timeout()), this, SLOT(SequenceRegularLightsPost()));
+        p_timer->setInterval (bgDelay);
+        p_timer->start();
+    }
 }
 
 
@@ -441,23 +499,28 @@ void LightBackground::SequenceRGBLights(QList<quint8> grpList, quint16 delay, RG
 
 void LightBackground::SequenceRGBLightsCM(QList<quint8> grpList, quint16 delay, QList<RGBColor> colorsMap)
 {
-    sequenceColorList = colorsMap;
-    sequenceColorListCount = sequenceColorList.count();
-    sequenceColorCount = 0;
-    isSequence = true;
-    sequenceDelay = delay;
-    sequenceCount = 0;
-    sequenceMaxCount = 1;
+    if(!isCommandRunning)
+    {
+        isSequence = true;
+        isCommandRunning = true;
 
-    rgbSequenceColor = sequenceColorList[sequenceColorCount];
-    sequenceColorCount++;
+        otherGroupList = grpList;
+        sequenceDelay = delay;
+        sequenceCount = 0;
+        sequenceMaxCount = 1;
 
-    FindMaxSequence();
+        sequenceColorList = colorsMap;
+        sequenceColorListCount = sequenceColorList.count();
+        sequenceColorCount = 0;
+        rgbSequenceColor = sequenceColorList[sequenceColorCount];
 
-    //Wait for Background Delay
-    connect(p_timer, SIGNAL(timeout()), this, SLOT(SequenceRGBLightsCMPost()));
-    p_timer->setInterval (bgDelay);
-    p_timer->start();
+        FindMaxSequence();
+
+        //Wait for Background Delay
+        connect(p_timer, SIGNAL(timeout()), this, SLOT(SequenceRGBLightsCMPost()));
+        p_timer->setInterval (bgDelay);
+        p_timer->start();
+    }
 }
 
 
@@ -521,15 +584,7 @@ void LightBackground::TurnOffLightsEnd()
 
             //Turn Off Lights
             if(useRandomPins)
-            {
                 emit ShowRegularStateOne(groupList, false, randomPins, 0);
-
-                if(useSideColor)
-                {
-                    emit ShowRegularStateOne(groupList, false, randomPins, 1);
-                    emit ShowRegularStateOne(groupList, false, randomPins, -1);
-                }
-            }
             else
                 emit ShowRegularState(groupList, false);
         }
@@ -612,13 +667,61 @@ void LightBackground::SequenceRGBLightsCMPost()
     //Diconnect Timer
     disconnect(p_timer, SIGNAL(timeout()), this, SLOT(SequenceRGBLightsCMPost()));
 
-    emit ShowRGBColorOneSequence(groupList, rgbSequenceColor, sequenceCount);
+    emit ShowRGBColorOneSequence(otherGroupList, rgbSequenceColor, sequenceCount);
 
     //Connect Timer to Turn On Next LEDs in the Sequence, to Next Color in List
     connect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDoneCM()));
     p_timer->setInterval (sequenceDelay);
     p_timer->start();
 }
+
+
+void LightBackground::FlashRegularLightsPost()
+{
+    //Diconnect Timer
+    disconnect(p_timer, SIGNAL(timeout()), this, SLOT(FlashRegularLightsPost()));
+
+    emit ShowRegularState(otherGroupList, true);
+
+    //Connect Timer to Turn Off LEDs
+    connect(p_timer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
+    p_timer->setInterval (flashTimeOn);
+    p_timer->start();
+
+    //Now Wait until timer runs out
+}
+
+
+void LightBackground::FlashRandomRegularLightsPost()
+{
+    //Diconnect Timer
+    disconnect(p_timer, SIGNAL(timeout()), this, SLOT(FlashRandomRegularLightsPost()));
+
+    emit ShowRegularStateOne(otherGroupList, true, randomPins, 0);
+
+    //Connect Timer to Turn Off LEDs
+    connect(p_timer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
+    p_timer->setInterval (flashTimeOn);
+    p_timer->start();
+
+    //Now Wait until timer runs out
+}
+
+void LightBackground::SequenceRegularLightsPost()
+{
+    //Diconnect Timer
+    disconnect(p_timer, SIGNAL(timeout()), this, SLOT(SequenceRegularLightsPost()));
+
+    emit ShowRegularStateOneSequence(otherGroupList, true, sequenceCount);
+
+    //Connect Timer to Turn On Next LEDs in the Sequence
+    connect(p_timer, SIGNAL(timeout()), this, SLOT(RegularSequenceDelayDone()));
+    p_timer->setInterval (sequenceDelay);
+    p_timer->start();
+}
+
+
+
 
 
 
@@ -680,7 +783,7 @@ void LightBackground::RGBFlashOn()
     {
         useRandomPins = false;
         useSideColor = false;
-        //emit CommandExecuted(executionNumber, groupList);
+        isFlash = false;
         isCommandRunning = false;
         TurnOnBackGround();
     }
@@ -694,42 +797,27 @@ void LightBackground::RGBSequenceDelayDone()
     else
         sequenceCount = sequenceCount + 3;
 
-    if(doingReload)
-    {
-        reloadColorCount++;
-        if(reloadColorCount >= bgColorMapCount)
-            reloadColorCount = 0;
-        rgbSequenceColor = bgColorMap[reloadColorCount];
-    }
-
     if(sequenceCount < sequenceMaxCount)
     {
         //qDebug() << "Sequence Timer Ended: sequence" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
         //Light Up the Next Sequence
-        if(doingReload)
-            emit ShowRGBColorOneSequence(groupList, rgbSequenceColor, sequenceCount);
-        else
-            emit ShowRGBColorOneSequence(otherGroupList, rgbSequenceColor, sequenceCount);
+        emit ShowRGBColorOneSequence(otherGroupList, rgbSequenceColor, sequenceCount);
 
         //Connect Timer to Turn On Next LEDs in the Sequence
         p_timer->start();
     }
     else
     {
-        //Turn Off Lights
-        if(!doingReload)
-        {
-            emit ShowRGBColor(otherGroupList, rgbOff);
-            TurnOnBackGround();
-        }
+        //Turn Off Lights and Turn On Background
+        //emit ShowRGBColor(otherGroupList, rgbOff);
+        TurnOnBackGround();
 
         //Disconnect the Timer
         disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDone()));
 
-        //Command Executed
-        //emit CommandExecuted(executionNumber, groupList);
-        doingReload = false;
+        //Turn Off isCommandRunning
         isCommandRunning = false;
+        isSequence = false;
     }
 }
 
@@ -743,11 +831,12 @@ void LightBackground::RGBSequenceDelayDoneCM()
     if(sequenceCount < sequenceMaxCount)
     {
         //Get Color From List
-        rgbSequenceColor = sequenceColorList[sequenceColorCount];
         sequenceColorCount++;
 
         if(sequenceColorCount >= sequenceColorListCount)
             sequenceColorCount = 0;
+
+        rgbSequenceColor = sequenceColorList[sequenceColorCount];
 
         //qDebug() << "Sequence Timer Ended: sequence" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
         //Light Up the Next Sequence
@@ -758,16 +847,21 @@ void LightBackground::RGBSequenceDelayDoneCM()
     }
     else
     {
-        //Turn Off Lights
-        emit ShowRGBColor(otherGroupList, rgbOff);
+        if(doingReload)
+            doingReload = false;
+        else
+        {
+            //Turn Off Lights
+            //emit ShowRGBColor(otherGroupList, rgbOff);
+            TurnOnBackGround();
+        }
 
         //Disconnect the Timer
-        disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDone()));
+        disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDoneCM()));
 
-        //Command Executed
-        //emit CommandExecuted(executionNumber, groupList);
+        //Turn Off isCommandRunning
         isCommandRunning = false;
-        TurnOnBackGround();
+        isSequence = false;
     }
 }
 
@@ -779,15 +873,7 @@ void LightBackground::RegularFlashOff()
     disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
 
     if(useRandomPins)
-    {
         emit ShowRegularStateOne(otherGroupList, false, randomPins, 0);
-
-        if(useSideColor)
-        {
-            emit ShowRegularStateOne(otherGroupList, false, randomPins, 1);
-            emit ShowRegularStateOne(otherGroupList, false, randomPins, -1);
-        }
-    }
     else
         emit ShowRegularState(otherGroupList, false);
 
@@ -809,15 +895,7 @@ void LightBackground::RegularFlashOn()
     if(timesFlashed < numberFlash)
     {
         if(useRandomPins)
-        {
             emit ShowRegularStateOne(otherGroupList, true, randomPins, 0);
-
-            if(useSideColor)
-            {
-                emit ShowRegularStateOne(otherGroupList, true, randomPins, 1);
-                emit ShowRegularStateOne(otherGroupList, true, randomPins, -1);
-            }
-        }
         else
             emit ShowRegularState(otherGroupList, true);
 
@@ -830,9 +908,9 @@ void LightBackground::RegularFlashOn()
     }
     else
     {
-        //Command Executed
-        //emit CommandExecuted(executionNumber, groupList);
         isCommandRunning = false;
+        isFlash = false;
+        useRandomPins = false;
         TurnOnBackGround();
     }
 }
@@ -852,16 +930,20 @@ void LightBackground::RegularSequenceDelayDone()
     }
     else
     {
-        //Turn Off Lights
-        emit ShowRegularState(otherGroupList, false);
+        if(doingReload)
+            doingReload = false;
+        else
+        {
+            //Turn Background Back On
+            //emit ShowRegularState(otherGroupList, false);
+            TurnOnBackGround();
+        }
 
         //Disconnect the Timer
         disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RegularSequenceDelayDone()));
 
-        //Command Executed
-        //emit CommandExecuted(executionNumber, groupList);
+        isSequence = false;
         isCommandRunning = false;
-        TurnOnBackGround();
     }
 }
 

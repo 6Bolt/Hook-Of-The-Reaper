@@ -41,6 +41,7 @@ addLightGunWindowV2::addLightGunWindowV2(ComDeviceList *cdList, QWidget *parent)
     ui->defaultLightGunComboBox->insertItem(XENAS,XENASNAME);
     ui->defaultLightGunComboBox->insertItem(XENASBTLE,XENASBTLENAME);
     ui->defaultLightGunComboBox->insertItem(SINDEN,SINDENNAME);
+    ui->defaultLightGunComboBox->insertItem(RKADE,RKADENAME);
     ui->defaultLightGunComboBox->setCurrentIndex (0);
 
     //COM Port Combo Box - Adding Available COM Ports
@@ -939,7 +940,7 @@ void addLightGunWindowV2::AddLightGun()
         deathSet = 0;
         shakeEn = false;
     }
-    else if(defaultLightGun && (defaultLightGunNum == RS3_REAPER || defaultLightGunNum == XGUNNER || defaultLightGunNum == SINDEN))
+    else if(defaultLightGun && (defaultLightGunNum == RS3_REAPER || defaultLightGunNum == XGUNNER || defaultLightGunNum == SINDEN || defaultLightGunNum == RKADE))
     {
         if(ui->reloadRadioButton->isChecked ())
             reloadSet = 1;
@@ -1609,7 +1610,7 @@ void addLightGunWindowV2::ChangeLabels(int index)
         ui->shakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
         ui->disableShakeradioButton->setStyleSheet("QRadioButton { color: red; }");
     }
-    else if(index == RS3_REAPER || index == XGUNNER || index == SINDEN)
+    else if(index == RS3_REAPER || index == XGUNNER || index == SINDEN || index == RKADE)
     {
         //Just Rumble
         ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");

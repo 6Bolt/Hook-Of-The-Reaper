@@ -17,6 +17,8 @@ LightExecution::LightExecution(quint8 exeNum, QList<quint8> grpNumList, QMap<qui
     useRandomPins = false;
     useSideColor = false;
 
+    isColorMap = false;
+
     isFlash = false;
     isSequence = false;
 
@@ -91,6 +93,7 @@ void LightExecution::FlashRandomRegularLights(quint16 timeOnMs, quint16 timeOffM
     flashTimeOff = timeOffMs;
 
     useRandomPins = true;
+
 
     //Find Random Pin for Groups
     for(i = 0; i < groupList.count(); i++)
@@ -251,6 +254,7 @@ void LightExecution::SequenceRGBLightsCM(quint16 delay, QList<RGBColor> colorsMa
     sequenceDelay = delay;
     sequenceCount = 0;
     sequenceMaxCount = 1;
+    isColorMap = true;
 
     rgbSequenceColor = sequenceColorList[sequenceColorCount];
     sequenceColorCount++;
@@ -260,7 +264,7 @@ void LightExecution::SequenceRGBLightsCM(quint16 delay, QList<RGBColor> colorsMa
     emit ShowRGBColorOneSequence(groupList, rgbSequenceColor, sequenceCount);
 
     //Connect Timer to Turn On Next LEDs in the Sequence, to Next Color in List
-    connect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDoneCM()));
+    connect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDone()));
     p_timer->setInterval (delay);
     p_timer->start();
 }
@@ -331,15 +335,7 @@ void LightExecution::TurnOffLightsEnd()
 
             //Turn Off Lights
             if(useRandomPins)
-            {
                 emit ShowRegularStateOne(groupList, false, randomPins, 0);
-
-                if(useSideColor)
-                {
-                    emit ShowRegularStateOne(groupList, false, randomPins, 1);
-                    emit ShowRegularStateOne(groupList, false, randomPins, -1);
-                }
-            }
             else
                 emit ShowRegularState(groupList, false);
 
@@ -423,6 +419,9 @@ void LightExecution::RGBFlashOn()
     }
     else
     {
+        isFlash = false;
+        useRandomPins = false;
+        useSideColor = false;
         emit CommandExecuted(executionNumber, groupList);
     }
 }
@@ -436,41 +435,15 @@ void LightExecution::RGBSequenceDelayDone()
 
     if(sequenceCount < sequenceMaxCount)
     {
-        //qDebug() << "Sequence Timer Ended: sequence" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
-        //Light Up the Next Sequence
-        emit ShowRGBColorOneSequence(groupList, rgbSequenceColor, sequenceCount);
+        if(isColorMap)
+        {
+            //Get Color From List
+            rgbSequenceColor = sequenceColorList[sequenceColorCount];
+            sequenceColorCount++;
 
-        //Connect Timer to Turn On Next LEDs in the Sequence
-        p_timer->start();
-    }
-    else
-    {
-        //Turn Off Lights
-        emit ShowRGBColor(groupList, rgbOff);
-
-        //Disconnect the Timer
-        disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDone()));
-
-        //Command Executed
-        emit CommandExecuted(executionNumber, groupList);
-    }
-}
-
-void LightExecution::RGBSequenceDelayDoneCM()
-{
-    if(rgbFastMode)
-        sequenceCount++;
-    else
-        sequenceCount = sequenceCount + 3;
-
-    if(sequenceCount < sequenceMaxCount)
-    {
-        //Get Color From List
-        rgbSequenceColor = sequenceColorList[sequenceColorCount];
-        sequenceColorCount++;
-
-        if(sequenceColorCount >= sequenceColorListCount)
-            sequenceColorCount = 0;
+            if(sequenceColorCount >= sequenceColorListCount)
+                sequenceColorCount = 0;
+        }
 
         //qDebug() << "Sequence Timer Ended: sequence" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
         //Light Up the Next Sequence
@@ -486,6 +459,9 @@ void LightExecution::RGBSequenceDelayDoneCM()
 
         //Disconnect the Timer
         disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDone()));
+
+        isSequence = false;
+        isColorMap = false;
 
         //Command Executed
         emit CommandExecuted(executionNumber, groupList);
@@ -500,15 +476,7 @@ void LightExecution::RegularFlashOff()
     disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RegularFlashOff()));
 
     if(useRandomPins)
-    {
         emit ShowRegularStateOne(groupList, false, randomPins, 0);
-
-        if(useSideColor)
-        {
-            emit ShowRegularStateOne(groupList, false, randomPins, 1);
-            emit ShowRegularStateOne(groupList, false, randomPins, -1);
-        }
-    }
     else
         emit ShowRegularState(groupList, false);
 
@@ -530,15 +498,7 @@ void LightExecution::RegularFlashOn()
     if(timesFlashed < numberFlash)
     {
         if(useRandomPins)
-        {
             emit ShowRegularStateOne(groupList, true, randomPins, 0);
-
-            if(useSideColor)
-            {
-                emit ShowRegularStateOne(groupList, true, randomPins, 1);
-                emit ShowRegularStateOne(groupList, true, randomPins, -1);
-            }
-        }
         else
             emit ShowRegularState(groupList, true);
 
@@ -551,6 +511,9 @@ void LightExecution::RegularFlashOn()
     }
     else
     {
+        isFlash = false;
+        useRandomPins = false;
+
         //Command Executed
         emit CommandExecuted(executionNumber, groupList);
     }
@@ -576,6 +539,8 @@ void LightExecution::RegularSequenceDelayDone()
 
         //Disconnect the Timer
         disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RegularSequenceDelayDone()));
+
+        isSequence = false;
 
         //Command Executed
         emit CommandExecuted(executionNumber, groupList);

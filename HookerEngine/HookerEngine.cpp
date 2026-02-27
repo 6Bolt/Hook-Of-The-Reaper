@@ -2154,7 +2154,7 @@ void HookerEngine::OpenSerialPortSlot(quint8 playerNum, bool noInit)
 
 void HookerEngine::CloseSerialPortSlot(quint8 playerNum, bool noInit, bool initOnly)
 {
-    quint8 j, lightGun;
+    quint8 j, lightGun, lgDefaultLGNum;
     quint8 tempCPNum;
     QStringList commands;
     QByteArray cpBA;
@@ -2165,6 +2165,8 @@ void HookerEngine::CloseSerialPortSlot(quint8 playerNum, bool noInit, bool initO
 
     //Get COM Port For Light Gun
     tempCPNum = loadedLGComPortNumber[playerNum];
+
+    lgDefaultLGNum = p_comDeviceList->p_lightGunList[lightGun]->GetDefaultLightGunNumber();
 
     if(!noInit || initOnly)
     {
@@ -2184,7 +2186,17 @@ void HookerEngine::CloseSerialPortSlot(quint8 playerNum, bool noInit, bool initO
 
     //Closes The COM Port
     if(closeComPortGameExit && !initOnly)
+    {
+        //Send 'E' to Cut off Serial Port
+        if(lgDefaultLGNum == OPENFIRE)
+        {
+            QString ofEnd = OPENFIREENDCOM;
+            cpBA = ofEnd.toUtf8 ();
+            emit WriteComPortSig(tempCPNum, cpBA);
+        }
+
         emit StopComPort(playerNum, tempCPNum);
+    }
 
     lgConnectionClosed[playerNum] = true;
 }

@@ -17,7 +17,7 @@ class LightBackground : public QObject
     Q_OBJECT
 
 public:
-    explicit LightBackground(quint8 player, quint8 mode, quint8 grpNum, QMap<quint8,QList<quint8>> lightMap, bool rgb, bool rgbFast, QList<RGBColor> cMap, quint8 hCount, quint16 tDelay, quint16 rDelay, QObject *parent = nullptr);
+    explicit LightBackground(quint8 player, quint8 grpNum, QMap<quint8,QList<quint8>> lightMap, bool rgb, bool rgbFast, QList<RGBColor> cMap, quint8 hCount, quint16 tDelay, quint16 rDelay, QObject *parent = nullptr);
 
     ~LightBackground();
 
@@ -39,7 +39,7 @@ public:
     //Normal Flash
 
     //Flash Regular Lights
-    void FlashRegularLights(quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes);
+    void FlashRegularLights(QList<quint8> grpList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes);
 
     //Flash RGB Lights
     void FlashRGBLights(QList<quint8> grpList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, RGBColor color);
@@ -47,7 +47,7 @@ public:
     //Random Flash
 
     //Flash Random Regular Light
-    void FlashRandomRegularLights(quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes);
+    void FlashRandomRegularLights(QList<quint8> grpList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes);
 
     //Flash Random RGB Lights
     void FlashRandomRGBLights(QList<quint8> grpList, quint16 timeOnMs, quint16 timeOffMs, quint8 numFlashes, RGBColor color);
@@ -60,7 +60,7 @@ public:
     //Sequence Commands
 
     //Sequence Regular Lights, Light Up Lights One by One
-    void SequenceRegularLights(quint16 delay);
+    void SequenceRegularLights(QList<quint8> grpList, quint16 delay);
 
     //Sequence RGB Lights, Light Up Lights One by One
     void SequenceRGBLights(QList<quint8> grpList, quint16 delay, RGBColor color);
@@ -77,12 +77,19 @@ public:
 
 private slots:
 
-    //After Delay for RGB
+    //After Background Delay for RGB
     void FlashRGBLightsPost();
     void FlashRandomRGBLightsPost();
     void FlashRandomRGB2CLightsPost();
     void SequenceRGBLightsPost();
     void SequenceRGBLightsCMPost();
+
+    //After Background Delay for Regular
+    void FlashRegularLightsPost();
+    void FlashRandomRegularLightsPost();
+    void SequenceRegularLightsPost();
+
+
 
     //Slots for RGB Commands with Timer
 
@@ -134,11 +141,6 @@ private:
     //Player Number
     quint8                          playerNumber;
 
-    //Different Background Modes
-    //0 is normal background, 1 is Ammo, and 2 is Life
-    bool                            ammoMode;
-    bool                            lifeMode;
-
     //High Count, How much the count Goes Up
     quint16                         highCount;
 
@@ -148,9 +150,9 @@ private:
     //Big Count Mode, is when Reload or Life Start is 2x then High Count
     bool                            bigCount;
 
-    //Group Lights that are On
-    quint16                         groupLights;
-    quint16                         oldGroupLights;
+    //Group Lights that are On for Background
+    quint8                          groupLights;
+    quint8                          oldGroupLights;
 
     //Time Delay, when Background Lights Go Off, then Delay, and then New Command
     quint16                         bgDelay;
@@ -159,15 +161,17 @@ private:
     QList<quint8>                   grpPins;
     quint8                          grpPinsCount;
 
-
+    //When Command is Running on Background
     bool                            isCommandRunning;
 
+    //Used to Display Info on Background Lights
     quint16                         ammoCount;
     quint16                         ammoPerLight;
     quint16                         shotsFired;
+    quint16                         reloadCount;
 
+    //When Reloading the Background
     bool                            doingReload;
-    quint8                          reloadColorCount;
     quint16                         reloadDelay;
 
     //Timer
@@ -227,6 +231,7 @@ private:
     quint8                          sequenceCount;
     quint8                          sequenceMaxCount;
 
+    //Sequence Color Map
     QList<RGBColor>                 sequenceColorList;
     quint8                          sequenceColorListCount;
     quint8                          sequenceColorCount;

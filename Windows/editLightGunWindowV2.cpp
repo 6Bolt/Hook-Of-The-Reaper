@@ -99,6 +99,7 @@ editLightGunWindowV2::editLightGunWindowV2(ComDeviceList *cdList, QWidget *paren
     ui->defaultLightGunComboBox->insertItem(XENAS,XENASNAME);
     ui->defaultLightGunComboBox->insertItem(XENASBTLE,XENASBTLENAME);
     ui->defaultLightGunComboBox->insertItem(SINDEN,SINDENNAME);
+    ui->defaultLightGunComboBox->insertItem(RKADE,RKADENAME);
 
     //Check if the First Light Gun is a Default Light Gun
     defaultLightGun = p_comDeviceList->p_lightGunList[0]->GetDefaultLightGun();
@@ -439,7 +440,7 @@ editLightGunWindowV2::editLightGunWindowV2(ComDeviceList *cdList, QWidget *paren
 
 
     }
-    else if(defaultLightGun && (defaultLightGunNum == XGUNNER || defaultLightGunNum == RS3_REAPER || defaultLightGunNum == SINDEN))
+    else if(defaultLightGun && (defaultLightGunNum == XGUNNER || defaultLightGunNum == RS3_REAPER || defaultLightGunNum == SINDEN || defaultLightGunNum == RKADE))
     {
         ui->reloadRadioButton->setEnabled(true);
         ui->reloadJustLEDRadioButton->setEnabled(false);
@@ -1434,7 +1435,7 @@ void editLightGunWindowV2::EditLightGun()
         lgSet.death = 0;
         lgSet.shake = false;
     }
-    else if(defaultLightGun && (defaultLightGunNum == RS3_REAPER || defaultLightGunNum == XGUNNER || defaultLightGunNum == SINDEN))
+    else if(defaultLightGun && (defaultLightGunNum == RS3_REAPER || defaultLightGunNum == XGUNNER || defaultLightGunNum == SINDEN || defaultLightGunNum == RKADE))
     {
         if(ui->reloadRadioButton->isChecked ())
             lgSet.reload = 1;
@@ -2595,7 +2596,7 @@ void editLightGunWindowV2::ChangeLabels(int index)
         ui->shakeRadioButton->setStyleSheet("QRadioButton { color: red; }");
         ui->disableShakeradioButton->setStyleSheet("QRadioButton { color: red; }");
     }
-    else if(index == RS3_REAPER || index == XGUNNER || index == SINDEN)
+    else if(index == RS3_REAPER || index == XGUNNER || index == SINDEN || index == RKADE)
     {
         //Just Rumble
         ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");

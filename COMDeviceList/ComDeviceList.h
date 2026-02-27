@@ -82,6 +82,10 @@ public:
     void            DeleteLightGun(quint8 lgNumber);
     void            DeleteLightController(quint8 lcNumber);
 
+    //Connects and Disconnects All the Light Controllers
+    void            ConnectLightControllers();
+    void            DisconnectLightControllers();
+
     //Player's Light Gun Assignment, Deassignment, or Get Assignment
     bool            AssignPlayerLightGun(quint8 playerNum, quint8 lgNum);
     void            DeassignPlayerLightGun(quint8 playerNum);

@@ -73,6 +73,12 @@ public:
 
     bool IsRGBFast() { return rgbFastMode; }
 
+    quint8 GetType() { return dataUltimarc.type; }
+
+    bool IsPAC64() { return isPAC64; }
+
+
+
     //Loading Group File Functions
 
     //Load Group File
@@ -122,7 +128,7 @@ public:
     //Regular Group Checking and Setting/Unsetting
 
     //Check Regular Groups Against Used Pins
-    bool CheckRegularGroups(QList<quint8> groupNumber);
+    bool CheckRegularGroups(QList<quint8> groupNumber, quint8 *failedGroup);
 
     //Set Regular Groups Against Used Pins
     void SetRegularGroups(QList<quint8> groupNumber);
@@ -199,10 +205,17 @@ public:
 
     //Background Commands
 
-    //Set Up Background Ammo Command
+    //Set Up Background RGB Command
     void SetUpBackgroundRGB(QList<quint8> grpNumList, QString colorMap, quint8 playerNumber, quint16 delay, quint16 delayBGR, quint8 highCount, QList<quint8> otherGrpList);
 
     void BackgroundRGB(quint8 playerNumber, quint16 ammoValue);
+
+
+    //Set Up Background Regular Command
+    void SetUpBackgroundRegular(QList<quint8> grpNumList, quint8 playerNumber, quint16 delay, quint16 delayBGR, quint8 highCount, QList<quint8> otherGrpList);
+
+    void BackgroundRegular(quint8 playerNumber, quint16 ammoValue);
+
 
     //Connect Execution Signals and Slots
 
@@ -230,6 +243,17 @@ public:
     //Disconnect for RGB Lights
     void DisconnectRGBBG(quint8 player);
 
+    //Connect for RGB Lights
+    void ConnectRegularBG(quint8 player);
+
+    //Disconnect for RGB Lights
+    void DisconnectRegularBG(quint8 player);
+
+    //Get RGB Group Piin Count
+    quint8 GetRGBGroupPinCount(quint8 groupNumber);
+
+    //Get Regular Group Piin Count
+    quint8 GetRegularGroupPinCount(quint8 groupNumber);
 
 public slots:
 
@@ -335,6 +359,11 @@ signals:
     //Set Group States
     void SetPinStates(quint8 id, quint8 group, quint8 groupData, bool all);
 
+    //Set Pin State for Pac
+    void SetPACLEDState(quint8 id, quint8 pin, bool state);
+
+    //Set Pin States for Pac
+    void SetPACLEDStates(quint8 id, quint16 data);
 
     //Signal to Show Error Message
 
@@ -366,6 +395,9 @@ private:
 
     //Ultimarc ID for Device
     int                             id;
+
+    //If is PAC64 or Not
+    bool                            isPAC64;
 
     //Group File with Path
     QString                         groupFilePath;
@@ -500,6 +532,7 @@ private:
     QList<quint8>                   otherBGGroups[MAXGAMEPLAYERS];
     bool                            backgroundActive[MAXGAMEPLAYERS];
     quint8                          backgroundGroup[MAXGAMEPLAYERS];
+    bool                            backgroundRGB[MAXGAMEPLAYERS];
 
     //Execution Array
     LightBackground*                p_background[MAXGAMEPLAYERS];
