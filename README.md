@@ -36,6 +36,9 @@
 
 [Recoil and Reload Commands](https://github.com/6Bolt/Hook-Of-The-Reaper#recoil-and-reload-commands)
 
+# Hook of the Reaper is Not Complete
+
+About every month or so, I get a person who asks, how did I get this one randomly thing that MameHooker supported. How do I do that on Hook of the Reaper. As people just assume that the program is complete and fully working, it is not. I work on the most requested features. Also, I just don’t copy what MameHooker did, as I went beyond it, and fixed most issues affecting MameHooker. That is why all the DefualtLG game files work on all the supported light guns, and non-supported serial port light guns. The users can change the reload, damage, death, and shake feature settings, without changing the game files. If I just copied MameHooker, I would probably be done already. After light guns, the most requested was Ultimarc light controllers, which I just got all the devices supported. After Ultimarc, was Addressable LEDs, and then RPEG Brooks encoder board. Again, I just don’t do what MameHooker did, as I added a bunch of more functionality to the light controller over what MameHooker did. So if you want a feature supported, I highly suggest you go to the HOTR GitHub, and put in an Issue asking for it. If not, it is at the bottom of the list then. 
 
 # Contact 
 
