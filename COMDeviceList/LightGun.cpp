@@ -1,8 +1,8 @@
 #include "LightGun.h"
 #include "../Global.h"
 
-#include "../../saeicmrterta.h"
-
+//#include "../../saeicmrterta.h"
+#define ARIEMCTORIRLK ""
 //Constructors
 
 //For RS3 Reaper Light Gun
@@ -1510,6 +1510,176 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     //connect(this, &LightGun::DoDisplayAmmoCommands, this, &LightGun::DisplayAmmo2Digit);
     //connect(this, &LightGun::DoDisplayLifeCommands, this, &LightGun::DisplayLife2Digit);
     //connect(this, &LightGun::DoDisplayOtherCommands, this, &LightGun::DisplayOther2Digit);
+}
+
+//Custom USB Light Gun
+LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool n2DDisplay, DisplayPriority displayP, QObject* parent)
+    : QObject{ parent }
+{
+    defaultLightGun = lgDefault;
+    defaultLightGunNum = dlgNum;
+    lightGunName = lgName;
+    lightGunNum = lgNumber;
+
+    usbHIDInfo = hidInfoStruct;
+
+    comPortNum = UNASSIGN;
+    comPortBaud = UNASSIGN;
+    comPortDataBits = UNASSIGN;
+    comPortParity = UNASSIGN;
+    comPortStopBits = UNASSIGN;
+    comPortFlow = UNASSIGN;
+
+    isDipSwitchPlayerNumberSet = false;
+    dipSwitchPlayerNumber = UNASSIGN;
+    hubComPortNumber = UNASSIGN;
+    maxAmmoSet = false;
+    reloadValueSet = false;
+    disableReaperLEDs = false;
+    reapearLargeAmmoValue = LARGEAMMOVALUEDEFAULT;
+    isAnalogStrengthSet = false;
+    analogStrength = UNASSIGN;
+
+    lastAmmoValue = 0;
+    ammoCheckValue = 1;
+    lastLifeValue = 0;
+    lastDeathValue = 0;
+    playerAlive = false;
+    maxLifeValue = 0;
+    maxDamage = 0;
+    doAmmoCheck = false;
+
+    tcpPort = 0;
+    tcpPlayer = UNASSIGN;
+    recoilVoltage = UNASSIGN;
+    recoilVoltageOverride = false;
+    sindenRecoilOverride = false;
+
+    outputConnection = USBHID;
+
+    isUSBLightGun = true;
+    isRecoilDelaySet = false;
+    recoilDelay = 0;
+
+    //Display Init
+    hasDisplayAmmoInited = false;
+    hasDisplayLifeInited = false;
+    hasDisplayOtherInited = false;
+    hasDisplayAmmoAndLifeInited = false;
+    ammoDisplayValue = -1;
+    lifeDisplayValue = -1;
+    otherDisplayValue = -1;
+    displayAmmoPriority = displayP.ammo;
+    displayLifePriority = displayP.life;
+    displayOtherPriority = displayP.other;
+    displayRefresh = DISPLAYREFRESHDEFAULT;
+    noDisplay = n2DDisplay;
+
+    displayAmmoLife = false;
+    displayAmmoLifeGlyphs = true;
+    displayAmmoLifeBar = false;
+    displayAmmoLifeNumber = false;
+    lifeBarMaxLife = 0;
+
+    lgRecoilPriority[0] = lgRecoils.ammoValue;
+    lgRecoilPriority[1] = lgRecoils.recoil;
+    lgRecoilPriority[2] = lgRecoils.recoilR2S;
+    lgRecoilPriority[3] = lgRecoils.recoilValue;
+
+    //Settings for Reload, Damage, Death & Shake Feature
+    reloadSetting = lgSet.reload;
+    damageSetting = lgSet.damage;
+    deathSetting = lgSet.death;
+    shakeEnalbe = lgSet.shake;
+
+    if (reloadSetting == 1)
+    {
+        loadReloadShake = true;
+        loadReloadLED = true;
+    }
+    else if (reloadSetting == 2)
+    {
+        loadReloadShake = true;
+        loadReloadLED = false;
+    }
+    else if (reloadSetting == 3)
+    {
+        loadReloadShake = false;
+        loadReloadLED = true;
+    }
+    else
+    {
+        loadReloadShake = false;
+        loadReloadLED = false;
+    }
+
+    if (damageSetting == 1)
+    {
+        loadDamageShake = true;
+        loadDamageLED = true;
+    }
+    else if (damageSetting == 2)
+    {
+        loadDamageShake = true;
+        loadDamageLED = false;
+    }
+    else if (damageSetting == 3)
+    {
+        loadDamageShake = false;
+        loadDamageLED = true;
+    }
+    else
+    {
+        loadDamageShake = false;
+        loadDamageLED = false;
+    }
+
+    if (deathSetting == 1)
+    {
+        loadDeathShake = true;
+        loadDeathLED = true;
+    }
+    else if (deathSetting == 2)
+    {
+        loadDeathShake = true;
+        loadDeathLED = false;
+    }
+    else if (deathSetting == 3)
+    {
+        loadDeathShake = false;
+        loadDeathLED = true;
+    }
+    else
+    {
+        loadDeathShake = false;
+        loadDeathLED = false;
+    }
+
+    reaperLargeAmmo = false;
+    isReaper5LEDsInited = false;
+    enableReaperAmmo0Delay = false;
+    repearAmmo0Delay = DEFAULTAMMO0DELAY;
+    isReaperAmmo0TimerInited = false;
+    reaperHoldSlideTime = REAPERHOLDSLIDETIME;
+    isReaperTimerRunning = false;
+    isReaperSlideHeldBack = false;
+    reaperLoadedReload = false;
+    disableReaperHoldBack = false;
+    reaperAmmo0Check = false;
+
+    hasDisplay = false;
+    hasReload = false;
+    hasDamage = false;
+    hasDeath = false;
+    hasShake = false;
+
+    LoadDefaultLGCommands();
+
+    //Connect Commands up
+    connect(this, &LightGun::DoAmmoValueCommands, this, &LightGun::AmmoValueNormal);
+    connect(this, &LightGun::DoDisplayAmmoCommands, this, &LightGun::DisplayAmmo2Digit);
+    connect(this, &LightGun::DoDisplayLifeCommands, this, &LightGun::DisplayLife2Digit);
+    connect(this, &LightGun::DoDisplayOtherCommands, this, &LightGun::DisplayOther2Digit);
 }
 
 //Deconstructor
