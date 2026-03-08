@@ -42,6 +42,7 @@ addLightGunWindowV2::addLightGunWindowV2(ComDeviceList *cdList, QWidget *parent)
     ui->defaultLightGunComboBox->insertItem(XENASBTLE,XENASBTLENAME);
     ui->defaultLightGunComboBox->insertItem(SINDEN,SINDENNAME);
     ui->defaultLightGunComboBox->insertItem(RKADE,RKADENAME);
+    ui->defaultLightGunComboBox->insertItem(CUSTOMUSB, CUSTOMUSBNAME);
     ui->defaultLightGunComboBox->setCurrentIndex (0);
 
     //COM Port Combo Box - Adding Available COM Ports
@@ -250,7 +251,7 @@ void addLightGunWindowV2::on_defaultLightGunComboBox_currentIndexChanged(int ind
 
             FillSerialPortInfo(hubIndex);
         }
-        else if(index != ALIENUSB && index != AIMTRAK && index != SINDEN)
+        else if(index != ALIENUSB && index != AIMTRAK && index != SINDEN && index != CUSTOMUSB)
         {
             ui->dipSwitchComboBox->setEnabled(false);
             ui->hubComComboBox->setEnabled(false);
@@ -275,7 +276,7 @@ void addLightGunWindowV2::on_defaultLightGunComboBox_currentIndexChanged(int ind
         //}
 
         //USB Light Gun, Not Serial Port
-        if(index == ALIENUSB || index == AIMTRAK)
+        if(index == ALIENUSB || index == AIMTRAK || index == CUSTOMUSB)
         {
             //Turn Off COM Port Combo Box
             //ui->comPortComboBox->setEnabled(false);
@@ -296,8 +297,13 @@ void addLightGunWindowV2::on_defaultLightGunComboBox_currentIndexChanged(int ind
                 ui->allHIDDevicesCheckBox->setEnabled (true);
             }
 
-            ui->allHIDDevicesCheckBox->setChecked (false);
-
+            if (index != CUSTOMUSB) {
+                ui->allHIDDevicesCheckBox->setChecked(false);
+            }
+            else
+            {   //Display all HID devices by default to indicate that the user's custom USB light gun must be selected from the list
+                ui->allHIDDevicesCheckBox->setChecked(true);
+            }
             this->FillUSBDevicesComboBox();
         }
         else
@@ -704,6 +710,8 @@ bool addLightGunWindowV2::IsValidData()
     bool reaperDelayTime = false;
     bool reaperHoldTime = false;
     bool reaperLargeAmmo = false;
+    bool noUSBSelected = false;
+
     quint8 numLightGuns = p_comDeviceList->GetNumberLightGuns();
     quint8 i;
     quint8 defaultLGIndex = ui->defaultLightGunComboBox->currentIndex ();
@@ -741,7 +749,7 @@ bool addLightGunWindowV2::IsValidData()
         }
 
     }
-    else if(defaultLGIndex != ALIENUSB && defaultLGIndex != AIMTRAK && defaultLGIndex != XENASBTLE && defaultLGIndex != SINDEN)
+    else if(defaultLGIndex != ALIENUSB && defaultLGIndex != AIMTRAK && defaultLGIndex != XENASBTLE && defaultLGIndex != SINDEN && defaultLGIndex != CUSTOMUSB)
     {
         //Check If the Com Port Name is Empty for the Combo Box
         ivTemp = ui->comPortComboBox->currentText ();
@@ -763,16 +771,19 @@ bool addLightGunWindowV2::IsValidData()
         //}
     }
 
-    if(defaultLGIndex == ALIENUSB || defaultLGIndex == AIMTRAK)
+    if(defaultLGIndex == ALIENUSB || defaultLGIndex == AIMTRAK || defaultLGIndex == CUSTOMUSB)
     {
         QString tempDP;
-        quint8 hidIndex = ui->usbDevicesComboBox->currentIndex ();
+        //Check if the ComboBox is empty
+        if (ui->usbDevicesComboBox->count() != 0) {
+            quint8 hidIndex = ui->usbDevicesComboBox->currentIndex();
 
-
-        //Check is the Display Path Already Exist
-        tempDP = hidInfoList[hidIndex].displayPath;
-        usbDisPMatch = p_comDeviceList->CheckUSBPath(tempDP);
-
+            //Check is the Display Path Already Exist
+            tempDP = hidInfoList[hidIndex].displayPath;
+            usbDisPMatch = p_comDeviceList->CheckUSBPath(tempDP);
+        }
+        else
+            noUSBSelected = true;
     }
 
     if(defaultLGIndex == SINDEN)
@@ -828,7 +839,7 @@ bool addLightGunWindowV2::IsValidData()
 
     //Check All the bools, If They are false, data is good and return true.
     //If false, then make a Warning string, and Pop Up a Warning Message Box on What is Wrong and return false
-    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubComLG == false && usbDisPMatch == false && recoilCheck == false && badTCPPort == false && badTCPPlayer == false && reaperDelayTime == false && reaperHoldTime == false && reaperLargeAmmo == false)
+    if(lgnIsEmpty == false && comPortNumEmpty == false && unusedName == false && analNotNumber == false && analNotRange == false && badDipIndex == false && hubComLG == false && usbDisPMatch == false && recoilCheck == false && badTCPPort == false && badTCPPlayer == false && reaperDelayTime == false && reaperHoldTime == false && reaperLargeAmmo == false && noUSBSelected == false)
     {
         return true;
     }
@@ -862,6 +873,8 @@ bool addLightGunWindowV2::IsValidData()
             message.append ("Reaper hold time needs to be in the range of 1.0s to 9.0s.");
         if(reaperLargeAmmo == true)
             message.append ("Reaper large ammo needs to be in the range of 10 to 255.");
+        if (noUSBSelected == true)
+            message.append("No USB HID device was selected. Please select your USB Light Gun from the USB HID device list.");
 
         QMessageBox::warning (this, "Can Not Add Light Gun", message);
 
@@ -908,13 +921,13 @@ void addLightGunWindowV2::AddLightGun()
         tempHub = ui->hubComComboBox->currentIndex ();
         comPortName = BEGINCOMPORTNAME+QString::number(tempHub);
     }
-    else if(!defaultLightGun || (defaultLightGun && defaultLightGunNum != ALIENUSB))
+    else if(!defaultLightGun || (defaultLightGun && defaultLightGunNum != ALIENUSB && defaultLightGunNum != CUSTOMUSB))
     {
         comPortNum = ui->comPortComboBox->currentIndex ();
         comPortName = BEGINCOMPORTNAME+QString::number(comPortNum);
     }
 
-    if(!defaultLightGun || (defaultLightGun && (defaultLightGunNum != ALIENUSB || defaultLightGunNum != AIMTRAK)))
+    if(!defaultLightGun || (defaultLightGun && (defaultLightGunNum != ALIENUSB || defaultLightGunNum != AIMTRAK || defaultLightGunNum != CUSTOMUSB)))
     {
         p_comPortInfo = new QSerialPortInfo(comPortName);
 
@@ -1122,11 +1135,11 @@ void addLightGunWindowV2::AddLightGun()
         //Create a New OpenFire Light Gun Class
         p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, comPortNum, comPortName, *p_comPortInfo, comPortBaud, comPortDataBits, comPortParity, comPortStopBits, comPortFlow, recoilOptions, lgSet, noDisplay, displayPri, displayOF);
     }
-    else if(defaultLightGun && (defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK))
+    else if(defaultLightGun && (defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK || defaultLightGunNum == CUSTOMUSB))
     {
         quint16 usbIndex = ui->usbDevicesComboBox->currentIndex ();
 
-        if(defaultLightGunNum == ALIENUSB)
+        if(defaultLightGunNum == ALIENUSB || defaultLightGunNum == CUSTOMUSB)
         {
             bool n2DDisplay;
             DisplayPriority displayPri;
@@ -1152,9 +1165,14 @@ void addLightGunWindowV2::AddLightGun()
             else
                 displayPri.other = false;
 
-
-            //Create a New Alien USB or Ultimarc Aimtrak Light Gun
-            p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, hidInfoList[usbIndex], recoilOptions, n2DDisplay, displayPri);
+            if (defaultLightGunNum == ALIENUSB) {
+                //Create a New Alien USB or Ultimarc Aimtrak Light Gun
+                p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, hidInfoList[usbIndex], recoilOptions, n2DDisplay, displayPri);
+            }
+            else {
+                //Create a new custom USB Light Gun
+                p_comDeviceList->AddLightGun(defaultLightGun, defaultLightGunNum, lightGunName, lightGunNum, hidInfoList[usbIndex], recoilOptions, lgSet, n2DDisplay, displayPri);
+            }
         }
         else if(defaultLightGunNum == AIMTRAK)
         {
@@ -1546,7 +1564,7 @@ void addLightGunWindowV2::ChangeLabels(int index)
     }
 
     //For the USB HID Light Guns
-    if(index == ALIENUSB || index == AIMTRAK)
+    if(index == ALIENUSB || index == AIMTRAK || index == CUSTOMUSB)
     {
         ui->usbLabel->setStyleSheet("QLabel { color: red; }");
 
@@ -1589,7 +1607,7 @@ void addLightGunWindowV2::ChangeLabels(int index)
 
 
     //For Reload, Damage, Death, and Shake
-    if(index < 1 || (index >= 3 && index <= 6) || index == XENAS || index == XENASBTLE)
+    if(index < 1 || (index >= 3 && index <= 6) || index == XENAS || index == XENASBTLE ||index == CUSTOMUSB)
     {
         //Everything On Rumble Motor and LED
         ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
@@ -1722,7 +1740,7 @@ void addLightGunWindowV2::ChangeLabels(int index)
     }
 
     //Display Priority
-    if(index < 1 || index == ALIENUSB || index == OPENFIRE || index == BLAMCON || index == XENAS || index == XENASBTLE)
+    if(index < 1 || index == ALIENUSB || index == OPENFIRE || index == BLAMCON || index == XENAS || index == XENASBTLE || index == CUSTOMUSB)
     {
         //Display Settings
         ui->ammoRadioButton->setStyleSheet("QRadioButton { color: red; }");
