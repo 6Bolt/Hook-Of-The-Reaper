@@ -100,6 +100,7 @@ editLightGunWindowV2::editLightGunWindowV2(ComDeviceList *cdList, QWidget *paren
     ui->defaultLightGunComboBox->insertItem(XENASBTLE,XENASBTLENAME);
     ui->defaultLightGunComboBox->insertItem(SINDEN,SINDENNAME);
     ui->defaultLightGunComboBox->insertItem(RKADE,RKADENAME);
+    ui->defaultLightGunComboBox->insertItem(CUSTOMUSB, CUSTOMUSBNAME);
 
     //Check if the First Light Gun is a Default Light Gun
     defaultLightGun = p_comDeviceList->p_lightGunList[0]->GetDefaultLightGun();
@@ -184,7 +185,7 @@ editLightGunWindowV2::editLightGunWindowV2(ComDeviceList *cdList, QWidget *paren
             //if(analogStrengthSet)
             //    ui->analogLineEdit->setText(QString::number (analogStrength));
         }
-        else if(defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK)
+        else if(defaultLightGunNum == ALIENUSB || defaultLightGunNum == AIMTRAK || defaultLightGunNum == CUSTOMUSB)
         {
             ui->comPortComboBox->setEnabled(false);
             ui->dipSwitchComboBox->setEnabled(false);
@@ -1657,7 +1658,7 @@ void editLightGunWindowV2::EditLightGun()
         qint16 hidIndex = ui->usbDevicesComboBox->currentIndex ();
         p_comDeviceList->p_lightGunList[lightGunNum]->SetHIDInfo (hidInfoList[hidIndex]);
 
-        if(defaultLightGun && defaultLightGunNum == ALIENUSB)
+        if(defaultLightGun && (defaultLightGunNum == ALIENUSB || defaultLightGunNum == CUSTOMUSB))
         {
             if(ui->no2DigitCheckBox->isChecked ())
                 p_comDeviceList->p_lightGunList[lightGunNum]->SetNoDisplay (true);
@@ -2017,6 +2018,15 @@ void editLightGunWindowV2::LoadSavedLightGun(quint8 index)
                 ui->lifeRadioButton->setChecked (displayP.life);
 
                 ui->displayOtherCheckBox->setChecked (displayP.other);
+            }
+            else if (defaultLightGunNum == CUSTOMUSB)
+            {
+                DisplayPriority displayP = p_comDeviceList->p_lightGunList[index]->GetDisplayPriority();
+
+                ui->ammoRadioButton->setChecked(displayP.ammo);
+                ui->lifeRadioButton->setChecked(displayP.life);
+
+                ui->displayOtherCheckBox->setChecked(displayP.other);
             }
             else
                 ui->no2DigitCheckBox->setEnabled (false);
@@ -2532,7 +2542,7 @@ void editLightGunWindowV2::ChangeLabels(int index)
     }
 
     //For the USB HID Light Guns
-    if(index == ALIENUSB || index == AIMTRAK)
+    if(index == ALIENUSB || index == AIMTRAK ||index == CUSTOMUSB)
     {
         ui->usbLabel->setStyleSheet("QLabel { color: red; }");
 
@@ -2575,7 +2585,7 @@ void editLightGunWindowV2::ChangeLabels(int index)
 
 
     //For Reload, Damage, Death, and Shake
-    if(index < 1 || (index >= 3 && index <= 6) || index == XENAS || index == XENASBTLE)
+    if(index < 1 || (index >= 3 && index <= 6) || index == XENAS || index == XENASBTLE || index == CUSTOMUSB)
     {
         //Everything On Rumble Motor and LED
         ui->reloadRadioButton->setStyleSheet("QRadioButton { color: red; }");
@@ -2708,7 +2718,7 @@ void editLightGunWindowV2::ChangeLabels(int index)
     }
 
     //Display Priority
-    if(index < 1 || index == ALIENUSB || index == OPENFIRE || index == BLAMCON || index == XENAS || index == XENASBTLE)
+    if(index < 1 || index == ALIENUSB || index == OPENFIRE || index == BLAMCON || index == XENAS || index == XENASBTLE || index == CUSTOMUSB)
     {
         //Display Settings
         ui->ammoRadioButton->setStyleSheet("QRadioButton { color: red; }");
