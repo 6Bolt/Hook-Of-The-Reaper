@@ -1,8 +1,8 @@
 #include "LightGun.h"
 #include "../Global.h"
 
-//#include "../../saeicmrterta.h"
-#define ARIEMCTORIRLK ""
+#include "../../saeicmrterta.h"
+
 //Constructors
 
 //For RS3 Reaper Light Gun
