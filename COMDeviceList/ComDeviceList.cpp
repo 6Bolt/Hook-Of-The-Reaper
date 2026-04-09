@@ -252,6 +252,14 @@ void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, q
     numberLightGuns++;
 }
 
+//For Custom USB Light Gun
+void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool n2DDisplay, DisplayPriority displayP)
+{
+    p_lightGunList[numberLightGuns] = new LightGun(lgDefault, dlgNum, lgName, lgNumber, hidInfoStruct, lgRecoils, lgSet, n2DDisplay, displayP);
+
+    numberLightGuns++;
+}
+
 //For USB Light Gun
 void ComDeviceList::AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, HIDInfo hidInfoStruct, quint16 rcDelay, SupportedRecoils lgRecoils)
 {
@@ -1126,7 +1134,7 @@ void ComDeviceList::SaveLightGunList()
             out << tempHIDInfo.usageString << "\n";
             out << tempHIDInfo.interfaceNumber << "\n";
 
-            if(p_lightGunList[i]->GetDefaultLightGunNumber () == ALIENUSB)
+            if(p_lightGunList[i]->GetDefaultLightGunNumber() == ALIENUSB || p_lightGunList[i]->GetDefaultLightGunNumber() == CUSTOMUSB)
             {
                 DisplayPriority displayP = p_lightGunList[i]->GetDisplayPriority ();
 
@@ -1374,7 +1382,7 @@ void ComDeviceList::LoadLightGunListV3()
 
 
         //For Serial Port Light Guns
-        if(!tempIsDefaultGun || (tempIsDefaultGun && (tempDefaultGunNum != ALIENUSB && tempDefaultGunNum != AIMTRAK && tempDefaultGunNum != XENASBTLE && tempDefaultGunNum != SINDEN)))
+        if(!tempIsDefaultGun || (tempIsDefaultGun && (tempDefaultGunNum != ALIENUSB && tempDefaultGunNum != AIMTRAK && tempDefaultGunNum != XENASBTLE && tempDefaultGunNum != SINDEN && tempDefaultGunNum != CUSTOMUSB)))
         {
 
             //COM Port Number
@@ -1559,7 +1567,7 @@ void ComDeviceList::LoadLightGunListV3()
             p_tempComPortInfo = nullptr;
 
         }
-        else if(tempIsDefaultGun && (tempDefaultGunNum == ALIENUSB || tempDefaultGunNum == AIMTRAK)) //USB HID Light Guns
+        else if(tempIsDefaultGun && (tempDefaultGunNum == ALIENUSB || tempDefaultGunNum == AIMTRAK || tempDefaultGunNum == CUSTOMUSB)) //USB HID Light Guns
         {
             //This is For USB Light Guns
             HIDInfo tempHIDInfo;
@@ -1610,7 +1618,7 @@ void ComDeviceList::LoadLightGunListV3()
             tempHIDInfo.displayPath = tempHIDInfo.path;
             tempHIDInfo.displayPath.remove(0,ALIENUSBFRONTPATHREM);
 
-            if(tempDefaultGunNum == ALIENUSB)
+            if(tempDefaultGunNum == ALIENUSB || tempDefaultGunNum == CUSTOMUSB)
             {
                 DisplayPriority displayP;
 
@@ -1637,8 +1645,14 @@ void ComDeviceList::LoadLightGunListV3()
                     displayP.other = true;
                 else
                     displayP.other = false;
-
-                AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempHIDInfo, recoilPriority, n2DDisplay, displayP);
+                if (tempDefaultGunNum == ALIENUSB)
+                {
+                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempHIDInfo, recoilPriority, n2DDisplay, displayP);
+                }
+                else
+                {
+                    AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempHIDInfo, recoilPriority, lgSet, n2DDisplay, displayP);
+                }
             }
             else if(tempDefaultGunNum == AIMTRAK)
                 AddLightGun(tempIsDefaultGun, tempDefaultGunNum, tempLightGunName, tenpLightGunNum, tempHIDInfo, AIMTRAKDELAYDFLT, recoilPriority);

@@ -64,7 +64,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 
 //Default Light Gun Definition - There is No Zero, as that is blan and nonDefaultLG
-#define NUM_DEFAULTLG           14
+#define NUM_DEFAULTLG           15
 
 //First Default Light Gun
 //Retro Shooter: RS3 Reaper
@@ -313,7 +313,27 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define RKADEMAXAMMONUM         0
 #define RKADERELOADNUM          0
 
+//Fourteenth Default Light Gun
+//Custom USB Light Gun
+#define CUSTOMUSB                14
+#define CUSTOMUSBNAME            "Custom USB Gun"
+#define CUSTOMUSBBAUD            0
+#define CUSTOMUSBDATA            0
+#define CUSTOMUSBPARITY          0
+#define CUSTOMUSBSTOP            0
+#define CUSTOMUSBFLOW            0
+#define CUSTOMUSBMAXAMMO         "0"
+#define CUSTOMUSBRELOAD          "0"
+#define CUSTOMUSBMAXAMMONUM      0
+#define CUSTOMUSBRELOADNUM       0
 
+#define CUSTOMUSBVENDORID        0x1B4F
+#define CUSTOMUSBPRODUCTID       0x9206
+#define CUSTOMUSBFRONTPATHREM    26
+#define CUSTOMUSBPATHFIRST       15
+#define CUSTOMUSBMINDELAY        40
+#define CUSTOMUSBDELAYDFLT       65
+#define CUSTOMUSBDELAYDFLTS      "65"
 
 //TCP Socket
 //Address Name & Port Number
