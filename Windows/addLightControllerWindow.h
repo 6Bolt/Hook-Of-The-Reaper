@@ -30,6 +30,8 @@ private slots:
 
     void on_closePushButton_clicked();
 
+    void on_typeComboBox_currentIndexChanged(int index);
+
 private:
 
     //Collects Ultimarc Device Data
@@ -38,11 +40,22 @@ private:
     //Displays Ultimarc Device Data
     void DisplayUltimarcData(quint8 index);
 
+    //Display ALED Strip Controller Data
+    void DisplayALEDStripData(quint8 index);
+
     void RemoveUltimarcData(quint8 index);
 
     void RemoveComboBoxDisplay(quint8 index);
 
     bool AddLightController();
+
+    void SearchSerialPorts();
+
+    void SetALED(bool enable);
+
+    bool AddALEDStripController();
+
+    void RemoveALEDStrip(quint8 index);
 
 public slots:
 
@@ -55,6 +68,9 @@ private:
 
     //ComDeviceList to Add the Light Gun Too. Do Not Delete!
     ComDeviceList           *p_comDeviceList;
+
+    //Current Type Setting
+    qint8                   typeSet;
 
     //Number of Saved Light Controillers in List
     quint8                  numberSaveLightCntlrs;
@@ -70,6 +86,12 @@ private:
     quint8                  ultimarcArrayNumber;
 
     bool                    noControllers;
+
+    //Found Serial Ports with ALED Strip Controller
+    QStringList             foundALEDCntlr;
+    QList<quint8>           foundALEDCntlrNumber;
+    quint8                  numberALEDCntlrs;
+    QList<SerialPortInfo>   foundALEDInfo;
 
 };
 

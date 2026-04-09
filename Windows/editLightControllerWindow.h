@@ -32,10 +32,15 @@ private slots:
 
     void on_closePushButton_clicked();
 
+    void on_typeComboBox_currentIndexChanged(int index);
+
 private:
 
     //Displays Ultimarc Device Data
     void DisplayUltimarcData(quint8 index);
+
+    //Display ALED Strip Controller Data
+    void DisplayALEDStripData(quint8 index);
 
     void RemoveUltimarcData(quint8 index);
 
@@ -43,20 +48,48 @@ private:
 
     bool CollectUltimarcData();
 
+    void SetALED(bool enable);
+
+    bool CollectALEDStripData();
+
 
     Ui::editLightControllerWindow *ui;
 
     //ComDeviceList to Add the Light Gun Too. Do Not Delete!
     ComDeviceList           *p_comDeviceList;
 
+    //Temp Pointers to Serial Port Info, so can Scan Through Serial Ports
+    QSerialPortInfo         *p_comPortInfo = nullptr;
+
+    //Current Type Setting
+    qint8                   typeSet;
+
     //Number of Saved Light Controillers
-    quint8                  numberSaveLightCntlrs;
+    quint8                  numberSaveUltimarcCntlrs;
+    quint8                  numberALEDStripCntlrs;
+
+    QList<quint8>           ultimarcPotitions;
+    QList<quint8>           aledStripPotitions;
 
     //Ultimarc Device Data
     UltimarcData            dataUltimarc[ULTIMARCMAXDEVICES];
 
     //If there is No More Saved Light Controllers
     bool                    noControllers;
+
+    //ALED Strip Controller
+    QStringList             aledCntlrCOMNames;
+    QList<quint8>           aledCntlrNumber;
+
+    quint8                  aledNumberStrings;
+    QList<quint16>          aledElements;
+    bool                    aledStripDataChanged;
+
+    quint8                  aledPattern;
+    bool                    aledPatChanged;
+
+    QString                 fileAndPath;
+    bool                    fileChanged;
 };
 
 #endif // EDITLIGHTCONTROLLERWINDOW_H

@@ -67,6 +67,8 @@ qt_add_executable(HookOfTheReaper
     defaultLG/hotd4.txt defaultLG/jp.txt defaultLG/rambo.txt
     defaultLG/lgi.txt defaultLG/lgi3d.txt defaultLG/lgj.txt
     defaultLG/alien3.txt defaultLG/confmiss.txt defaultLG/ptblank2.txt
+    COMDeviceList/UltimarcLC.h COMDeviceList/UltimarcLC.cpp
+    COMDeviceList/ALEDStripLC.h COMDeviceList/ALEDStripLC.cpp
 )
 
 

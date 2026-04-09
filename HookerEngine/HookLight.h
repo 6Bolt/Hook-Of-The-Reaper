@@ -46,33 +46,41 @@ signals:
 public:
 
     //ComDeviceList to Add the Light Gun Too. Do Not Delete!
-    ComDeviceList                   *p_comDeviceList;
+    ComDeviceList                       *p_comDeviceList;
 
-    QString                         pathLightFiles;
+    QString                             pathLightFiles;
 
-    quint8                          numberLightCntlrs;
+    quint8                              numberLightCntlrs;
 
-    QString                         gameName;
+    quint8                              numberALEDCntlrs;
 
-    QString                         defaultFilePath;
+    QList<quint8>                       ALEDCntlrsPositions;
 
-    QString                         lightFilePath;
+    QString                             gameName;
 
-    QMap<QString,LightCommand>      signalLightCommand;
+    QString                             defaultFilePath;
 
-    QStringList                     outputSignals;
+    QString                             lightFilePath;
 
-    bool                            isGameFile;
+    QMap<QString,QList<LightCommand>>   signalLightCommand;
 
-    bool                            isFileLoaded;
+    QStringList                         outputSignals;
 
-    quint16                         ammoValue[MAXGAMEPLAYERS];
-    quint16                         lifeValue[MAXGAMEPLAYERS];
+    bool                                isGameFile;
 
-    bool                            playerAlive[MAXGAMEPLAYERS];
-    quint8                          maxLifeValue[MAXGAMEPLAYERS];
-    quint8                          maxDamage[MAXGAMEPLAYERS];
+    bool                                isFileLoaded;
 
+    quint16                             ammoValue[MAXGAMEPLAYERS];
+    quint16                             lifeValue[MAXGAMEPLAYERS];
+
+    bool                                playerAlive[MAXGAMEPLAYERS];
+    quint8                              maxLifeValue[MAXGAMEPLAYERS];
+    quint8                              maxDamage[MAXGAMEPLAYERS];
+
+    //Struct Counters for ALED Strips
+    QList<quint8>                       flashCount;
+    QList<quint8>                       rndFlashCount;
+    QList<quint8>                       sequentialCount;
 };
 
 #endif // HOOKLIGHT_H

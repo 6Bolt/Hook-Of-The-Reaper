@@ -1722,7 +1722,7 @@ void HookerEngine::SetUpLightGuns()
     //Disconnect old connections, if any
     if(!connectedReaperLG.isEmpty())
     {
-        for(i = 0; i < connectedReaperLG.size (); i++)
+        for(i = 0; i < connectedReaperLG.count (); i++)
             disconnect(p_comDeviceList->p_lightGunList[connectedReaperLG[i]], &LightGun::WriteCOMPort, this, &HookerEngine::WriteLGComPortSlot);
 
         connectedReaperLG.clear ();
@@ -2120,7 +2120,7 @@ void HookerEngine::OpenSerialPortSlot(quint8 playerNum, bool noInit)
     tempPath = p_comDeviceList->p_lightGunList[lightGun]->GetComPortPath();
 
     //Opens the COM Port
-    emit StartComPort(playerNum, tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, tempPath, true);
+    emit StartComPort(playerNum, tempCPNum, tempCPName, tempBaud, tempData, tempParity, tempStop, tempFlow, tempPath, COMREADONLYWIN);
 
     lgConnectionClosed[playerNum] = false;
 
@@ -4993,6 +4993,14 @@ void HookerEngine::LoadLGFile()
                         {
                             if(loadedLGNumbers[k] != UNASSIGN)
                                 p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetAmmoCheck ();
+                        }
+                    }
+                    else if(line.startsWith(SKIPAUTOLEDOPTION))
+                    {
+                        for(quint8 k = 0; k < numberLGPlayers; k++)
+                        {
+                            if(loadedLGNumbers[k] != UNASSIGN)
+                                p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetSkipAutoLED ();
                         }
                     }
                     else

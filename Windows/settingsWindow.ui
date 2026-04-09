@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>485</width>
-    <height>355</height>
+    <height>423</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>210</x>
-     <y>320</y>
+     <y>390</y>
      <width>262</width>
      <height>26</height>
     </rect>
@@ -81,7 +81,7 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>11</x>
+     <x>10</x>
      <y>11</y>
      <width>71</width>
      <height>21</height>
@@ -189,7 +189,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>230</y>
+     <y>300</y>
      <width>56</width>
      <height>21</height>
     </rect>
@@ -208,7 +208,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>260</y>
+     <y>330</y>
      <width>251</width>
      <height>22</height>
     </rect>
@@ -219,7 +219,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Bypass Serial Port Write Checks</string>
+    <string>Bypass - Serial Port Write Checks</string>
    </property>
   </widget>
   <widget class="QCheckBox" name="enableNewGFCheckBox">
@@ -238,6 +238,43 @@
    </property>
    <property name="text">
     <string>Enable New Game File Creation, if Name or Default Not Found</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>230</y>
+     <width>81</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Developer</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="bypassCantFindLightCntlrCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>260</y>
+     <width>391</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Bypass - Can't Find Light Controller Pop-Up Window</string>
    </property>
   </widget>
  </widget>

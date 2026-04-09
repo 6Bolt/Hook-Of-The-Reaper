@@ -63,6 +63,30 @@ public:
     void SetInvertData() { isInvertData = true; }
     bool IsInvertData() { return isInvertData; }
 
+    //ALED
+    bool IsALEDStrip() { return isALEDStrip; }
+    bool IsDisplayRange() { return isDisplayRange; }
+    bool IsALEDStripFlash() { return isStripFlash; }
+    bool IsALEDStripRndFlash() { return isStripRndFlash; }
+    bool IsALEDStripSequential() { return isStripSequential; }
+
+    quint16 GetMaxRange() { return maxRange; }
+    quint8 GetNumberSteps() { return numberSteps; }
+    bool GetSeqReloadDR() { return sequenceReload; }
+    bool GetStripFlashWait() { return stripFlashWait; }
+    quint8 GetStripSeqNumberLEDs() { return sequenceNumLEDs; }
+
+    bool GetStripEnable2ndColor() { return enable2ndColor; }
+
+    quint8 GetProbability2ndColor() { return probability2nd; }
+
+    quint8 GetNumberLEDs() { return numberLEDs; }
+
+
+
+    void SetStructNumber(quint8 cntlrNum, QList<quint8> sNums) { structNumbers.insert(cntlrNum, sNums); }
+    QList<quint8> GetStructNumber(quint8 cntlrNum) { return structNumbers[cntlrNum]; }
+
     void ProcessLightCommand();
 
     //Check Arguments
@@ -73,6 +97,15 @@ public:
     bool CheckPlayerNumber(QString pNum);
     bool CheckHighCount(QString hcount);
     bool CheckBGTimeDelayReload(QString tDelay);
+    bool CheckMaxRange(QString maxRan);
+    bool CheckNumberSteps(QString numSt);
+    bool CheckNumberLEDs(QString numLEDs);
+    bool CheckSeqReloadDR(QString seqR);
+    bool CheckTimeDelayDR(QString tDelay);
+    bool CheckStripFlashWait(QString sFW);
+    bool CheckNumberLEDsSeq(QString numLED);
+    bool CheckEnable2ndColor(QString en2ndC);
+    bool CheckProbability2ndColor(QString prob2nd);
 
     //Check Command's Arguments
 
@@ -114,6 +147,22 @@ public:
     bool ProcessBackgroundRegular();
 
 
+    //ALED Strip Commands
+
+    //Display Range
+    bool ProcessDisplayRange();
+
+    //Strip Flash
+    bool ProcessStripFlash();
+    bool ProcessStripPlayerFlash();
+
+    //Strip Random Flash
+    bool ProcessStripRndFlash();
+
+    //Strip Sequential
+    bool ProcessStripSequential();
+    bool ProcessStripPlayerSequential();
+
 
 
 
@@ -136,6 +185,8 @@ public:
     bool                                isGeneralCommand;
     bool                                isInvertData;
     bool                                isBackground;
+    bool                                isALEDStrip;
+    bool                                isDisplayRange;
 
 
     quint8                              kindOfCommand;
@@ -159,11 +210,35 @@ public:
     bool                                isColorMap;
     QString                             colorMapName;
 
-    quint8                              highCount;
-
-
     //Background
     QList<quint8>                       otherBGGroups;
+
+    //ALED Strip
+
+    //Display Range
+    quint8                              highCount;
+    quint16                             maxRange;
+    quint8                              numberSteps;
+    bool                                sequenceReload;
+    quint8                              sequenceNumLEDs;
+
+    //Flash
+    bool                                stripFlashWait;
+
+    //Random Flash
+    quint8                              numberLEDs;
+    bool                                enable2ndColor;
+    quint8                              probability2nd;
+
+
+    QMap<quint8,QList<quint8>>          structNumbers;
+    bool                                isStripFlash;
+    bool                                isStripRndFlash;
+    bool                                isStripSequential;
+
+    //Flash
+
+
 
 };
 

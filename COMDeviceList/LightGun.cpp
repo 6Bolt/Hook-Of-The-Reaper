@@ -44,6 +44,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     maxLifeValue = 0;
     maxDamage = 0;
     doAmmoCheck = false;
+    reaperSkipAutoLED = false;
 
     tcpPort = 0;
     tcpPlayer = UNASSIGN;
@@ -234,6 +235,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     maxLifeValue = 0;
     maxDamage = 0;
     doAmmoCheck = false;
+    reaperSkipAutoLED = false;
 
     tcpPort = 0;
     tcpPlayer = UNASSIGN;
@@ -299,7 +301,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
         loadDamageLED = false;
         loadDeathLED = false;
     }
-    else    // For Fusion and Xena
+    else    // For Fusion, Xena, & GUN4IR
     {
         if(reloadSetting == 1)
         {
@@ -505,6 +507,7 @@ LightGun::LightGun(LightGun const &lgMember, QObject *parent)
     maxLifeValue = 0;
     maxDamage = 0;
     doAmmoCheck = false;
+    reaperSkipAutoLED = false;
 
     tcpPort = lgMember.tcpPort;
     tcpPlayer = lgMember.tcpPlayer;
@@ -640,6 +643,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     maxLifeValue = 0;
     maxDamage = 0;
     doAmmoCheck = false;
+    reaperSkipAutoLED = false;
 
     tcpPort = 0;
     tcpPlayer = UNASSIGN;
@@ -783,6 +787,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     maxLifeValue = 0;
     maxDamage = 0;
     doAmmoCheck = false;
+    reaperSkipAutoLED = false;
 
     tcpPort = 0;
     tcpPlayer = UNASSIGN;
@@ -954,6 +959,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     maxLifeValue = 0;
     maxDamage = 0;
     doAmmoCheck = false;
+    reaperSkipAutoLED = false;
 
     tcpPort = 0;
     tcpPlayer = UNASSIGN;
@@ -1068,6 +1074,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     maxLifeValue = 0;
     maxDamage = 0;
     doAmmoCheck = false;
+    reaperSkipAutoLED = false;
 
     tcpPort = 0;
     tcpPlayer = UNASSIGN;
@@ -1198,6 +1205,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     maxLifeValue = 0;
     maxDamage = 0;
     doAmmoCheck = false;
+    reaperSkipAutoLED = false;
 
     outputConnection = TCP;
 
@@ -1342,6 +1350,7 @@ LightGun::LightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumbe
     maxLifeValue = 0;
     maxDamage = 0;
     doAmmoCheck = false;
+    reaperSkipAutoLED = false;
 
     tcpPort = 0;
     tcpPlayer = UNASSIGN;
@@ -1758,7 +1767,11 @@ void LightGun::SetDisplayOpenFire(DisplayOpenFire displayOF)
     }
 }
 
-
+void LightGun::SetSkipAutoLED()
+{
+    if(defaultLightGunNum == RS3_REAPER)
+        reaperSkipAutoLED = true;
+}
 
 
 //Get Member Functions
@@ -2019,6 +2032,7 @@ void LightGun::CopyLightGun(LightGun const &lgMember)
     maxLifeValue = 0;
     maxDamage = 0;
     doAmmoCheck = false;
+    reaperSkipAutoLED = false;
 
     tcpPort = lgMember.tcpPort;
     tcpPlayer = lgMember.tcpPlayer;
@@ -2851,6 +2865,18 @@ QStringList LightGun::OpenComPortCommands(bool *isSet)
 
         return tempCMDs;
     }
+    else if(reaperSkipAutoLED)
+    {
+        QStringList tempCMDs;
+
+        for(quint8 i = 0; i < openComPortCmds.count(); i++)
+        {
+            if(openComPortCmds[i] != REAPERAUTOLED)
+                tempCMDs << openComPortCmds[i];
+        }
+
+        return tempCMDs;
+    }
 
     return openComPortCmds;
 }
@@ -3145,6 +3171,7 @@ void LightGun::ResetLightGun()
     maxLifeValue = 0;
     maxDamage = 0;
     doAmmoCheck = false;
+    reaperSkipAutoLED = false;
     hasDisplayAmmoInited = false;
     hasDisplayLifeInited = false;
     hasDisplayOtherInited = false;

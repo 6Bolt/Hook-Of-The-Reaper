@@ -24,8 +24,10 @@
 //Light Gun Class
 #include "LightGun.h"
 
-//Light Controller Class
+//Light Controller Classes
 #include "LightController.h"
+#include "UltimarcLC.h"
+#include "ALEDStripLC.h"
 
 //Ultimarc PacDrive SDK
 #include "PacDriveControl.h"
@@ -46,7 +48,7 @@ public:
     void            AddLightGun(LightGun const &lgMember);
     //For RS3 Reaper
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool disableLEDs,  quint8 largeAmmo, ReaperSlideData slideData);
-    //Normal Light Gun & Fusion & Xena & X-Gunner & JB Gun4IR
+    //Normal Light Gun & Fusion & Xena & X-Gunner & JB Gun4IR & RKADE
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet);
     //For MX24 Light Gun
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, bool dipSwitchSet, quint8 dipSwitchNumber, quint8 hcpNum, SupportedRecoils lgRecoils);
@@ -61,9 +63,12 @@ public:
     //For Blamcon
     void            AddLightGun(bool lgDefault, quint8 dlgNum, QString lgName, quint8 lgNumber, quint8 cpNumber, QString cpString, QSerialPortInfo cpInfo, quint32 cpBaud, quint16 cpDataBits, quint16 cpParity, quint16 cpStopBits, quint16 cpFlow, SupportedRecoils lgRecoils, LightGunSettings lgSet, bool has2DigitDiplay, DisplayPriority displayP);
 
-    //Adds a Light Controller
-    void            AddLightController(LightController const &other);
+    //Adds an Ultimarc Light Controller
+    void            AddLightController(UltimarcLC const &other);
     void            AddLightController(UltimarcData dataU);
+
+    //Adds a ALED Strip Controller
+    void            AddALEDStripController(quint8 comNum, QString comName, SerialPortInfo spInfo, quint8 stripCount, QList<quint16> elementsCounts, quint8 pat, QString grpFile);
 
     //Copies Available COM Ports
     void            CopyAvailableComPortsArray(bool *targetArray, quint8 size);
@@ -71,6 +76,14 @@ public:
     //Get the Number of Certain Devices
     quint8          GetNumberLightGuns();
     quint8          GetNumberLightControllers();
+    quint8          GetNumberUltimarcControllers() { return numberUltimarcCntrls; }
+    quint8          GetNumberALEDStripControllers() { return numberALEDStripCntrls; }
+
+    QList<quint8>   GetUltimarcPotitions() { return ultimarcCntlrPotitions; }
+
+    QStringList     GetALEDCOMNames() { return aledStripCntlrCOMList; }
+    QList<quint8>   GetALEDCOMNumbers() { return aledStripCntlrCOMNumList; }
+    QList<quint8>   GetALEDPotitions() { return aledStripCntlrPotitions; }
 
     //Switch COM Ports, Used in Edit Window
     void            SwitchComPortsInList(quint8 oldPort, quint8 newPort);
@@ -108,11 +121,17 @@ public:
     void            SaveSettings();
     void            LoadSettings();
 
+    //Old
     void            LoadSettingsV2();
+    //New
+    void            LoadSettingsV3();
 
     //Save or Load Light Controllers
     void            SaveLightControllersList();
+
     void            LoadLightControllersList();
+    void            LoadLightControllersListV0();
+    void            LoadLightControllersListV1();
 
     //Settings Get & Set Functions
     //Use Default Light Gun Files before INI Files
@@ -143,6 +162,10 @@ public:
     bool            GetEnableNewGameFileCreation();
     void            SetEnableNewGameFileCreation(bool enableNGFC);
 
+    //Bypass the Pop-up Window when Light Controller is Not Found
+    bool            GetBypassCantFindLightCntlr() { return bypassCantFindLightCntlr; }
+    void            SetBypassCantFindLightCntlr(bool bypassCFLC) { bypassCantFindLightCntlr = bypassCFLC; }
+
     //Get TCP Port Player Info
     qint8           GetTCPPortPlayerInfo(quint16 portNumber);
     void            SetTCPPortPlayerInfo(quint16 portNumber, quint8 playerInfo);
@@ -164,6 +187,7 @@ public:
     //Check is the USB Light Gun Already Exsits
     bool            CheckUSBPath(QString lgPath);
     bool            CheckUSBPath(QString lgPath, quint8 lgNumbeer);
+
 
 
 public slots:
@@ -192,6 +216,9 @@ public:
 
     //Get Light Controller Thread
     QThread*        GetLightCntlrThread() { return p_threadForLight; }
+
+    //Check COM Ports for the ALED Strip Controller
+    bool            CheckALEDStripCOM(quint8 comNum);
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -223,6 +250,8 @@ private:
     //Number of Light Guns & COM Devices
     quint8              numberLightGuns;
     quint8              numberLightCntrls;
+    quint8              numberUltimarcCntrls;
+    quint8              numberALEDStripCntrls;
 
     //Player's Light Gun Assignment
     quint8              playersLightGun[MAXPLAYERLIGHTGUNS];
@@ -250,15 +279,17 @@ private:
     bool                closeComPortGameExit;
     bool                ignoreUselessDLGGF;
     bool                bypassSerialWriteChecks;
+    bool                enableNewGameFileCreation;
+    bool                bypassCantFindLightCntlr;
+
+    // Moved to the Light gun Settings
     bool                disbleReaperLEDs;
     bool                displayAmmoPriority;
     bool                displayLifePriority;
     bool                displayOtherPriority;
-    bool                enableNewGameFileCreation;
     bool                enableReaperAmmo0Delay;
     quint8              repearAmmo0Delay;
     quint16             reaperHoldSlideTime;
-
     quint8              userRecoilPriority[NUMBEROFRECOILS];
 
     //OpenFire Settings
@@ -267,11 +298,17 @@ private:
     bool                displayAmmoLifeBar;
     bool                displayAmmoLifeNumber;
 
-    bool                saveLGAfterSettings;
 
     //TCP Server Port and Players
     //0 - Both P1 and P2 Taken, 1 - P1 Taken, 2 - P2 Taken
     QMap<quint16,quint8>    tcpPortPlayersMap;
+
+    QList<quint8>       ultimarcCntlrPotitions;
+
+    //HOTR ALED Strip Controllers Serial Port COMs List
+    QStringList         aledStripCntlrCOMList;
+    QList<quint8>       aledStripCntlrCOMNumList;
+    QList<quint8>       aledStripCntlrPotitions;
 
 };
 

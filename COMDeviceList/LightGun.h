@@ -79,6 +79,7 @@ public:
     void SetReaperSlideData(ReaperSlideData slideData);
     void SetDisplayOpenFire(DisplayOpenFire displayOF);
     void SetReaperLargeAmmo(quint8 largeAmmo) { reapearLargeAmmoValue = largeAmmo; }
+    void SetSkipAutoLED();
 
 
 
@@ -253,6 +254,7 @@ private:
     bool                disableReaperLEDs;
     bool                isReaper5LEDsInited;
     quint8              reapearLargeAmmoValue;
+    bool                reaperSkipAutoLED;
     //Repaer Ammo 0 Z0 Delay Buffer
     bool                disableReaperHoldBack;
     bool                enableReaperAmmo0Delay;
@@ -411,11 +413,11 @@ private:
     //Ammo
     quint16             lastAmmoValue;
     quint16             reloadAmmoValue;
-    quint8              reaper5LEDNumber;
-    quint8              reaperBullets1LED;
-    quint8              reaperBulletCount;
+    quint16             reaper5LEDNumber;
+    quint16             reaperBullets1LED;
+    quint16             reaperBulletCount;
     bool                reaperLargeAmmo;
-    quint8              reaperNumLEDOn;
+    quint16             reaperNumLEDOn;
 
     //For Ammo Check
     bool                doAmmoCheck;

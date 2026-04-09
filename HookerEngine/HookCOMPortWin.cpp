@@ -76,25 +76,6 @@ HookCOMPortWin::~HookCOMPortWin()
     //Disconnect all Interfaces
     DisconnectAll();
 
-    /*
-    //Close and Delete Serial COM Ports
-    for(quint8 i = 0; i < MAXCOMPORTS; i++)
-    {
-        if(comPortOpen[i])
-           this->Disconnect(i);
-    }
-
-    //Close All Open USB HID Connections
-    for(quint8 i = 0; i < MAXGAMEPLAYERS; i++)
-    {
-        if(hidOpen[i])
-        {
-            hid_close(p_hidConnection[i]);
-            hidOpen[i] = false;
-        }
-    }
-    */
-
     //Exit the USB HID
     hid_exit ();
 
@@ -202,7 +183,6 @@ bool HookCOMPortWin::Reconnect(quint8 comPortNum)
     isPortOpen = true;
 
     return true;
-
 }
 
 
@@ -289,13 +269,6 @@ bool HookCOMPortWin::Reconnect(quint8 comPortNum)
         {
             quint16 lastError = GetLastError();
 
-            //qDebug() << "lastError: " << lastError;
-            //qDebug() << "comPortArray[comPortNum]: " << comPortArray[comPortNum] << "GetLastError(): " << lastError;
-
-            //FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-            //              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-            //              (LPWSTR)&messageBuffer, 1020, NULL);
-
             if(!bypassCOMPortConnectFailWarning)
             {
 
@@ -334,18 +307,11 @@ bool HookCOMPortWin::Reconnect(quint8 comPortNum)
                 COMSTAT status;
                 DWORD errors;
 
-                //DWORD charsCopied = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                //              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                //              (LPWSTR)&messageBuffer, 0, NULL);
-
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                //if(messageBuffer == nullptr || charsCopied == 0)
-                    critMessage = "Can not get the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the default settings for the serial port.";
-                //else
-                //    critMessage = "Can not get the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the default settings for the serial port. "+QString::fromWCharArray(messageBuffer);
+                critMessage = "Can not get the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the default settings for the serial port.";
 
                 emit ErrorMessage("Serial COM Port Error",critMessage);
                 return;
@@ -433,18 +399,10 @@ bool HookCOMPortWin::Reconnect(quint8 comPortNum)
                 COMSTAT status;
                 DWORD errors;
 
-                //DWORD charsCopied = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                //              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                //              (LPWSTR)&messageBuffer, 0, NULL);
-
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                //if(messageBuffer == nullptr || charsCopied == 0)
-                //    critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. ";
-                //else
-                //    critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. "+QString::fromWCharArray(messageBuffer);
                 critMessage = "Can not set the CommState for the Serial COM Port: "+comPortName+" on Port: "+QString::number(comPortNum)+". This is the settings for the serial port. ";
                 emit ErrorMessage("Serial COM Port Error",critMessage);
                 return;
@@ -481,18 +439,12 @@ bool HookCOMPortWin::Reconnect(quint8 comPortNum)
                 COMSTAT status;
                 DWORD errors;
 
-                //DWORD charsCopied = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                //              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                //              (LPWSTR)&messageBuffer, 0, NULL);
-
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                //if(messageBuffer == nullptr || charsCopied == 0)
-                    critMessage = "Serial COM Port failed to set TimeOuts, on COM Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
-                //else
-                //    critMessage = "Serial COM Port failed to set TimeOuts, on COM Port: : "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
+                critMessage = "Serial COM Port failed to set TimeOuts, on COM Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
+
                 emit ErrorMessage("Serial COM Port Error",critMessage);
                 return;
             }
@@ -609,18 +561,11 @@ void HookCOMPortWin::WriteData(const quint8 &comPortNum, const QByteArray &write
             //If Write Failed
             if (writeOutput == 0)
             {
-                //FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                //              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                //              (LPWSTR)&messageBuffer, 1020, NULL);
-
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                //if(messageBuffer == nullptr)
-                    critMessage = "Serial COM Port write failed on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
-                //else
-                //    critMessage = "Serial COM Port write failed on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
+                critMessage = "Serial COM Port write failed on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
                 emit ErrorMessage("Serial COM Port Error",critMessage);
                 delete [] charArray;
                 return;
@@ -629,18 +574,11 @@ void HookCOMPortWin::WriteData(const quint8 &comPortNum, const QByteArray &write
             //If Size Doesn't Match Byte Written
             if(size != dwWrite)
             {
-                //FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                //              GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                //              (LPWSTR)&messageBuffer, 1020, NULL);
-
                 ClearCommError(comPortArray[comPortNum], &errors, &status);
 
                 QString critMessage;
 
-                //if(messageBuffer == nullptr)
-                    critMessage = "Serial COM Port write failed on number of bytes written on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
-                //else
-                //    critMessage = "Serial COM Port write failed on number of bytes written on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors)+" "+QString::fromWCharArray(messageBuffer);
+                critMessage = "Serial COM Port write failed on number of bytes written on Port: "+QString::number(comPortNum)+". Please check you Serial COM Port connections. Error: "+QString::number(errors);
                 emit ErrorMessage("Serial COM Port Error",critMessage);
             }
         }

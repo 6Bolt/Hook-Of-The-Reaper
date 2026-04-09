@@ -199,6 +199,65 @@ LightController::LightController(quint8 cntlrNum, UltimarcData dataU, QObject *p
     initDone = true;
 }
 
+LightController::LightController(quint8 cntlrNum, SerialPortInfo portInfo, QObject *parent)
+    : QObject{parent}
+{
+    initDone = false;
+
+    lightCntlrNum = cntlrNum;
+
+    comPortInfo = portInfo;
+
+    id = UNASSIGN;
+
+    lightCntlrMaker = HOTRALEDSTRIP;
+
+    rgbFastMode = false;
+
+    noRegularGroups = false;
+
+    noRGBGroups = false;
+
+    didGroupFileLoad = false;
+
+    defaultBrightness = 255;
+
+    isPAC64 = true;
+
+    isBackground = false;
+
+    title = "ALED Strip Controller Group File Error";
+    titleGF = "ALED Strip Controller Game File Error";
+    titleC = "ALED Strip Controller Color Error";
+
+    rgbOff.r = 0;
+    rgbOff.g = 0;
+    rgbOff.b = 0;
+
+    doReset = false;
+
+    numberPins = 0;
+
+    numberGroups = 0;
+
+    quint16 i;
+
+    for(i = 0; i < numberGroups; i++)
+        p_usedPins[i] = 0;
+
+    for(i = 0; i < NUMBEREXECUTIONS; i++)
+        p_execution[i] = nullptr;
+
+    for(i = 0; i < MAXGAMEPLAYERS; i++)
+    {
+        backgroundActive[i] = false;
+        backgroundRGB[i] = false;
+    }
+
+    executionCount = 0;
+
+    initDone = true;
+}
 
 //Deconstructor
 
@@ -216,11 +275,14 @@ LightController::~LightController()
         }
     }
 
-    //Used Pins Array
-    delete[] p_usedPins;
+    if(lightCntlrMaker == ULTIMARC)
+    {
+        //Used Pins Array
+        delete[] p_usedPins;
 
-    TurnOffLights();
-    ResetLightController();
+        TurnOffLights();
+        ResetLightController();
+    }
 }
 
 
@@ -324,16 +386,16 @@ bool LightController::SetGroupFile(QString filePath)
     //Load the Group File
     LoadGroupFile();
 
-    if(didGroupFileLoad)
+    if(didGroupFileLoad && lightCntlrMaker == ULTIMARC)
     {
         //Build Group Data for Regular and RGB
         BuildRegularGroupData();
         BuildRGBGroupData();
     }
-    else
+    else if(!didGroupFileLoad)
         return didGroupFileLoad;
 
-    if(!noRegularGroups && didGroupFileLoad)
+    if(!noRegularGroups && didGroupFileLoad  && lightCntlrMaker == ULTIMARC)
     {
         quint8 i;
 
@@ -374,7 +436,7 @@ bool LightController::ReloadGroupFile()
     //Load the Group File
     LoadGroupFile();
 
-    if(didGroupFileLoad)
+    if(didGroupFileLoad && lightCntlrMaker == ULTIMARC)
     {
         //Build Group Data for Regular and RGB
         BuildRegularGroupData();
@@ -384,7 +446,7 @@ bool LightController::ReloadGroupFile()
         return didGroupFileLoad;
 
 
-    if(!noRegularGroups && didGroupFileLoad)
+    if(!noRegularGroups && didGroupFileLoad && lightCntlrMaker == ULTIMARC)
     {
         quint8 i;
 
@@ -603,7 +665,7 @@ void LightController::LoadGroupFile()
         emit ShowErrorMessage(title, tempCrit);
         didGroupFileLoad = false;
     }
-    else if(!gotData)
+    else if(!gotData && lightCntlrMaker == ULTIMARC)
     {
         QString tempCrit = "No group data was loaded. Please correct the group file for this light controller.\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
@@ -633,7 +695,7 @@ void LightController::LoadGroupFile()
         noRGBGroups = true;
 
     //No Group Data Loaded
-    if(noRegularGroups && noRGBGroups && gotData)
+    if(noRegularGroups && noRGBGroups && gotData && lightCntlrMaker == ULTIMARC)
     {
         QString tempCrit = "No group data was loaded. Please correct the group file for this light controller.\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
@@ -1160,7 +1222,14 @@ bool LightController::LoadRGBColorMap(QString line)
 
     QStringList splitData = line.split(' ', Qt::SkipEmptyParts);
 
-    if(splitData.length() < COLORMAPSIZE)
+    quint8 lengthCheck;
+
+    if(lightCntlrMaker == ULTIMARC)
+        lengthCheck = COLORMAPSIZE;
+    else if(lightCntlrMaker == HOTRALEDSTRIP)
+        lengthCheck = COLORMAPSIZEALED;
+
+    if(splitData.length() < lengthCheck)
     {
         QString tempCrit = "The RGB color map needs more data or color names.\nColor Map Data: "+line+"\nFile: "+groupFilePath;
         emit ShowErrorMessage(title, tempCrit);
@@ -2954,6 +3023,72 @@ void LightController::SetUpLights()
 }
 
 
+void LightController::RedoSetUpALEDStrips()
+{
+
+}
+
+void LightController::UpdateALEDPattern()
+{
+
+}
+
+void LightController::GameStarted()
+{
+
+}
+
+
+void LightController::GameEnded()
+{
+
+}
+
+
+void LightController::SetUpDisplayRange(QList<quint8> stps, quint16 mRange, quint8 numSteps, quint16 tOff, QString cMap, bool enSeqR, quint16 tDelay, quint8 numLEDs)
+{
+
+}
+
+void LightController::UpdateDisplayRange(QList<quint8> stps, quint16 value)
+{
+
+}
+
+void LightController::SetUpStripFlash(quint8 structN, quint8 stp, quint16 timeOn, quint16 timeOff, quint8 numFlash, QString color)
+{
+
+}
+
+void LightController::DoStripFlash(quint8 structN)
+{
+
+}
+
+void LightController::DoStripFlashWait(quint8 structN)
+{
+
+}
+
+void LightController::SetUpStripRndFlash(quint8 structN, quint8 stp, quint8 numLEDs, quint16 timeOn, quint16 timeOff, quint8 numFlash, QString color, bool enable2nd, quint8 prob, QString color2)
+{
+
+}
+
+void LightController::DoStripRndFlash(quint8 structN)
+{
+
+}
+
+void LightController::SetUpStripSequential(quint8 structN, quint8 stp, quint16 timeDelay, QString color, quint8 numLEDs)
+{
+
+}
+
+void LightController::DoStripSequential(quint8 structN)
+{
+
+}
 
 
 //Private Slots

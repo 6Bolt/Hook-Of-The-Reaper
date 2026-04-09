@@ -80,6 +80,13 @@ settingsWindow::settingsWindow(ComDeviceList *cdList, QWidget *parent)
     else
         ui->enableNewGFCheckBox->setCheckState (Qt::Unchecked);
 
+    bypassCantFindLightCntlr = p_comDeviceList->GetBypassCantFindLightCntlr();
+
+    //If Set. then Check the Box For Bypass Can't Find Light Controller
+    if(bypassCantFindLightCntlr)
+        ui->bypassCantFindLightCntlrCheckBox->setCheckState (Qt::Checked);
+    else
+        ui->bypassCantFindLightCntlrCheckBox->setCheckState (Qt::Unchecked);
 
 
     //Convert ms to s, and then convert to QString
@@ -133,6 +140,7 @@ void settingsWindow::CheckAndSaveSetting()
     ignoreUDLGGF = ui->ignoreUDLGGFCheckBox->checkState ();
     bypassSWC = ui->bypassSerialWriteCheckBox->checkState ();
     enableNGFC = ui->enableNewGFCheckBox->checkState ();
+    bypassCFLC = ui->bypassCantFindLightCntlrCheckBox->checkState ();
 
 
     if(defaultLG == Qt::Checked)
@@ -169,6 +177,10 @@ void settingsWindow::CheckAndSaveSetting()
     else
         enableNewGameFileCreation = false;
 
+    if(bypassCFLC == Qt::Checked)
+        bypassCantFindLightCntlr = true;
+    else
+        bypassCantFindLightCntlr = false;
 
     //reaperHoldSlideTime = static_cast<quint16>(reaperHoldSlideTimeSec*1000.0f);
 
@@ -178,6 +190,7 @@ void settingsWindow::CheckAndSaveSetting()
     p_comDeviceList->SetIgnoreUselessDFLGGF (ignoreUselessDLGGF);
     p_comDeviceList->SetSerialPortWriteCheckBypass (bypassSerialWriteChecks);
     p_comDeviceList->SetEnableNewGameFileCreation (enableNewGameFileCreation);
+    p_comDeviceList->SetBypassCantFindLightCntlr (bypassCantFindLightCntlr);
 
     if(isNumber)
     {

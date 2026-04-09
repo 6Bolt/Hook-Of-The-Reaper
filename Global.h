@@ -22,6 +22,9 @@
 #define COMPORTWAITFORWRITE     50
 #define COMPORTPATHFRONT        "\\\\.\\"
 
+//If USB Serial Port, is Read Only in Win32
+#define COMREADONLYWIN          true
+
 //Number of Different Settings
 #define BAUD_NUMBER             8
 #define DATABITS_NUMBER         4
@@ -78,6 +81,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define REAPERRELOADNUM         6
 
 #define DISABLEREAPERLEDSOPEN   "ZS"
+#define REAPERAUTOLED           "ZR"
 #define DISABLEREAPERLEDSCLOSE  "ZX"
 
 #define MAXRELOADVALUE          15
@@ -372,6 +376,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define SETTINGSSAVEFILE        "settings.hor"
 #define STARTSETTINGSFILE       "Settings"
 #define STARTSETTINGSFILEV2     "Settings V2"
+#define STARTSETTINGSFILEV3     "Settings V3"
 #define DEFAULTREFRESHDISPLAY   400
 
 
@@ -389,6 +394,9 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 //Input Mask for Light Controller Time Delay
 #define LIGHTCNTLRTIMEMASK      "00000"
+
+//Input Mask for ALED Strip Number
+#define ALEDNUMBERLINEMASK      "0000"
 
 #define USBDEVICEMASK           "000"
 #define USBINPUTMASKHEX         "HHHH"
@@ -510,6 +518,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define SINDENTRIGGERRECOILNUM  1
 #define SINDENTRIGGERRECOILMAX  3
 #define AMMOCHECKOPTION         "Ammo_Check"
+#define SKIPAUTOLEDOPTION       "Skip_Auto_LED"
 
 
 //Number of Supported Recoil Commands 4: Ammo_Value, Recoil, Recoil_R2S, and Recoil_Value
@@ -653,6 +662,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 //Light Controllers Save File
 #define LIGHTCNTLRSSAVEFILE     "lightControllers.hor"
 #define STARTLIGHTCNTLRSSAVE    "Light Controllers Data File V0"
+#define STARTLIGHTCNTLRSSAVE1   "Light Controllers Data File V1"
 #define LIGHTCNTLRNUMBERFILE    "Light Controller #"
 
 //Light Controller Game Files
@@ -661,6 +671,10 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define DEFAULTLIGHTFILE        "default.txt"
 
 #define INTERNALRECOILR2S       "_CtmRecoil"
+
+//Types of Light Controllers
+#define ULTIMARCTYPE            "Ultimarc Devices"
+#define ALEDSTRIPTYPE           "LED Hook - Strip"
 
 
 
@@ -673,6 +687,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define COLORSIZE               5
 #define COLORMAP                "Color_Map"
 #define COLORMAPSIZE            4
+#define COLORMAPSIZEALED        3
 #define DEFAULTBRIGHTNESS       "Default_Brightness"
 #define DEFAULTBRIGHTNESSSIZE   2
 #define INVERTDATASYMBOL        '~'
@@ -684,6 +699,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 
 //Light Controller Makers
 #define ULTIMARC                0
+#define HOTRALEDSTRIP           1
 
 
 //PacDrive, U-HID, and Blue-HID: 16 LED Channels with No Brightness (0 - Off and 1 - On)
@@ -755,6 +771,7 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 
 //General Commands
 #define GENERALCOMMAND          50
+
 
 
 
@@ -864,11 +881,69 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 
 
 
-
-
-
 //Execution List
 #define NUMBEREXECUTIONS        256
+
+
+
+////////////////////////
+/// ALED Controller
+////////////////////////
+
+#define ALEDCNTLRVID            0xCAFE
+#define ALEDCNTLRPID            0x6920
+
+//Display Ranges Smallest Delay in us, for Sequence Reload
+#define DRSMALLESTDELAY         101
+#define ALEDSTRIPTIME           9999
+#define ALEDSTRIPMAXNUM         9
+
+//Patterns
+#define NOPATTERN               "No Pattern"
+#define SNAKESPAT               "Snakes"
+#define RANDOMPAT               "Random"
+#define SPARKLESPAT             "Sparkles"
+#define GREYSPAT                "Greys"
+
+
+//ALED Strip Commands
+#define ALEDSTRIP               70
+#define ALEDSDISPLAYRANGE       71
+#define ALEDSFLASHCMD           72
+#define ALEDSRNDFLASH           73
+#define ALEDSSEQUENCECMD        74
+
+//ALED Strip Display Range
+#define DISPLAYRANGEALEDS       "Display_Range_ALED_Strip"
+#define DISPLAYRANGEALEDSARGS   7
+#define DISPLAYRANGEALEDSCMD    0
+
+//ALED Strip Flash
+#define FLASHALEDS              "Flash_ALED_Strip"
+#define FLASHALEDSARGS          5
+#define FLASHALEDSCMD           0
+
+#define RELOADFLASHALEDS        "Reload_Flash_ALED_Strip"
+#define RELOADFLASHALEDSARGS    6
+#define RELOADFLASHALEDSCMD     1
+
+#define DEATHFLASHALEDS         "Death_Flash_ALED_Strip"
+#define DEATHFLASHALEDSARGS     6
+#define DEATHFLASHALEDSCMD      2
+
+#define RANDOMFLASHALEDS        "Random_Flash_ALED_Strip"
+#define RANDOMFLASHALEDSARGS    8
+#define RANDOMFLASHALEDSCMD     3
+
+
+//ALED Strip Sequence
+#define SEQUENCEALEDS             "Sequence_ALED_Strip"
+#define SEQUENCEALEDSARGS         3
+#define SEQUENCEALEDSCMD          0
+
+#define RELOADSEQUENCEALEDS       "Reload_Sequence_ALED_Strip"
+#define RELOADSEQUENCEALEDSARGS   4
+#define RELOADSEQUENCEALEDSCMD    1
 
 
 //Not Used Yet, But Needed for Future
@@ -943,6 +1018,7 @@ struct SerialPortInfo
     quint16     productID;
     QString     productIDString;
     QString     portName;
+    quint8      portNumber;
 };
 
 struct SupportedRecoils

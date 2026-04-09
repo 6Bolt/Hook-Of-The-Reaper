@@ -30,10 +30,12 @@ public:
 
     explicit LightController(quint8 cntlrNum, UltimarcData dataU, QObject *parent = nullptr);
 
-    ~LightController();
+    explicit LightController(quint8 cntlrNum, SerialPortInfo portInfo, QObject *parent = nullptr);
+
+    virtual ~LightController();
 
 
-    void CopyLightController(LightController const &lcMember);
+    virtual void CopyLightController(LightController const &lcMember);
 
     //Set and Get Light Controller List Number
     void SetLightCntlrNumber(quint8 lcNum) { lightCntlrNum = lcNum; }
@@ -55,13 +57,14 @@ public:
     //Get Ultimarc Data Struct
     UltimarcData GetUltimarcData() { return dataUltimarc; }
 
+    virtual bool SetGroupFile(QString filePath);
+
     //Get Group File and Path
-    bool SetGroupFile(QString filePath);
     QString GetGroupFile() { return groupFilePath; }
 
     bool DidGroupFileLoad() { return didGroupFileLoad; }
 
-    bool ReloadGroupFile();
+    virtual bool ReloadGroupFile();
 
     quint8 GetID() { return id; }
 
@@ -77,6 +80,21 @@ public:
 
     bool IsPAC64() { return isPAC64; }
 
+
+    //For the ALED Strip Controller
+    quint8 GetCOMNumber() { return comNumber; }
+    QString GetCOMName() { return comName; }
+    QString GetCOMPath() { return comPath; }
+    SerialPortInfo GetCOMPortInfo() { return comPortInfo; }
+
+    quint8 GetNumberStrips() { return numberStrips; }
+    QList<quint16> GetElementCounts() { return elementsStripList; }
+
+    quint8 GetALEDPattern() { return aledPattern; }
+
+    void SetALEDStrip(quint8 numStrips, QList<quint16> elements) { numberStrips = numStrips; elementsStripList = elements; }
+
+    void SetALEDPattern(quint8 pat) { aledPattern = pat; }
 
 
     //Loading Group File Functions
@@ -339,6 +357,31 @@ public:
     //Set Up Lights After Being Connected to PacDrive
     void SetUpLights();
 
+    virtual void RedoSetUpALEDStrips();
+
+    virtual void UpdateALEDPattern();
+
+    virtual void GameStarted();
+
+    virtual void GameEnded();
+
+    virtual void SetUpDisplayRange(QList<quint8> stps, quint16 mRange, quint8 numSteps, quint16 tOff, QString cMap, bool enSeqR, quint16 tDelay, quint8 numLEDs);
+
+    virtual void UpdateDisplayRange(QList<quint8> stps, quint16 value);
+
+    virtual void SetUpStripFlash(quint8 structN, quint8 stp, quint16 timeOn, quint16 timeOff, quint8 numFlash, QString color);
+
+    virtual void DoStripFlash(quint8 structN);
+
+    virtual void DoStripFlashWait(quint8 structN);
+
+    virtual void SetUpStripRndFlash(quint8 structN, quint8 stp, quint8 numLEDs, quint16 timeOn, quint16 timeOff, quint8 numFlash, QString color, bool enable2nd, quint8 prob, QString color2);
+
+    virtual void DoStripRndFlash(quint8 structN);
+
+    virtual void SetUpStripSequential(quint8 structN, quint8 stp, quint16 timeDelay, QString color, quint8 numLEDs);
+
+    virtual void DoStripSequential(quint8 structN);
 
 signals:
 
@@ -378,7 +421,7 @@ private slots:
 
 
 
-private:
+public:
 
     //Private Varibles
 
@@ -544,15 +587,36 @@ private:
     //Follower RGB
     RGBColor                        rgbFollowerColor;
 
-
-
-
     //Misc
 
     //Error Title
     QString                         title;
     QString                         titleGF;
     QString                         titleC;
+
+
+    //For the ALED Strip Controller
+    //Serial Port Information
+    quint8              comNumber;
+    QString             comName;
+    QString             comPath;
+
+
+    //ALED Strip Info
+    quint8              numberStrips;
+    QList<quint16>      elementsStripList;
+
+    SerialPortInfo      comPortInfo;
+
+    //ALED Pattern
+    quint8              aledPattern;
+
+    QList<quint8>       strips;
+
+    //Display Range
+    quint16             maxRange;
+    quint8              numberSteps;
+
 
 };
 

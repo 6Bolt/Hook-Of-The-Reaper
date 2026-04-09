@@ -55,6 +55,7 @@ private:
     bool                ignoreUselessDLGGF;
     bool                bypassSerialWriteChecks;
     bool                enableNewGameFileCreation;
+    bool                bypassCantFindLightCntlr;
 
     //For Check Boxes
     Qt::CheckState      defaultLG;
@@ -63,6 +64,7 @@ private:
     Qt::CheckState      ignoreUDLGGF;
     Qt::CheckState      bypassSWC;
     Qt::CheckState      enableNGFC;
+    Qt::CheckState      bypassCFLC;
 
     //Refresh Time in Number and String
     quint32             refreshDisplayTime;
