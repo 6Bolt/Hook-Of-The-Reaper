@@ -641,6 +641,8 @@ void addLightControllerWindow::RemoveALEDStrip(quint8 index)
         numberALEDCntlrs--;
     }
 
+    ui->controllerComboBox->clear ();
+
     if(numberALEDCntlrs > 0)
     {
         for(quint8 i = 0; i < numberALEDCntlrs; i++)
