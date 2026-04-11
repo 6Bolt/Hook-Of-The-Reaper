@@ -18,9 +18,19 @@ public:
 
     ~HookLight();
 
+    void UpdateSettings();
+
     bool LoadLightFile();
 
+    bool CheckLightFile(QStringList file, quint16 lineCount);
+
+    bool CheckLightFileSequence(quint8 lastLineType, QString lastLine, QString line);
+
     quint8 CheckCommandArgs(QString command);
+
+    bool CheckExsitingCommands(QString outputSignal, LightCommand newCmd);
+
+    void GameEnded();
 
 public slots:
 
@@ -52,10 +62,6 @@ public:
 
     quint8                              numberLightCntlrs;
 
-    quint8                              numberALEDCntlrs;
-
-    QList<quint8>                       ALEDCntlrsPositions;
-
     QString                             gameName;
 
     QString                             defaultFilePath;
@@ -70,6 +76,8 @@ public:
 
     bool                                isFileLoaded;
 
+    bool                                inGame;
+
     quint16                             ammoValue[MAXGAMEPLAYERS];
     quint16                             lifeValue[MAXGAMEPLAYERS];
 
@@ -78,9 +86,9 @@ public:
     quint8                              maxDamage[MAXGAMEPLAYERS];
 
     //Struct Counters for ALED Strips
-    QList<quint8>                       flashCount;
-    QList<quint8>                       rndFlashCount;
-    QList<quint8>                       sequentialCount;
+    quint8                              flashCount[MAXLIGHTCONTROLLERS];
+    quint8                              rndFlashCount[MAXLIGHTCONTROLLERS];
+    quint8                              sequentialCount[MAXLIGHTCONTROLLERS];
 };
 
 #endif // HOOKLIGHT_H

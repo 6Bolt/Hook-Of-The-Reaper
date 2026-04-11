@@ -14,12 +14,11 @@ HookLight::HookLight(ComDeviceList *cdList, QString currentPath, QObject *parent
     //Has Game File Been Loaded
     isFileLoaded = false;
 
+    // If in a Game
+    inGame = false;
+
     //Check the number of Light Controllers. If 0, then do nothing
     numberLightCntlrs = p_comDeviceList->GetNumberLightControllers ();
-
-    //Get the Number of ALED Controllers
-    numberALEDCntlrs = p_comDeviceList->GetNumberALEDStripControllers();
-    ALEDCntlrsPositions = p_comDeviceList->GetALEDPotitions();
 
     quint8 i;
     for(i = 0; i < MAXGAMEPLAYERS; i++)
@@ -31,12 +30,12 @@ HookLight::HookLight(ComDeviceList *cdList, QString currentPath, QObject *parent
         maxDamage[i] = 0;
     }
 
-    //Set Counts back to Zero
-    for(quint8 i = 0; i < numberALEDCntlrs; i++)
+    //Set Counts to Zero
+    for(quint8 i = 0; i < MAXLIGHTCONTROLLERS; i++)
     {
-        flashCount << 0;
-        rndFlashCount << 0;
-        sequentialCount << 0;
+        flashCount[i] = 0;
+        rndFlashCount[i] = 0;
+        sequentialCount[i] = 0;
     }
 }
 
@@ -45,6 +44,15 @@ HookLight::~HookLight()
 {
 
 }
+
+// Update Setting ,like when a new light controller is added
+void HookLight::UpdateSettings()
+{
+    //Check the number of Light Controllers. If 0, then do nothing
+    numberLightCntlrs = p_comDeviceList->GetNumberLightControllers ();
+
+}
+
 
 
 //Load Light File that is the Game of Default
@@ -56,7 +64,6 @@ bool HookLight::LoadLightFile()
     QStringList fileData;
     quint16 lineNumber = 0;
     quint16 lineCount;
-    quint16 cntlrLine;
     bool isNumber;
     QString outputSignal;
     QMap<quint8,QList<quint8>> cntlrGroups;
@@ -95,8 +102,6 @@ bool HookLight::LoadLightFile()
         return false;
     }
 
-
-
     //Clear out Map and List
     signalLightCommand.clear();
     outputSignals.clear();
@@ -112,13 +117,18 @@ bool HookLight::LoadLightFile()
         //Read Line
         line = in.readLine();
 
-        //Chop New Line off
-        if(line.endsWith('\n') || line.endsWith('\r'))
-            line.chop(1);
-
-        //Store line into the QStringList, if not Empty
         if(!line.isEmpty())
-            fileData << line;
+        {
+            //Only Get Lines that Start with :, !, and >
+            if(line[0] == OUTPUTSIGNALSTART || line[0] == CNTLRANDGROUPSSTART || line[0] == COMMANDSTART)
+            {
+                //Chop New Line off at Front and End
+                line = line.trimmed();
+
+                //Store line into the QStringList, if not Empty
+                fileData << line;
+            }
+        }
     }
 
     //Now that we have the Data, close File
@@ -126,304 +136,263 @@ bool HookLight::LoadLightFile()
 
     lineCount = fileData.length ();
 
+    // Check Light Game/Default File Sequence
+    bool chkSeq = CheckLightFile(fileData, lineCount);
+
+    if(!chkSeq)
+        return false;
+
     while(lineNumber < lineCount)
     {
-        fileData[lineNumber] = fileData[lineNumber].trimmed ();
-
         //Check for Output Signal
-        if(fileData[lineNumber][0] == ':')
+        if(fileData[lineNumber][0] == OUTPUTSIGNALSTART)
         {
-            if(!gotCntlrGroups && !gotCommands)
+            outputSignal = fileData[lineNumber];
+            //Remove the :
+            outputSignal.remove(0,1);
+            outputSignal = outputSignal.trimmed ();
+
+            if(outputSignal.endsWith (INVERTDATASYMBOL))
             {
-                //Check if First Output Signal. If Not, then Clear the Controller and Groups
-                //if(firstOutputSignal)
-                //    firstOutputSignal = false;
-                //else
-                //    cntlrGroups.clear();
-
-                outputSignal = fileData[lineNumber];
-                //Remove the :
-                outputSignal.remove(0,1);
-                outputSignal = outputSignal.trimmed ();
-
-                if(outputSignal.endsWith (INVERTDATASYMBOL))
-                {
-                    invertData = true;
-                    outputSignal.chop(1);
-                }
-                else
-                    invertData = false;
-
-                gotOutputSignal = true;
-                gotCntlrGroups = false;
-                gotCommands = false;
-
-                endOutputSignal = true;
-                endGroups = false;
-                endCommands = false;
+                invertData = true;
+                outputSignal.chop(1);
             }
             else
-            {
-                QString failMeg = "Failed when getting output signal. It needs the controller & groups and command after it.\nFailing Line: "+fileData[lineNumber];
-                emit ShowErrorMessage(title, failMeg);
-                return false;
-            }
+                invertData = false;
+
         }
         else if(fileData[lineNumber][0] == '!')
         {
 
-            //if((gotOutputSignal && !gotCommands && endOutputSignal) || (gotOutputSignal && gotCntlrGroups && !gotCommands))
-            if(gotOutputSignal && (endOutputSignal || gotCntlrGroups || endCommands))
+            //Remove the ! from Controller Number
+            fileData[lineNumber].remove(0,1);
+
+            //Split Up Line Data with a Space
+            QStringList splitData = fileData[lineNumber].split(' ', Qt::SkipEmptyParts);
+
+            if(splitData.length() < 2)
             {
-                //if(!endOutputSignal && !endGroups && endCommands)
-                //{
-                    //If Got Output Signal, Controller and Groups, and Command, and then goes back to Controller and Groups
-                    //Clear out Controller and Groups, as a New Command is Coming with Different Controller and Groups
-                //    cntlrGroups.clear();
-                //}
-
-                //Remove the ! from Controller Number
-                fileData[lineNumber].remove(0,1);
-
-                //Split Up Line Data with a Space
-                QStringList splitData = fileData[lineNumber].split(' ', Qt::SkipEmptyParts);
-
-                if(splitData.length() < 2)
-                {
-                    QString failMeg = "Light controller number and groups, don't have enough data.\nFailing Line: "+fileData[lineNumber];
-                    emit ShowErrorMessage(title, failMeg);
-                    return false;
-                }
-
-                cntlrNum = splitData[0].toUInt(&isNumber);
-
-                if(!isNumber)
-                {
-                    QString failMeg = "Light controller number is not a number.\nFailing Number: "+splitData[0];
-                    emit ShowErrorMessage(title, failMeg);
-                    return false;
-                }
-
-                if(p_comDeviceList->p_lightCntlrList[cntlrNum] == nullptr)
-                {
-                    QString failMeg = "Light controller with that number, doesn't exist.\nFailing Number: "+splitData[0];
-                    emit ShowErrorMessage(title, failMeg);
-                    return false;
-                }
-
-                if(!cntlrGroups.isEmpty ())
-                {
-                    if(cntlrGroups.contains (cntlrNum))
-                    {
-                        QString failMeg = "Light controller number aready used for this command.\nController Number: "+splitData[0];
-                        emit ShowErrorMessage(title, failMeg);
-                        return false;
-                    }
-                }
-
-                quint8 i;
-                groups.clear();
-
-                for(i = 1; i < splitData.length(); i++)
-                {
-                    quint8 tempGrp = splitData[i].toUInt(&isNumber);
-
-                    if(!isNumber)
-                    {
-                        QString failMeg = "Light controller group number is not a number.\nFailing Number: "+splitData[i]+"\nFailing Controller Number: "+splitData[0];
-                        emit ShowErrorMessage(title, failMeg);
-                        return false;
-                    }
-
-                    groups << tempGrp;
-
-                    //Check Groups moved below, in the Command Area
-                }
-
-                //Add Controller Number and Group Numbers to cntlrGroups Map
-                cntlrGroups.insert(cntlrNum, groups);
-
-                cntlrLine = lineNumber;
-
-                gotCntlrGroups = true;
-
-                endOutputSignal = false;
-                endGroups = true;
-                endCommands = false;
-            }
-            else
-            {
-                QString failMeg = "Failed when getting controller and groups. It needs the output signal before, and command after.\nFailing Line: "+fileData[lineNumber];
+                QString failMeg = "Light controller number and groups, don't have enough data.\nFailing Line: "+fileData[lineNumber];
                 emit ShowErrorMessage(title, failMeg);
                 return false;
             }
+
+            cntlrNum = splitData[0].toUInt(&isNumber);
+
+            if(!isNumber)
+            {
+                QString failMeg = "Light controller number is not a number.\nFailing Number: "+splitData[0];
+                emit ShowErrorMessage(title, failMeg);
+                return false;
+            }
+
+            if(p_comDeviceList->p_lightCntlrList[cntlrNum] == nullptr)
+            {
+                QString failMeg = "Light controller with that number, doesn't exist.\nFailing Number: "+splitData[0];
+                emit ShowErrorMessage(title, failMeg);
+                return false;
+            }
+
+            if(!cntlrGroups.isEmpty ())
+            {
+                if(cntlrGroups.contains (cntlrNum))
+                {
+                    QString failMeg = "Light controller number aready used for this command.\nController Number: "+splitData[0];
+                    emit ShowErrorMessage(title, failMeg);
+                    return false;
+                }
+            }
+
+            quint8 i;
+            groups.clear();
+
+            for(i = 1; i < splitData.length(); i++)
+            {
+                quint8 tempGrp = splitData[i].toUInt(&isNumber);
+
+                if(!isNumber)
+                {
+                    QString failMeg = "Light controller group number is not a number.\nFailing Number: "+splitData[i]+"\nFailing Controller Number: "+splitData[0];
+                    emit ShowErrorMessage(title, failMeg);
+                    return false;
+                }
+
+                groups << tempGrp;
+
+                //Check Groups moved below, in the Command Area
+            }
+
+            //Add Controller Number and Group Numbers to cntlrGroups Map
+            cntlrGroups.insert(cntlrNum, groups);
         }
         else if(fileData[lineNumber][0] == '>')
         {
-            if(gotOutputSignal && gotCntlrGroups && endGroups)
+            //Remove the > from Controller Number
+            fileData[lineNumber].remove(0,1);
+
+            //Split Up Line Data with a Space
+            QStringList splitData = fileData[lineNumber].split(' ', Qt::SkipEmptyParts);
+
+            command = splitData[0];
+
+            // Check the Args in the Command
+            quint8 numArgs = CheckCommandArgs(command);
+
+            if(numArgs == 254)
             {
-                //Remove the > from Controller Number
-                fileData[lineNumber].remove(0,1);
-
-                //Split Up Line Data with a Space
-                QStringList splitData = fileData[lineNumber].split(' ', Qt::SkipEmptyParts);
-
-                command = splitData[0];
-
-                quint8 numArgs = CheckCommandArgs(command);
-
-                if(numArgs == 254)
+                if(splitData.count() < 6)
                 {
-                    if(splitData.count() < 6)
-                    {
-                        QString failMeg = "There is too little arguments for the RGB background command.\nFailing Line: "+fileData[lineNumber];
-                        emit ShowErrorMessage(title, failMeg);
-                        return false;
-                    }
-                }
-                else if(numArgs == 253)
-                {
-                    if(splitData.count() < 5)
-                    {
-                        QString failMeg = "There is too little arguments for the regular background command.\nFailing Line: "+fileData[lineNumber];
-                        emit ShowErrorMessage(title, failMeg);
-                        return false;
-                    }
-                }
-                else if(numArgs == 252)
-                {
-                    if(splitData.count() != 7 && splitData.count() != 9)
-                    {
-                        QString failMeg = "The arguments count is off for the ALED Random Flash command.\nFailing Line: "+fileData[lineNumber];
-                        emit ShowErrorMessage(title, failMeg);
-                        return false;
-                    }
-                }
-                else if(numArgs == 251)
-                {
-                    if(splitData.count() != 6 && splitData.count() != 8)
-                    {
-                        QString failMeg = "The arguments count is off for the ALED Display Range command.\nFailing Line: "+fileData[lineNumber];
-                        emit ShowErrorMessage(title, failMeg);
-                        return false;
-                    }
-                }
-                else if(numArgs != 255)
-                {
-                    if(splitData.count() != (numArgs+1))
-                    {
-                        QString failMeg = "There is too many or too little arguments for the command.\nFailing Line: "+fileData[lineNumber];
-                        emit ShowErrorMessage(title, failMeg);
-                        return false;
-                    }
-                }
-                else
-                {
-                    QString failMeg = "Command for light controller is not found.\nFailing Command: "+command;
+                    QString failMeg = "There is too little arguments for the RGB background command.\nFailing Line: "+fileData[lineNumber];
                     emit ShowErrorMessage(title, failMeg);
                     return false;
                 }
-
-                //Load Up the Command Args
-                QStringList tempArg;
-                quint8 i, j;
-                for(i = 1; i < splitData.count(); i++)
-                    tempArg << splitData[i];
-
-                LightCommand tempCmd(outputSignal,command,tempArg,cntlrGroups);
-
-                bool validCmd = tempCmd.IsCommandValid();
-
-                if(!validCmd)
+            }
+            else if(numArgs == 253)
+            {
+                if(splitData.count() < 5)
                 {
-                    QString failMeg = "Light controller command is not valid. Something is wrong with the command arguments.\nFailing Line: "+fileData[lineNumber];
+                    QString failMeg = "There is too little arguments for the regular background command.\nFailing Line: "+fileData[lineNumber];
                     emit ShowErrorMessage(title, failMeg);
                     return false;
                 }
-
-                if(invertData)
-                    tempCmd.SetInvertData();
-
-                //Check Controllers Group Numbers for Command
-                bool isRGB = tempCmd.IsRGB();
-                bool isGeneralCommand = tempCmd.IsGeneralCommand ();
-                bool isBackground = tempCmd.IsBackgroundCommand ();
-                bool isALEDStrip = tempCmd.IsALEDStrip ();
-                quint8 numCntlrs = tempCmd.GetNumberControllers();
-
-                if(isBackground)
-                    isBackgroundAll = true;
-
-                if(isALEDStrip)
-                    isALEDStripAll = true;
-
-                if(!isGeneralCommand && !isALEDStrip)
+            }
+            else if(numArgs == 252)
+            {
+                if(splitData.count() != 7 && splitData.count() != 9)
                 {
-                    for(i = 0; i < numCntlrs; i++)
+                    QString failMeg = "The arguments count is off for the ALED Random Flash command.\nFailing Line: "+fileData[lineNumber];
+                    emit ShowErrorMessage(title, failMeg);
+                    return false;
+                }
+            }
+            else if(numArgs == 251)
+            {
+                if(splitData.count() != 6 && splitData.count() != 8)
+                {
+                    QString failMeg = "The arguments count is off for the ALED Display Range command.\nFailing Line: "+fileData[lineNumber];
+                    emit ShowErrorMessage(title, failMeg);
+                    return false;
+                }
+            }
+            else if(numArgs != 255)
+            {
+                if(splitData.count() != (numArgs+1))
+                {
+                    QString failMeg = "There is too many or too little arguments for the command.\nFailing Line: "+fileData[lineNumber];
+                    emit ShowErrorMessage(title, failMeg);
+                    return false;
+                }
+            }
+            else
+            {
+                QString failMeg = "Command for light controller is not found.\nFailing Command: "+command;
+                emit ShowErrorMessage(title, failMeg);
+                return false;
+            }
+
+            //Load Up the Command Args
+            QStringList tempArg;
+            quint8 i, j;
+            for(i = 1; i < splitData.count(); i++)
+                tempArg << splitData[i];
+
+            LightCommand tempCmd(outputSignal,command,tempArg,cntlrGroups);
+
+            bool validCmd = tempCmd.IsCommandValid();
+
+            if(!validCmd)
+            {
+                QString failMeg = "Light controller command is not valid. Something is wrong with the command arguments.\nFailing Line: "+fileData[lineNumber];
+                emit ShowErrorMessage(title, failMeg);
+                return false;
+            }
+
+            if(invertData)
+                tempCmd.SetInvertData();
+
+            //Check Controllers Group Numbers for Command
+            bool isRGB = tempCmd.IsRGB();
+            bool isGeneralCommand = tempCmd.IsGeneralCommand ();
+            bool isBackground = tempCmd.IsBackgroundCommand ();
+            bool isALEDStrip = tempCmd.IsALEDStrip ();
+            quint8 numCntlrs = tempCmd.GetNumberControllers();
+
+            if(isBackground)
+                isBackgroundAll = true;
+
+            if(isALEDStrip)
+                isALEDStripAll = true;
+
+            // Check RGB or Regular Groups, if Not General or ALED Strip
+            if(!isGeneralCommand && !isALEDStrip)
+            {
+                for(i = 0; i < numCntlrs; i++)
+                {
+                    quint8 cntrlNumber = tempCmd.GetControllerNumber(i);
+                    QList<quint8> groups = tempCmd.GetControllerGroups(cntrlNumber);
+
+                    //qDebug() << "Number of Controllers:" << numCntlrs << "Controller Number:" << cntrlNumber;
+
+                    for(j = 0; j < groups.count(); j++)
                     {
-                        quint8 cntrlNumber = tempCmd.GetControllerNumber(i);
-                        QList<quint8> groups = tempCmd.GetControllerGroups(cntrlNumber);
+                        bool chkGrp;
 
-                        //qDebug() << "Number of Controllers:" << numCntlrs << "Controller Number:" << cntrlNumber;
+                        if(isRGB)
+                            chkGrp = p_comDeviceList->p_lightCntlrList[cntrlNumber]->CheckRGBGroupNumber (groups[j]);
+                        else
+                            chkGrp = p_comDeviceList->p_lightCntlrList[cntrlNumber]->CheckRegularGroupNumber (groups[j]);
 
-                        for(j = 0; j < groups.count(); j++)
+                        //qDebug() << "chkGrp" << chkGrp << "Controller Number:" << cntrlNumber << "Group Number:" << groups[j];
+
+                        if(!chkGrp)
                         {
-                            bool chkGrp;
-
-                            if(isRGB)
-                                chkGrp = p_comDeviceList->p_lightCntlrList[cntrlNumber]->CheckRGBGroupNumber (groups[j]);
-                            else
-                                chkGrp = p_comDeviceList->p_lightCntlrList[cntrlNumber]->CheckRegularGroupNumber (groups[j]);
-
-                            //qDebug() << "chkGrp" << chkGrp << "Controller Number:" << cntrlNumber << "Group Number:" << groups[j];
-
-                            if(!chkGrp)
-                            {
-                                QString failMeg = "Group number doesn't exist in the light controller.\nFailing Group Number: "+QString::number(groups[j])+"\nFailing Controller Number: "+QString::number(cntrlNumber);
-                                emit ShowErrorMessage(title, failMeg);
-                                return false;
-                            }
+                            QString failMeg = "Group number doesn't exist in the light controller.\nFailing Group Number: "+QString::number(groups[j])+"\nFailing Controller Number: "+QString::number(cntrlNumber);
+                            emit ShowErrorMessage(title, failMeg);
+                            return false;
                         }
                     }
                 }
+            }
 
 
-                //Check Color, Side Color, and Color Map, if RGB
-                if((isRGB || isALEDStrip) && !isGeneralCommand)
+            //Check Color, Side Color, and Color Map, if RGB
+            if((isRGB || isALEDStrip) && !isGeneralCommand)
+            {
+                //Checking Color
+                if(tempCmd.IsColor())
                 {
-                    //Checking Color
-                    if(tempCmd.IsColor())
+                    QString colorCHK = tempCmd.GetColor ();
+
+                    //Check Light Controllers for Color
+                    for(i = 0; i < numCntlrs; i++)
                     {
-                        QString colorCHK = tempCmd.GetColor ();
+                        quint8 cntrlNumber = tempCmd.GetControllerNumber(i);
 
-                        //Check Light Controllers for Color
-                        for(i = 0; i < numCntlrs; i++)
+                        bool chkColor = p_comDeviceList->p_lightCntlrList[cntrlNumber]->CheckColor (colorCHK);
+
+                        if(!chkColor)
                         {
-                            quint8 cntrlNumber = tempCmd.GetControllerNumber(i);
+                            QString failMeg = "Light controller cannot find color "+colorCHK+" in it's color map. Please make sure color is defined in the group file.\nController Number: "+QString::number(cntrlNumber);
+                            emit ShowErrorMessage(title, failMeg);
+                            return false;
+                        }
 
-                            bool chkColor = p_comDeviceList->p_lightCntlrList[cntrlNumber]->CheckColor (colorCHK);
+                        //Is there a Side Color, if so then Check Color and Groups
+                        if(tempCmd.IsSideColor())
+                        {
+                            QString sideColorCHK = tempCmd.GetSideColor ();
 
-                            if(!chkColor)
+                            bool chkSideColor = p_comDeviceList->p_lightCntlrList[cntrlNumber]->CheckColor (sideColorCHK);
+
+                            if(!chkSideColor)
                             {
-                                QString failMeg = "Light controller cannot find color "+colorCHK+" in it's color map. Please make sure color is defined in the group file.\nController Number: "+QString::number(cntrlNumber);
+                                QString failMeg = "Light controller cannot find color "+sideColorCHK+" in it's color map. Please make sure color is defined in the group file.\nController Number: "+QString::number(cntrlNumber);
                                 emit ShowErrorMessage(title, failMeg);
                                 return false;
                             }
 
-                            //Is there a Side Color, if so then Check Color and Groups
-                            if(tempCmd.IsSideColor())
+                            if(isRGB)
                             {
-                                QString sideColorCHK = tempCmd.GetSideColor ();
-
-                                bool chkSideColor = p_comDeviceList->p_lightCntlrList[cntrlNumber]->CheckColor (sideColorCHK);
-
-                                if(!chkSideColor)
-                                {
-                                    QString failMeg = "Light controller cannot find color "+sideColorCHK+" in it's color map. Please make sure color is defined in the group file.\nController Number: "+QString::number(cntrlNumber);
-                                    emit ShowErrorMessage(title, failMeg);
-                                    return false;
-                                }
-
                                 QList<quint8> groups = tempCmd.GetControllerGroups(cntrlNumber);
                                 bool groupsChk = p_comDeviceList->p_lightCntlrList[cntrlNumber]->CheckGroupsfor2Colors (groups);
 
@@ -433,343 +402,463 @@ bool HookLight::LoadLightFile()
                                     emit ShowErrorMessage(title, failMeg);
                                     return false;
                                 }
-
-                            }
-                        }
-                    }
-
-                    //Checking Color Map
-                    if(tempCmd.IsColorMap())
-                    {
-                        QString colorMapCHK = tempCmd.GetColorMap ();
-
-                        //Check Light Controllers for Color Map
-                        for(i = 0; i < numCntlrs; i++)
-                        {
-                            quint8 cntrlNumber = tempCmd.GetControllerNumber(i);
-
-                            bool chkColor = p_comDeviceList->p_lightCntlrList[cntrlNumber]->CheckColorMap (colorMapCHK);
-
-                            if(!chkColor)
-                            {
-                                QString failMeg = "Light controller cannot find color map, "+colorMapCHK+", in it's color map map. Please make sure the colors and color map is defined in the group file.\nController Number: "+QString::number(cntrlNumber);
-                                emit ShowErrorMessage(title, failMeg);
-                                return false;
                             }
                         }
                     }
                 }
 
-                //Check Background Commands to make sure they have 1 Group per Controller
-                if(isBackground)
+                //Checking Color Map
+                if(tempCmd.IsColorMap())
                 {
+                    QString colorMapCHK = tempCmd.GetColorMap ();
+
+                    //Check Light Controllers for Color Map
                     for(i = 0; i < numCntlrs; i++)
                     {
                         quint8 cntrlNumber = tempCmd.GetControllerNumber(i);
-                        QList<quint8> groups = tempCmd.GetControllerGroups(cntrlNumber);
 
-                        if(groups.count() != 1)
+                        bool chkColor = p_comDeviceList->p_lightCntlrList[cntrlNumber]->CheckColorMap (colorMapCHK);
+
+                        if(!chkColor)
                         {
-                            QString failMeg = "Background command can only have one group with it.\nController Number: "+QString::number(cntrlNumber)+"\nCommand: "+tempCmd.GetCommand ();
+                            QString failMeg = "Light controller cannot find color map, "+colorMapCHK+", in it's color map map. Please make sure the colors and color map is defined in the group file.\nController Number: "+QString::number(cntrlNumber);
                             emit ShowErrorMessage(title, failMeg);
                             return false;
                         }
                     }
                 }
+            }
 
-
-
-                if(signalLightCommand.contains (outputSignal))
+            //Check Background Commands to make sure they have 1 Group per Controller
+            if(isBackground)
+            {
+                for(i = 0; i < numCntlrs; i++)
                 {
+                    quint8 cntrlNumber = tempCmd.GetControllerNumber(i);
+                    QList<quint8> groups = tempCmd.GetControllerGroups(cntrlNumber);
+
+                    if(groups.count() != 1)
+                    {
+                        QString failMeg = "Background command can only have one group with it.\nController Number: "+QString::number(cntrlNumber)+"\nCommand: "+tempCmd.GetCommand ();
+                        emit ShowErrorMessage(title, failMeg);
+                        return false;
+                    }
+                }
+            }
+
+
+
+            if(signalLightCommand.contains (outputSignal))
+            {
+                bool chkCmds = CheckExsitingCommands(outputSignal, tempCmd);
+
+                //qDebug() << "Check for " << outputSignal << "was" << chkCmds;
+
+                if(chkCmds)
                     signalLightCommand[outputSignal].append (tempCmd);
-                }
                 else
-                {
-                    QList<LightCommand> tempCmdList;
-                    tempCmdList << tempCmd;
-
-                    signalLightCommand.insert(outputSignal,tempCmdList);
-
-                    outputSignals << outputSignal;
-                }
-
-                endOutputSignal = false;
-                endGroups = false;
-                endCommands = true;
-
-                //Clear Out Controllers and Groups
-                cntlrGroups.clear();
-
-                //gotCommands = true;
-
-                gotCntlrGroups = false;
-
-                gotCommands = false;
+                    return false;
             }
             else
             {
-                QString failMeg = "Failed when getting command. It needs the output signal and controller & groups before it.\nFailing Line: "+fileData[lineNumber];
-                emit ShowErrorMessage(title, failMeg);
-                return false;
+                QList<LightCommand> tempCmdList;
+                tempCmdList << tempCmd;
+
+                signalLightCommand.insert(outputSignal,tempCmdList);
+
+                outputSignals << outputSignal;
             }
+
+            //Clear Out Controllers and Groups
+            cntlrGroups.clear();
         }
 
+        //Increament the Line Number
         lineNumber++;
     }
 
-    if(gotOutputSignal && !gotCntlrGroups && !gotCommands && endCommands)
+    // Light Game/Default File has Been Loaded
+
+    //Set-Up Background Commands, as it Needs to be Done Beforehand
+    if(isBackgroundAll)
     {
-        //File Loaded Good and Ended Well
-
-        //Check for Background Commands
-        if(isBackgroundAll)
+        quint8 i;
+        QMapIterator<QString, QList<LightCommand>> x(signalLightCommand);
+        while (x.hasNext())
         {
-            quint8 i;
-            QMapIterator<QString, QList<LightCommand>> x(signalLightCommand);
-            while (x.hasNext())
+            x.next();
+            QList<LightCommand> lightCmdList = signalLightCommand[x.key()];
+
+            for(quint8 k = 0; k < lightCmdList.count(); k++)
             {
-                x.next();
-                QList<LightCommand> lightCmdList = signalLightCommand[x.key()];
+                LightCommand lightCmd =  lightCmdList[k];
 
-                for(quint8 k = 0; k < lightCmdList.count(); k++)
+                if(lightCmd.IsBackgroundCommand ())
                 {
-                    LightCommand lightCmd =  lightCmdList[k];
+                    quint8 numberCntlrs = lightCmd.GetNumberControllers();
+                    bool isRGB = lightCmd.IsRGB();
+                    QString colorMap;
+                    quint8 playerNumber = lightCmd.GetPlayerNumber ();
+                    QList<quint8> otherGroups = lightCmd.GetOtherBGGroups();
+                    quint16 delay = lightCmd.GetTimeDelay ();
+                    quint8 highCount = lightCmd.GetHighCount ();
+                    quint16 reloadDelay = lightCmd.GetBGTimeDelayReload ();
 
-                    if(lightCmd.IsBackgroundCommand ())
+                    if(isRGB)
+                        colorMap = lightCmd.GetColorMap ();
+
+                    //qDebug() << "highCount" << highCount << "delay" << delay << "reloadDelay" << reloadDelay;
+
+                    for(i = 0; i < numberCntlrs; i++)
                     {
-                        quint8 numberCntlrs = lightCmd.GetNumberControllers();
-                        bool isRGB = lightCmd.IsRGB();
-                        QString colorMap;
-                        quint8 playerNumber = lightCmd.GetPlayerNumber ();
-                        QList<quint8> otherGroups = lightCmd.GetOtherBGGroups();
-                        quint16 delay = lightCmd.GetTimeDelay ();
-                        quint8 highCount = lightCmd.GetHighCount ();
-                        quint16 reloadDelay = lightCmd.GetBGTimeDelayReload ();
+                        quint8 cntlrNumber = lightCmd.GetControllerNumber(i);
+                        QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                        if(groups.count() != 1)
+                        {
+                            QString failMeg = "Background command can only have 1 group. It has too many or 0. Please fix in the game/default file.\nPlayer: "+QString::number(playerNumber+1);
+                            emit ShowErrorMessage(title, failMeg);
+                            return false;
+                        }
 
                         if(isRGB)
-                            colorMap = lightCmd.GetColorMap ();
-
-                        //qDebug() << "highCount" << highCount << "delay" << delay << "reloadDelay" << reloadDelay;
-
-                        for(i = 0; i < numberCntlrs; i++)
-                        {
-                            quint8 cntlrNumber = lightCmd.GetControllerNumber(i);
-                            QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
-
-                            if(groups.count() != 1)
-                            {
-                                QString failMeg = "Background command can only have 1 group. It has too many or 0. Please fix in the game/default file.\nPlayer: "+QString::number(playerNumber+1);
-                                emit ShowErrorMessage(title, failMeg);
-                                return false;
-                            }
-
-                            if(isRGB)
-                                p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpBackgroundRGB(groups, colorMap, playerNumber, delay, reloadDelay, highCount, otherGroups);
-                            else
-                                p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpBackgroundRegular(groups, playerNumber, delay, reloadDelay, highCount, otherGroups);
-                        }
+                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpBackgroundRGB(groups, colorMap, playerNumber, delay, reloadDelay, highCount, otherGroups);
+                        else
+                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpBackgroundRegular(groups, playerNumber, delay, reloadDelay, highCount, otherGroups);
                     }
                 }
             }
         }
-        else if(isALEDStripAll)
+    }
+
+    // Set-Up ALED Strip Commands, as they need to be Done Beforehand
+    if(isALEDStripAll)
+    {
+        quint8 i;
+        QMapIterator<QString, QList<LightCommand>> x(signalLightCommand);
+        while (x.hasNext())
         {
-            quint8 i;
-            QMapIterator<QString, QList<LightCommand>> x(signalLightCommand);
-            while (x.hasNext())
+            x.next();
+            QList<LightCommand> lightCmdList = signalLightCommand[x.key()];
+
+            for(quint8 k = 0; k < lightCmdList.count(); k++)
             {
-                x.next();
-                QList<LightCommand> lightCmdList = signalLightCommand[x.key()];
+                LightCommand lightCmd = lightCmdList[k];
 
-                for(quint8 k = 0; k < lightCmdList.count(); k++)
+                if(lightCmd.IsDisplayRange())
                 {
-                     LightCommand lightCmd = lightCmdList[k];
+                    //qDebug() << "Setting Up Display Range";
 
-                    if(lightCmd.IsDisplayRange())
+                    quint8 numberCntlrs = lightCmd.GetNumberControllers();
+                    QString colorMap = lightCmd.GetColorMap ();
+                    quint16 maxRange = lightCmd.GetMaxRange ();
+                    quint8 numberSteps = lightCmd.GetNumberSteps ();
+                    quint16 timeOff = lightCmd.GetTimeOff ();
+                    bool enSeqR = lightCmd.GetSeqReloadDR();
+                    quint16 tDelay = 0;
+                    quint8 numLEDs = 0;
+
+                    if(enSeqR)
                     {
-                         //qDebug() << "Setting Up Display Range";
-
-                         quint8 numberCntlrs = lightCmd.GetNumberControllers();
-                         QString colorMap = lightCmd.GetColorMap ();
-                         quint16 maxRange = lightCmd.GetMaxRange ();
-                         quint8 numberSteps = lightCmd.GetNumberSteps ();
-                         quint16 timeOff = lightCmd.GetTimeOff ();
-                         bool enSeqR = lightCmd.GetSeqReloadDR();
-                         quint16 tDelay = 0;
-                         quint8 numLEDs = 0;
-
-                         if(enSeqR)
-                         {
-                             tDelay = lightCmd.GetTimeDelay();
-                             numLEDs = lightCmd.GetStripSeqNumberLEDs();
-                         }
-
-                         for(i = 0; i < numberCntlrs; i++)
-                         {
-                             quint8 cntlrNumber = lightCmd.GetControllerNumber(i);
-                             QList<quint8> strips = lightCmd.GetControllerGroups(cntlrNumber);
-
-                             p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpDisplayRange(strips, maxRange, numberSteps, timeOff, colorMap, enSeqR, tDelay, numLEDs);
-                         }
+                        tDelay = lightCmd.GetTimeDelay();
+                        numLEDs = lightCmd.GetStripSeqNumberLEDs();
                     }
-                    else if(lightCmd.IsALEDStripFlash() || lightCmd.IsALEDStripRndFlash())
+
+                    for(i = 0; i < numberCntlrs; i++)
                     {
-                        quint8 numberCntlrs = lightCmd.GetNumberControllers();
-                        quint16 timeOn = lightCmd.GetTimeOn ();
-                        quint16 timeOff = lightCmd.GetTimeOff ();
-                        quint8 numFlash = lightCmd.GetNumberFlashes();
-                        QString color = lightCmd.GetColor();
-                        quint8 command = lightCmd.GetCommandNumber();
+                        quint8 cntlrNumber = lightCmd.GetControllerNumber(i);
+                        QList<quint8> strips = lightCmd.GetControllerGroups(cntlrNumber);
 
-                        if(command != RANDOMFLASHALEDSCMD)
-                        {
-                            for(i = 0; i < numberCntlrs; i++)
-                            {
-                                quint8 cntlrNumber = lightCmd.GetControllerNumber(i);
-                                QList<quint8> strips = lightCmd.GetControllerGroups(cntlrNumber);
-                                QList<quint8> structNums;
-
-                                quint8 pos = 0;
-                                bool foundPos;
-
-                                for(quint8 j = 0; j < numberALEDCntlrs; j++)
-                                {
-                                    if(cntlrNumber == ALEDCntlrsPositions[j])
-                                    {
-                                        pos = j;
-                                        foundPos = true;
-                                        break;
-                                    }
-                                }
-
-                                if(foundPos)
-                                {
-                                    for(quint8 j = 0; j < strips.count(); j++)
-                                    {
-                                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpStripFlash(flashCount[pos], strips[j], timeOn, timeOff, numFlash, color);
-                                        structNums << flashCount[pos];
-                                        flashCount[pos]++;
-                                    }
-
-                                    lightCmd.SetStructNumber(cntlrNumber, structNums);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            quint8 numLEDs = lightCmd.GetNumberLEDs();
-
-                            for(i = 0; i < numberCntlrs; i++)
-                            {
-                                quint8 cntlrNumber = lightCmd.GetControllerNumber(i);
-                                QList<quint8> strips = lightCmd.GetControllerGroups(cntlrNumber);
-                                QList<quint8> structNums;
-                                bool enable2nd = lightCmd.GetStripEnable2ndColor();
-                                quint8 prob = 0;
-                                QString color2;
-
-                                if(enable2nd)
-                                {
-                                    prob = lightCmd.GetProbability2ndColor();
-                                    color2 = lightCmd.GetSideColor();
-                                }
-
-                                quint8 pos = 0;
-                                bool foundPos;
-
-                                for(quint8 j = 0; j < numberALEDCntlrs; j++)
-                                {
-                                    if(cntlrNumber == ALEDCntlrsPositions[j])
-                                    {
-                                        pos = j;
-                                        foundPos = true;
-                                        break;
-                                    }
-                                }
-
-                                if(foundPos)
-                                {
-                                    for(quint8 j = 0; j < strips.count(); j++)
-                                    {
-                                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpStripRndFlash(rndFlashCount[pos], strips[j], numLEDs, timeOn, timeOff, numFlash, color, enable2nd, prob, color2);
-                                        structNums << rndFlashCount[pos];
-                                        rndFlashCount[pos]++;
-                                    }
-
-                                    lightCmd.SetStructNumber(cntlrNumber, structNums);
-                                }
-                            }
-                        }
+                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpDisplayRange(strips, maxRange, numberSteps, timeOff, colorMap, enSeqR, tDelay, numLEDs);
                     }
-                    else if(lightCmd.IsALEDStripSequential())
-                    {
-                        quint8 numberCntlrs = lightCmd.GetNumberControllers();
-                        quint16 timeDelay = lightCmd.GetTimeDelay ();
-                        QString color = lightCmd.GetColor();
-                        quint8 numLEDs = lightCmd.GetStripSeqNumberLEDs();
+                }
+                else if(lightCmd.IsALEDStripFlash() || lightCmd.IsALEDStripRndFlash())
+                {
+                    quint8 numberCntlrs = lightCmd.GetNumberControllers();
+                    quint16 timeOn = lightCmd.GetTimeOn ();
+                    quint16 timeOff = lightCmd.GetTimeOff ();
+                    quint8 numFlash = lightCmd.GetNumberFlashes();
+                    QString color = lightCmd.GetColor();
+                    quint8 command = lightCmd.GetCommandNumber();
 
+                    if(command != RANDOMFLASHALEDSCMD)
+                    {
                         for(i = 0; i < numberCntlrs; i++)
                         {
                             quint8 cntlrNumber = lightCmd.GetControllerNumber(i);
                             QList<quint8> strips = lightCmd.GetControllerGroups(cntlrNumber);
                             QList<quint8> structNums;
 
-                            quint8 pos = 0;
-                            bool foundPos;
-
-                            for(quint8 j = 0; j < numberALEDCntlrs; j++)
+                            for(quint8 j = 0; j < strips.count(); j++)
                             {
-                                if(cntlrNumber == ALEDCntlrsPositions[j])
-                                {
-                                    pos = j;
-                                    foundPos = true;
-                                    break;
-                                }
+                                p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpStripFlash(flashCount[cntlrNumber], strips[j], timeOn, timeOff, numFlash, color);
+                                structNums << flashCount[cntlrNumber];
+                                flashCount[cntlrNumber]++;
                             }
 
-                            if(foundPos)
-                            {
-                                for(quint8 j = 0; j < strips.count(); j++)
-                                {
-                                    p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpStripSequential(sequentialCount[pos], strips[j], timeDelay, color, numLEDs);
-                                    structNums << sequentialCount[pos];
-                                    sequentialCount[pos]++;
-                                }
-
-                                lightCmd.SetStructNumber(cntlrNumber, structNums);
-                            }
+                            lightCmd.SetStructNumber(cntlrNumber, structNums);
                         }
                     }
+                    else
+                    {
+                        quint8 numLEDs = lightCmd.GetNumberLEDs();
 
-                    lightCmdList[k] = lightCmd;
+                        for(i = 0; i < numberCntlrs; i++)
+                        {
+                            quint8 cntlrNumber = lightCmd.GetControllerNumber(i);
+                            QList<quint8> strips = lightCmd.GetControllerGroups(cntlrNumber);
+                            QList<quint8> structNums;
+                            bool enable2nd = lightCmd.GetStripEnable2ndColor();
+                            quint8 prob = 0;
+                            QString color2;
+
+                            if(enable2nd)
+                            {
+                                prob = lightCmd.GetProbability2ndColor();
+                                color2 = lightCmd.GetSideColor();
+                            }
+
+                            for(quint8 j = 0; j < strips.count(); j++)
+                            {
+                                p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpStripRndFlash(rndFlashCount[cntlrNumber], strips[j], numLEDs, timeOn, timeOff, numFlash, color, enable2nd, prob, color2);
+                                structNums << rndFlashCount[cntlrNumber];
+                                rndFlashCount[cntlrNumber]++;
+                            }
+
+                            lightCmd.SetStructNumber(cntlrNumber, structNums);
+                        }
+                    }
+                }
+                else if(lightCmd.IsALEDStripSequential())
+                {
+                    quint8 numberCntlrs = lightCmd.GetNumberControllers();
+                    quint16 timeDelay = lightCmd.GetTimeDelay ();
+                    QString color = lightCmd.GetColor();
+                    quint8 numLEDs = lightCmd.GetStripSeqNumberLEDs();
+
+                    for(i = 0; i < numberCntlrs; i++)
+                    {
+                        quint8 cntlrNumber = lightCmd.GetControllerNumber(i);
+                        QList<quint8> strips = lightCmd.GetControllerGroups(cntlrNumber);
+                        QList<quint8> structNums;
+
+                        for(quint8 j = 0; j < strips.count(); j++)
+                        {
+                            p_comDeviceList->p_lightCntlrList[cntlrNumber]->SetUpStripSequential(sequentialCount[cntlrNumber], strips[j], timeDelay, color, numLEDs);
+                            structNums << sequentialCount[cntlrNumber];
+                            sequentialCount[cntlrNumber]++;
+                        }
+
+                        lightCmd.SetStructNumber(cntlrNumber, structNums);
+                    }
                 }
 
-                signalLightCommand[x.key()] = lightCmdList;
+                lightCmdList[k] = lightCmd;
+            }
+
+            signalLightCommand[x.key()] = lightCmdList;
+        }
+    }
+
+
+    //Send Output Signals to TCP Socket
+    emit GameStartSignals(outputSignals);
+
+    //if(isGameFile)
+    //    qDebug() << "Game File Loaded:" << lightFilePath;
+    //else
+    //    qDebug() << "Default File Loaded:" << lightFilePath;
+
+    //qDebug() << "Output Signals List:" << outputSignals;
+
+    return true;
+}
+
+
+bool HookLight::CheckLightFile(QStringList file, quint16 lineCount)
+{
+    // This Checks the Sequence of the Light File, with only the 3 commands, as Everything else is Taken Out
+    // File Starts with an Output Signal
+    //      Cannot be Controller and Groups or Command
+    // From Output Signal, can go to another Output Signal (lone), or Controller and Group
+    //      Cannot Go to a Command
+    // From Controller and Group, can go to another Controller and Group, or Command
+    //      Cannot Go to an Output Signal
+    // From Command, can go to an Output Signal, or Controller and Group
+    //      Cannot Go to a Command
+    // File End with a Command or lone Output Signal
+    //      Cannot be a Controller and Groups
+
+    //Last Line
+    // OUTPUTSIG (0) - Output Signal
+    // CNTLRGRPS (1) - Controller and Groups
+    // CMD (2) - Command
+    // UNASSIGN - Unknown
+
+    quint8 lastLine = UNASSIGN;
+    QString title = "Light Game/Default File Failed Sequence Check";
+
+    for(quint16 i = 0; i < lineCount; i++)
+    {
+        if(i == 0)
+        {
+            //First Line needs to be an Output Signal
+            if(file[i][0] != OUTPUTSIGNALSTART)
+            {
+                QString failMes = "The first sequence of the Light Game/Default file needs to be an Output Signal (:).\nFirst Sequence: " + file[i];
+                emit ShowErrorMessage(title, failMes);
+                return false;
+            }
+            else
+                lastLine = OUTPUTSIG;
+        }
+        else if(i == (lineCount - 1))
+        {
+            //Last Line
+            // Check Seq
+            bool chkSeq = CheckLightFileSequence(lastLine, file[i-1], file[i]);
+
+            if(!chkSeq)
+                return false;
+            else
+            {
+                //Check Last Line, tom Make Sure it is not a Controller and Group
+                if(file[i][0] == CNTLRANDGROUPSSTART)
+                {
+                    QString failMes = "The last sequence of the Light Game/Default file cannot be a Controller and Groups (!).\nLast Sequence: " + file[i];
+                    emit ShowErrorMessage(title, failMes);
+                    return false;
+                }
+                // No Need for lastLine, as this is the Last Line
             }
         }
+        else
+        {
+            //Everything in the Middle, Just Check Sequence
+            bool chkSeq = CheckLightFileSequence(lastLine, file[i-1], file[i]);
 
-
-        //Send Output Signals to TCP Socket
-        emit GameStartSignals(outputSignals);
-
-        //if(isGameFile)
-        //    qDebug() << "Game File Loaded:" << lightFilePath;
-        //else
-        //    qDebug() << "Default File Loaded:" << lightFilePath;
-
-        //qDebug() << "Output Signals List:" << outputSignals;
-
-        return true;
+            if(!chkSeq)
+                return false;
+            else
+            {
+                if(file[i][0] == OUTPUTSIGNALSTART)
+                    lastLine = OUTPUTSIG;
+                else if(file[i][0] == CNTLRANDGROUPSSTART)
+                    lastLine = CNTLRGRPS;
+                else if(file[i][0] == COMMANDSTART)
+                    lastLine = CMD;
+                else
+                    lastLine = UNASSIGN;
+            }
+        }
     }
-    else
-    {
-        QString failMeg = "File failed to load, as it ended with with a controller and groups.\nFailing Line: "+fileData[cntlrLine];
-        emit ShowErrorMessage(title, failMeg);
+
+    //Ran the Gauntlet
+    return true;
+}
+
+bool HookLight::CheckLightFileSequence(quint8 lastLineType, QString lastLine, QString line)
+{
+    quint8 lineType = UNASSIGN;
+    QString title = "Light Game/Default File Failed Sequence Check";
+
+    if(line[0] == OUTPUTSIGNALSTART)
+        lineType = OUTPUTSIG;
+    else if(line[0] == CNTLRANDGROUPSSTART)
+        lineType = CNTLRGRPS;
+    else if(line[0] == COMMANDSTART)
+        lineType = CMD;
+
+    // Check for UNASSIGN
+    if(lineType == UNASSIGN || lastLineType == UNASSIGN)
         return false;
+
+    if(lastLineType == OUTPUTSIG)
+    {
+        if(lineType == CMD)
+        {
+            QString failMes = "The sequence check failed for the Light Game/Default file. An Output Signal (:) and then a Command (>) happened, which is illegal.\nLast Sequence: " + lastLine + "\nSequence: " + line;
+            emit ShowErrorMessage(title, failMes);
+            return false;
+        }
+        else
+            return true;
     }
+    else if(lastLineType == CNTLRGRPS)
+    {
+        if(lineType == OUTPUTSIG)
+        {
+            QString failMes = "The sequence check failed for the Light Game/Default file. A Controller & Groups (!) and then an Output Signal (:) happened, which is illegal.\nLast Sequence: " + lastLine + "\nSequence: " + line;
+            emit ShowErrorMessage(title, failMes);
+            return false;
+        }
+        else
+            return true;
+    }
+    else if(lastLineType == CMD)
+    {
+        if(lineType == CMD)
+        {
+            QString failMes = "The sequence check failed for the Light Game/Default file. A Command (>) and then an Command (>) happened, which is illegal.\nLast Sequence: " + lastLine + "\nSequence: " + line;
+            emit ShowErrorMessage(title, failMes);
+            return false;
+        }
+        else
+            return true;
+    }
+
+    //Something Went Wrong if You got Here
+    return false;
 
 }
 
+bool HookLight::CheckExsitingCommands(QString outputSignal, LightCommand newCmd)
+{
+    quint8 k, i, j, l;
+    quint8 newNumberCntlrs = newCmd.GetNumberControllers();
+    QString title = "Light Game/Default File Failed Exsiting Command Check";
+    LightCommand lightCmd;
+    quint8 numberCntlrs, cntlrNumber, newCntlrNumber;
+
+    //Get Exsiting Commands
+    QList<LightCommand> lightCmdList = signalLightCommand[outputSignal];
+
+    for(k = 0; k < lightCmdList.count(); k++)
+    {
+        lightCmd = lightCmdList[k];
+
+        numberCntlrs = lightCmd.GetNumberControllers();
+
+        for(i = 0; i < numberCntlrs; i++)
+        {
+            cntlrNumber = lightCmd.GetControllerNumber(i);
+
+            for(j = 0; j < newNumberCntlrs; j++)
+            {
+                newCntlrNumber = newCmd.GetControllerNumber(j);
+
+                if(cntlrNumber == newCntlrNumber)
+                {
+                    QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+                    QList<quint8> newGroups = newCmd.GetControllerGroups(newCntlrNumber);
+
+                    for(l = 0; l < newGroups.length(); l++)
+                    {
+                        if(groups.contains(newGroups[l]))
+                        {
+                            QString failMes = "The Output Signal, \'" + outputSignal + "\', has 2 Commands using Light Controller " + QString::number(cntlrNumber) + " with Group " + QString::number(newGroups[l]);
+                            emit ShowErrorMessage(title, failMes);
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //Ran the Gauntlet
+    return true;
+}
 
 quint8 HookLight::CheckCommandArgs(QString command)
 {
@@ -835,6 +924,42 @@ quint8 HookLight::CheckCommandArgs(QString command)
         return 255;
 }
 
+void HookLight::GameEnded()
+{
+    if(inGame)
+    {
+        quint8 i;
+
+        if(isFileLoaded)
+        {
+            ProcessSignal(MAMESTOPFRONT, "1");
+            isFileLoaded = false;
+        }
+
+        //Set Counts back to Zero
+        for(i = 0; i < numberLightCntlrs; i++)
+        {
+            p_comDeviceList->p_lightCntlrList[i]->ResetLightController();
+            p_comDeviceList->p_lightCntlrList[i]->GameEnded();
+            flashCount[i] = 0;
+            rndFlashCount[i] = 0;
+            sequentialCount[i] = 0;
+        }
+
+        //Set Player Values back to 0
+        for(i = 0; i < MAXGAMEPLAYERS; i++)
+        {
+            ammoValue[i] = 0;
+            lifeValue[i] = 0;
+            playerAlive[i] = false;
+            maxLifeValue[i] = 0;
+            maxDamage[i] = 0;
+        }
+
+        //Game Ended
+        inGame = false;
+    }
+}
 
 //Public Slots
 
@@ -865,6 +990,9 @@ void HookLight::GameStarted(const QString &gameN)
         //Send mame_start signal if file loaded
         if(isFileLoaded)
         {
+            //Now in Game
+            inGame = true;
+
             //Tell Light Controllers Game Started
             for(quint8 i = 0; i < numberLightCntlrs; i++)
                 p_comDeviceList->p_lightCntlrList[i]->GameStarted();
@@ -889,6 +1017,9 @@ void HookLight::GameStarted(const QString &gameN)
             //Send mame_start signal if file loaded
             if(isFileLoaded)
             {
+                //Now in Game
+                inGame = true;
+
                 //Tell Light Controllers Game Started
                 for(quint8 i = 0; i < numberLightCntlrs; i++)
                     p_comDeviceList->p_lightCntlrList[i]->GameStarted();
@@ -902,60 +1033,12 @@ void HookLight::GameStarted(const QString &gameN)
 
 void HookLight::GameStopped()
 {
-    //Send mame_stop Signal to Signal Processor
-    if(isFileLoaded)
-        ProcessSignal(MAMESTOPFRONT, "1");
-
-    //Game Has Stopped
-    isFileLoaded = false;
-
-    quint8 i;
-
-    for(i = 0; i < numberLightCntlrs; i++)
-    {
-        p_comDeviceList->p_lightCntlrList[i]->ResetLightController();
-        p_comDeviceList->p_lightCntlrList[i]->GameEnded();
-    }
-
-    //Set Counts back to Zero
-    for(i = 0; i < numberALEDCntlrs; i++)
-    {
-        flashCount[i] = 0;
-        rndFlashCount[i] = 0;
-        sequentialCount[i] = 0;
-    }
-
+    GameEnded();
 }
 
 void HookLight::TCPSocketDisconnected()
 {
-    quint8 i;
-
-
-    //for(i = 0; i < numberLightCntlrs; i++)
-    //    p_comDeviceList->p_lightCntlrList[i]->DoReset();
-
-
-    //TCP Socket has Been Disconnected
-    isFileLoaded = false;
-
-
-    for(i = 0; i < MAXGAMEPLAYERS; i++)
-    {
-        ammoValue[i] = 0;
-        lifeValue[i] = 0;
-        playerAlive[i] = false;
-        maxLifeValue[i] = 0;
-        maxDamage[i] = 0;
-    }
-
-    //Set Counts back to Zero
-    for(i = 0; i < numberALEDCntlrs; i++)
-    {
-        flashCount[i] = 0;
-        rndFlashCount[i] = 0;
-        sequentialCount[i] = 0;
-    }
+    GameEnded();
 }
 
 void HookLight::ProcessSignal(const QString &signal, const QString &data)
@@ -966,6 +1049,17 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
 
     bool isNumber;
     quint16 dataNumber = data.toUInt(&isNumber);
+
+    //For Ammo and Life values
+    bool updateAmmo = false;
+    QList<quint8> playerAmmo;
+    bool updateLife = false;
+    QList<quint8> playerLife;
+    bool updatePlayerAlive = false;
+    QList<quint8> playerSpawn;
+    bool updatePlayerDead = false;
+    QList<quint8> playerDead;
+
 
     if(!isNumber)
         dataNumber = 0;
@@ -1038,7 +1132,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                         }
 
                         //Make New Ammo the Old Ammo Value
-                        ammoValue[playerNum] = dataNumber;
+                        //ammoValue[playerNum] = dataNumber;
+                        updateAmmo = true;
+                        playerAmmo << playerNum;
                     }
                     else if(commandNumber == DEATHFLASHRGBCMD)
                     {
@@ -1052,7 +1148,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                             //And Do Nothing
                             if(dataNumber > lifeValue[playerNum])
                             {
-                                playerAlive[playerNum] = true;
+                                //playerAlive[playerNum] = true;
+                                updatePlayerAlive = true;
+                                playerSpawn << playerNum;
                                 maxLifeValue[playerNum] = dataNumber;
 
                                 if(maxDamage[playerNum] == 0)
@@ -1068,7 +1166,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
 
                                 if(damage <= maxDamage[playerNum])
                                 {
-                                    playerAlive[playerNum] = false;
+                                    //playerAlive[playerNum] = false;
+                                    updatePlayerDead = true;
+                                    playerDead << playerNum;
 
                                     //Death Happened, Show Lights
                                     for(i = 0; i < numberCntlrs; i++)
@@ -1083,7 +1183,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                         }
 
                         //Make New Life the Old Life Value
-                        lifeValue[playerNum] = dataNumber;
+                        //lifeValue[playerNum] = dataNumber;
+                        updateLife = true;
+                        playerLife << playerNum;
                     }
 
                 }
@@ -1173,7 +1275,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                     }
 
                     //Make New Ammo the Old Ammo Value
-                    ammoValue[playerNum] = dataNumber;
+                    //ammoValue[playerNum] = dataNumber;
+                    updateAmmo = true;
+                    playerAmmo << playerNum;
                 }
             }
             else if(kindOfCommand == SEQUENCECMCOMMAND)
@@ -1210,7 +1314,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                     }
 
                     //Make New Ammo the Old Ammo Value
-                    ammoValue[playerNum] = dataNumber;
+                    //ammoValue[playerNum] = dataNumber;
+                    updateAmmo = true;
+                    playerAmmo << playerNum;
                 }
             }
             else if(kindOfCommand == FOLLOWERCOMMAND)
@@ -1281,7 +1387,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                         }
 
                         //Make New Ammo the Old Ammo Value
-                        ammoValue[playerNum] = dataNumber;
+                        //ammoValue[playerNum] = dataNumber;
+                        updateAmmo = true;
+                        playerAmmo << playerNum;
                     }
                     else if(commandNumber == DEATHFLASHREGCMD)
                     {
@@ -1295,7 +1403,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                             //And Do Nothing
                             if(dataNumber > lifeValue[playerNum])
                             {
-                                playerAlive[playerNum] = true;
+                                //playerAlive[playerNum] = true;
+                                updatePlayerAlive = true;
+                                playerSpawn << playerNum;
                                 maxLifeValue[playerNum] = dataNumber;
 
                                 if(maxDamage[playerNum] == 0)
@@ -1311,7 +1421,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
 
                                 if(damage <= maxDamage[playerNum])
                                 {
-                                    playerAlive[playerNum] = false;
+                                    //playerAlive[playerNum] = false;
+                                    updatePlayerDead = true;
+                                    playerDead << playerNum;
 
                                     //Death Happened, Show Lights
                                     for(i = 0; i < numberCntlrs; i++)
@@ -1326,7 +1438,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                         }
 
                         //Make New Life the Old Life Value
-                        lifeValue[playerNum] = dataNumber;
+                        //lifeValue[playerNum] = dataNumber;
+                        updateLife = true;
+                        playerLife << playerNum;
                     }
 
                 }
@@ -1381,7 +1495,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                     }
 
                     //Make New Ammo the Old Ammo Value
-                    ammoValue[playerNum] = dataNumber;
+                    //ammoValue[playerNum] = dataNumber;
+                    updateAmmo = true;
+                    playerAmmo << playerNum;
                 }
             }//End of Regular Sequence Commands
             else if(kindOfCommand == REGFOLLOWERCOMMAND)
@@ -1478,7 +1594,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                     }
 
                     //Make New Ammo the Old Ammo Value
-                    ammoValue[playerNum] = dataNumber;
+                    //ammoValue[playerNum] = dataNumber;
+                    updateAmmo = true;
+                    playerAmmo << playerNum;
                 }
                 else if(commandNumber == DEATHFLASHALEDSCMD)
                 {
@@ -1492,7 +1610,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                         //And Do Nothing
                         if(dataNumber > lifeValue[playerNum])
                         {
-                            playerAlive[playerNum] = true;
+                            //playerAlive[playerNum] = true;
+                            updatePlayerAlive = true;
+                            playerSpawn << playerNum;
                             maxLifeValue[playerNum] = dataNumber;
 
                             if(maxDamage[playerNum] == 0)
@@ -1510,7 +1630,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                             {
                                 //qDebug() << "Player Died";
 
-                                playerAlive[playerNum] = false;
+                                //playerAlive[playerNum] = false;
+                                updatePlayerDead = true;
+                                playerDead << playerNum;
 
                                 //Death Happened, Show Lights
                                 for(i = 0; i < numberCntlrs; i++)
@@ -1533,7 +1655,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                     }
 
                     //Make New Life the Old Life Value
-                    lifeValue[playerNum] = dataNumber;
+                    //lifeValue[playerNum] = dataNumber;
+                    updateLife = true;
+                    playerLife << playerNum;
                 }
             }
             else if(kindOfCommand == ALEDSRNDFLASH)
@@ -1585,7 +1709,9 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                     }
 
                     //Make New Ammo the Old Ammo Value
-                    ammoValue[playerNum] = dataNumber;
+                    //ammoValue[playerNum] = dataNumber;
+                    updateAmmo = true;
+                    playerAmmo << playerNum;
                 }
             }
         }
@@ -1603,6 +1729,31 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
         }
 
     }
+
+    if(updateAmmo)
+    {
+        for(quint8 i = 0; i < playerAmmo.count(); i++)
+            ammoValue[playerAmmo[i]] = dataNumber;
+    }
+
+    if(updateLife)
+    {
+        for(quint8 i = 0; i < playerLife.count(); i++)
+            lifeValue[playerLife[i]] = dataNumber;
+    }
+
+    if(updatePlayerAlive)
+    {
+        for(quint8 i = 0; i < playerSpawn.count(); i++)
+            playerAlive[playerSpawn[i]] = true;
+    }
+
+    if(updatePlayerDead)
+    {
+        for(quint8 i = 0; i < playerDead.count(); i++)
+            playerAlive[playerDead[i]] = false;
+    }
+
 }
 
 

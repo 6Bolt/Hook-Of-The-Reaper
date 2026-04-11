@@ -119,7 +119,12 @@ private:
     QList<DCB>                      comPortDCBList;
     QList<COMMTIMEOUTS>             comPortTOList;
     QList<quint8>                   comPortPlayerList;
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QList<LPCWSTR>                  comPortLPCList;
+#else
+    QList<LPCSTR>                   comPortLPCList;
+#endif
 
     //Error char Array
     LPWSTR                          messageBuffer = nullptr;

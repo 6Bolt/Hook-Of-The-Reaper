@@ -2466,7 +2466,7 @@ void ComDeviceList::LoadLightControllersList()
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     openFile = loadLCData.open (QIODeviceBase::ReadOnly | QIODevice::Text);
 #else
-    openFile = loadLGData.open (QIODevice::ReadOnly | QIODevice::Text);
+    openFile = loadLCData.open (QIODevice::ReadOnly | QIODevice::Text);
 #endif
 
     if(!openFile)

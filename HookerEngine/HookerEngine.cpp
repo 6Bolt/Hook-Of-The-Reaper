@@ -407,6 +407,9 @@ void HookerEngine::HookerEngine::Start()
     //Load Settings
     LoadSettingsFromList();
 
+    //Update Hook Light
+    p_hookLight->UpdateSettings ();
+
     //Set-Up Reapers if they are Holding Slide Back
     SetUpLightGuns();
 

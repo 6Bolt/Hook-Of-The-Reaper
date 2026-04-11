@@ -773,7 +773,7 @@ void ALEDStripLC::SetUpStripSequential(quint8 structN, quint8 stp, quint16 timeD
         sequentialCount++;
     else
     {
-        QString message = "Struct Count is off, for the ALED Strip controller Sequential command. Sequential Count is "+QString::number(flashCount)+" and structNumber is "+QString::number(structN)+".";
+        QString message = "Struct Count is off, for the ALED Strip controller Sequential command. Sequential Count is "+QString::number(sequentialCount)+" and structNumber is "+QString::number(structN)+".";
         emit ShowErrorMessage("ALED Strip Controller Error", message);
     }
 

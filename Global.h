@@ -3,7 +3,7 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.3.0"
+#define VERSION                 "1.3.0C"
 #define VERSIONMAIN             1
 #define VERSIONMID              2
 #define VERSIONLAST             8
@@ -712,6 +712,14 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define DEFAULTBRIGHTNESSSIZE   2
 #define INVERTDATASYMBOL        '~'
 
+// Light Game/Default File Stuff
+#define OUTPUTSIGNALSTART       ':'
+#define CNTLRANDGROUPSSTART     '!'
+#define COMMANDSTART            '>'
+
+#define OUTPUTSIG               0
+#define CNTLRGRPS               1
+#define CMD                     2
 
 //Max Light Controllers Supported
 #define MAXLIGHTCONTROLLERS     32
