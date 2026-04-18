@@ -4,9 +4,6 @@
 ![HookOfTheReaperLogo330](https://github.com/user-attachments/assets/ff4479bc-adf3-4b0f-8dfb-0a8755b2ad6b)
 
 
-# ****** I am Out Sick ******
-I am currently out sick right now. I tried to get the ALED strip controller done, but crashed out before I can finish things. I am finally getting over it, as I have slept for 4-5 days now. I finished the ALED Group Info file, and 90% of the ALED File Info file. I still have to set-up the repo for the ALED controller, write out the release notes, and test a couple of things out. Hopefully, maybe Thursday, it will be out. 
-
 
 # Quick Links
 
