@@ -58,6 +58,15 @@ public:
     //Sequence RGB Lights, Light Up Lights One by One with Color Map
     void SequenceRGBLightsCM(quint16 delay, QList<RGBColor> colorsMap);
 
+    //Slash Commands
+
+    //RGB Slash
+    void SlashRGBLights(quint16 timeDelayMs, RGBColor color);
+
+    //RGB Double Slash
+    void DoubleSlashRGBLights(quint16 timeDelayMs, quint16 timeOffMs, RGBColor color);
+
+
     //Find Max Sequence Count for Regular & RGB Lights
     void FindMaxSequence();
 
@@ -75,6 +84,9 @@ private slots:
 
     void RGBSequenceDelayDone();
 
+    void RGBSlashDelayDone();
+
+    void RGBDoubleSlashDelayDone();
 
     //Slots for Regular Commands with Timer
 
@@ -124,6 +136,9 @@ signals:
     //Turn on 0ne RGB set, in each Group, for Sequence
     void ShowRGBColorOneSequence(QList<quint8> grpNumList, RGBColor color, quint8 index);
 
+    //For the Slash Command
+    void ShowRGBColorOneSlash(QList<quint8> grpNumList, RGBColor color, RGBColor colorBy2, RGBColor colorBy4, quint8 index, bool reverse);
+
 
 
     //Command Has Been Executed and Finished
@@ -155,6 +170,7 @@ private:
     //Is a Flash Command
     bool                            isFlash;
     bool                            isSequence;
+    bool                            isSlash;
 
 
     //Flash Command
@@ -185,6 +201,16 @@ private:
     quint8                          sequenceColorListCount;
     quint8                          sequenceColorCount;
     bool                            isColorMap;
+
+    //Slash
+    quint16                         slashDelay;
+    quint16                         slashOff;
+    bool                            doubleSlashRev;
+    quint8                          slashCount;
+    quint8                          slashMaxCount;
+    RGBColor                        rgbSlashColor;
+    RGBColor                        rgbSlashColorBy2;
+    RGBColor                        rgbSlashColorBy4;
 
     //Color & Intensity
     RGBColor                        rgbSequenceColor;

@@ -128,7 +128,7 @@ signals:
     void UpdateOrientationFromGame(QString sig, QString dat);
 
     //TCP Server Signals
-    void ConnectTCPServer(const quint16 &port);
+    void ConnectTCPServer(const quint16 &port, const quint8 &server);
     void DisconnectTCPServer();
     void WriteTCPServer(const QByteArray &writeData);
 

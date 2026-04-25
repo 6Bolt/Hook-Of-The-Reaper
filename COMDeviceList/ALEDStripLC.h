@@ -169,6 +169,9 @@ private:
     quint8                          rndFlashCount;
     quint8                          sequentialCount;
 
+    quint16                         displayRangeMax[MAXNUMALEDSTRIPS];
+    quint16                         displayRangeValue[MAXNUMALEDSTRIPS];
+
 };
 
 #endif // ALEDSTRIPLC_H

@@ -232,7 +232,7 @@ void editLightControllerWindow::on_editPushButton_clicked()
                 QMessageBox::critical (nullptr, "Group File Error", "The group file for light controller didn't load properly. Please fix errors in group file", QMessageBox::Ok);
         }
         else
-            QMessageBox::critical (nullptr, "Group File Error", "The group file for light controller doesn't exist at the current path. Please select the file with the Set button.", QMessageBox::Ok);
+            QMessageBox::critical (nullptr, "Ultimarc Group File Error", "The group file for light controller doesn't exist at the current path. Please select the file with the Set button.", QMessageBox::Ok);
     }
     else if(typeSet == 1)
     {
@@ -253,7 +253,10 @@ void editLightControllerWindow::on_editPushButton_clicked()
             else if(aledPatChanged && !aledStripDataChanged)
                 p_comDeviceList->p_lightCntlrList[potition]->UpdateALEDPattern();
 
-            p_comDeviceList->p_lightCntlrList[potition]->SetGroupFile (fileAndPath);
+            bool didGroupFileLoad = p_comDeviceList->p_lightCntlrList[potition]->SetGroupFile (fileAndPath);
+
+            if(!didGroupFileLoad)
+                QMessageBox::critical (nullptr, "LED Hook: Strip Group File Error", "The group file for light controller didn't load properly. Please fix errors in group file", QMessageBox::Ok);
         }
     }
 }
@@ -303,6 +306,8 @@ void editLightControllerWindow::on_editClosePushButton_clicked()
                 //Close and Destroy the Window
                 accept ();
             }
+            else
+                QMessageBox::critical (nullptr, "LED Hook: Strip Group File Error", "The group file for light controller didn't load properly. Please fix errors in group file", QMessageBox::Ok);
         }
     }
 }

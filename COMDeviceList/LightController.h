@@ -37,6 +37,9 @@ public:
 
     virtual void CopyLightController(LightController const &lcMember);
 
+
+    // Simple Functions
+
     //Set and Get Light Controller List Number
     void SetLightCntlrNumber(quint8 lcNum) { lightCntlrNum = lcNum; }
     quint8 GetLightCntlrNumber() { return lightCntlrNum; }
@@ -44,12 +47,20 @@ public:
     //Get Light Controller Maker
     quint8 GetLightCntlrMaker() { return lightCntlrMaker; }
 
+    //Get Group File and Path
+    QString GetGroupFile() { return groupFilePath; }
+
+    //Did Group File Load
+    bool DidGroupFileLoad() { return didGroupFileLoad; }
+
+
+    //Ultimarc Controller
+
     //Get Number of Regular LEDs
     quint8 GetNumberLEDs() { return numberLEDs;}
 
     //Get Number of RGBs
     quint8 GetNumberRGBLEDs() { return numberRGBLEDs;}
-
 
     //Get the Max Brightness
     quint8 GetMaxBrightness() { return maxBrightness; }
@@ -57,22 +68,9 @@ public:
     //Get Ultimarc Data Struct
     UltimarcData GetUltimarcData() { return dataUltimarc; }
 
-    virtual bool SetGroupFile(QString filePath);
-
-    //Get Group File and Path
-    QString GetGroupFile() { return groupFilePath; }
-
-    bool DidGroupFileLoad() { return didGroupFileLoad; }
-
-    virtual bool ReloadGroupFile();
-
     quint8 GetID() { return id; }
 
     bool GetInitDone() { return initDone; }
-
-    bool IsRegularGroups();
-
-    bool IsRGBGroups();
 
     bool IsRGBFast() { return rgbFastMode; }
 
@@ -80,14 +78,22 @@ public:
 
     bool IsPAC64() { return isPAC64; }
 
+    QMap<QString,RGBColor> GetRGBColorMap() { return rgbColorMap; }
+
+    QMap<QString,QStringList> GetRGBColorMapMap() { return rgbColorMapMap; }
+
 
     //For the ALED Strip Controller
     quint8 GetCOMNumber() { return comNumber; }
+
     QString GetCOMName() { return comName; }
+
     QString GetCOMPath() { return comPath; }
+
     SerialPortInfo GetCOMPortInfo() { return comPortInfo; }
 
     quint8 GetNumberStrips() { return numberStrips; }
+
     QList<quint16> GetElementCounts() { return elementsStripList; }
 
     quint8 GetALEDPattern() { return aledPattern; }
@@ -95,6 +101,21 @@ public:
     void SetALEDStrip(quint8 numStrips, QList<quint16> elements) { numberStrips = numStrips; elementsStripList = elements; }
 
     void SetALEDPattern(quint8 pat) { aledPattern = pat; }
+
+
+    // Set and Reload Group File
+
+    virtual bool SetGroupFile(QString filePath);
+
+    virtual bool ReloadGroupFile();
+
+
+    // Ultimarc if Regular and/or RGB
+
+    bool IsRegularGroups();
+
+    bool IsRGBGroups();
+
 
 
     //Loading Group File Functions
@@ -125,6 +146,9 @@ public:
 
     //Load Default Brightness
     bool LoadDefaultBrightness(QString line);
+
+    //Load Default Fade
+    bool LoadDefaultFade(QString line);
 
 
     //Builds The Groups Array Positions and Array Byte Data
@@ -203,6 +227,16 @@ public:
     void SequenceRGBLightsCM(QList<quint8> grpNumList, quint16 delay, QString colorMap);
 
 
+    //Slash Command
+
+    //Slash RGB Lights
+    void SlashRGBLights(QList<quint8> grpNumList, quint16 timeDelayMs, QString color);
+
+    //Double Slash RGB Lights
+    void DoubleSlashRGBLights(QList<quint8> grpNumList, quint16 timeDelayMs, quint16 timeOffMs, QString color);
+
+
+
     //Follower Commands
 
     //Follower Regular Lights
@@ -267,65 +301,26 @@ public:
     //Disconnect for RGB Lights
     void DisconnectRegularBG(quint8 player);
 
+
+    //Pin Count
+
     //Get RGB Group Piin Count
     quint8 GetRGBGroupPinCount(quint8 groupNumber);
 
     //Get Regular Group Piin Count
     quint8 GetRegularGroupPinCount(quint8 groupNumber);
 
-public slots:
 
+    //Override Fade
 
-    //Regular Lights Changing State
-
-    //Set Intensity for Regular Light Groups
-    void ShowRegularState(QList<quint8> grpNumList, bool state);
-
-    //Set 1 Pin State
-    void ShowRegularStateOne(QList<quint8> grpNumList, bool state, QList<quint8> indexList, qint8 offset);
-
-    //Set 1 Pin State for Sequence
-    void ShowRegularStateOneSequence(QList<quint8> grpNumList, bool state, quint8 index);
+    //Override Fade For Ultimarc PAC64
+    void OverrideUltimarcFade(quint8 newFade);
 
 
 
-
-    //RGB Lights Changing Intensity
-
-    //Turn on RGB Groups with a RGB Color
-    void ShowRGBColor(QList<quint8> grpNumList, RGBColor color);
-
-    //Turn on 0ne RGB set, in each Group
-    void ShowRGBColorOne(QList<quint8> grpNumList, RGBColor color, QList<quint8> indexList, qint8 offset);
-
-    //Turn on 0ne RGB set, in each Group, for Sequence
-    void ShowRGBColorOneSequence(QList<quint8> grpNumList, RGBColor color, quint8 index);
-
-
-
-    //Change States for RGB and Regular
-
-    //Turn State for a Group of Regular
-    void TurnRegularState(QList<quint8> grpNumList, bool state);
-
-    //Turn State for a Group of RGB
-    void TurnRGBState(QList<quint8> grpNumList, bool state);
-
-
-    //When an Execution has Finished
-
-    //Regular Lights Execution has Finished
-    void RegularExecutionFinished(quint8 exeNum, QList<quint8> grpNumList);
-
-    //RGB Lights Execution has Finished
-    void RGBExecutionFinished(quint8 exeNum, QList<quint8> grpNumList);
-
-
-
-public:
+    //Checking, when Loading the Game/Default File
 
     //Check Regular and RGB Groups Exists or Not
-
     //Check Group Number for Regular
     bool CheckRegularGroupNumber(quint8 grpNum);
 
@@ -357,6 +352,9 @@ public:
     //Set Up Lights After Being Connected to PacDrive
     void SetUpLights();
 
+
+    // For LED Hook: Strip
+
     virtual void RedoSetUpALEDStrips();
 
     virtual void UpdateALEDPattern();
@@ -383,6 +381,58 @@ public:
 
     virtual void DoStripSequential(quint8 structN);
 
+
+public slots:
+
+
+    //Regular Lights Changing State
+
+    //Set Intensity for Regular Light Groups
+    void ShowRegularState(QList<quint8> grpNumList, bool state);
+
+    //Set 1 Pin State
+    void ShowRegularStateOne(QList<quint8> grpNumList, bool state, QList<quint8> indexList, qint8 offset);
+
+    //Set 1 Pin State for Sequence
+    void ShowRegularStateOneSequence(QList<quint8> grpNumList, bool state, quint8 index);
+
+
+
+
+    //RGB Lights Changing Intensity
+
+    //Turn on RGB Groups with a RGB Color
+    void ShowRGBColor(QList<quint8> grpNumList, RGBColor color);
+
+    //Turn on 0ne RGB set, in each Group
+    void ShowRGBColorOne(QList<quint8> grpNumList, RGBColor color, QList<quint8> indexList, qint8 offset);
+
+    //Turn on 0ne RGB set, in each Group, for Sequence
+    void ShowRGBColorOneSequence(QList<quint8> grpNumList, RGBColor color, quint8 index);
+
+    //Turn on 0ne RGB set, in each Group, for Slash
+    void ShowRGBColorOneSlash(QList<quint8> grpNumList, RGBColor color, RGBColor colorBy2, RGBColor colorBy4, quint8 index, bool reverse);
+
+
+
+    //Change States for RGB and Regular
+
+    //Turn State for a Group of Regular
+    void TurnRegularState(QList<quint8> grpNumList, bool state);
+
+    //Turn State for a Group of RGB
+    void TurnRGBState(QList<quint8> grpNumList, bool state);
+
+
+    //When an Execution has Finished
+
+    //Regular Lights Execution has Finished
+    void RegularExecutionFinished(quint8 exeNum, QList<quint8> grpNumList);
+
+    //RGB Lights Execution has Finished
+    void RGBExecutionFinished(quint8 exeNum, QList<quint8> grpNumList);
+
+
 signals:
 
     //Signals to PacDriveControl to Change Intensity or State
@@ -408,14 +458,13 @@ signals:
     //Set Pin States for Pac
     void SetPACLEDStates(quint8 id, quint16 data);
 
+    //Set Fade
+    void SetFade(quint8 id, quint8 fade);
+
     //Signal to Show Error Message
 
     //Show Error Message Box in Main Thread
     void ShowErrorMessage(const QString title, const QString message);
-
-
-private slots:
-
 
 
 
@@ -499,6 +548,12 @@ public:
 
     //Default Brightness for Regular Lights
     quint8                          defaultBrightness;
+
+    //Default Fade Time
+    quint8                          defaultFade;
+
+    //Override Fade
+    bool                            overrideFade;
 
     //Groups Regular LED Map
     QMap<quint8,QList<quint8>>      regularLEDMap;

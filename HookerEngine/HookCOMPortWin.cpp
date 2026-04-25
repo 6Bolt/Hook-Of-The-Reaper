@@ -7,6 +7,7 @@ HookCOMPortWin::HookCOMPortWin(QObject *parent)
     isPortOpen = false;
     bypassCOMPortConnectFailWarning = false;
     connectedTCPPort = 0;
+    connectedTCPPort1 = 0;
 
     for(quint8 i = 0; i < MAXCOMPORTS; i++)
     {
@@ -714,9 +715,9 @@ void HookCOMPortWin::SetBypassCOMPortConnectFailWarning(const bool &bypassCPCFW)
 }
 
 
-void HookCOMPortWin::ConnectTCP(const quint16 &port)
+void HookCOMPortWin::ConnectTCP(const quint16 &port, const quint8 &server)
 {
-    if(!isTCPConnected && !isTCPConnecting)
+    if(!isTCPConnected && !isTCPConnecting && server == 0)
     {
         connectedTCPPort = port;
 
@@ -736,7 +737,7 @@ void HookCOMPortWin::ConnectTCP(const quint16 &port)
             emit ErrorMessage("Light Gun TCP Connection Failed",critMessage);
         }
     }
-    else if(!isTCPConnected1 && !isTCPConnecting1)
+    else if(!isTCPConnected1 && !isTCPConnecting1 && server == 1)
     {
         if(connectedTCPPort != port)
         {

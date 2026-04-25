@@ -21,6 +21,7 @@ LightExecution::LightExecution(quint8 exeNum, QList<quint8> grpNumList, QMap<qui
 
     isFlash = false;
     isSequence = false;
+    isSlash = false;
 
 
     //Timer Set-up
@@ -270,6 +271,83 @@ void LightExecution::SequenceRGBLightsCM(quint16 delay, QList<RGBColor> colorsMa
 }
 
 
+void LightExecution::SlashRGBLights(quint16 timeDelayMs, RGBColor color)
+{
+    isSlash = true;
+    slashDelay = timeDelayMs;
+    slashCount = 0;
+    sequenceMaxCount = 1;
+    rgbSlashColor = color;
+
+    //Color Divided by 2
+    rgbSlashColorBy2 = color;
+    rgbSlashColorBy2.r = (rgbSlashColorBy2.r >> 1);
+    rgbSlashColorBy2.g = (rgbSlashColorBy2.g >> 1);
+    rgbSlashColorBy2.b = (rgbSlashColorBy2.b >> 1);
+
+    //Color Divided by 4
+    rgbSlashColorBy4 = color;
+    rgbSlashColorBy4.r = (rgbSlashColorBy4.r >> 2);
+    rgbSlashColorBy4.g = (rgbSlashColorBy4.g >> 2);
+    rgbSlashColorBy4.b = (rgbSlashColorBy4.b >> 2);
+
+    FindMaxSequence();
+
+    //To make the slash go all the way through
+    if(rgbFastMode)
+        slashMaxCount = sequenceMaxCount + 3;
+    else
+        slashMaxCount = sequenceMaxCount + 9;
+
+    emit ShowRGBColorOneSlash(groupList, rgbSlashColor, rgbSlashColorBy2, rgbSlashColorBy4, slashCount, false);
+
+    //Connect Timer to Turn On Next LEDs in the Sequence
+    connect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSlashDelayDone()));
+    p_timer->setInterval (slashDelay);
+    p_timer->start();
+}
+
+
+void LightExecution::DoubleSlashRGBLights(quint16 timeDelayMs, quint16 timeOffMs, RGBColor color)
+{
+    isSlash = true;
+    slashDelay = timeDelayMs;
+    slashOff = timeOffMs;
+    slashCount = 0;
+    sequenceMaxCount = 1;
+    rgbSlashColor = color;
+    doubleSlashRev = false;
+
+    //Color Divided by 2
+    rgbSlashColorBy2 = color;
+    rgbSlashColorBy2.r = (rgbSlashColorBy2.r >> 1);
+    rgbSlashColorBy2.g = (rgbSlashColorBy2.g >> 1);
+    rgbSlashColorBy2.b = (rgbSlashColorBy2.b >> 1);
+
+    //Color Divided by 4
+    rgbSlashColorBy4 = color;
+    rgbSlashColorBy4.r = (rgbSlashColorBy4.r >> 2);
+    rgbSlashColorBy4.g = (rgbSlashColorBy4.g >> 2);
+    rgbSlashColorBy4.b = (rgbSlashColorBy4.b >> 2);
+
+    FindMaxSequence();
+
+    //To make the slash go all the way through
+    if(rgbFastMode)
+        slashMaxCount = sequenceMaxCount + 3;
+    else
+        slashMaxCount = sequenceMaxCount + 9;
+
+    emit ShowRGBColorOneSlash(groupList, rgbSlashColor, rgbSlashColorBy2, rgbSlashColorBy4, slashCount, doubleSlashRev);
+
+    //Connect Timer to Turn On Next LEDs in the Sequence
+    connect(p_timer, SIGNAL(timeout()), this, SLOT(RGBDoubleSlashDelayDone()));
+    p_timer->setInterval (slashDelay);
+    p_timer->start();
+}
+
+
+
 void LightExecution::FindMaxSequence()
 {
     quint8 i;
@@ -315,6 +393,18 @@ void LightExecution::TurnOffLightsEnd()
         }
 
         if(isSequence)
+        {
+            //Stop Timer
+            p_timer->stop();
+
+            //Turn Off Lights
+            emit ShowRGBColor(groupList, rgbOff);
+
+            //Command Executed
+            emit CommandExecuted(executionNumber, groupList);
+        }
+
+        if(isSlash)
         {
             //Stop Timer
             p_timer->stop();
@@ -462,6 +552,102 @@ void LightExecution::RGBSequenceDelayDone()
 
         isSequence = false;
         isColorMap = false;
+
+        //Command Executed
+        emit CommandExecuted(executionNumber, groupList);
+    }
+}
+
+
+void LightExecution::RGBSlashDelayDone()
+{
+    if(rgbFastMode)
+        slashCount++;
+    else
+        slashCount = slashCount + 3;
+
+    if(slashCount < slashMaxCount)
+    {
+        if(isColorMap)
+        {
+            //Get Color From List
+            //rgbSequenceColor = sequenceColorList[sequenceColorCount];
+            //sequenceColorCount++;
+
+            //if(sequenceColorCount >= sequenceColorListCount)
+            //    sequenceColorCount = 0;
+        }
+
+        //qDebug() << "Sequence Timer Ended: sequence" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
+        //Light Up the Next Sequence
+        emit ShowRGBColorOneSlash(groupList, rgbSlashColor, rgbSlashColorBy2, rgbSlashColorBy4, slashCount, false);
+
+        //Connect Timer to Turn On Next LEDs in the Sequence
+        p_timer->start();
+    }
+    else
+    {
+        //Turn Off Lights
+        //emit ShowRGBColor(groupList, rgbOff);
+
+        //Disconnect the Timer
+        disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSlashDelayDone()));
+
+        isSlash = false;
+        isColorMap = false;
+
+        //Command Executed
+        emit CommandExecuted(executionNumber, groupList);
+    }
+}
+
+
+void LightExecution::RGBDoubleSlashDelayDone()
+{
+    if(doubleSlashRev && slashCount == 0)
+        p_timer->setInterval (slashDelay);
+
+    if(rgbFastMode)
+        slashCount++;
+    else
+        slashCount = slashCount + 3;
+
+    if(slashCount < slashMaxCount)
+    {
+        //if(isColorMap)
+        //{
+            //Get Color From List
+            //rgbSequenceColor = sequenceColorList[sequenceColorCount];
+            //sequenceColorCount++;
+
+            //if(sequenceColorCount >= sequenceColorListCount)
+            //    sequenceColorCount = 0;
+        //}
+
+        //qDebug() << "Sequence Timer Ended: sequence" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
+        //Light Up the Next Sequence
+        emit ShowRGBColorOneSlash(groupList, rgbSlashColor, rgbSlashColorBy2, rgbSlashColorBy4, slashCount, doubleSlashRev);
+
+        //Connect Timer to Turn On Next LEDs in the Sequence
+        p_timer->start();
+    }
+    else if(!doubleSlashRev)
+    {
+        slashCount = 0;
+        doubleSlashRev = true;
+        p_timer->setInterval (slashOff);
+        p_timer->start();
+    }
+    else
+    {
+        //Turn Off Lights
+        //emit ShowRGBColor(groupList, rgbOff);
+
+        //Disconnect the Timer
+        disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RGBDoubleSlashDelayDone()));
+
+        isSlash = false;
+        //isColorMap = false;
 
         //Command Executed
         emit CommandExecuted(executionNumber, groupList);

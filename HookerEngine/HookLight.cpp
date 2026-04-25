@@ -302,7 +302,16 @@ bool HookLight::LoadLightFile()
 
             if(!validCmd)
             {
-                QString failMeg = "Light controller command is not valid. Something is wrong with the command arguments.\nFailing Line: "+fileData[lineNumber];
+                QString failMeg;
+
+                if(tempCmd.IsErrorMessage())
+                {
+                    failMeg = tempCmd.GetErrorMessage ();
+                    failMeg.append ("\nFailing Line: "+fileData[lineNumber]);
+                }
+                else
+                    failMeg = "Light controller command is not valid. Something is wrong with the command arguments.\nFailing Line: "+fileData[lineNumber];
+
                 emit ShowErrorMessage(title, failMeg);
                 return false;
             }
@@ -876,6 +885,10 @@ quint8 HookLight::CheckCommandArgs(QString command)
         return SEQUENCERGBARGS;
     else if(command == RELOADSEQUENCERGB)
         return RELOADSEQUENCERGBARGS;
+    else if(command == SLASHRGB)
+        return SLASHRGBARGS;
+    else if(command == DOUBLESLASHRGB)
+        return DOUBLESLASHRGBARGS;
     else if(command == FOLLOWERRGB)
         return FOLLOWERRGBARGS;
     else if(command == FOLLOWERRANDOMRGB)
@@ -1344,6 +1357,34 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                     }
                 }
             }
+            else if(kindOfCommand == SLASHCOMMANDS)
+            {
+                QString color = lightCmd.GetColor();
+                quint16 timeDelay = lightCmd.GetTimeDelay();
+
+                if(commandNumber == SLASHRGBCMD && dataNumber != 0)
+                {
+                    for(i = 0; i < numberCntlrs; i++)
+                    {
+                        cntlrNumber = lightCmd.GetControllerNumber(i);
+                        QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->SlashRGBLights(groups, timeDelay, color);
+                    }
+                }
+                else if(commandNumber == DOUBLESLASHRGBCMD && dataNumber != 0)
+                {
+                    quint16 timeOff = lightCmd.GetTimeOff();
+
+                    for(i = 0; i < numberCntlrs; i++)
+                    {
+                        cntlrNumber = lightCmd.GetControllerNumber(i);
+                        QList<quint8> groups = lightCmd.GetControllerGroups(cntlrNumber);
+
+                        p_comDeviceList->p_lightCntlrList[cntlrNumber]->DoubleSlashRGBLights(groups, timeDelay, timeOff, color);
+                    }
+                }
+            }
         } //End of RGB Commands
         else if(kindOfCommand > REGCOMMANDS && kindOfCommand < BACKGROUNDCOMMAND)
         {
@@ -1543,6 +1584,7 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
                 for(i = 0; i < numberCntlrs; i++)
                 {
                     cntlrNumber = lightCmd.GetControllerNumber(i);
+
                     QList<quint8> strips = lightCmd.GetControllerGroups(cntlrNumber);
 
                     p_comDeviceList->p_lightCntlrList[cntlrNumber]->UpdateDisplayRange(strips, dataNumber);
@@ -1732,25 +1774,25 @@ void HookLight::ProcessSignal(const QString &signal, const QString &data)
 
     if(updateAmmo)
     {
-        for(quint8 i = 0; i < playerAmmo.count(); i++)
+        for(quint8 i = 0; i < playerAmmo.size(); i++)
             ammoValue[playerAmmo[i]] = dataNumber;
     }
 
     if(updateLife)
     {
-        for(quint8 i = 0; i < playerLife.count(); i++)
+        for(quint8 i = 0; i < playerLife.size(); i++)
             lifeValue[playerLife[i]] = dataNumber;
     }
 
     if(updatePlayerAlive)
     {
-        for(quint8 i = 0; i < playerSpawn.count(); i++)
+        for(quint8 i = 0; i < playerSpawn.size(); i++)
             playerAlive[playerSpawn[i]] = true;
     }
 
     if(updatePlayerDead)
     {
-        for(quint8 i = 0; i < playerDead.count(); i++)
+        for(quint8 i = 0; i < playerDead.size(); i++)
             playerAlive[playerDead[i]] = false;
     }
 

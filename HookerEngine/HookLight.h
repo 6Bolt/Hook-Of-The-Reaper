@@ -89,6 +89,7 @@ public:
     quint8                              flashCount[MAXLIGHTCONTROLLERS];
     quint8                              rndFlashCount[MAXLIGHTCONTROLLERS];
     quint8                              sequentialCount[MAXLIGHTCONTROLLERS];
+
 };
 
 #endif // HOOKLIGHT_H

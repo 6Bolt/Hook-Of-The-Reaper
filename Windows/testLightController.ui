@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>532</width>
-    <height>545</height>
+    <width>545</width>
+    <height>615</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>180</x>
-     <y>510</y>
+     <x>190</x>
+     <y>580</y>
      <width>341</width>
      <height>32</height>
     </rect>
@@ -52,7 +52,7 @@
     <rect>
      <x>140</x>
      <y>20</y>
-     <width>211</width>
+     <width>191</width>
      <height>25</height>
     </rect>
    </property>
@@ -298,25 +298,10 @@
     <string>Color:</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="colorLineEdit">
-   <property name="geometry">
-    <rect>
-     <x>70</x>
-     <y>270</y>
-     <width>131</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-  </widget>
   <widget class="QLabel" name="sideColor">
    <property name="geometry">
     <rect>
-     <x>220</x>
+     <x>260</x>
      <y>270</y>
      <width>81</width>
      <height>25</height>
@@ -329,21 +314,6 @@
    </property>
    <property name="text">
     <string>Side Color:</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="sideColorLineEdit">
-   <property name="geometry">
-    <rect>
-     <x>300</x>
-     <y>270</y>
-     <width>131</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
    </property>
   </widget>
   <widget class="QLabel" name="Color_2">
@@ -364,26 +334,11 @@
     <string>Color Map:</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="colorMapLineEdit">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>320</y>
-     <width>131</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-  </widget>
   <widget class="QPushButton" name="pushButton">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>470</y>
+     <x>10</x>
+     <y>540</y>
      <width>101</width>
      <height>24</height>
     </rect>
@@ -527,7 +482,7 @@
   <widget class="QLabel" name="playerNumber">
    <property name="geometry">
     <rect>
-     <x>260</x>
+     <x>300</x>
      <y>320</y>
      <width>111</width>
      <height>25</height>
@@ -545,7 +500,7 @@
   <widget class="QLineEdit" name="playerNumberLineEdit">
    <property name="geometry">
     <rect>
-     <x>370</x>
+     <x>410</x>
      <y>320</y>
      <width>61</width>
      <height>25</height>
@@ -593,14 +548,205 @@
   <widget class="QPushButton" name="updateBG">
    <property name="geometry">
     <rect>
-     <x>140</x>
-     <y>470</y>
+     <x>130</x>
+     <y>540</y>
      <width>111</width>
      <height>24</height>
     </rect>
    </property>
    <property name="text">
     <string>Update Background</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="colorComboBox">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>270</y>
+     <width>161</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="sideColorComboBox">
+   <property name="geometry">
+    <rect>
+     <x>350</x>
+     <y>270</y>
+     <width>161</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="colorMapComboBox">
+   <property name="geometry">
+    <rect>
+     <x>100</x>
+     <y>320</y>
+     <width>161</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="typeLabel">
+   <property name="geometry">
+    <rect>
+     <x>340</x>
+     <y>10</y>
+     <width>41</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Type:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="typeComboBox">
+   <property name="geometry">
+    <rect>
+     <x>380</x>
+     <y>20</y>
+     <width>161</width>
+     <height>24</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="color2ndCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>220</x>
+     <y>220</y>
+     <width>91</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>2nd Color</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="propComboBox">
+   <property name="geometry">
+    <rect>
+     <x>440</x>
+     <y>220</y>
+     <width>72</width>
+     <height>24</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="probabilityLabel">
+   <property name="geometry">
+    <rect>
+     <x>350</x>
+     <y>220</y>
+     <width>81</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Probability:</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="seqReloadCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>470</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Seq Reload</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="numLEDsComboBox">
+   <property name="geometry">
+    <rect>
+     <x>260</x>
+     <y>470</y>
+     <width>72</width>
+     <height>24</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="ledsDelayLabel">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>470</y>
+     <width>111</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>LEDs per Delay:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="ledsFlashComboBox">
+   <property name="geometry">
+    <rect>
+     <x>440</x>
+     <y>470</y>
+     <width>72</width>
+     <height>24</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="ledsFlashLabel">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>470</y>
+     <width>81</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>LEDs Flash:</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="closeBG">
+   <property name="geometry">
+    <rect>
+     <x>260</x>
+     <y>540</y>
+     <width>111</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Close Background</string>
    </property>
   </widget>
  </widget>

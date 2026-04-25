@@ -2320,6 +2320,7 @@ void HookerEngine::OpenTCPServerSlot(quint8 playerNum, bool noInit)
     QByteArray cpBA;
     QStringList commands;
     bool isCommands;
+    quint8 sleepCount = 0;
 
     //Get Light Gun Number
     lightGun = loadedLGNumbers[playerNum];
@@ -2327,49 +2328,62 @@ void HookerEngine::OpenTCPServerSlot(quint8 playerNum, bool noInit)
     isTCPConnected = p_hookComPortWin->IsTCPConnected (lgTCPPort[playerNum]);
     isTCPConnecting = p_hookComPortWin->IsTCPConnecting (lgTCPPort[playerNum]);
 
+    //qDebug() << "TCP Server Connecting for Player:" << playerNum << "Port:" << lgTCPPort[playerNum] << "isTCPConnected" << isTCPConnected << "isTCPConnecting" << isTCPConnecting;
+
     if(!isTCPConnected && !isTCPConnecting)
     {
         //Connect to TCP Server
-        emit ConnectTCPServer(lgTCPPort[playerNum]);
+        if(firstTCPPort == lgTCPPort[playerNum])
+            emit ConnectTCPServer(lgTCPPort[playerNum], 0);
+        else if(secondTCPPort == lgTCPPort[playerNum])
+            emit ConnectTCPServer(lgTCPPort[playerNum], 1);
     }
 
     isTCPConnected = p_hookComPortWin->IsTCPConnected (lgTCPPort[playerNum]);
 
     //Wait until connected, can take 1 seconds. Connecting started when loading DefaultLG game file
-    while(!isTCPConnected)
+    // Waits for 7s, then fails after
+    while(!isTCPConnected && sleepCount < TCPSLEEPCOUNT)
     {
         QThread::msleep(TCPSLEEPTIME);
         isTCPConnected = p_hookComPortWin->IsTCPConnected (lgTCPPort[playerNum]);
+        sleepCount++;
         //qDebug() << "Waiting for TCP Server connected" << isTCPConnected;
     }
 
-    ConnectedLightGun(playerNum);
+    //qDebug() << "TCP Server Connecting for Player:" << playerNum << "Port:" << lgTCPPort[playerNum] << "isTCPConnected" << isTCPConnected;
 
-    if(!noInit)
+    if(isTCPConnected)
     {
-        //Get the Commnds for Open COM Port
-        commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
+        ConnectedLightGun(playerNum);
 
-        //qDebug() << "Command Count: " << commands.count() << " Commands: " << commands;
-
-        //Write Commands to the TCP
-        if(isCommands)
+        if(!noInit)
         {
-            for(j = 0; j < commands.count(); j++)
+            //Get the Commnds for Open COM Port
+            commands = p_comDeviceList->p_lightGunList[lightGun]->OpenComPortCommands(&isCommands);
+
+            //qDebug() << "Command Count: " << commands.count() << " Commands: " << commands;
+
+            //Write Commands to the TCP
+            if(isCommands)
             {
-                QString tempCMD = commands[j] + '\n';
-                cpBA = tempCMD.toUtf8 ();
-                if(firstTCPPort == lgTCPPort[playerNum])
-                    emit WriteTCPServer(cpBA);
-                else
-                    emit WriteTCPServer1(cpBA);
+                for(j = 0; j < commands.count(); j++)
+                {
+                    QString tempCMD = commands[j] + '\n';
+                    cpBA = tempCMD.toUtf8 ();
+                    if(firstTCPPort == lgTCPPort[playerNum])
+                        emit WriteTCPServer(cpBA);
+                    else if(secondTCPPort == lgTCPPort[playerNum])
+                        emit WriteTCPServer1(cpBA);
+                }
             }
         }
+
+        //Says LG Has Open and Init
+        lgConnectionClosed[playerNum] = false;
+        lgTCPConnections++;
     }
 
-    //Says LG Has Open and Init
-    lgConnectionClosed[playerNum] = false;
-    lgTCPConnections++;
 }
 
 void HookerEngine::CloseTCPServerSlot(quint8 playerNum, bool noInit, bool initOnly)
@@ -2396,7 +2410,7 @@ void HookerEngine::CloseTCPServerSlot(quint8 playerNum, bool noInit, bool initOn
                 cpBA = tempCMD.toUtf8 ();
                 if(firstTCPPort == lgTCPPort[playerNum])
                     emit WriteTCPServer(cpBA);
-                else
+                else if(secondTCPPort == lgTCPPort[playerNum])
                     emit WriteTCPServer1(cpBA);
             }
         }
@@ -3668,6 +3682,8 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber, QSt
                         QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
                     return false;
                 }
+
+
             }
             else
             {
@@ -3680,6 +3696,314 @@ bool HookerEngine::CheckINICommand(QString commndNotChk, quint16 lineNumber, QSt
 
         //Ran the gaunlet
         return true;
+    }// USB HID Commands
+    else if(commndNotChk.startsWith(ULTIMARCSTART, Qt::CaseSensitive) == true)
+    {
+        //Ultimarc Dispplay Command
+        //State command: uls device# pin# state				uls 1 1 1
+        //Intensity command: uli device# pin# intensity			uli 1 1 255
+        //Fade command: ulf device# fadetime				ulf 1 255
+        //Kill command: ulk device#					ulk 1
+
+        qint8 validDevices = p_comDeviceList->p_pacDrive->GetUltimarcValidDevices ();
+
+        if(commndNotChk.startsWith(ULTIMARCSETSTATE, Qt::CaseInsensitive))
+        {
+            //State command: uls device# pin# state				uls 1 1 1
+            temp1 = commndNotChk.split(' ', Qt::SkipEmptyParts);
+
+            if(temp1.count () != ULTIMARCSETSTATECMDS)
+            {
+                QString tempCrit = "The Ultimarc State command, doesn't have enough or too many variables. It should be uls and 3 variables.\nLine Number: "+QString::number(lineNumber)+"\nCommand: "+commndNotChk+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            bool isNumber;
+            qint8 deviceNumber = temp1[1].toUInt (&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In Ultimarc State command, Device is not a number.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            deviceNumber--;
+
+            if(deviceNumber < 0)
+            {
+                QString tempCrit = "In Ultimarc State command, Device number is 0 or less.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            if(deviceNumber > validDevices)
+            {
+                QString tempCrit = "In Ultimarc State command, Device number doesn't exisits.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+
+            quint8 type = p_comDeviceList->p_pacDrive->GetDeviceType (deviceNumber);
+            quint8 maxPins = ULTIMARCTYPELEDCOUNT[type];
+            maxPins--;
+            quint8 pin = temp1[2].toUInt (&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In Ultimarc State command, Pin is not a number.\nLine Number: "+QString::number(lineNumber)+"\nPin Number: "+temp1[2]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            if(pin == 0)
+            {
+                QString tempCrit = "In Ultimarc State command, Pin number is 0.\nLine Number: "+QString::number(lineNumber)+"\nPin Number: "+temp1[2]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            pin--;
+
+            if(pin > maxPins)
+            {
+                QString tempCrit = "In Ultimarc State command, Pin number is too high for device.\nLine Number: "+QString::number(lineNumber)+"\nPin Number: "+temp1[2]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            quint8 stateNum = temp1[3].toUInt (&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In Ultimarc State command, State is not a number.\nLine Number: "+QString::number(lineNumber)+"\nState Number: "+temp1[3]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            if(stateNum != 0 && stateNum != 1)
+            {
+                QString tempCrit = "In Ultimarc State command, State can only be 0 or 1.\nLine Number: "+QString::number(lineNumber)+"\nState Number: "+temp1[3]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            //Ran the Guantlet
+            return true;
+        }
+        else if(commndNotChk.startsWith(ULTIMARCSETINT, Qt::CaseInsensitive))
+        {
+            //Intensity command: uli device# pin# intensity			uli 1 1 255
+            temp1 = commndNotChk.split(' ', Qt::SkipEmptyParts);
+
+            if(temp1.count () != ULTIMARCSETINTCMD)
+            {
+                QString tempCrit = "The Ultimarc Intensity command, doesn't have enough or too many variables. It should be uls and 3 variables.\nLine Number: "+QString::number(lineNumber)+"\nCommand: "+commndNotChk+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            bool isNumber;
+            qint8 deviceNumber = temp1[1].toUInt (&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In Ultimarc Intensity command, Device is not a number.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            deviceNumber--;
+
+            if(deviceNumber < 0)
+            {
+                QString tempCrit = "In Ultimarc Intensity command, Device number is 0 or less.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            if(deviceNumber > validDevices)
+            {
+                QString tempCrit = "In Ultimarc Intensity command, Device number doesn't exisits.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            quint8 type = p_comDeviceList->p_pacDrive->GetDeviceType (deviceNumber);
+            quint8 maxPins = ULTIMARCTYPELEDCOUNT[type];
+            maxPins--;
+            quint8 pin = temp1[2].toUInt (&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In Ultimarc Intensity command, Pin is not a number.\nLine Number: "+QString::number(lineNumber)+"\nPin Number: "+temp1[2]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            if(pin == 0)
+            {
+                QString tempCrit = "In Ultimarc Intensity command, Pin number is 0.\nLine Number: "+QString::number(lineNumber)+"\nPin Number: "+temp1[2]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            pin--;
+
+            if(pin > maxPins)
+            {
+                QString tempCrit = "In Ultimarc Intensity command, Pin number is too high for device.\nLine Number: "+QString::number(lineNumber)+"\nPin Number: "+temp1[2]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            quint16 intensity = temp1[3].toUInt (&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In Ultimarc Intensity command, Intensity is not a number.\nLine Number: "+QString::number(lineNumber)+"\nIntensity Number: "+temp1[3]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            if(intensity > 255)
+            {
+                QString tempCrit = "In Ultimarc Intensity command, Intensity is over 255.\nLine Number: "+QString::number(lineNumber)+"\nIntensity Number: "+temp1[3]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            //Ran the Guantlet
+            return true;
+        }
+        else if(commndNotChk.startsWith(ULTIMARCSETFADE, Qt::CaseInsensitive))
+        {
+            //Fade command: ulf device# fadetime				ulf 1 255
+            temp1 = commndNotChk.split(' ', Qt::SkipEmptyParts);
+
+            if(temp1.count () != ULTIMARCSETFADECMD)
+            {
+                QString tempCrit = "The Ultimarc Fade command, doesn't have enough or too many variables. It should be uls and 3 variables.\nLine Number: "+QString::number(lineNumber)+"\nCommand: "+commndNotChk+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            bool isNumber;
+            qint8 deviceNumber = temp1[1].toUInt (&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In Ultimarc Fade command, Device is not a number.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            deviceNumber--;
+
+            if(deviceNumber < 0)
+            {
+                QString tempCrit = "In Ultimarc Fade command, Device number is 0 or less.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            if(deviceNumber > validDevices)
+            {
+                QString tempCrit = "In Ultimarc Fade command, Device number doesn't exisits.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            quint16 fade = temp1[2].toUInt (&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In Ultimarc Fade command, Intensity is not a number.\nLine Number: "+QString::number(lineNumber)+"\nFade Number: "+temp1[2]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            if(fade > 255)
+            {
+                QString tempCrit = "In Ultimarc Fade command, Fade is over 255.\nLine Number: "+QString::number(lineNumber)+"\nFade Number: "+temp1[2]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            //Ran the Guantlet
+            return true;
+        }
+        else if(commndNotChk.startsWith(ULTIMARCKILL, Qt::CaseInsensitive))
+        {
+            //Kill command: ulk device#					ulk 1
+            temp1 = commndNotChk.split(' ', Qt::SkipEmptyParts);
+
+            if(temp1.count () != ULTIMARCKILLCMD)
+            {
+                QString tempCrit = "The Ultimarc Kill command, doesn't have enough or too many variables. It should be uls and 3 variables.\nLine Number: "+QString::number(lineNumber)+"\nCommand: "+commndNotChk+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            bool isNumber;
+            qint8 deviceNumber = temp1[1].toUInt (&isNumber);
+
+            if(!isNumber)
+            {
+                QString tempCrit = "In Ultimarc Kill command, Device is not a number.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            deviceNumber--;
+
+            if(deviceNumber < 0)
+            {
+                QString tempCrit = "In Ultimarc Kill command, Device number is 0 or less.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            if(deviceNumber > validDevices)
+            {
+                QString tempCrit = "In Ultimarc Kill command, Device number doesn't exisits.\nLine Number: "+QString::number(lineNumber)+"\nDevice Number: "+temp1[1]+"\nFile: "+filePathName;
+                if(displayMB)
+                    QMessageBox::critical (p_guiConnect, "Processes INI Command Error", tempCrit, QMessageBox::Ok);
+                return false;
+            }
+
+            return true;
+        }
+
     }
     else if(commndNotChk.startsWith(ININULLCMD, Qt::CaseInsensitive))
     {
@@ -4107,6 +4431,72 @@ void HookerEngine::ProcessINICommands(QString signalName, QString value, bool is
             //Send Data to USB HID
             emit WriteUSBHID(player, cpBA);
         }
+        else if(commands[i].startsWith(ULTIMARCSTART, Qt::CaseSensitive) == true)
+        {
+            if(commands[i].startsWith(ULTIMARCSETSTATE, Qt::CaseInsensitive))
+            {
+                //Ultimarc State
+                //State command: uls device# pin# state				uls 1 1 1
+
+                temp1 = commands[i].split(' ', Qt::SkipEmptyParts);
+
+                quint8 device = temp1[1].toUInt ();
+                device--;
+
+                quint8 pin = temp1[2].toUInt ();
+                pin--;
+
+                quint8 state = temp1[3].toUInt ();
+
+                if(state == 0)
+                    p_comDeviceList->p_pacDrive->SetStateINI(device, pin, false);
+                else
+                    p_comDeviceList->p_pacDrive->SetStateINI(device, pin, true);
+            }
+            else if(commands[i].startsWith(ULTIMARCSETINT, Qt::CaseInsensitive))
+            {
+                //Ultimarc Intensity
+                //Intensity command: uli device# pin# intensity			uli 1 1 255
+
+                temp1 = commands[i].split(' ', Qt::SkipEmptyParts);
+
+                quint8 device = temp1[1].toUInt ();
+                device--;
+
+                quint8 pin = temp1[2].toUInt ();
+                pin--;
+
+                quint8 intensity = temp1[3].toUInt ();
+
+                p_comDeviceList->p_pacDrive->SetIntensityINI(device, pin, intensity);
+            }
+            else if(commands[i].startsWith(ULTIMARCSETFADE, Qt::CaseInsensitive))
+            {
+                //Ultimarc Fade
+                //Fade command: ulf device# fadetime				ulf 1 255
+
+                temp1 = commands[i].split(' ', Qt::SkipEmptyParts);
+
+                quint8 device = temp1[1].toUInt ();
+                device--;
+
+                quint8 fade = temp1[2].toUInt ();
+
+                p_comDeviceList->p_pacDrive->SetFadeINI(device, fade);
+            }
+            else if(commands[i].startsWith(ULTIMARCKILL, Qt::CaseInsensitive))
+            {
+                //Ultimarc Kill
+                //Kill command: ulk device#					ulk 1
+
+                temp1 = commands[i].split(' ', Qt::SkipEmptyParts);
+
+                quint8 device = temp1[1].toUInt ();
+                device--;
+
+                p_comDeviceList->p_pacDrive->KillLightsINI(device);
+            }
+        }
     }//for(i
 }
 
@@ -4480,23 +4870,23 @@ void HookerEngine::LoadLGFile()
                             }
                             else
                             {
-                                //Checks if the Ports are the same
-                                if(firstTCPPort != lgTCPPort[i])
+                                if(firstTCPPort != lgTCPPort[i] && !isMultipleTCPPorts)
                                 {
                                     tcpServerCount++;
                                     isMultipleTCPPorts = true;
+                                    secondTCPPort = lgTCPPort[i];
 
-                                    if(tcpServerCount > MAXTCPSERVERS)
-                                    {
-                                        lgFileLoadFail = true;
-                                        lgFile.close();
-                                        QString tempCrit = "Three or more TCP Server ports cannot be used.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number: "+line+"\nFile: "+gameLGFilePath;
-                                        if(displayMB)
-                                            QMessageBox::critical (p_guiConnect, "DefaultLG Game File Load Error", tempCrit, QMessageBox::Ok);
-                                        return;
-                                    }
-                                    else
-                                        secondTCPPort = lgTCPPort[i];
+                                    //if(tcpServerCount > MAXTCPSERVERS)
+
+                                }
+                                else if(isMultipleTCPPorts && firstTCPPort != lgTCPPort[i] && secondTCPPort != lgTCPPort[i])
+                                {
+                                    lgFileLoadFail = true;
+                                    lgFile.close();
+                                    QString tempCrit = "Three or more TCP Server ports cannot be used.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number: "+line+"\nFile: "+gameLGFilePath;
+                                    if(displayMB)
+                                        QMessageBox::critical (p_guiConnect, "DefaultLG Game File Load Error", tempCrit, QMessageBox::Ok);
+                                    return;
                                 }
                             }
 
@@ -4504,10 +4894,19 @@ void HookerEngine::LoadLGFile()
                             connect(&lgGamePlayers[i], &GamePlayer::DisconnectFromLG, this, &HookerEngine::CloseTCPServerSlot);
                             connect(&lgGamePlayers[i], &GamePlayer::WriteToLG, this, &HookerEngine::WriteTCPServerSlot);
 
-                            if(firstTCPPort == lgTCPPort[i])
+                            if(lgTCPPort[i] == firstTCPPort)
                                 lgGamePlayers[i].SetWriteNumber (0);
-                            else
+                            else if(lgTCPPort[i] == secondTCPPort)
                                 lgGamePlayers[i].SetWriteNumber (1);
+                            else
+                            {
+                                lgFileLoadFail = true;
+                                lgFile.close();
+                                QString tempCrit = "TCP Server port cannot be found for player.\nLine Number: "+QString::number(lineNumber)+"\nPlayer Number: "+line+"\nFile: "+gameLGFilePath;
+                                if(displayMB)
+                                    QMessageBox::critical (p_guiConnect, "DefaultLG Game File Load Error", tempCrit, QMessageBox::Ok);
+                                return;
+                            }
                         }
                         else if(lgOutputConnection[i] == UNKNOWNCONNECT)
                         {
@@ -5005,6 +5404,40 @@ void HookerEngine::LoadLGFile()
                             if(loadedLGNumbers[k] != UNASSIGN)
                                 p_comDeviceList->p_lightGunList[loadedLGNumbers[k]]->SetSkipAutoLED ();
                         }
+                    }
+                    else if(line.startsWith(OVERRIDEFADE))
+                    {
+                        QStringList overrideFadeSL = line.split (' ', Qt::SkipEmptyParts);
+
+                        if(overrideFadeSL.length() != OVERRIDEFADELENGTH)
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "The Ultimarc Override Fade argument number is not 1.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
+
+                        bool isNumber;
+
+                        quint8 newFade = overrideFadeSL[1].toUInt(&isNumber);
+
+                        if(!isNumber)
+                        {
+                            lgFileLoadFail = true;
+                            lgFile.close();
+                            QString tempCrit = "The Ultimarc Override Fade is not a number.\nLine: "+line+"\nLine Number: "+QString::number(lineNumber)+"\nFile: "+gameLGFilePath;
+                            if(displayMB)
+                                QMessageBox::critical (p_guiConnect, "Default Light Gun Game File Error", tempCrit, QMessageBox::Ok);
+                            return;
+                        }
+
+                        quint8 ultimarcNum = p_comDeviceList->GetNumberUltimarcControllers();
+                        QList<quint8> pos = p_comDeviceList->GetUltimarcPotitions();
+
+                        for(quint8 k = 0; k < ultimarcNum; k++)
+                            p_comDeviceList->p_lightCntlrList[pos[k]]->OverrideUltimarcFade(newFade);
                     }
                     else
                     {

@@ -22,6 +22,8 @@ public:
 
     void SetUpArguments(quint8 index);
 
+    //Ultimarc
+
     void SetUpRegularFlash();
 
     void SetUpRegularSequence();
@@ -38,7 +40,25 @@ public:
 
     void SetUpRGBSequenceCM();
 
+    void SetUpRGBSlash();
+
+    void SetUpRGBDoubleSlash();
+
     void SetUpRGBBackground();
+
+    //ALED
+
+    void SetUpALEDFlash();
+
+    void SetUpALEDRandomFlash();
+
+    void SetUpALEDSequential();
+
+    void SetUpALEDDisplayRange();
+
+
+
+    //Get Variable Data
 
     bool GetTimeOn();
 
@@ -66,6 +86,20 @@ public:
 
     bool GetPlayerNumber();
 
+    bool GetProbability();
+
+    bool GetLEDsPerDelay();
+
+    bool GetLEDsToFlash();
+
+
+
+    void SetLabels();
+
+    void CloseDisplayRange();
+
+
+
 private slots:
     void on_lightCntlrComboBox_currentIndexChanged(int index);
 
@@ -74,6 +108,10 @@ private slots:
     void on_pushButton_clicked();
 
     void on_updateBG_clicked();
+
+    void on_typeComboBox_currentIndexChanged(int index);
+
+    void on_closeBG_clicked();
 
 private:
     Ui::testLightController *ui;
@@ -88,6 +126,18 @@ private:
     //Number of Light Controllers
     quint8              numberLightCntlrs;
 
+    //Current Type Setting
+    qint8               typeSet;
+
+    //Number of Saved Light Controillers
+    quint8              numberSaveUltimarcCntlrs;
+    quint8              numberALEDStripCntlrs;
+
+    QList<quint8>       ultimarcPotitions;
+    QList<quint8>       aledStripPotitions;
+
+    QStringList         aledCntlrCOMNames;
+
     //Controller Number
     quint8              cntlrsNumber;
 
@@ -99,6 +149,25 @@ private:
 
     //Have RGB Lights
     bool                rgbLights;
+
+
+    //RGB Colors
+    QMap<QString,RGBColor>  rgbColorMap;
+
+    //Number of RGB Colors
+    quint8              numberColors;
+
+    QStringList         colors;
+
+    //RGB Colors
+    QMap<QString,QStringList>  rgbColorMapMap;
+
+    //Number of RGB Colors
+    quint8              numberColorMaps;
+
+    QStringList         colorMaps;
+
+
 
     //Number of Commands Loaded
     quint8              numberCommands;
@@ -149,6 +218,17 @@ private:
     //Is Background Running
     bool                isBGRunning;
     bool                isBGRGB;
+
+    //ALED
+
+    //Max Range for Display Range
+    quint16             maxRange;
+    quint8              steps;
+    quint8              probability;
+    quint8              ledsPerDelay;
+    quint8              ledsToFlash;
+
+    bool                isDRRunning;
 
 };
 

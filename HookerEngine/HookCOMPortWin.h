@@ -11,7 +11,6 @@
 
 #include "../Global.h"
 
-#include <Windows.h>
 
 #include <Windows.h>
 #include "hidapi_winapi.h"
@@ -72,7 +71,7 @@ public slots:
     void SetBypassCOMPortConnectFailWarning(const bool &bypassCPCFW);
 
     //Connect to a TCP Server
-    void ConnectTCP(const quint16 &port);
+    void ConnectTCP(const quint16 &port, const quint8 &server);
     void DisconnectTCP();
 
     void FoundTCPServer();

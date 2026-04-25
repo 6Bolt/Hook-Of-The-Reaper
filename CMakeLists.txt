@@ -1,23 +1,26 @@
 cmake_minimum_required(VERSION 3.19)
 project(HookOfTheReaper LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets SerialPort Network Multimedia Bluetooth)
-#find_package(Qt6 REQUIRED COMPONENTS Core)
-#find_package(Qt6 REQUIRED COMPONENTS Widgets)
-#find_package(Qt6 REQUIRED COMPONENTS SerialPort)
-#find_package(Qt6 REQUIRED COMPONENTS Network)
-#find_package(Qt6 REQUIRED COMPONENTS Multimedia)
-#find_package(Qt6 REQUIRED COMPONENTS Bluetooth)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-qt_standard_project_setup()
+#qt_standard_project_setup()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 
-qt_add_executable(HookOfTheReaper
+#find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets SerialPort Network Multimedia Bluetooth)
+
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets SerialPort Network Multimedia)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets SerialPort Network Multimedia)
+
+
+#qt_add_executable(HookOfTheReaper
+add_executable(HookOfTheReaper
     WIN32 MACOSX_BUNDLE
     main.cpp ${app_icon_resource_windows}
     hookOfTheReaper.cpp
@@ -75,12 +78,6 @@ qt_add_executable(HookOfTheReaper
 
 target_include_directories(HookOfTheReaper
     PRIVATE
-    ${Qt6Core_INCLUDE_DIRS}
-    ${Qt6Widgets_INCLUDE_DIRS}
-    ${Qt6SerialPort_INCLUDE_DIRS}
-    ${Qt6Network_INCLUDE_DIRS}
-    ${Qt6Multimedia_INCLUDE_DIRS}
-    ${Qt6Bluetooth_INCLUDE_DIRS}
     D:/QtProjects/HookOfTheReaperGit/HIDAPI/include
     D:/QtProjects/HookOfTheReaperGit/UltimarcSDK
 )
@@ -92,12 +89,11 @@ target_link_directories(HookOfTheReaper
 
 target_link_libraries(HookOfTheReaper
     PRIVATE
-        Qt6::Core
-        Qt6::Widgets
-        Qt6::SerialPort
-        Qt6::Network
-        Qt6::Multimedia
-        Qt6::Bluetooth
+        Qt::Core
+        Qt::Widgets
+        Qt::SerialPort
+        Qt::Network
+        Qt::Multimedia
         hidapi
         PacDrive64
 )
@@ -105,19 +101,8 @@ target_link_libraries(HookOfTheReaper
 
 include(GNUInstallDirs)
 
-install(TARGETS HookOfTheReaper
-    BUNDLE  DESTINATION .
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
 
-qt_generate_deploy_app_script(
-    TARGET HookOfTheReaper
-    OUTPUT_SCRIPT deploy_script
-    NO_UNSUPPORTED_PLATFORM_ERROR
-    NO_TRANSLATIONS
-)
-install(SCRIPT ${deploy_script})
+
 
 
 set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/data/icons/icons.rc")

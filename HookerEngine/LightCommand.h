@@ -82,6 +82,9 @@ public:
 
     quint8 GetNumberLEDs() { return numberLEDs; }
 
+    //Error Message
+    bool IsErrorMessage() { return isErrorMessage; }
+    QString GetErrorMessage() { return errorMessage; }
 
 
     void SetStructNumber(quint8 cntlrNum, QList<quint8> sNums) { structNumbers.insert(cntlrNum, sNums); }
@@ -123,6 +126,12 @@ public:
     bool ProcessRandomFlashRGB();
     bool ProcessRandomFlash2CRGB();
     bool ProcessRandomFlashRGBCM();
+
+    //Slash RGB
+    bool ProcessSlashRGB();
+
+    //Double Slash
+    bool ProcessDoubleSlashRGB();
 
     //Follower RGB
     bool ProcessFollowerRGB();
@@ -212,6 +221,10 @@ public:
 
     //Background
     QList<quint8>                       otherBGGroups;
+
+    //Error Message
+    QString                             errorMessage;
+    bool                                isErrorMessage;
 
     //ALED Strip
 

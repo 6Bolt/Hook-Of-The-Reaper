@@ -3,7 +3,8 @@
 
 #include <qobject.h>
 
-#define VERSION                 "1.3.0C"
+
+#define VERSION                 "1.3.1"
 #define VERSIONMAIN             1
 #define VERSIONMID              2
 #define VERSIONLAST             8
@@ -344,6 +345,7 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 //Time for the TCP Socket Timer (msec)
 #define TCPTIMERTIME            3050
 #define TCPSLEEPTIME            500    // In ms
+#define TCPSLEEPCOUNT           10     // 10 * 500ms is 5s
 #define TIMETOWAITTCPSERVER     3000
 
 
@@ -508,7 +510,16 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define DIGIT0                  "%d0%"
 #define PERCENTAGESYMBOL        "%"
 
-
+// Ultimarc Commands for INI Side
+#define ULTIMARCSTART           "ul"
+#define ULTIMARCSETSTATE        "uls"
+#define ULTIMARCSETSTATECMDS    4
+#define ULTIMARCSETINT          "uli"
+#define ULTIMARCSETINTCMD       4
+#define ULTIMARCSETFADE         "ulf"
+#define ULTIMARCSETFADECMD      3
+#define ULTIMARCKILL            "ulk"
+#define ULTIMARCKILLCMD         2
 
 
 //Process Default LG Game File
@@ -539,7 +550,8 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define SINDENTRIGGERRECOILMAX  3
 #define AMMOCHECKOPTION         "Ammo_Check"
 #define SKIPAUTOLEDOPTION       "Skip_Auto_LED"
-
+#define OVERRIDEFADE            "Override_Fade"
+#define OVERRIDEFADELENGTH      2
 
 //Number of Supported Recoil Commands 4: Ammo_Value, Recoil, Recoil_R2S, and Recoil_Value
 #define NUMBEROFRECOILS         4
@@ -711,6 +723,8 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define DEFAULTBRIGHTNESS       "Default_Brightness"
 #define DEFAULTBRIGHTNESSSIZE   2
 #define INVERTDATASYMBOL        '~'
+#define DEFAULTFADE             "Default_Fade"
+#define DEFAULTFADESIZE         2
 
 // Light Game/Default File Stuff
 #define OUTPUTSIGNALSTART       ':'
@@ -729,6 +743,35 @@ extern QString DEFAULTLGFILENAMES_ARRAY[];
 #define ULTIMARC                0
 #define HOTRALEDSTRIP           1
 
+
+// For Test Light Controller
+
+#define ULTIMARCGRPS            "Groups:"
+#define ALEDSTRIPS              "Strips:"
+
+#define ULTIMARCSIDEC           "Side Color:"
+#define ALED2NDCOLOR            " 2nd Color:"
+
+#define ULTIMARCTIMEBG          "Time BG:"
+#define ALEDDRTIME              "Time DR"
+
+#define ULTIMARCTIMEBGR         "Time BG Reload:"
+#define ALEDDRTIMER             "Time DR Reload:"
+
+#define ULTIMARCHIGHC           "High Count:"
+#define ALEDMAXRANGE            " Max Range:"
+
+#define ULTIMARCOTHER           "Other Groups:"
+#define ALEDNUMSTEPS            "Number Steps:"
+
+#define ULTIMARCBGNUM           "Background Number:"
+#define ALEDDRNUMBER            "Display Range Num:"
+
+#define ULTIMARCUPDATEBG        "Update Background"
+#define ALEDDRUPDATE            "    Update DR    "
+
+#define ULTIMARCCLOSEBG         "Close Background"
+#define ALEDCLOSEDR             "    Close DR    "
 
 //PacDrive, U-HID, and Blue-HID: 16 LED Channels with No Brightness (0 - Off and 1 - On)
 //Nano-LED: 60 LED Channels with 256 Brightness Levels (20 RGB LEDs)
@@ -787,6 +830,8 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 
 #define FLASHCMCOMMAND          4
 #define SEQUENCECMCOMMAND       5
+
+#define SLASHCOMMANDS           6
 
 //Regular
 #define REGCOMMANDS             20
@@ -864,6 +909,18 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 #define RELOADSEQUENCERGBCMCMD  1
 
 
+//Slash
+#define SLASHRGB                "Slash_RGB"
+#define SLASHRGBARGS            2
+#define SLASHRGBCMD             0
+
+#define DOUBLESLASHRGB          "Double_Slash_RGB"
+#define DOUBLESLASHRGBARGS      3
+#define DOUBLESLASHRGBCMD       1
+
+
+
+
 //Regular
 #define SEQUENCEREG             "Sequence_Regular"
 #define SEQUENCEREGARGS         1
@@ -925,6 +982,7 @@ extern quint8 ULTIMARCTYPEBRIGHTNESS[];
 #define DRSMALLESTDELAY         101
 #define ALEDSTRIPTIME           9999
 #define ALEDSTRIPMAXNUM         9
+#define MAXNUMALEDSTRIPS        4
 
 //Patterns
 #define NOPATTERN               "No Pattern"

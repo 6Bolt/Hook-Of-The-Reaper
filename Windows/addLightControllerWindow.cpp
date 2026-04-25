@@ -481,8 +481,8 @@ void addLightControllerWindow::SearchSerialPorts()
                     tempVID.prepend ("0x");
 
                     QString tempPID = QString::number(tempSPI.productID, 16).rightJustified(4, '0');
-                    tempVID = tempVID.toUpper ();
-                    tempVID.prepend ("0x");
+                    tempPID = tempPID.toUpper ();
+                    tempPID.prepend ("0x");
 
                     tempSPI.vendorIDString = tempVID;
                     tempSPI.productIDString = tempPID;

@@ -27,6 +27,9 @@ ALEDStripLC::ALEDStripLC(quint8 cntlrNum, quint8 comNum, QString comNm, SerialPo
     if(isCOMPortOpen)
         SetUpALEDStrips();
 
+    for(quint8 i = 0; i < MAXNUMALEDSTRIPS; i++)
+        displayRangeValue[i] = 0;
+
     LoadGroupFile();
 }
 
@@ -533,6 +536,10 @@ void ALEDStripLC::GameEnded()
     flashCount = 0;
     rndFlashCount = 0;
     sequentialCount = 0;
+
+    //Set Display Range Values to 0
+    for(quint8 i = 0; i < MAXNUMALEDSTRIPS; i++)
+        displayRangeValue[i] = 0;
 }
 
 
@@ -550,6 +557,8 @@ void ALEDStripLC::SetUpDisplayRange(QList<quint8> stps, quint16 mRange, quint8 n
 
     for(quint8 i = 0; i < strips.count(); i++)
     {
+        displayRangeMax[strips[i]] = mRange;
+
         //Make Data into 1 String
         QString stripData = DISPLAYRANGE + QString::number(strips[i]) + ENDCHAR;
         sendNoColor = stripData;
@@ -621,16 +630,44 @@ void ALEDStripLC::SetUpDisplayRange(QList<quint8> stps, quint16 mRange, quint8 n
 
 void ALEDStripLC::UpdateDisplayRange(QList<quint8> stps, quint16 value)
 {
-    QString updateData = UPDATEDISPLAYRANGE + QString::number(stps[0]) + QString::number(value) + ENDCHAR;
+    quint16 updateValue;
+    bool writeData = false;
+    QString updateData;
 
-    if(stps.count() > 1)
+    //Check the Max Value
+    if(value > displayRangeMax[stps[0]])
+        updateValue = displayRangeMax[stps[0]];
+    else
+        updateValue = value;
+
+    if(value != displayRangeValue[stps[0]])
     {
-        for(quint8 i = 0; i < stps.count(); i++)
-            updateData.append (UPDATEDISPLAYRANGE + QString::number(stps[i]) + QString::number(value) + ENDCHAR);
+        updateData = UPDATEDISPLAYRANGE + QString::number(stps[0]) + QString::number(updateValue) + ENDCHAR;
+        writeData = true;
     }
 
-    //Write Data to ALED Strip Controller
-    COMWrite(updateData.toUtf8());
+    //If there is 2 or more ALED Strips to Update
+    if(stps.count() > 1)
+    {
+        for(quint8 i = 1; i < stps.count(); i++)
+        {
+            //Check the Max Value
+            if(value > displayRangeMax[stps[i]])
+                updateValue = displayRangeMax[stps[i]];
+            else
+                updateValue = value;
+
+            if(value != displayRangeValue[stps[i]])
+            {
+                updateData.append (UPDATEDISPLAYRANGE + QString::number(stps[i]) + QString::number(updateValue) + ENDCHAR);
+                writeData = true;
+            }
+        }
+    }
+
+    //Write Data to ALED Strip Controller, if value has changed
+    if(writeData)
+        COMWrite(updateData.toUtf8());
 }
 
 
@@ -803,7 +840,7 @@ void ALEDStripLC::SetUpStripSequential(quint8 structN, quint8 stp, quint16 timeD
     COMWrite(sendData.toUtf8());
 
     //Give a little time
-    QThread::msleep(5);
+    QThread::msleep(8);
 }
 
 void ALEDStripLC::DoStripSequential(quint8 structN)

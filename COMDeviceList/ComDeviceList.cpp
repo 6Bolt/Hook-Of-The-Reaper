@@ -332,6 +332,7 @@ void ComDeviceList::AddLightController(UltimarcData dataU)
         connect(p_lightCntlrList[numberLightCntrls],&UltimarcLC::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
         connect(p_lightCntlrList[numberLightCntrls],&UltimarcLC::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
         connect(p_lightCntlrList[numberLightCntrls],&UltimarcLC::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
+        connect(p_lightCntlrList[numberLightCntrls],&UltimarcLC::SetFade, p_pacDrive, &PacDriveControl::SetFade);
     }
     else if(dataU.type >= PACDRIVE && dataU.type <= BLUEHID)
     {
@@ -777,6 +778,7 @@ void ComDeviceList::ConnectLightControllers()
                 connect(p_lightCntlrList[i],&UltimarcLC::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
                 connect(p_lightCntlrList[i],&UltimarcLC::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
                 connect(p_lightCntlrList[i],&UltimarcLC::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
+                connect(p_lightCntlrList[i],&UltimarcLC::SetFade, p_pacDrive, &PacDriveControl::SetFade);
             }
             else if(!isPAC64 && maker == ULTIMARC)
             {
@@ -811,6 +813,7 @@ void ComDeviceList::DisconnectLightControllers()
                 disconnect(p_lightCntlrList[i],&UltimarcLC::SetRGBLightIntensity, p_pacDrive, &PacDriveControl::SetRGBLightIntensity);
                 disconnect(p_lightCntlrList[i],&UltimarcLC::SetPinState, p_pacDrive, &PacDriveControl::SetPinState);
                 disconnect(p_lightCntlrList[i],&UltimarcLC::SetPinStates, p_pacDrive, &PacDriveControl::SetPinStates);
+                disconnect(p_lightCntlrList[i],&UltimarcLC::SetFade, p_pacDrive, &PacDriveControl::SetFade);
             }
             else if(!isPAC64 && maker == ULTIMARC)
             {

@@ -37,6 +37,12 @@ public:
     //Get Number of Ultimarc Devices in List
     quint8 GetNumberDevicesInList() { return devicesInList; }
 
+    //Get the Number of Valid Ultimarc Devices
+    qint8 GetUltimarcValidDevices() { return numberUltimarcDevicesValid; }
+
+    //Get Device Type
+    quint8 GetDeviceType(quint8 index) { return dataUltimarc[index].type; }
+
     //Turns Off All Lights
     void TurnOffAllLights();
 
@@ -47,6 +53,14 @@ public:
     bool CheckLoadedUltimarcDevice(UltimarcData dataU);
 
     void DeletedFromList(UltimarcData dataU);
+
+    void SetStateINI(quint8 id, quint8 pin, bool state);
+
+    void SetIntensityINI(quint8 id, quint8 pin, quint8 intensity);
+
+    void SetFadeINI(quint8 id, quint8 fade);
+
+    void KillLightsINI(quint8 id);
 
 public slots:
 
@@ -67,6 +81,9 @@ public slots:
 
     //Set Pin State for PacDrive
     void SetPACLEDState(quint8 id, quint8 pin, bool state);
+
+    //Set Fade
+    void SetFade(quint8 id, quint8 fade);
 
 
 

@@ -14,6 +14,8 @@ LightCommand::LightCommand()
     numberCntlrs = 0;
     kindOfCommand = 0;
 
+    isErrorMessage = false;
+
     isColor = false;
     isSideColor = false;
     isColorMap = false;
@@ -39,6 +41,8 @@ LightCommand::LightCommand(QString outputSig, QString cmd, QStringList cmdArgs, 
     cntlrsGroup = cntlrsGrps;
     isCommandValid = false;
     isRGB = true;
+
+    isErrorMessage = false;
 
     isColor = false;
     isSideColor = false;
@@ -148,6 +152,18 @@ void LightCommand::ProcessLightCommand()
         kindOfCommand = SEQUENCECOMMAND;
         commandNumber = RELOADSEQUENCERGBCMD;
         isCommandValid = ProcessReloadSequenceRGB();
+    }
+    else if(command == SLASHRGB)
+    {
+        kindOfCommand = SLASHCOMMANDS;
+        commandNumber = SLASHRGBCMD;
+        isCommandValid = ProcessSlashRGB();
+    }
+    else if(command == DOUBLESLASHRGB)
+    {
+        kindOfCommand = SLASHCOMMANDS;
+        commandNumber = DOUBLESLASHRGBCMD;
+        isCommandValid = ProcessDoubleSlashRGB();
     }
     else if(command == FOLLOWERRGB)
     {
@@ -325,15 +341,26 @@ bool LightCommand::CheckTimeOn(QString tOn)
 
     if(!isNumber)
     {
-        //QString failMeg = "Time on is not a number.\nFailing Number: "+tOn;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Time On is not a number.\nFailing Number: "+tOn;
+        isErrorMessage = true;
+        return false;
+    }
+
+    if(timeOn == 0)
+    {
+        errorMessage = "Time On is zero.\nFailing Number: "+tOn;
+        isErrorMessage = true;
         return false;
     }
 
     if(isALEDStrip)
     {
-        if(timeOn > ALEDSTRIPTIME || timeOn == 0)
+        if(timeOn > ALEDSTRIPTIME)
+        {
+            errorMessage = "Time On is 10,000 or more for LED Hook: Strip. Can only be 1 to 9,999.\nFailing Number: "+tOn;
+            isErrorMessage = true;
             return false;
+        }
     }
 
     return true;
@@ -347,15 +374,26 @@ bool LightCommand::CheckTimeOff(QString tOff)
 
     if(!isNumber)
     {
-        //QString failMeg = "Time off is not a number.\nFailing Number: "+tOff;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Time Off is not a number.\nFailing Number: "+tOff;
+        isErrorMessage = true;
+        return false;
+    }
+
+    if(timeOff == 0)
+    {
+        errorMessage = "Time Off is zero.\nFailing Number: "+tOff;
+        isErrorMessage = true;
         return false;
     }
 
     if(isALEDStrip)
     {
-        if(timeOff > ALEDSTRIPTIME || timeOff == 0)
+        if(timeOff > ALEDSTRIPTIME)
+        {
+            errorMessage = "Time Off is 10,000 or more for LED Hook: Strip. Can only be 1 to 9,999.\nFailing Number: "+tOff;
+            isErrorMessage = true;
             return false;
+        }
     }
 
     return true;
@@ -369,15 +407,26 @@ bool LightCommand::CheckTimeDelay(QString tDelay)
 
     if(!isNumber)
     {
-        //QString failMeg = "Time off is not a number.\nFailing Number: "+tDelay;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Time Delay is not a number.\nFailing Number: "+tDelay;
+        isErrorMessage = true;
+        return false;
+    }
+
+    if(timeDelay == 0)
+    {
+        errorMessage = "Time Delay is zero.\nFailing Number: "+tDelay;
+        isErrorMessage = true;
         return false;
     }
 
     if(isALEDStrip)
     {
-        if(timeDelay == 0 || timeDelay > ALEDSTRIPTIME)
+        if(timeDelay > ALEDSTRIPTIME)
+        {
+            errorMessage = "Time Delay is 10,000 or more for LED Hook: Strip. Can only be 1 to 9,999.\nFailing Number: "+tDelay;
+            isErrorMessage = true;
             return false;
+        }
     }
 
 
@@ -392,15 +441,26 @@ bool LightCommand::CheckNumberFlashes(QString numF)
 
     if(!isNumber)
     {
-        //QString failMeg = "Number of flashes is not a number.\nFailing Number: "+numF;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Number of Flashes is not a number.\nFailing Number: "+numF;
+        isErrorMessage = true;
+        return false;
+    }
+
+    if(numberFlashes == 0)
+    {
+        errorMessage = "Number of Flashes is zero.\nFailing Number: "+numF;
+        isErrorMessage = true;
         return false;
     }
 
     if(isALEDStrip)
     {
         if(numberFlashes > ALEDSTRIPMAXNUM)
+        {
+            errorMessage = "Number of Flashes is 10 or more for LED Hook: Strip. Can only be 1 to 9.\nFailing Number: "+numF;
+            isErrorMessage = true;
             return false;
+        }
     }
 
     return true;
@@ -413,13 +473,28 @@ bool LightCommand::CheckPlayerNumber(QString pNum)
     playerNumber = pNum.toUInt(&isNumber);
 
     if(!isNumber)
+    {
+        errorMessage = "Player Number is not a number.\nFailing Number: "+pNum;
+        isErrorMessage = true;
         return false;
+    }
+
+    if(numberFlashes == 0)
+    {
+        errorMessage = "Player Number is zero.\nFailing Number: "+pNum;
+        isErrorMessage = true;
+        return false;
+    }
 
     //Take one off of Player Number, P1 is 0
     playerNumber--;
 
     if(playerNumber >= MAXGAMEPLAYERS)
+    {
+        errorMessage = "Player Number is 5 or more. Can only be 1 to 4.\nFailing Number: "+pNum;
+        isErrorMessage = true;
         return false;
+    }
 
     return true;
 }
@@ -432,8 +507,8 @@ bool LightCommand::CheckHighCount(QString hCount)
 
     if(!isNumber)
     {
-        //QString failMeg = "Number of flashes is not a number.\nFailing Number: "+numF;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "High Count is not a number.\nFailing Number: "+hCount;
+        isErrorMessage = true;
         return false;
     }
 
@@ -449,8 +524,8 @@ bool LightCommand::CheckBGTimeDelayReload(QString tDelay)
 
     if(!isNumber)
     {
-        //QString failMeg = "Time off is not a number.\nFailing Number: "+tDelay;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Background Reload Delay is not a number.\nFailing Number: "+tDelay;
+        isErrorMessage = true;
         return false;
     }
 
@@ -465,8 +540,23 @@ bool LightCommand::CheckMaxRange(QString maxRan)
 
     if(!isNumber)
     {
-        //QString failMeg = "Number of flashes is not a number.\nFailing Number: "+numF;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Max Range is not a number.\nFailing Number: "+maxRan;
+        isErrorMessage = true;
+        return false;
+    }
+
+    if(maxRange == 0)
+    {
+        errorMessage = "Max Range is zero.\nFailing Number: "+maxRan;
+        isErrorMessage = true;
+        return false;
+    }
+
+
+    if(maxRange > ALEDSTRIPTIME)
+    {
+        errorMessage = "Max Range is 10,000 or more for LED Hook: Strip. Can only be 1 to 9,999.\nFailing Number: "+maxRan;
+        isErrorMessage = true;
         return false;
     }
 
@@ -481,13 +571,24 @@ bool LightCommand::CheckNumberSteps(QString numSt)
 
     if(!isNumber)
     {
-        //QString failMeg = "Number of flashes is not a number.\nFailing Number: "+numF;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Number of Steps is not a number.\nFailing Number: "+numSt;
+        isErrorMessage = true;
+        return false;
+    }
+
+    if(numberSteps == 0)
+    {
+        errorMessage = "Number of Steps is zero.\nFailing Number: "+numSt;
+        isErrorMessage = true;
         return false;
     }
 
     if(numberSteps > ALEDSTRIPMAXNUM)
+    {
+        errorMessage = "Number of Steps is 10 or more for LED Hook: Strip. Can only be 1 to 9.\nFailing Number: "+numSt;
+        isErrorMessage = true;
         return false;
+    }
 
     return true;
 }
@@ -500,13 +601,24 @@ bool LightCommand::CheckNumberLEDs(QString numLEDs)
 
     if(!isNumber)
     {
-        //QString failMeg = "Number of flashes is not a number.\nFailing Number: "+numF;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Number of LEDs is not a number.\nFailing Number: "+numLEDs;
+        isErrorMessage = true;
+        return false;
+    }
+
+    if(numberLEDs == 0)
+    {
+        errorMessage = "Number of LEDs is zero.\nFailing Number: "+numLEDs;
+        isErrorMessage = true;
         return false;
     }
 
     if(numberLEDs > ALEDSTRIPMAXNUM+1)
+    {
+        errorMessage = "Number of LEDs is 11 or more for LED Hook: Strip. Can only be 1 to 10.\nFailing Number: "+numLEDs;
+        isErrorMessage = true;
         return false;
+    }
 
     return true;
 }
@@ -519,8 +631,8 @@ bool LightCommand::CheckSeqReloadDR(QString seqR)
 
     if(!isNumber)
     {
-        //QString failMeg = "Number of flashes is not a number.\nFailing Number: "+numF;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Enable Seq Reload for Display Range is not a number.\nFailing Number: "+seqR;
+        isErrorMessage = true;
         return false;
     }
 
@@ -540,13 +652,24 @@ bool LightCommand::CheckTimeDelayDR(QString tDelay)
 
     if(!isNumber)
     {
-        //QString failMeg = "Time off is not a number.\nFailing Number: "+tDelay;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Seq Reload Delay for Display Range is not a number.\nFailing Number: "+tDelay;
+        isErrorMessage = true;
         return false;
     }
 
-    if(timeDelay == 0 || timeDelay > ALEDSTRIPTIME)
+    if(timeDelay == 0)
+    {
+        errorMessage = "Seq Reload Delay for Display Range is zero.\nFailing Number: "+tDelay;
+        isErrorMessage = true;
         return false;
+    }
+
+    if(timeDelay > ALEDSTRIPTIME)
+    {
+        errorMessage = "Seq Reload Delay for Display Range is 10,000 or more for LED Hook: Strip. Can only be 1 to 9,999.\nFailing Number: "+tDelay;
+        isErrorMessage = true;
+        return false;
+    }
 
     return true;
 }
@@ -559,8 +682,8 @@ bool LightCommand::CheckStripFlashWait(QString sFW)
 
     if(!isNumber)
     {
-        //QString failMeg = "Number of flashes is not a number.\nFailing Number: "+numF;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Flash Wait is not a number.\nFailing Number: "+sFW;
+        isErrorMessage = true;
         return false;
     }
 
@@ -580,8 +703,8 @@ bool LightCommand::CheckNumberLEDsSeq(QString numLED)
 
     if(!isNumber)
     {
-        //QString failMeg = "Number of flashes is not a number.\nFailing Number: "+numF;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Number of LEDs to turn on is not a number.\nFailing Number: "+numLED;
+        isErrorMessage = true;
         return false;
     }
 
@@ -591,7 +714,11 @@ bool LightCommand::CheckNumberLEDsSeq(QString numLED)
         return true;
     }
     else
+    {
+        errorMessage = "Number of LEDs to turn on is not 1, 2, 4, or 8 for LED Hook: Strip.\nFailing Number: "+numLED;
+        isErrorMessage = true;
         return false;
+    }
 }
 
 bool LightCommand::CheckEnable2ndColor(QString en2ndC)
@@ -602,8 +729,8 @@ bool LightCommand::CheckEnable2ndColor(QString en2ndC)
 
     if(!isNumber)
     {
-        //QString failMeg = "Number of flashes is not a number.\nFailing Number: "+numF;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Enable 2nd Color is not a number.\nFailing Number: "+en2ndC;
+        isErrorMessage = true;
         return false;
     }
 
@@ -623,10 +750,18 @@ bool LightCommand::CheckProbability2ndColor(QString prob2nd)
 
     if(!isNumber)
     {
-        //QString failMeg = "Number of flashes is not a number.\nFailing Number: "+numF;
-        //emit ShowErrorMessage(errorTitle, failMeg);
+        errorMessage = "Probability is not a number.\nFailing Number: "+prob2nd;
+        isErrorMessage = true;
         return false;
     }
+
+    if(prob2ndNum == 0)
+    {
+        errorMessage = "Probability is zero.\nFailing Number: "+prob2nd;
+        isErrorMessage = true;
+        return false;
+    }
+
 
     // Check if Number is 2-12
     if(prob2ndNum > 1 && prob2ndNum < 13)
@@ -635,6 +770,8 @@ bool LightCommand::CheckProbability2ndColor(QString prob2nd)
         return true;
     }
 
+    errorMessage = "Probability is not 2 to 12.\nFailing Number: "+prob2nd;
+    isErrorMessage = true;
     return false;
 }
 
@@ -864,7 +1001,44 @@ bool LightCommand::ProcessRandomFlashRGBCM()
 }
 
 
+bool LightCommand::ProcessSlashRGB()
+{
+    bool check;
 
+    color = commandArg[0];
+
+    isColor = true;
+
+    check = CheckTimeDelay(commandArg[1]);
+
+    if(!check)
+        return false;
+
+    //Ran the Gauntlet
+    return true;
+}
+
+bool LightCommand::ProcessDoubleSlashRGB()
+{
+    bool check;
+
+    color = commandArg[0];
+
+    isColor = true;
+
+    check = CheckTimeDelay(commandArg[1]);
+
+    if(!check)
+        return false;
+
+    check = CheckTimeOff(commandArg[2]);
+
+    if(!check)
+        return false;
+
+    //Ran the Gauntlet
+    return true;
+}
 
 
 bool LightCommand::ProcessFollowerRGB()

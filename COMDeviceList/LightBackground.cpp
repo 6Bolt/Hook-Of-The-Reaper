@@ -34,6 +34,8 @@ LightBackground::LightBackground(quint8 player, quint8 grpNum, QMap<quint8,QList
 
     isFlash = false;
     isSequence = false;
+    isSlash = false;
+
 
     isCommandRunning = false;
 
@@ -501,6 +503,9 @@ void LightBackground::SequenceRGBLightsCM(QList<quint8> grpList, quint16 delay, 
 {
     if(!isCommandRunning)
     {
+        //Turn Off Background
+        TurnOffBackGround();
+
         isSequence = true;
         isCommandRunning = true;
 
@@ -524,14 +529,108 @@ void LightBackground::SequenceRGBLightsCM(QList<quint8> grpList, quint16 delay, 
 }
 
 
+void LightBackground::SlashRGBLights(QList<quint8> grpList, quint16 timeDelayMs, RGBColor color)
+{
+    if(!isCommandRunning)
+    {
+        //Turn Off Background
+        TurnOffBackGround();
+
+        isSlash = true;
+        isCommandRunning = true;
+
+        otherGroupList = grpList;
+        slashDelay = timeDelayMs;
+        slashCount = 0;
+        slashMaxCount = 1;
+        rgbSlashColor = color;
+
+        //Color Divided by 2
+        rgbSlashColorBy2 = color;
+        rgbSlashColorBy2.r = (rgbSlashColorBy2.r >> 1);
+        rgbSlashColorBy2.g = (rgbSlashColorBy2.g >> 1);
+        rgbSlashColorBy2.b = (rgbSlashColorBy2.b >> 1);
+
+        //Color Divided by 4
+        rgbSlashColorBy4 = color;
+        rgbSlashColorBy4.r = (rgbSlashColorBy4.r >> 2);
+        rgbSlashColorBy4.g = (rgbSlashColorBy4.g >> 2);
+        rgbSlashColorBy4.b = (rgbSlashColorBy4.b >> 2);
+
+        FindMaxSequence();
+
+        //To make the slash go all the way through
+        if(rgbFastMode)
+            slashMaxCount = sequenceMaxCount + 3;
+        else
+            slashMaxCount = sequenceMaxCount + 9;
+
+        //Wait for Background Delay
+        connect(p_timer, SIGNAL(timeout()), this, SLOT(SlashRGBLightsPost()));
+        p_timer->setInterval (bgDelay);
+        p_timer->start();
+    }
+}
+
+
+void LightBackground::DoubleSlashRGBLights(QList<quint8> grpList, quint16 timeDelayMs, quint16 timeOffMs, RGBColor color)
+{
+    if(!isCommandRunning)
+    {
+        //Turn Off Background
+        TurnOffBackGround();
+
+        isSlash = true;
+        isCommandRunning = true;
+
+        otherGroupList = grpList;
+        slashDelay = timeDelayMs;
+        slashCount = 0;
+        slashMaxCount = 1;
+        rgbSlashColor = color;
+        slashOff = timeOffMs;
+        doubleSlashRev = false;
+
+        //Color Divided by 2
+        rgbSlashColorBy2 = color;
+        rgbSlashColorBy2.r = (rgbSlashColorBy2.r >> 1);
+        rgbSlashColorBy2.g = (rgbSlashColorBy2.g >> 1);
+        rgbSlashColorBy2.b = (rgbSlashColorBy2.b >> 1);
+
+        //Color Divided by 4
+        rgbSlashColorBy4 = color;
+        rgbSlashColorBy4.r = (rgbSlashColorBy4.r >> 2);
+        rgbSlashColorBy4.g = (rgbSlashColorBy4.g >> 2);
+        rgbSlashColorBy4.b = (rgbSlashColorBy4.b >> 2);
+
+        FindMaxSequence();
+
+        //To make the slash go all the way through
+        if(rgbFastMode)
+            slashMaxCount = sequenceMaxCount + 3;
+        else
+            slashMaxCount = sequenceMaxCount + 9;
+
+        //Wait for Background Delay
+        connect(p_timer, SIGNAL(timeout()), this, SLOT(DoubleSlashRGBLightsPost()));
+        p_timer->setInterval (bgDelay);
+        p_timer->start();
+    }
+}
+
+
+
+
+
 void LightBackground::FindMaxSequence()
 {
     quint8 i;
 
     //For Groups
-    for(i = 0; i < groupList.count(); i++)
+    //for(i = 0; i < groupList.count(); i++)
+    for(i = 0; i < otherGroupList.count(); i++)
     {
-        quint8 count = ledMap[groupList[i]].count();
+        quint8 count = ledMap[otherGroupList[i]].count();
 
         //qDebug() << "Group" << groupList[i] << "Count" << count;
 
@@ -553,16 +652,16 @@ void LightBackground::TurnOffLightsEnd()
             //Turn Off Lights
             if(useRandomPins)
             {
-                emit ShowRGBColorOne(groupList, rgbOff, randomPins, 0);
+                emit ShowRGBColorOne(otherGroupList, rgbOff, randomPins, 0);
 
                 if(useSideColor)
                 {
-                    emit ShowRGBColorOne(groupList, rgbOff, randomPins, 1);
-                    emit ShowRGBColorOne(groupList, rgbOff, randomPins, -1);
+                    emit ShowRGBColorOne(otherGroupList, rgbOff, randomPins, 1);
+                    emit ShowRGBColorOne(otherGroupList, rgbOff, randomPins, -1);
                 }
             }
             else
-                emit ShowRGBColor(groupList, rgbOff);
+                emit ShowRGBColor(otherGroupList, rgbOff);
         }
         else if(isSequence)
         {
@@ -570,7 +669,15 @@ void LightBackground::TurnOffLightsEnd()
             p_timer->stop();
 
             //Turn Off Lights
-            emit ShowRGBColor(groupList, rgbOff);
+            emit ShowRGBColor(otherGroupList, rgbOff);
+        }
+        else if(isSlash)  //Only RGB
+        {
+            //Stop Timer
+            p_timer->stop();
+
+            //Turn Off Lights
+            emit ShowRGBColor(otherGroupList, rgbOff);
         }
         else
             TurnOffBackGround();
@@ -584,9 +691,9 @@ void LightBackground::TurnOffLightsEnd()
 
             //Turn Off Lights
             if(useRandomPins)
-                emit ShowRegularStateOne(groupList, false, randomPins, 0);
+                emit ShowRegularStateOne(otherGroupList, false, randomPins, 0);
             else
-                emit ShowRegularState(groupList, false);
+                emit ShowRegularState(otherGroupList, false);
         }
         else if(isSequence)
         {
@@ -594,7 +701,7 @@ void LightBackground::TurnOffLightsEnd()
             p_timer->stop();
 
             //Turn Off Lights
-            emit ShowRegularState(groupList, false);
+            emit ShowRegularState(otherGroupList, false);
         }
         else
             TurnOffBackGround();
@@ -674,6 +781,36 @@ void LightBackground::SequenceRGBLightsCMPost()
     p_timer->setInterval (sequenceDelay);
     p_timer->start();
 }
+
+
+void LightBackground::SlashRGBLightsPost()
+{
+    //Diconnect Timer
+    disconnect(p_timer, SIGNAL(timeout()), this, SLOT(SlashRGBLightsPost()));
+
+    emit ShowRGBColorOneSlash(otherGroupList, rgbSlashColor, rgbSlashColorBy2, rgbSlashColorBy4, slashCount, false);
+
+    //Connect Timer to Turn On Next LEDs in the Sequence
+    connect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSlashDelayDone()));
+    p_timer->setInterval (slashDelay);
+    p_timer->start();
+}
+
+
+void LightBackground::DoubleSlashRGBLightsPost()
+{
+    //Diconnect Timer
+    disconnect(p_timer, SIGNAL(timeout()), this, SLOT(DoubleSlashRGBLightsPost()));
+
+    emit ShowRGBColorOneSlash(otherGroupList, rgbSlashColor, rgbSlashColorBy2, rgbSlashColorBy4, slashCount, doubleSlashRev);
+
+    //Connect Timer to Turn On Next LEDs in the Sequence
+    connect(p_timer, SIGNAL(timeout()), this, SLOT(RGBDoubleSlashDelayDone()));
+    p_timer->setInterval (slashDelay);
+    p_timer->start();
+}
+
+
 
 
 void LightBackground::FlashRegularLightsPost()
@@ -808,12 +945,10 @@ void LightBackground::RGBSequenceDelayDone()
     }
     else
     {
-        //Turn Off Lights and Turn On Background
-        //emit ShowRGBColor(otherGroupList, rgbOff);
-        TurnOnBackGround();
-
         //Disconnect the Timer
         disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSequenceDelayDone()));
+
+        TurnOnBackGround();
 
         //Turn Off isCommandRunning
         isCommandRunning = false;
@@ -864,6 +999,77 @@ void LightBackground::RGBSequenceDelayDoneCM()
         isSequence = false;
     }
 }
+
+
+void LightBackground::RGBSlashDelayDone()
+{
+    if(rgbFastMode)
+        slashCount++;
+    else
+        slashCount = slashCount + 3;
+
+    if(slashCount < slashMaxCount)
+    {
+        //qDebug() << "Sequence Timer Ended: sequence" << sequenceCount << "sequenceMaxCount" << sequenceMaxCount;
+        //Light Up the Next Sequence
+        emit ShowRGBColorOneSlash(otherGroupList, rgbSlashColor, rgbSlashColorBy2, rgbSlashColorBy4, slashCount, false);
+
+        //Connect Timer to Turn On Next LEDs in the Sequence
+        p_timer->start();
+    }
+    else
+    {
+        //Disconnect the Timer
+        disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RGBSlashDelayDone()));
+
+        TurnOnBackGround();
+
+        isSlash = false;
+        isCommandRunning = false;
+    }
+}
+
+
+
+void LightBackground::RGBDoubleSlashDelayDone()
+{
+    if(doubleSlashRev && slashCount == 0)
+        p_timer->setInterval (slashDelay);
+
+    if(rgbFastMode)
+        slashCount++;
+    else
+        slashCount = slashCount + 3;
+
+    if(slashCount < slashMaxCount)
+    {
+        //Light Up the Next Sequence
+        emit ShowRGBColorOneSlash(otherGroupList, rgbSlashColor, rgbSlashColorBy2, rgbSlashColorBy4, slashCount, doubleSlashRev);
+
+        //Connect Timer to Turn On Next LEDs in the Sequence
+        p_timer->start();
+    }
+    else if(!doubleSlashRev)
+    {
+        slashCount = 0;
+        doubleSlashRev = true;
+        p_timer->setInterval (slashOff);
+        p_timer->start();
+    }
+    else
+    {
+        //Disconnect the Timer
+        disconnect(p_timer, SIGNAL(timeout()), this, SLOT(RGBDoubleSlashDelayDone()));
+
+        TurnOnBackGround();
+
+        isSlash = false;
+        isCommandRunning = false;
+    }
+}
+
+
+
 
 
 
