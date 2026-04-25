@@ -640,10 +640,11 @@ void ALEDStripLC::UpdateDisplayRange(QList<quint8> stps, quint16 value)
     else
         updateValue = value;
 
-    if(value != displayRangeValue[stps[0]])
+    if(updateValue != displayRangeValue[stps[0]])
     {
         updateData = UPDATEDISPLAYRANGE + QString::number(stps[0]) + QString::number(updateValue) + ENDCHAR;
         writeData = true;
+        displayRangeValue[stps[0]] = updateValue;
     }
 
     //If there is 2 or more ALED Strips to Update
@@ -657,10 +658,11 @@ void ALEDStripLC::UpdateDisplayRange(QList<quint8> stps, quint16 value)
             else
                 updateValue = value;
 
-            if(value != displayRangeValue[stps[i]])
+            if(updateValue != displayRangeValue[stps[i]])
             {
                 updateData.append (UPDATEDISPLAYRANGE + QString::number(stps[i]) + QString::number(updateValue) + ENDCHAR);
                 writeData = true;
+                displayRangeValue[stps[i]] = updateValue;
             }
         }
     }
